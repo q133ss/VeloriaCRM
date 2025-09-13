@@ -12,7 +12,7 @@ class Appointment extends Model
     protected $fillable = [
         'user_id',
         'client_id',
-        'service_id',
+        'service_ids',
         'starts_at',
         'ends_at',
         'status',
@@ -25,6 +25,7 @@ class Appointment extends Model
     protected function casts(): array
     {
         return [
+            'service_ids' => 'array',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'meta' => 'array',
