@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ app()->getLocale() }}"
     class="layout-wide customizer-hide"
     dir="ltr"
     data-skin="default"
@@ -14,7 +14,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Demo: Register Basic - Pages | Materialize - Bootstrap Dashboard PRO</title>
+    <title>{{ __('auth.register_title') }}</title>
 
     <meta name="description" content="" />
 
@@ -132,20 +132,21 @@
                     <h4 class="mb-1">Adventure starts here 🚀</h4>
                     <p class="mb-5">Make your app management easy and fun!</p>
 
-                    <form id="formAuthentication" class="mb-5" action="index.html" method="GET">
+                    <form id="formAuthentication" class="mb-5" action="/api/register" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
                                 type="text"
                                 class="form-control"
                                 id="username"
                                 name="username"
-                                placeholder="Enter your username"
+                                placeholder="{{ __('auth.name') }}"
                                 autofocus />
-                            <label for="username">Username</label>
+                            <label for="username">{{ __('auth.name') }}</label>
                         </div>
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
-                            <input type="text" class="form-control" id="email" name="email" placeholder="Enter your email" />
-                            <label for="email">Email</label>
+                            <input type="text" class="form-control" id="email" name="email" placeholder="{{ __('auth.email') }}" />
+                            <label for="email">{{ __('auth.email') }}</label>
                         </div>
                         <div class="mb-5 form-password-toggle form-control-validation">
                             <div class="input-group input-group-merge">
@@ -157,7 +158,7 @@
                                         name="password"
                                         placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                         aria-describedby="password" />
-                                    <label for="password">Password</label>
+                                    <label for="password">{{ __('auth.password') }}</label>
                                 </div>
                                 <span class="input-group-text cursor-pointer"
                                 ><i class="icon-base ri ri-eye-off-line icon-20px"></i
@@ -170,12 +171,12 @@
                                 <div class="form-floating form-floating-outline">
                                     <input
                                         type="password"
-                                        id="password"
+                                        id="password_confirmation"
                                         class="form-control"
-                                        name="password"
+                                        name="password_confirmation"
                                         placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                         aria-describedby="password" />
-                                    <label for="password">Password</label>
+                                    <label for="password_confirmation">{{ __('auth.confirm_password') }}</label>
                                 </div>
                                 <span class="input-group-text cursor-pointer"
                                 ><i class="icon-base ri ri-eye-off-line icon-20px"></i
@@ -187,18 +188,17 @@
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="terms-conditions" name="terms" />
                                 <label class="form-check-label" for="terms-conditions">
-                                    I agree to
-                                    <a href="javascript:void(0);">privacy policy & terms</a>
+                                    {{ __('auth.terms') }}
                                 </label>
                             </div>
                         </div>
-                        <button class="btn btn-primary d-grid w-100 mb-5">Sign up</button>
+                        <button class="btn btn-primary d-grid w-100 mb-5">{{ __('auth.register') }}</button>
                     </form>
 
                     <p class="text-center mb-5">
-                        <span>Already have an account?</span>
-                        <a href="auth-login-basic.html">
-                            <span>Sign in instead</span>
+                        <span>{{ __('auth.have_account') }}</span>
+                        <a href="/login">
+                            <span>{{ __('auth.login_instead') }}</span>
                         </a>
                     </p>
 

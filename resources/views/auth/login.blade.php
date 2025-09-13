@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ app()->getLocale() }}"
     class="layout-wide customizer-hide"
     dir="ltr"
     data-skin="default"
@@ -14,7 +14,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Demo: Login Basic - Pages | Materialize - Bootstrap Dashboard PRO</title>
+    <title>{{ __('auth.login_title') }}</title>
 
     <meta name="description" content="" />
 
@@ -133,16 +133,17 @@
                     <h4 class="mb-1">Welcome to Materialize! 👋</h4>
                     <p class="mb-5">Please sign-in to your account and start the adventure</p>
 
-                    <form id="formAuthentication" class="mb-5" action="index.html" method="GET">
+                    <form id="formAuthentication" class="mb-5" action="/api/login" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
                                 type="text"
                                 class="form-control"
                                 id="email"
                                 name="email-username"
-                                placeholder="Enter your email or username"
+                                placeholder="{{ __('auth.email') }}"
                                 autofocus />
-                            <label for="email">Email or Username</label>
+                            <label for="email">{{ __('auth.email') }}</label>
                         </div>
                         <div class="mb-5">
                             <div class="form-password-toggle form-control-validation">
@@ -155,7 +156,7 @@
                                             name="password"
                                             placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                             aria-describedby="password" />
-                                        <label for="password">Password</label>
+                                        <label for="password">{{ __('auth.password') }}</label>
                                     </div>
                                     <span class="input-group-text cursor-pointer"
                                     ><i class="icon-base ri ri-eye-off-line icon-20px"></i
@@ -166,21 +167,21 @@
                         <div class="mb-5 d-flex justify-content-between mt-5">
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="remember-me" />
-                                <label class="form-check-label" for="remember-me"> Remember Me </label>
+                                <label class="form-check-label" for="remember-me"> {{ __('auth.remember') }} </label>
                             </div>
-                            <a href="auth-forgot-password-basic.html" class="float-end mb-1 mt-2">
-                                <span>Forgot Password?</span>
+                            <a href="/forgot-password" class="float-end mb-1 mt-2">
+                                <span>{{ __('auth.forgot_password') }}</span>
                             </a>
                         </div>
                         <div class="mb-5">
-                            <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                            <button class="btn btn-primary d-grid w-100" type="submit">{{ __('auth.login') }}</button>
                         </div>
                     </form>
 
                     <p class="text-center mb-5">
-                        <span>New on our platform?</span>
-                        <a href="auth-register-basic.html">
-                            <span>Create an account</span>
+                        <span>{{ __('auth.new_here') }}</span>
+                        <a href="/register">
+                            <span>{{ __('auth.create_account') }}</span>
                         </a>
                     </p>
 

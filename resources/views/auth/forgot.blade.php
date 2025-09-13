@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ app()->getLocale() }}"
     class="layout-wide customizer-hide"
     dir="ltr"
     data-skin="default"
@@ -14,7 +14,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Demo: Forgot Password Basic - Pages | Materialize - Bootstrap Dashboard PRO</title>
+    <title>{{ __('auth.forgot_title') }}</title>
 
     <meta name="description" content="" />
 
@@ -131,23 +131,24 @@
                 <div class="card-body mt-1">
                     <h4 class="mb-1">Forgot Password? 🔒</h4>
                     <p class="mb-5">Enter your email and we'll send you instructions to reset your password</p>
-                    <form id="formAuthentication" class="mb-5" action="auth-reset-password-basic.html" method="GET">
+                    <form id="formAuthentication" class="mb-5" action="/api/forgot-password" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
                                 type="text"
                                 class="form-control"
                                 id="email"
                                 name="email"
-                                placeholder="Enter your email"
+                                placeholder="{{ __('auth.email') }}"
                                 autofocus />
-                            <label>Email</label>
+                            <label>{{ __('auth.email') }}</label>
                         </div>
-                        <button class="btn btn-primary d-grid w-100 mb-5">Send Reset Link</button>
+                        <button class="btn btn-primary d-grid w-100 mb-5">{{ __('auth.send_link') }}</button>
                     </form>
                     <div class="text-center">
-                        <a href="auth-login-basic.html" class="d-flex align-items-center justify-content-center">
+                        <a href="/login" class="d-flex align-items-center justify-content-center">
                             <i class="icon-base ri ri-arrow-left-s-line scaleX-n1-rtl icon-20px me-1_5"></i>
-                            Back to login
+                            {{ __('auth.login_instead') }}
                         </a>
                     </div>
                 </div>
