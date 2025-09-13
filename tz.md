@@ -81,7 +81,7 @@
 - **Метрики:** успешные/неуспешные логины, активные сессии.
 
 ### 3.2 Clients (клиенты)
-- **Назначение:** база клиентов, согласия, аллергии, предпочтения.  
+- **Назначение:** база клиентов, аллергии, предпочтения.  
 - **Данные:** `clients(name, phone, email, birthday, tags jsonb, allergies jsonb, preferences jsonb, notes, last_visit_at, loyalty_level)`; `consents`.  
 - **API:** CRUD, поиск; `GET /clients/<built-in function id>/history`; `POST /clients/<built-in function id>/consents`.  
 - **Логика:** автотэги в Veloria/Imperium; локаль клиента для сообщений.  

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
-            $table->json('service_ids')->comment('ID услуг');
+            $table->jsonb('service_ids')->comment('ID услуг');
             $table->timestampTz('starts_at');
             $table->timestampTz('ends_at');
             $table->enum('status', ['scheduled','confirmed','completed','cancelled'])->default('scheduled');

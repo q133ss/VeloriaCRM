@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('base_price', 10, 2);
             $table->decimal('cost', 10, 2);
             $table->integer('duration_min');
-            $table->json('upsell_suggestions')->nullable()->comment('ID сопутствующих услуг');
+            $table->jsonb('upsell_suggestions')->nullable()->comment('ID сопутствующих услуг');
             $table->timestamps();
         });
     }
