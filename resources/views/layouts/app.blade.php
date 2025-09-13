@@ -134,19 +134,11 @@
             </div>
 
             <div class="menu-inner-shadow"></div>
-
-            <ul class="menu-inner py-1">
-                <!-- Page -->
-                <li class="menu-item active">
-                    <a href="index.html" class="menu-link">
-                        <i class="menu-icon icon-base ri ri-home-smile-line"></i>
-                        <div data-i18n="Page 1">Page 1</div>
-                    </a>
-                </li>
+            <ul id="main-menu" class="menu-inner py-1">
                 <li class="menu-item">
-                    <a href="page-2.html" class="menu-link">
-                        <i class="menu-icon icon-base ri ri-file-3-line"></i>
-                        <div data-i18n="Page 2">Page 2</div>
+                    <a href="javascript:void(0);" class="menu-link">
+                        <i class="menu-icon icon-base ri ri-loader-4-line"></i>
+                        <div>Loading...</div>
                     </a>
                 </li>
             </ul>
@@ -383,6 +375,93 @@
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    fetch('/api/v1/auth/me', { credentials: 'include' })
+        .then(function (res) { return res.json(); })
+        .then(function (user) {
+            var plan = (user && user.plan ? user.plan : 'ivory').toLowerCase();
+            var menus = {
+                ivory: [
+                    { label: 'Дашборд', href: '/dashboard', icon: 'ri-dashboard-2-line' },
+                    { label: 'Календарь', href: '/calendar', icon: 'ri-calendar-line' },
+                    { label: 'Записи', href: '/appointments', icon: 'ri-calendar-check-line' },
+                    { label: 'Клиенты', href: '/clients', icon: 'ri-user-3-line' },
+                    { label: 'Услуги', href: '/services', icon: 'ri-scissors-2-line' },
+                    { label: 'Инвойсы', href: '/invoices', icon: 'ri-bill-line' },
+                    { label: 'Сообщения', href: '/messages', icon: 'ri-message-3-line' },
+                    { label: 'Витрина', href: '/storefront', icon: 'ri-store-3-line' },
+                    { label: 'Портфолио', href: '/portfolio', icon: 'ri-image-line' },
+                    { label: 'Отзывы', href: '/reviews', icon: 'ri-star-line' },
+                    { label: 'Аналитика', href: '/analytics', icon: 'ri-bar-chart-line' },
+                    { label: 'Интеграции', href: '/integrations', icon: 'ri-puzzle-line' },
+                    { label: 'Настройки', href: '/settings', icon: 'ri-settings-3-line' },
+                    { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
+                    { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
+                ],
+                veloria: [
+                    { label: 'Дашборд (Velory)', href: '/dashboard', icon: 'ri-dashboard-2-line' },
+                    { label: 'Календарь (No-Show/Waitlist)', href: '/calendar', icon: 'ri-calendar-line' },
+                    { label: 'Записи', href: '/appointments', icon: 'ri-calendar-check-line' },
+                    { label: 'Клиенты (Fit Score)', href: '/clients', icon: 'ri-user-3-line' },
+                    { label: 'Услуги (рекомендации)', href: '/services', icon: 'ri-scissors-2-line' },
+                    { label: 'Инвойсы/Оплаты', href: '/invoices', icon: 'ri-bill-line' },
+                    { label: 'Сообщения (триггеры)', href: '/messages', icon: 'ri-message-3-line' },
+                    { label: 'Маркетинг (Reactivation)', href: '/marketing', icon: 'ri-megaphone-line' },
+                    { label: 'Витрина+Пиксели', href: '/storefront', icon: 'ri-store-3-line' },
+                    { label: 'Портфолио (Curator)', href: '/portfolio', icon: 'ri-image-line' },
+                    { label: 'Отзывы (Maestro)', href: '/reviews', icon: 'ri-star-line' },
+                    { label: 'Аналитика (маржа/час)', href: '/analytics', icon: 'ri-bar-chart-line' },
+                    { label: 'Обучение/Тренды', href: '/learning', icon: 'ri-lightbulb-line' },
+                    { label: 'Интеграции (+GCal 1-way)', href: '/integrations', icon: 'ri-puzzle-line' },
+                    { label: 'Velory Studio', href: '/velory', icon: 'ri-robot-line' },
+                    { label: 'Настройки', href: '/settings', icon: 'ri-settings-3-line' },
+                    { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
+                    { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
+                ],
+                imperium: [
+                    { label: 'Дашборд (Profit Map)', href: '/dashboard', icon: 'ri-dashboard-2-line' },
+                    { label: 'Календарь (автозаполнение)', href: '/calendar', icon: 'ri-calendar-line' },
+                    { label: 'Записи (правила)', href: '/appointments', icon: 'ri-calendar-check-line' },
+                    { label: 'Клиенты (планы ухода)', href: '/clients', icon: 'ri-user-3-line' },
+                    { label: 'Услуги (динамика цен/времени)', href: '/services', icon: 'ri-scissors-2-line' },
+                    { label: 'Инвойсы (расшир.)', href: '/invoices', icon: 'ri-bill-line' },
+                    { label: 'Сообщения (A/B, сценарии)', href: '/messages', icon: 'ri-message-3-line' },
+                    { label: 'Маркетинг PRO', href: '/marketing', icon: 'ri-megaphone-line' },
+                    { label: 'Витрина (белый лейбл)', href: '/storefront', icon: 'ri-store-3-line' },
+                    { label: 'Портфолио PRO', href: '/portfolio', icon: 'ri-image-line' },
+                    { label: 'Отзывы PRO', href: '/reviews', icon: 'ri-star-line' },
+                    { label: 'Аналитика PRO', href: '/analytics', icon: 'ri-bar-chart-line' },
+                    { label: 'Обучение PRO', href: '/learning', icon: 'ri-lightbulb-line' },
+                    { label: 'Интеграции PRO', href: '/integrations', icon: 'ri-puzzle-line' },
+                    { label: 'Автоматизации (IFTTT)', href: '/automations', icon: 'ri-magic-line' },
+                    { label: 'Velory Studio PRO', href: '/velory', icon: 'ri-robot-line' },
+                    { label: 'Настройки (расшир.)', href: '/settings', icon: 'ri-settings-3-line' },
+                    { label: 'Безопасность/Аудит', href: '/security', icon: 'ri-shield-check-line' },
+                    { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
+                    { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
+                ]
+            };
+            var menuEl = document.getElementById('main-menu');
+            if (!menuEl) return;
+            menuEl.innerHTML = '';
+            (menus[plan] || menus.ivory).forEach(function (item) {
+                var li = document.createElement('li');
+                li.className = 'menu-item';
+                var a = document.createElement('a');
+                a.className = 'menu-link';
+                a.href = item.href;
+                a.innerHTML = '<i class="menu-icon icon-base ' + item.icon + '"></i><div>' + item.label + '</div>';
+                if (window.location.pathname === item.href) {
+                    li.classList.add('active');
+                }
+                li.appendChild(a);
+                menuEl.appendChild(li);
+            });
+        })
+        .catch(function () {});
+});
+</script>
 @yield('scripts')
 <!-- Page JS -->
 </body>
