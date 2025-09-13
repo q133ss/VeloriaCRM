@@ -179,10 +179,7 @@
 ---
 
 ## 4. Данные и ERD (текстово)
-Ключевые таблицы: `users`, `tenants`, `clients`, `services`, `appointments`, `waitlist_entries`, `invoices`, `invoice_items`, `payments`, `messages`, `message_templates`, `consents`, `media`, `analytics_daily`, `flows`, `flow_runs`, `flow_events`, `ai_recommendations`, `settings`, `webhooks`, `audit_logs`.
-
-> Полные поля и индексы — см. миграции; используем **jsonb** для гибких структур (предпочтения, шаблоны, мета). Индексы по `tenant_id`, `starts_at`, `status`, `client_id`.
-
+# ЕЩЕ В РАБОТЕ
 ---
 
 ## 5. API конвенции
