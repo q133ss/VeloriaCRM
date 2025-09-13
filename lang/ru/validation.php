@@ -10,7 +10,12 @@ return [
     'confirmed' => 'Поле :attribute не совпадает с подтверждением.',
 
     'custom' => [],
-    'attributes' => [],
+    'attributes' => [
+        'name' => 'Имя',
+        'email' => 'Email',
+        'password' => 'Пароль',
+        'password_confirmation' => 'Подтверждение пароля',
+    ],
 
     'given_data_invalid' => 'Предоставленные данные недействительны.',
 ];

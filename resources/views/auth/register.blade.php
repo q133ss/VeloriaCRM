@@ -129,8 +129,8 @@
                 </div>
                 <!-- /Logo -->
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Adventure starts here 🚀</h4>
-                    <p class="mb-5">Make your app management easy and fun!</p>
+                    <h4 class="mb-1">{{ __('auth.register_heading') }}</h4>
+                    <p class="mb-5">{{ __('auth.register_subtitle') }}</p>
 
                     <form id="formAuthentication" class="mb-5" action="/api/register" method="POST">
                         @csrf
@@ -138,11 +138,11 @@
                             <input
                                 type="text"
                                 class="form-control"
-                                id="username"
-                                name="username"
+                                id="name"
+                                name="name"
                                 placeholder="{{ __('auth.name') }}"
                                 autofocus />
-                            <label for="username">{{ __('auth.name') }}</label>
+                            <label for="name">{{ __('auth.name') }}</label>
                         </div>
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input type="text" class="form-control" id="email" name="email" placeholder="{{ __('auth.email') }}" />
@@ -203,7 +203,7 @@
                     </p>
 
                     <div class="divider my-5">
-                        <div class="divider-text">or</div>
+                        <div class="divider-text">{{ __('auth.or') }}</div>
                     </div>
 
                     <div class="d-flex justify-content-center gap-2">
@@ -262,16 +262,44 @@
 
 <!-- endbuild -->
 
-<!-- Vendors JS -->
-<script src="/assets/vendor/libs/@form-validation/popular.js"></script>
-<script src="/assets/vendor/libs/@form-validation/bootstrap5.js"></script>
-<script src="/assets/vendor/libs/@form-validation/auto-focus.js"></script>
-
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
 
 <!-- Page JS -->
 <script src="/assets/js/pages-auth.js"></script>
+<script>
+document.getElementById('formAuthentication').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = this;
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept-Language': document.documentElement.lang
+        },
+        body: formData
+    });
+    const result = await response.json().catch(() => ({}));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    if (!response.ok) {
+        const errors = result.error?.fields || {};
+        Object.keys(errors).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                const container = input.closest('.form-control-validation') || input.parentNode;
+                const div = document.createElement('div');
+                div.classList.add('invalid-feedback', 'd-block');
+                div.textContent = errors[key][0];
+                container.appendChild(div);
+            }
+        });
+    } else {
+        window.location.href = '/login';
+    }
+});
+</script>
 </body>
 </html>

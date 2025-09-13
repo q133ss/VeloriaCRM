@@ -130,8 +130,8 @@
                 <!-- /Logo -->
 
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Welcome to Materialize! 👋</h4>
-                    <p class="mb-5">Please sign-in to your account and start the adventure</p>
+                    <h4 class="mb-1">{{ __('auth.login_heading') }}</h4>
+                    <p class="mb-5">{{ __('auth.login_subtitle') }}</p>
 
                     <form id="formAuthentication" class="mb-5" action="/api/login" method="POST">
                         @csrf
@@ -140,7 +140,7 @@
                                 type="text"
                                 class="form-control"
                                 id="email"
-                                name="email-username"
+                                name="email"
                                 placeholder="{{ __('auth.email') }}"
                                 autofocus />
                             <label for="email">{{ __('auth.email') }}</label>
@@ -166,7 +166,7 @@
                         </div>
                         <div class="mb-5 d-flex justify-content-between mt-5">
                             <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="remember-me" />
+                                <input class="form-check-input" type="checkbox" id="remember-me" name="remember" />
                                 <label class="form-check-label" for="remember-me"> {{ __('auth.remember') }} </label>
                             </div>
                             <a href="/forgot-password" class="float-end mb-1 mt-2">
@@ -186,7 +186,7 @@
                     </p>
 
                     <div class="divider my-5">
-                        <div class="divider-text">or</div>
+                        <div class="divider-text">{{ __('auth.or') }}</div>
                     </div>
 
                     <div class="d-flex justify-content-center gap-2">
@@ -245,16 +245,47 @@
 
 <!-- endbuild -->
 
-<!-- Vendors JS -->
-<script src="/assets/vendor/libs/@form-validation/popular.js"></script>
-<script src="/assets/vendor/libs/@form-validation/bootstrap5.js"></script>
-<script src="/assets/vendor/libs/@form-validation/auto-focus.js"></script>
-
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
 
 <!-- Page JS -->
 <script src="/assets/js/pages-auth.js"></script>
+<script>
+document.getElementById('formAuthentication').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = this;
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept-Language': document.documentElement.lang
+        },
+        body: formData
+    });
+    const result = await response.json().catch(() => ({}));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    if (!response.ok) {
+        const errors = result.error?.fields || {};
+        Object.keys(errors).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                const container = input.closest('.form-control-validation') || input.parentNode;
+                const div = document.createElement('div');
+                div.classList.add('invalid-feedback', 'd-block');
+                div.textContent = errors[key][0];
+                container.appendChild(div);
+            }
+        });
+    } else {
+        if (result.token) {
+            localStorage.setItem('token', result.token);
+        }
+        window.location.href = '/';
+    }
+});
+</script>
 </body>
 </html>

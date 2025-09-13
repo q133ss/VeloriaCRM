@@ -129,8 +129,8 @@
                 </div>
                 <!-- /Logo -->
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Forgot Password? 🔒</h4>
-                    <p class="mb-5">Enter your email and we'll send you instructions to reset your password</p>
+                    <h4 class="mb-1">{{ __('auth.forgot_heading') }}</h4>
+                    <p class="mb-5">{{ __('auth.forgot_subtitle') }}</p>
                     <form id="formAuthentication" class="mb-5" action="/api/forgot-password" method="POST">
                         @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
@@ -190,16 +190,44 @@
 
 <!-- endbuild -->
 
-<!-- Vendors JS -->
-<script src="/assets/vendor/libs/@form-validation/popular.js"></script>
-<script src="/assets/vendor/libs/@form-validation/bootstrap5.js"></script>
-<script src="/assets/vendor/libs/@form-validation/auto-focus.js"></script>
-
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
 
 <!-- Page JS -->
 <script src="/assets/js/pages-auth.js"></script>
+<script>
+document.getElementById('formAuthentication').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = this;
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept-Language': document.documentElement.lang
+        },
+        body: formData
+    });
+    const result = await response.json().catch(() => ({}));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    if (!response.ok) {
+        const errors = result.error?.fields || {};
+        Object.keys(errors).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                const container = input.closest('.form-control-validation') || input.parentNode;
+                const div = document.createElement('div');
+                div.classList.add('invalid-feedback', 'd-block');
+                div.textContent = errors[key][0];
+                container.appendChild(div);
+            }
+        });
+    } else {
+        alert(result.message || '');
+    }
+});
+</script>
 </body>
 </html>
