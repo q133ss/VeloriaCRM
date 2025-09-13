@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
-            $table->jsonb('business_hours')->nullable()->comment('Рабочие часы');
+            $table->jsonb('work_days')->nullable()->comment('Рабочие дни недели');
+            $table->jsonb('work_hours')->nullable()->comment('Рабочие часы по дням');
             $table->jsonb('cancel_policy')->nullable()->comment('Политика отмен');
             $table->jsonb('deposit_policy')->nullable()->comment('Политика предоплат');
             $table->jsonb('notification_prefs')->nullable()->comment('Предпочтения каналов уведомлений');

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('plan_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->timestamp('ends_at')->nullable()->comment('Дата окончания плана');
             $table->timestamps();
         });
     }
