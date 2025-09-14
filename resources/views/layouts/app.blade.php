@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var a = document.createElement('a');
                 a.className = 'menu-link';
                 a.href = item.href;
-                a.innerHTML = '<i class="menu-icon icon-base ' + item.icon + '"></i><div>' + item.label + '</div>';
+                a.innerHTML = '<i class="menu-icon icon-base ri ' + item.icon + '"></i><div>' + item.label + '</div>';
                 if (window.location.pathname === item.href) {
                     li.classList.add('active');
                 }
