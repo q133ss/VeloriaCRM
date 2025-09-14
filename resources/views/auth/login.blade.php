@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ app()->getLocale() }}"
     class="layout-wide customizer-hide"
     dir="ltr"
     data-skin="default"
@@ -14,7 +14,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Demo: Login Basic - Pages | Materialize - Bootstrap Dashboard PRO</title>
+    <title>{{ __('auth.login_title') }}</title>
 
     <meta name="description" content="" />
 
@@ -130,19 +130,21 @@
                 <!-- /Logo -->
 
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Welcome to Materialize! 👋</h4>
-                    <p class="mb-5">Please sign-in to your account and start the adventure</p>
+                    <h4 class="mb-1">{{ __('auth.login_heading') }}</h4>
+                    <p class="mb-5">{{ __('auth.login_subtitle') }}</p>
 
-                    <form id="formAuthentication" class="mb-5" action="index.html" method="GET">
+                    <form id="formAuthentication" class="mb-5" action="/api/login" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
-                                type="text"
+                                type="email"
                                 class="form-control"
                                 id="email"
-                                name="email-username"
-                                placeholder="Enter your email or username"
+                                name="email"
+                                placeholder="{{ __('auth.email') }}"
+                                required
                                 autofocus />
-                            <label for="email">Email or Username</label>
+                            <label for="email">{{ __('auth.email') }}</label>
                         </div>
                         <div class="mb-5">
                             <div class="form-password-toggle form-control-validation">
@@ -154,8 +156,10 @@
                                             class="form-control"
                                             name="password"
                                             placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
-                                            aria-describedby="password" />
-                                        <label for="password">Password</label>
+                                            aria-describedby="password"
+                                            required
+                                            minlength="8" />
+                                        <label for="password">{{ __('auth.password') }}</label>
                                     </div>
                                     <span class="input-group-text cursor-pointer"
                                     ><i class="icon-base ri ri-eye-off-line icon-20px"></i
@@ -165,27 +169,27 @@
                         </div>
                         <div class="mb-5 d-flex justify-content-between mt-5">
                             <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="remember-me" />
-                                <label class="form-check-label" for="remember-me"> Remember Me </label>
+                                <input class="form-check-input" type="checkbox" id="remember-me" name="remember" />
+                                <label class="form-check-label" for="remember-me"> {{ __('auth.remember') }} </label>
                             </div>
-                            <a href="auth-forgot-password-basic.html" class="float-end mb-1 mt-2">
-                                <span>Forgot Password?</span>
+                            <a href="/forgot-password" class="float-end mb-1 mt-2">
+                                <span>{{ __('auth.forgot_password') }}</span>
                             </a>
                         </div>
                         <div class="mb-5">
-                            <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                            <button class="btn btn-primary d-grid w-100" type="submit">{{ __('auth.login') }}</button>
                         </div>
                     </form>
 
                     <p class="text-center mb-5">
-                        <span>New on our platform?</span>
-                        <a href="auth-register-basic.html">
-                            <span>Create an account</span>
+                        <span>{{ __('auth.new_here') }}</span>
+                        <a href="/register">
+                            <span>{{ __('auth.create_account') }}</span>
                         </a>
                     </p>
 
                     <div class="divider my-5">
-                        <div class="divider-text">or</div>
+                        <div class="divider-text">{{ __('auth.or') }}</div>
                     </div>
 
                     <div class="d-flex justify-content-center gap-2">
@@ -244,16 +248,57 @@
 
 <!-- endbuild -->
 
-<!-- Vendors JS -->
-<script src="/assets/vendor/libs/@form-validation/popular.js"></script>
-<script src="/assets/vendor/libs/@form-validation/bootstrap5.js"></script>
-<script src="/assets/vendor/libs/@form-validation/auto-focus.js"></script>
-
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
 
 <!-- Page JS -->
 <script src="/assets/js/pages-auth.js"></script>
+<script>
+document.getElementById('formAuthentication').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = this;
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept-Language': document.documentElement.lang
+        },
+        body: formData
+    });
+    const result = await response.json().catch(() => ({}));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    if (!response.ok) {
+        const errors = result.error?.fields || {};
+        if (Object.keys(errors).length === 0 && result.error?.message) {
+            const div = document.createElement('div');
+            div.classList.add('invalid-feedback', 'd-block', 'mb-4', 'text-center');
+            div.textContent = result.error.message;
+            form.prepend(div);
+        }
+        Object.keys(errors).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                const container = input.closest('.form-control-validation') || input.parentNode;
+                const div = document.createElement('div');
+                div.classList.add('invalid-feedback', 'd-block');
+                div.textContent = errors[key][0];
+                container.appendChild(div);
+            }
+        });
+        return;
+    }
+    if (result.token) {
+        localStorage.setItem('token', result.token);
+    }
+    window.location.href = '/';
+});
+</script>
 </body>
 </html>

@@ -183,6 +183,8 @@ return [
         ],
     ],
 
+    'given_data_invalid' => 'The given data was invalid.',
+
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Attributes
@@ -194,6 +196,11 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'name' => 'Name',
+        'email' => 'Email',
+        'password' => 'Password',
+        'password_confirmation' => 'Password confirmation',
+    ],
 
 ];

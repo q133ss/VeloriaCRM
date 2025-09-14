@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ app()->getLocale() }}"
     class="layout-wide customizer-hide"
     dir="ltr"
     data-skin="default"
@@ -14,7 +14,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Demo: Forgot Password Basic - Pages | Materialize - Bootstrap Dashboard PRO</title>
+    <title>{{ __('auth.forgot_title') }}</title>
 
     <meta name="description" content="" />
 
@@ -129,25 +129,27 @@
                 </div>
                 <!-- /Logo -->
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Forgot Password? 🔒</h4>
-                    <p class="mb-5">Enter your email and we'll send you instructions to reset your password</p>
-                    <form id="formAuthentication" class="mb-5" action="auth-reset-password-basic.html" method="GET">
+                    <h4 class="mb-1">{{ __('auth.forgot_heading') }}</h4>
+                    <p class="mb-5">{{ __('auth.forgot_subtitle') }}</p>
+                    <form id="formAuthentication" class="mb-5" action="/api/forgot-password" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
-                                type="text"
+                                type="email"
                                 class="form-control"
                                 id="email"
                                 name="email"
-                                placeholder="Enter your email"
+                                placeholder="{{ __('auth.email') }}"
+                                required
                                 autofocus />
-                            <label>Email</label>
+                            <label>{{ __('auth.email') }}</label>
                         </div>
-                        <button class="btn btn-primary d-grid w-100 mb-5">Send Reset Link</button>
+                        <button class="btn btn-primary d-grid w-100 mb-5">{{ __('auth.send_link') }}</button>
                     </form>
                     <div class="text-center">
-                        <a href="auth-login-basic.html" class="d-flex align-items-center justify-content-center">
+                        <a href="/login" class="d-flex align-items-center justify-content-center">
                             <i class="icon-base ri ri-arrow-left-s-line scaleX-n1-rtl icon-20px me-1_5"></i>
-                            Back to login
+                            {{ __('auth.login_instead') }}
                         </a>
                     </div>
                 </div>
@@ -189,16 +191,54 @@
 
 <!-- endbuild -->
 
-<!-- Vendors JS -->
-<script src="/assets/vendor/libs/@form-validation/popular.js"></script>
-<script src="/assets/vendor/libs/@form-validation/bootstrap5.js"></script>
-<script src="/assets/vendor/libs/@form-validation/auto-focus.js"></script>
-
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
 
 <!-- Page JS -->
 <script src="/assets/js/pages-auth.js"></script>
+<script>
+document.getElementById('formAuthentication').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = this;
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept-Language': document.documentElement.lang
+        },
+        body: formData
+    });
+    const result = await response.json().catch(() => ({}));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    if (!response.ok) {
+        const errors = result.error?.fields || {};
+        if (Object.keys(errors).length === 0 && result.error?.message) {
+            const div = document.createElement('div');
+            div.classList.add('invalid-feedback', 'd-block', 'mb-4', 'text-center');
+            div.textContent = result.error.message;
+            form.prepend(div);
+        }
+        Object.keys(errors).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                const container = input.closest('.form-control-validation') || input.parentNode;
+                const div = document.createElement('div');
+                div.classList.add('invalid-feedback', 'd-block');
+                div.textContent = errors[key][0];
+                container.appendChild(div);
+            }
+        });
+        return;
+    }
+    alert(result.message || '');
+});
+</script>
 </body>
 </html>
