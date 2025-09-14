@@ -19,7 +19,7 @@ class UpdateSettingsRequest extends BaseRequest
             'phone' => ['nullable', 'string', 'max:255'],
             'timezone' => ['required', 'string', 'max:255'],
             'time_format' => ['required', Rule::in(['12h','24h'])],
-            'current_password' => ['required_with:new_password', 'current_password'],
+            'current_password' => ['nullable', 'required_with:new_password', 'current_password'],
             'new_password' => ['nullable', 'min:8', 'confirmed'],
             'notifications' => ['array'],
             'notifications.email' => ['boolean'],

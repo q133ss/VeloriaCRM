@@ -41,6 +41,7 @@
                 </div>
                 <div class="card-body pt-0">
                     <form id="settings-form" onsubmit="return false">
+                        <div id="form-messages"></div>
                         <div class="row mt-1 g-5">
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
@@ -144,18 +145,33 @@
                             </div>
                             <div class="col-12">
                                 <h5 class="mt-4">{{ __('settings.work_settings') }}</h5>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="work_days" name="work_days" />
-                                    <label for="work_days">{{ __('settings.work_days') }}</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="work_hours" name="work_hours" />
-                                    <label for="work_hours">{{ __('settings.work_hours') }}</label>
-                                </div>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('settings.work_days') }}</th>
+                                            <th>{{ __('settings.from') }}</th>
+                                            <th>{{ __('settings.to') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
+                                        <tr>
+                                            <td>
+                                                <div class="form-check form-switch mt-2">
+                                                    <input class="form-check-input workday-check" type="checkbox" id="workday-{{ $day }}" data-day="{{ $day }}" />
+                                                    <label class="form-check-label" for="workday-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <input type="time" class="form-control workday-start" data-day="{{ $day }}" />
+                                            </td>
+                                            <td>
+                                                <input type="time" class="form-control workday-end" data-day="{{ $day }}" />
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
@@ -216,7 +232,7 @@
     }
     function authHeaders(extra = {}) {
         var token = getCookie('token');
-        var headers = Object.assign({ 'Accept': 'application/json' }, extra);
+        var headers = Object.assign({ 'Accept': 'application/json', 'Accept-Language': document.documentElement.lang }, extra);
         if (token) headers['Authorization'] = 'Bearer ' + token;
         return headers;
     }
@@ -239,8 +255,21 @@
         form['integrations[smsaero][api_key]'].value = data.settings.integrations.smsaero.api_key || '';
         form['integrations[yookassa][shop_id]'].value = data.settings.integrations.yookassa.shop_id || '';
         form['integrations[yookassa][secret_key]'].value = data.settings.integrations.yookassa.secret_key || '';
-        form.work_days.value = JSON.stringify(data.settings.work_days || {});
-        form.work_hours.value = JSON.stringify(data.settings.work_hours || {});
+        const days = ['mon','tue','wed','thu','fri','sat','sun'];
+        days.forEach(day=>{
+            const check = document.getElementById('workday-'+day);
+            const start = document.querySelector(`input.workday-start[data-day="${day}"]`);
+            const end = document.querySelector(`input.workday-end[data-day="${day}"]`);
+            check.checked = (data.settings.work_days || []).includes(day);
+            const hours = data.settings.work_hours?.[day] || [];
+            if(hours.length){
+                start.value = hours[0];
+                end.value = hours[hours.length-1];
+            } else {
+                start.value = '';
+                end.value = '';
+            }
+        });
         form.holidays.value = (data.settings.holidays || []).join(',');
         form.address.value = data.settings.address || '';
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
@@ -248,18 +277,22 @@
     }
     loadSettings();
 
+    function showMessage(type, text){
+        const container = document.getElementById('form-messages');
+        container.innerHTML = `<div class="alert alert-${type}" role="alert">${text}</div>`;
+    }
+
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.target;
+        form.querySelectorAll('.invalid-feedback').forEach(el=>el.remove());
+        form.querySelectorAll('.is-invalid').forEach(el=>el.classList.remove('is-invalid'));
         const payload = {
             name: form.name.value,
             email: form.email.value,
             phone: form.phone.value,
             timezone: form.timezone.value,
             time_format: form.time_format.value,
-            current_password: form.current_password.value,
-            new_password: form.new_password.value,
-            new_password_confirmation: form.new_password_confirmation.value,
             notifications: {
                 email: document.getElementById('notif-email').checked,
                 telegram: document.getElementById('notif-telegram').checked,
@@ -275,8 +308,6 @@
                     secret_key: form['integrations[yookassa][secret_key]'].value,
                 }
             },
-            work_days: form.work_days.value ? JSON.parse(form.work_days.value) : {},
-            work_hours: form.work_hours.value ? JSON.parse(form.work_hours.value) : {},
             holidays: form.holidays.value ? form.holidays.value.split(',').map(s=>s.trim()).filter(Boolean) : [],
             address: form.address.value,
             map_point: {
@@ -284,18 +315,61 @@
                 lng: form['map_point[lng]'].value,
             }
         };
+        const days=['mon','tue','wed','thu','fri','sat','sun'];
+        payload.work_days=[];
+        payload.work_hours={};
+        days.forEach(day=>{
+            const check=document.getElementById('workday-'+day);
+            const start=document.querySelector(`input.workday-start[data-day="${day}"]`).value;
+            const end=document.querySelector(`input.workday-end[data-day="${day}"]`).value;
+            if(check.checked){
+                payload.work_days.push(day);
+                if(start && end){
+                    let s=parseInt(start.split(':')[0]);
+                    let e=parseInt(end.split(':')[0]);
+                    let arr=[];
+                    for(let h=s; h<=e; h++){
+                        arr.push(String(h).padStart(2,'0')+':00');
+                    }
+                    payload.work_hours[day]=arr;
+                }
+            }
+        });
+        if(form.new_password.value){
+            payload.current_password = form.current_password.value;
+            payload.new_password = form.new_password.value;
+            payload.new_password_confirmation = form.new_password_confirmation.value;
+        }
         const res = await fetch('/api/v1/settings', {
             method: 'PATCH',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
             credentials: 'include',
             body: JSON.stringify(payload)
         });
-        if(res.ok){
-            alert('{{ __('settings.saved') }}');
-        }else{
-            const err = await res.json();
-            alert(err.error?.message || 'Error');
+        const result = await res.json().catch(()=>({}));
+        if(!res.ok){
+            const errors = result.error?.fields || {};
+            if(Object.keys(errors).length === 0 && result.error?.message){
+                showMessage('danger', result.error.message);
+            }
+            Object.keys(errors).forEach(key=>{
+                const fieldName = key.replace(/\.(\w+)/g,'[$1]');
+                const input = form.querySelector(`[name="${fieldName}"]`);
+                if(input){
+                    input.classList.add('is-invalid');
+                    const container = input.closest('.form-control-validation') || input.parentNode;
+                    const div = document.createElement('div');
+                    div.classList.add('invalid-feedback');
+                    div.textContent = errors[key][0];
+                    container.appendChild(div);
+                }
+            });
+            return;
         }
+        showMessage('success', '{{ __('settings.saved') }}');
+        form.current_password.value='';
+        form.new_password.value='';
+        form.new_password_confirmation.value='';
     });
 
     document.getElementById('delete-form').addEventListener('submit', async (e) => {
@@ -310,8 +384,8 @@
         if(res.status === 204){
             window.location.href = '/';
         } else {
-            const err = await res.json();
-            alert(err.error?.message || 'Error');
+            const err = await res.json().catch(()=>({}));
+            showMessage('danger', err.error?.message || 'Error');
         }
     });
     </script>
