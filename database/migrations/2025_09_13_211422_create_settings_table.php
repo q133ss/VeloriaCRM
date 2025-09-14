@@ -22,6 +22,10 @@ return new class extends Migration
             $table->jsonb('branding')->nullable()->comment('Цвета/логотипы витрины');
             $table->string('address')->nullable();
             $table->jsonb('map_point')->nullable()->comment('Данные точки на Яндекс.Картах');
+            $table->string('smsaero_email')->nullable();
+            $table->string('smsaero_api_key')->nullable();
+            $table->string('yookassa_shop_id')->nullable();
+            $table->string('yookassa_secret_key')->nullable();
             $table->timestamps();
         });
     }

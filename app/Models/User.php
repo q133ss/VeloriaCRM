@@ -24,6 +24,8 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'timezone',
+        'time_format',
         'password'
     ];
 
@@ -53,5 +55,15 @@ class User extends Authenticatable
     public function plans(): BelongsToMany
     {
         return $this->belongsToMany(Plan::class)->withPivot('ends_at')->withTimestamps();
+    }
+
+    public function setting()
+    {
+        return $this->hasOne(Setting::class);
+    }
+
+    public function holidays()
+    {
+        return $this->hasMany(Holiday::class);
     }
 }

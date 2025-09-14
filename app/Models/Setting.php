@@ -19,6 +19,10 @@ class Setting extends Model
         'branding',
         'address',
         'map_point',
+        'smsaero_email',
+        'smsaero_api_key',
+        'yookassa_shop_id',
+        'yookassa_secret_key',
     ];
 
     protected function casts(): array
@@ -32,5 +36,10 @@ class Setting extends Model
             'branding' => 'array',
             'map_point' => 'array',
         ];
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
