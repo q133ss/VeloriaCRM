@@ -377,75 +377,58 @@
 <script src="/assets/js/main.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var BASE_MENU = [
+        { label: 'Дашборд', href: '/dashboard', icon: 'ri-dashboard-2-line' },
+        { label: 'Календарь', href: '/calendar', icon: 'ri-calendar-line' },
+        { label: 'Записи', href: '/appointments', icon: 'ri-calendar-check-line' },
+        { label: 'Клиенты', href: '/clients', icon: 'ri-user-3-line' },
+        { label: 'Услуги', href: '/services', icon: 'ri-scissors-2-line' },
+        { label: 'Инвойсы', href: '/invoices', icon: 'ri-bill-line' },
+        { label: 'Сообщения', href: '/messages', icon: 'ri-message-3-line' },
+        { label: 'Витрина', href: '/storefront', icon: 'ri-store-3-line' },
+        { label: 'Портфолио', href: '/portfolio', icon: 'ri-image-line' },
+        { label: 'Отзывы', href: '/reviews', icon: 'ri-star-line' },
+        { label: 'Аналитика', href: '/analytics', icon: 'ri-bar-chart-line' },
+        { label: 'Интеграции', href: '/integrations', icon: 'ri-puzzle-line' },
+        { label: 'Настройки', href: '/settings', icon: 'ri-settings-3-line' },
+        { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
+        { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
+    ];
+
+    var PLAN_ADDITIONS = {
+        lite: [],
+        pro: [
+            { label: 'Маркетинг', href: '/marketing', icon: 'ri-megaphone-line' },
+            { label: 'Обучение', href: '/learning', icon: 'ri-lightbulb-line' },
+            { label: 'Velory Studio', href: '/velory', icon: 'ri-robot-line' }
+        ],
+        elite: [
+            { label: 'Маркетинг', href: '/marketing', icon: 'ri-megaphone-line' },
+            { label: 'Обучение', href: '/learning', icon: 'ri-lightbulb-line' },
+            { label: 'Автоматизации', href: '/automations', icon: 'ri-magic-line' },
+            { label: 'Безопасность/Аудит', href: '/security', icon: 'ri-shield-check-line' },
+            { label: 'Velory Studio', href: '/velory', icon: 'ri-robot-line' }
+        ]
+    };
+
     fetch('/api/v1/auth/me', { credentials: 'include' })
         .then(function (res) { return res.json(); })
-        .then(function (user) {
-            var plan = (user && user.plan ? user.plan : 'ivory').toLowerCase();
-            var menus = {
-                ivory: [
-                    { label: 'Дашборд', href: '/dashboard', icon: 'ri-dashboard-2-line' },
-                    { label: 'Календарь', href: '/calendar', icon: 'ri-calendar-line' },
-                    { label: 'Записи', href: '/appointments', icon: 'ri-calendar-check-line' },
-                    { label: 'Клиенты', href: '/clients', icon: 'ri-user-3-line' },
-                    { label: 'Услуги', href: '/services', icon: 'ri-scissors-2-line' },
-                    { label: 'Инвойсы', href: '/invoices', icon: 'ri-bill-line' },
-                    { label: 'Сообщения', href: '/messages', icon: 'ri-message-3-line' },
-                    { label: 'Витрина', href: '/storefront', icon: 'ri-store-3-line' },
-                    { label: 'Портфолио', href: '/portfolio', icon: 'ri-image-line' },
-                    { label: 'Отзывы', href: '/reviews', icon: 'ri-star-line' },
-                    { label: 'Аналитика', href: '/analytics', icon: 'ri-bar-chart-line' },
-                    { label: 'Интеграции', href: '/integrations', icon: 'ri-puzzle-line' },
-                    { label: 'Настройки', href: '/settings', icon: 'ri-settings-3-line' },
-                    { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
-                    { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
-                ],
-                veloria: [
-                    { label: 'Дашборд (Velory)', href: '/dashboard', icon: 'ri-dashboard-2-line' },
-                    { label: 'Календарь (No-Show/Waitlist)', href: '/calendar', icon: 'ri-calendar-line' },
-                    { label: 'Записи', href: '/appointments', icon: 'ri-calendar-check-line' },
-                    { label: 'Клиенты (Fit Score)', href: '/clients', icon: 'ri-user-3-line' },
-                    { label: 'Услуги (рекомендации)', href: '/services', icon: 'ri-scissors-2-line' },
-                    { label: 'Инвойсы/Оплаты', href: '/invoices', icon: 'ri-bill-line' },
-                    { label: 'Сообщения (триггеры)', href: '/messages', icon: 'ri-message-3-line' },
-                    { label: 'Маркетинг (Reactivation)', href: '/marketing', icon: 'ri-megaphone-line' },
-                    { label: 'Витрина+Пиксели', href: '/storefront', icon: 'ri-store-3-line' },
-                    { label: 'Портфолио (Curator)', href: '/portfolio', icon: 'ri-image-line' },
-                    { label: 'Отзывы (Maestro)', href: '/reviews', icon: 'ri-star-line' },
-                    { label: 'Аналитика (маржа/час)', href: '/analytics', icon: 'ri-bar-chart-line' },
-                    { label: 'Обучение/Тренды', href: '/learning', icon: 'ri-lightbulb-line' },
-                    { label: 'Интеграции (+GCal 1-way)', href: '/integrations', icon: 'ri-puzzle-line' },
-                    { label: 'Velory Studio', href: '/velory', icon: 'ri-robot-line' },
-                    { label: 'Настройки', href: '/settings', icon: 'ri-settings-3-line' },
-                    { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
-                    { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
-                ],
-                imperium: [
-                    { label: 'Дашборд (Profit Map)', href: '/dashboard', icon: 'ri-dashboard-2-line' },
-                    { label: 'Календарь (автозаполнение)', href: '/calendar', icon: 'ri-calendar-line' },
-                    { label: 'Записи (правила)', href: '/appointments', icon: 'ri-calendar-check-line' },
-                    { label: 'Клиенты (планы ухода)', href: '/clients', icon: 'ri-user-3-line' },
-                    { label: 'Услуги (динамика цен/времени)', href: '/services', icon: 'ri-scissors-2-line' },
-                    { label: 'Инвойсы (расшир.)', href: '/invoices', icon: 'ri-bill-line' },
-                    { label: 'Сообщения (A/B, сценарии)', href: '/messages', icon: 'ri-message-3-line' },
-                    { label: 'Маркетинг PRO', href: '/marketing', icon: 'ri-megaphone-line' },
-                    { label: 'Витрина (белый лейбл)', href: '/storefront', icon: 'ri-store-3-line' },
-                    { label: 'Портфолио PRO', href: '/portfolio', icon: 'ri-image-line' },
-                    { label: 'Отзывы PRO', href: '/reviews', icon: 'ri-star-line' },
-                    { label: 'Аналитика PRO', href: '/analytics', icon: 'ri-bar-chart-line' },
-                    { label: 'Обучение PRO', href: '/learning', icon: 'ri-lightbulb-line' },
-                    { label: 'Интеграции PRO', href: '/integrations', icon: 'ri-puzzle-line' },
-                    { label: 'Автоматизации (IFTTT)', href: '/automations', icon: 'ri-magic-line' },
-                    { label: 'Velory Studio PRO', href: '/velory', icon: 'ri-robot-line' },
-                    { label: 'Настройки (расшир.)', href: '/settings', icon: 'ri-settings-3-line' },
-                    { label: 'Безопасность/Аудит', href: '/security', icon: 'ri-shield-check-line' },
-                    { label: 'Биллинг', href: '/billing', icon: 'ri-bank-card-line' },
-                    { label: 'Помощь', href: '/help', icon: 'ri-question-line' }
-                ]
-            };
+        .then(function (data) {
+            var user = data.user || {};
+            var slug = user.plan && user.plan.slug ? String(user.plan.slug).toLowerCase() : 'lite';
+            if (['lite', 'pro', 'elite'].indexOf(slug) === -1) slug = 'lite';
+
+            var menu = BASE_MENU.slice();
+            (PLAN_ADDITIONS[slug] || []).forEach(function (item) {
+                if (!menu.some(function (m) { return m.href === item.href; })) {
+                    menu.push(item);
+                }
+            });
+
             var menuEl = document.getElementById('main-menu');
             if (!menuEl) return;
             menuEl.innerHTML = '';
-            (menus[plan] || menus.ivory).forEach(function (item) {
+            menu.forEach(function (item) {
                 var li = document.createElement('li');
                 li.className = 'menu-item';
                 var a = document.createElement('a');
