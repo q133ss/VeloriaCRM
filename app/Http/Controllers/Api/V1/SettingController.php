@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class SettingController extends Controller
 {
@@ -38,7 +39,7 @@ class SettingController extends Controller
                 ],
                 'work_days' => $settings->work_days,
                 'work_hours' => $settings->work_hours,
-                'holidays' => $user->holidays()->pluck('date'),
+                'holidays' => $user->holidays()->pluck('date')->map(fn($d) => Carbon::parse($d)->toDateString()),
                 'address' => $settings->address,
                 'map_point' => $settings->map_point,
             ],

@@ -287,7 +287,7 @@
         });
         const holidaysBody = document.querySelector('#holidays-table tbody');
         holidaysBody.innerHTML = '';
-        (data.settings.holidays || []).forEach(date => addHolidayRow(date));
+        (data.settings.holidays || []).forEach(date => addHolidayRow(date.split('T')[0]));
         if(!holidaysBody.children.length) addHolidayRow();
         form.address.value = data.settings.address || '';
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
