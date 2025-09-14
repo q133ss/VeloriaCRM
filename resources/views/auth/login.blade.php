@@ -137,11 +137,12 @@
                         @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
-                                type="text"
+                                type="email"
                                 class="form-control"
                                 id="email"
                                 name="email"
                                 placeholder="{{ __('auth.email') }}"
+                                required
                                 autofocus />
                             <label for="email">{{ __('auth.email') }}</label>
                         </div>
@@ -155,7 +156,9 @@
                                             class="form-control"
                                             name="password"
                                             placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
-                                            aria-describedby="password" />
+                                            aria-describedby="password"
+                                            required
+                                            minlength="8" />
                                         <label for="password">{{ __('auth.password') }}</label>
                                     </div>
                                     <span class="input-group-text cursor-pointer"
@@ -255,6 +258,10 @@
 document.getElementById('formAuthentication').addEventListener('submit', async function (e) {
     e.preventDefault();
     const form = this;
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
     const formData = new FormData(form);
     const response = await fetch(form.action, {
         method: 'POST',
@@ -269,6 +276,12 @@ document.getElementById('formAuthentication').addEventListener('submit', async f
     form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
     if (!response.ok) {
         const errors = result.error?.fields || {};
+        if (Object.keys(errors).length === 0 && result.error?.message) {
+            const div = document.createElement('div');
+            div.classList.add('invalid-feedback', 'd-block', 'mb-4', 'text-center');
+            div.textContent = result.error.message;
+            form.prepend(div);
+        }
         Object.keys(errors).forEach(key => {
             const input = form.querySelector(`[name="${key}"]`);
             if (input) {
@@ -279,12 +292,12 @@ document.getElementById('formAuthentication').addEventListener('submit', async f
                 container.appendChild(div);
             }
         });
-    } else {
-        if (result.token) {
-            localStorage.setItem('token', result.token);
-        }
-        window.location.href = '/';
+        return;
     }
+    if (result.token) {
+        localStorage.setItem('token', result.token);
+    }
+    window.location.href = '/';
 });
 </script>
 </body>
