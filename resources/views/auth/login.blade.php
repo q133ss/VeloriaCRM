@@ -295,7 +295,7 @@ document.getElementById('formAuthentication').addEventListener('submit', async f
         return;
     }
     if (result.token) {
-        localStorage.setItem('token', result.token);
+        document.cookie = 'token=' + result.token + '; path=/';
     }
     window.location.href = '/';
 });

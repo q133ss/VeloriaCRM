@@ -12,7 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'token.cookie' => \App\Http\Middleware\TokenFromCookie::class,
+        ]);
+
+        $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
