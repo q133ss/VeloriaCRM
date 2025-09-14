@@ -173,11 +173,18 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="holidays" name="holidays" />
-                                    <label for="holidays">{{ __('settings.holidays') }}</label>
-                                </div>
+                            <div class="col-12">
+                                <h6 class="mt-4">{{ __('settings.holidays') }}</h6>
+                                <table class="table" id="holidays-table">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('settings.date') }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                                <button type="button" class="btn btn-sm btn-secondary" id="add-holiday">{{ __('settings.add') }}</button>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
@@ -236,6 +243,14 @@
         if (token) headers['Authorization'] = 'Bearer ' + token;
         return headers;
     }
+    function addHolidayRow(date = '') {
+        const tbody = document.querySelector('#holidays-table tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="date" class="form-control holiday-date" name="holidays[]" value="${date}"></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger remove-holiday">{{ __('settings.delete') }}</button></td>`;
+        tr.querySelector('.remove-holiday').addEventListener('click', () => tr.remove());
+        tbody.appendChild(tr);
+    }
     async function loadSettings() {
         const res = await fetch('/api/v1/settings', { headers: authHeaders(), credentials: 'include' });
         if(!res.ok) return;
@@ -270,12 +285,16 @@
                 end.value = '';
             }
         });
-        form.holidays.value = (data.settings.holidays || []).join(',');
+        const holidaysBody = document.querySelector('#holidays-table tbody');
+        holidaysBody.innerHTML = '';
+        (data.settings.holidays || []).forEach(date => addHolidayRow(date));
+        if(!holidaysBody.children.length) addHolidayRow();
         form.address.value = data.settings.address || '';
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
         form['map_point[lng]'].value = data.settings.map_point?.lng || '';
     }
     loadSettings();
+    document.getElementById('add-holiday').addEventListener('click', () => addHolidayRow());
 
     function showMessage(type, text){
         const container = document.getElementById('form-messages');
@@ -308,7 +327,7 @@
                     secret_key: form['integrations[yookassa][secret_key]'].value,
                 }
             },
-            holidays: form.holidays.value ? form.holidays.value.split(',').map(s=>s.trim()).filter(Boolean) : [],
+            holidays: Array.from(document.querySelectorAll('.holiday-date')).map(i=>i.value).filter(Boolean),
             address: form.address.value,
             map_point: {
                 lat: form['map_point[lat]'].value,
@@ -354,7 +373,11 @@
             }
             Object.keys(errors).forEach(key=>{
                 const fieldName = key.replace(/\.(\w+)/g,'[$1]');
-                const input = form.querySelector(`[name="${fieldName}"]`);
+                let input = form.querySelector(`[name="${fieldName}"]`);
+                if(!input){
+                    const base = key.split('.')[0];
+                    input = form.querySelector(`[name="${base}[]"]`);
+                }
                 if(input){
                     input.classList.add('is-invalid');
                     const container = input.closest('.form-control-validation') || input.parentNode;

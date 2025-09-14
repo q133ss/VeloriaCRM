@@ -50,6 +50,8 @@ return [
     'holidays' => 'Holidays',
     'address' => 'Address',
     'map_point' => 'Map point',
+    'date' => 'Date',
+    'add' => 'Add',
     'save' => 'Save',
     'delete_account' => 'Delete account',
     'delete' => 'Delete',
