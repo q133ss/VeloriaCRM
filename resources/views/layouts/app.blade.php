@@ -411,8 +411,12 @@ document.addEventListener('DOMContentLoaded', function () {
         ]
     };
 
-    fetch('/api/v1/auth/me', { credentials: 'include' })
-        .then(function (res) { return res.json(); })
+    var token = localStorage.getItem('token');
+    var headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    fetch('/api/v1/auth/me', { headers: headers })
+        .then(function (res) { return res.ok ? res.json() : {}; })
         .then(function (data) {
             var user = data.user || {};
             var slug = user.plan && user.plan.slug ? String(user.plan.slug).toLowerCase() : 'lite';
