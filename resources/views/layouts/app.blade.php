@@ -411,7 +411,12 @@ document.addEventListener('DOMContentLoaded', function () {
         ]
     };
 
-    var token = localStorage.getItem('token');
+    function getCookie(name) {
+        var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+        return match ? match[1] : null;
+    }
+
+    var token = getCookie('token');
     var headers = { 'Accept': 'application/json' };
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
