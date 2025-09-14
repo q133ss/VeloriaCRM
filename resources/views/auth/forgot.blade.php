@@ -131,7 +131,7 @@
                 <div class="card-body mt-1">
                     <h4 class="mb-1">{{ __('auth.forgot_heading') }}</h4>
                     <p class="mb-5">{{ __('auth.forgot_subtitle') }}</p>
-                    <form id="formAuthentication" class="mb-5" action="/api/forgot-password" method="POST">
+                    <form id="formAuthentication" class="mb-5" action="/api/v1/forgot-password" method="POST">
                         @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
