@@ -1,6 +1,17 @@
 <?php
 
 return [
+    'nav_account' => 'Аккаунт',
+    'nav_security' => 'Безопасность',
+    'nav_billing' => 'Подписки и планы',
+    'nav_notifications' => 'Уведомления',
+    'nav_connections' => 'Интеграции',
+    'upload_photo' => 'Загрузить новое фото',
+    'reset' => 'Сбросить',
+    'allowed_formats' => 'Допустимы JPG, GIF или PNG. Максимум 800Кб',
+    'save_changes' => 'Сохранить изменения',
+    'delete_account_title' => 'Удаление аккаунта',
+    'delete_account_warning' => 'После удаления аккаунта возврата не будет. Пожалуйста, подтвердите.',
     'title' => 'Настройки',
     'basic_info' => 'Базовая информация',
     'name' => 'Имя',

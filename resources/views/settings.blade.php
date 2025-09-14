@@ -1,237 +1,318 @@
 @extends('layouts.app')
-
 @section('content')
-<div class="container py-4">
-    <h1>{{ __('settings.title') }}</h1>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="nav-align-top">
+                <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="javascript:void(0);"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pages-account-settings-security.html"><i class="icon-base ri ri-lock-line icon-sm me-2"></i>{{ __('settings.nav_security') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pages-account-settings-billing.html"><i class="icon-base ri ri-bookmark-line icon-sm me-2"></i>{{ __('settings.nav_billing') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pages-account-settings-notifications.html"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pages-account-settings-connections.html"><i class="icon-base ri ri-link-m icon-sm me-2"></i>{{ __('settings.nav_connections') }}</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div class="d-flex align-items-start align-items-sm-center gap-6">
+                        <img src="../../assets/img/avatars/1.png" alt="user-avatar" class="d-block w-px-100 h-px-100 rounded-4" id="uploadedAvatar" />
+                        <div class="button-wrapper">
+                            <label for="upload" class="btn btn-primary me-3 mb-4" tabindex="0">
+                                <span class="d-none d-sm-block">{{ __('settings.upload_photo') }}</span>
+                                <i class="icon-base ri ri-upload-2-line d-block d-sm-none"></i>
+                                <input type="file" id="upload" class="account-file-input" hidden accept="image/png, image/jpeg" />
+                            </label>
+                            <button type="button" class="btn btn-outline-danger account-image-reset mb-4">
+                                <i class="icon-base ri ri-refresh-line d-block d-sm-none"></i>
+                                <span class="d-none d-sm-block">{{ __('settings.reset') }}</span>
+                            </button>
+                            <div>{{ __('settings.allowed_formats') }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body pt-0">
+                    <form id="settings-form" onsubmit="return false">
+                        <div class="row mt-1 g-5">
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control" id="name" name="name" />
+                                    <label for="name">{{ __('settings.name') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="email" class="form-control" id="email" name="email" />
+                                    <label for="email">{{ __('settings.email') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control" id="phone" name="phone" />
+                                    <label for="phone">{{ __('settings.phone') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <select id="timezone" name="timezone" class="form-select">
+                                        @foreach(timezone_identifiers_list() as $tz)
+                                            <option value="{{ $tz }}">{{ $tz }}</option>
+                                        @endforeach
+                                    </select>
+                                    <label for="timezone">{{ __('settings.timezone') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <select id="time_format" name="time_format" class="form-select">
+                                        <option value="24h">24h</option>
+                                        <option value="12h">12h</option>
+                                    </select>
+                                    <label for="time_format">{{ __('settings.time_format') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="password" class="form-control" id="current_password" name="current_password" />
+                                    <label for="current_password">{{ __('settings.current_password') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="password" class="form-control" id="new_password" name="new_password" />
+                                    <label for="new_password">{{ __('settings.new_password') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="password" class="form-control" id="new_password_confirmation" name="new_password_confirmation" />
+                                    <label for="new_password_confirmation">{{ __('settings.password_confirmation') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="notif-email" />
+                                    <label class="form-check-label" for="notif-email">{{ __('settings.email_notifications') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="notif-telegram" />
+                                    <label class="form-check-label" for="notif-telegram">{{ __('settings.telegram_notifications') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="notif-sms" />
+                                    <label class="form-check-label" for="notif-sms">{{ __('settings.sms_notifications') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <h5 class="mt-4">{{ __('settings.integrations') }}</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="email" class="form-control" id="smsaero_email" name="integrations[smsaero][email]" />
+                                    <label for="smsaero_email">{{ __('settings.smsaero_email') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="smsaero_api_key" name="integrations[smsaero][api_key]" />
+                                    <label for="smsaero_api_key">{{ __('settings.smsaero_api_key') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="yookassa_shop_id" name="integrations[yookassa][shop_id]" />
+                                    <label for="yookassa_shop_id">{{ __('settings.yookassa_shop_id') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="yookassa_secret_key" name="integrations[yookassa][secret_key]" />
+                                    <label for="yookassa_secret_key">{{ __('settings.yookassa_secret_key') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <h5 class="mt-4">{{ __('settings.work_settings') }}</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="work_days" name="work_days" />
+                                    <label for="work_days">{{ __('settings.work_days') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="work_hours" name="work_hours" />
+                                    <label for="work_hours">{{ __('settings.work_hours') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="holidays" name="holidays" />
+                                    <label for="holidays">{{ __('settings.holidays') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="address" name="address" />
+                                    <label for="address">{{ __('settings.address') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="map_lat" name="map_point[lat]" />
+                                    <label for="map_lat">lat</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="map_lng" name="map_point[lng]" />
+                                    <label for="map_lng">lng</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button type="submit" class="btn btn-primary me-3">{{ __('settings.save_changes') }}</button>
+                            <button type="reset" class="btn btn-outline-secondary">{{ __('settings.reset') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card">
+                <h5 class="card-header mb-1">{{ __('settings.delete_account_title') }}</h5>
+                <div class="card-body">
+                    <div class="mb-6 col-12 mb-0">
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading mb-1">{{ __('settings.delete_account') }}</h6>
+                            <p class="mb-0">{{ __('settings.delete_account_warning') }}</p>
+                        </div>
+                    </div>
+                    <form id="delete-form" onsubmit="return false">
+                        <div class="mb-6">
+                            <input type="password" class="form-control" name="password" placeholder="{{ __('settings.current_password') }}" />
+                        </div>
+                        <button type="submit" class="btn btn-danger">{{ __('settings.delete') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <form id="settings-form" class="my-4">
-        @csrf
-        <h2>{{ __('settings.basic_info') }}</h2>
-        <div>
-            <label class="form-label">{{ __('settings.name') }}
-                <input type="text" name="name" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.email') }}
-                <input type="email" name="email" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.phone') }}
-                <input type="text" name="phone" class="form-control" />
-            </label>
-        </div>
+    <script>
+    function getCookie(name) {
+        var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+    }
+    function authHeaders(extra = {}) {
+        var token = getCookie('token');
+        var headers = Object.assign({ 'Accept': 'application/json' }, extra);
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        return headers;
+    }
+    async function loadSettings() {
+        const res = await fetch('/api/v1/settings', { headers: authHeaders(), credentials: 'include' });
+        if(!res.ok) return;
+        const data = await res.json();
+        const form = document.getElementById('settings-form');
+        form.name.value = data.user.name || '';
+        form.email.value = data.user.email || '';
+        form.phone.value = data.user.phone || '';
+        form.timezone.value = data.user.timezone || '';
+        form.time_format.value = data.user.time_format || '24h';
+        document.getElementById('notif-email').checked = data.settings.notifications?.email ?? false;
+        document.getElementById('notif-telegram').checked = data.settings.notifications?.telegram ?? false;
+        document.getElementById('notif-sms').checked = data.settings.notifications?.sms ?? false;
+        document.getElementById('notif-telegram').disabled = !data.user.telegram_id;
+        document.getElementById('notif-sms').disabled = !data.user.phone;
+        form['integrations[smsaero][email]'].value = data.settings.integrations.smsaero.email || '';
+        form['integrations[smsaero][api_key]'].value = data.settings.integrations.smsaero.api_key || '';
+        form['integrations[yookassa][shop_id]'].value = data.settings.integrations.yookassa.shop_id || '';
+        form['integrations[yookassa][secret_key]'].value = data.settings.integrations.yookassa.secret_key || '';
+        form.work_days.value = JSON.stringify(data.settings.work_days || {});
+        form.work_hours.value = JSON.stringify(data.settings.work_hours || {});
+        form.holidays.value = (data.settings.holidays || []).join(',');
+        form.address.value = data.settings.address || '';
+        form['map_point[lat]'].value = data.settings.map_point?.lat || '';
+        form['map_point[lng]'].value = data.settings.map_point?.lng || '';
+    }
+    loadSettings();
 
-        <h2 class="mt-4">{{ __('settings.time') }}</h2>
-        <div>
-            <label class="form-label">{{ __('settings.timezone') }}
-                <select name="timezone" class="form-select">
-                    @foreach(timezone_identifiers_list() as $tz)
-                        <option value="{{ $tz }}">{{ $tz }}</option>
-                    @endforeach
-                </select>
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.time_format') }}
-                <select name="time_format" class="form-select">
-                    <option value="24h">24h</option>
-                    <option value="12h">12h</option>
-                </select>
-            </label>
-        </div>
-
-        <h2 class="mt-4">{{ __('settings.password') }}</h2>
-        <div>
-            <label class="form-label">{{ __('settings.current_password') }}
-                <input type="password" name="current_password" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.new_password') }}
-                <input type="password" name="new_password" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.password_confirmation') }}
-                <input type="password" name="new_password_confirmation" class="form-control" />
-            </label>
-        </div>
-
-        <h2 class="mt-4">{{ __('settings.notifications') }}</h2>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="notifications[email]" id="notif-email">
-            <label class="form-check-label" for="notif-email">{{ __('settings.email_notifications') }}</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="notifications[telegram]" id="notif-telegram">
-            <label class="form-check-label" for="notif-telegram">{{ __('settings.telegram_notifications') }}</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="notifications[sms]" id="notif-sms">
-            <label class="form-check-label" for="notif-sms">{{ __('settings.sms_notifications') }}</label>
-        </div>
-
-        <h2 class="mt-4">{{ __('settings.integrations') }}</h2>
-        <h3>{{ __('settings.smsaero') }}</h3>
-        <div>
-            <label class="form-label">{{ __('settings.smsaero_email') }}
-                <input type="email" name="integrations[smsaero][email]" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.smsaero_api_key') }}
-                <input type="text" name="integrations[smsaero][api_key]" class="form-control" />
-            </label>
-        </div>
-        <h3>{{ __('settings.yookassa') }}</h3>
-        <div>
-            <label class="form-label">{{ __('settings.yookassa_shop_id') }}
-                <input type="text" name="integrations[yookassa][shop_id]" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.yookassa_secret_key') }}
-                <input type="text" name="integrations[yookassa][secret_key]" class="form-control" />
-            </label>
-        </div>
-
-        <h2 class="mt-4">{{ __('settings.work_settings') }}</h2>
-        <div>
-            <label class="form-label">{{ __('settings.work_days') }}
-                <input type="text" name="work_days" class="form-control" placeholder="{\"mon\":true}" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.work_hours') }}
-                <input type="text" name="work_hours" class="form-control" placeholder="{\"mon\":[\"09:00-18:00\"]}" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.holidays') }}
-                <input type="text" name="holidays" class="form-control" placeholder="2025-01-01,2025-01-02" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.address') }}
-                <input type="text" name="address" class="form-control" />
-            </label>
-        </div>
-        <div>
-            <label class="form-label">{{ __('settings.map_point') }}
-                <input type="text" name="map_point[lat]" class="form-control" placeholder="lat" />
-                <input type="text" name="map_point[lng]" class="form-control mt-1" placeholder="lng" />
-            </label>
-        </div>
-
-        <button type="submit" class="btn btn-primary mt-3">{{ __('settings.save') }}</button>
-    </form>
-
-    <hr>
-    <h2 class="text-danger">{{ __('settings.delete_account') }}</h2>
-    <form id="delete-form" class="my-3">
-        @csrf
-        @method('DELETE')
-        <input type="password" name="password" class="form-control mb-2" placeholder="{{ __('settings.current_password') }}" />
-        <button type="submit" class="btn btn-danger">{{ __('settings.delete') }}</button>
-    </form>
-</div>
-
-<script>
-async function loadSettings() {
-    const res = await fetch('/api/v1/settings', {credentials:'include'});
-    const data = await res.json();
-    const form = document.getElementById('settings-form');
-    form.name.value = data.user.name || '';
-    form.email.value = data.user.email || '';
-    form.phone.value = data.user.phone || '';
-    form.timezone.value = data.user.timezone || '';
-    form.time_format.value = data.user.time_format || '24h';
-    document.getElementById('notif-email').checked = data.settings.notifications?.email ?? false;
-    document.getElementById('notif-telegram').checked = data.settings.notifications?.telegram ?? false;
-    document.getElementById('notif-sms').checked = data.settings.notifications?.sms ?? false;
-    document.getElementById('notif-telegram').disabled = !data.user.telegram_id;
-    document.getElementById('notif-sms').disabled = !data.user.phone;
-    form['integrations[smsaero][email]'].value = data.settings.integrations.smsaero.email || '';
-    form['integrations[smsaero][api_key]'].value = data.settings.integrations.smsaero.api_key || '';
-    form['integrations[yookassa][shop_id]'].value = data.settings.integrations.yookassa.shop_id || '';
-    form['integrations[yookassa][secret_key]'].value = data.settings.integrations.yookassa.secret_key || '';
-    form.work_days.value = JSON.stringify(data.settings.work_days || {});
-    form.work_hours.value = JSON.stringify(data.settings.work_hours || {});
-    form.holidays.value = (data.settings.holidays || []).join(',');
-    form.address.value = data.settings.address || '';
-    form['map_point[lat]'].value = data.settings.map_point?.lat || '';
-    form['map_point[lng]'].value = data.settings.map_point?.lng || '';
-}
-
-loadSettings();
-
-document.getElementById('settings-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const payload = {
-        name: form.name.value,
-        email: form.email.value,
-        phone: form.phone.value,
-        timezone: form.timezone.value,
-        time_format: form.time_format.value,
-        current_password: form.current_password.value,
-        new_password: form.new_password.value,
-        new_password_confirmation: form.new_password_confirmation.value,
-        notifications: {
-            email: document.getElementById('notif-email').checked,
-            telegram: document.getElementById('notif-telegram').checked,
-            sms: document.getElementById('notif-sms').checked,
-        },
-        integrations: {
-            smsaero: {
-                email: form['integrations[smsaero][email]'].value,
-                api_key: form['integrations[smsaero][api_key]'].value,
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const payload = {
+            name: form.name.value,
+            email: form.email.value,
+            phone: form.phone.value,
+            timezone: form.timezone.value,
+            time_format: form.time_format.value,
+            current_password: form.current_password.value,
+            new_password: form.new_password.value,
+            new_password_confirmation: form.new_password_confirmation.value,
+            notifications: {
+                email: document.getElementById('notif-email').checked,
+                telegram: document.getElementById('notif-telegram').checked,
+                sms: document.getElementById('notif-sms').checked,
             },
-            yookassa: {
-                shop_id: form['integrations[yookassa][shop_id]'].value,
-                secret_key: form['integrations[yookassa][secret_key]'].value,
+            integrations: {
+                smsaero: {
+                    email: form['integrations[smsaero][email]'].value,
+                    api_key: form['integrations[smsaero][api_key]'].value,
+                },
+                yookassa: {
+                    shop_id: form['integrations[yookassa][shop_id]'].value,
+                    secret_key: form['integrations[yookassa][secret_key]'].value,
+                }
+            },
+            work_days: form.work_days.value ? JSON.parse(form.work_days.value) : {},
+            work_hours: form.work_hours.value ? JSON.parse(form.work_hours.value) : {},
+            holidays: form.holidays.value ? form.holidays.value.split(',').map(s=>s.trim()).filter(Boolean) : [],
+            address: form.address.value,
+            map_point: {
+                lat: form['map_point[lat]'].value,
+                lng: form['map_point[lng]'].value,
             }
-        },
-        work_days: form.work_days.value ? JSON.parse(form.work_days.value) : {},
-        work_hours: form.work_hours.value ? JSON.parse(form.work_hours.value) : {},
-        holidays: form.holidays.value ? form.holidays.value.split(',').map(s=>s.trim()).filter(Boolean) : [],
-        address: form.address.value,
-        map_point: {
-            lat: form['map_point[lat]'].value,
-            lng: form['map_point[lng]'].value,
+        };
+        const res = await fetch('/api/v1/settings', {
+            method: 'PATCH',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        if(res.ok){
+            alert('{{ __('settings.saved') }}');
+        }else{
+            const err = await res.json();
+            alert(err.error?.message || 'Error');
         }
-    };
-    const res = await fetch('/api/v1/settings', {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'include',
-        body: JSON.stringify(payload)
     });
-    if(res.ok){
-        alert('{{ __('settings.saved') }}');
-    }else{
-        const err = await res.json();
-        alert(err.error?.message || 'Error');
-    }
-});
 
-document.getElementById('delete-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if(!confirm('{{ __('settings.confirm_delete') }}')) return;
-    const res = await fetch('/api/v1/user', {
-        method: 'DELETE',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'include',
-        body: JSON.stringify({password: e.target.password.value})
+    document.getElementById('delete-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if(!confirm('{{ __('settings.confirm_delete') }}')) return;
+        const res = await fetch('/api/v1/user', {
+            method: 'DELETE',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            credentials: 'include',
+            body: JSON.stringify({password: e.target.password.value})
+        });
+        if(res.status === 204){
+            window.location.href = '/';
+        } else {
+            const err = await res.json();
+            alert(err.error?.message || 'Error');
+        }
     });
-    if(res.status === 204){
-        window.location.href = '/';
-    } else {
-        const err = await res.json();
-        alert(err.error?.message || 'Error');
-    }
-});
-</script>
+    </script>
 @endsection

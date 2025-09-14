@@ -1,6 +1,17 @@
 <?php
 
 return [
+    'nav_account' => 'Account',
+    'nav_security' => 'Security',
+    'nav_billing' => 'Billing & Plans',
+    'nav_notifications' => 'Notifications',
+    'nav_connections' => 'Connections',
+    'upload_photo' => 'Upload new photo',
+    'reset' => 'Reset',
+    'allowed_formats' => 'Allowed JPG, GIF or PNG. Max size of 800K',
+    'save_changes' => 'Save changes',
+    'delete_account_title' => 'Delete Account',
+    'delete_account_warning' => 'Once you delete your account, there is no going back. Please be certain.',
     'title' => 'Settings',
     'basic_info' => 'Basic information',
     'name' => 'Name',
