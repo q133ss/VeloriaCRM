@@ -31,6 +31,17 @@ class AuthController extends Controller
         return response()->json(['message' => __('auth.logout_success')]);
     }
 
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        $user->load(['plans' => fn($q) => $q->latest('plan_user.created_at')->limit(1)]);
+        $plan = $user->plans->first();
+        $user->setRelation('plan', $plan);
+        $user->unsetRelation('plans');
+
+        return response()->json(['user' => $user]);
+    }
+
     public function sendResetLink(ForgotPasswordRequest $request)
     {
         $this->authService->sendResetLink($request->validated()['email']);

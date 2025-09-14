@@ -13,4 +13,11 @@ class Plan extends Model
         'name',
         'price',
     ];
+
+    protected $appends = ['slug'];
+
+    public function getSlugAttribute(): string
+    {
+        return $this->name;
+    }
 }

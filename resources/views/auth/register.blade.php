@@ -132,7 +132,7 @@
                     <h4 class="mb-1">{{ __('auth.register_heading') }}</h4>
                     <p class="mb-5">{{ __('auth.register_subtitle') }}</p>
 
-                    <form id="formAuthentication" class="mb-5" action="/api/register" method="POST">
+                    <form id="formAuthentication" class="mb-5" action="/api/v1/register" method="POST">
                         @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
                             <input
