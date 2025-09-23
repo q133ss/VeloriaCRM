@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('settings', function (Blueprint $table) {
+            $table->text('reminder_message')
+                ->nullable()
+                ->after('notification_prefs')
+                ->comment('Шаблон автонапоминания клиенту о записи');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('settings', function (Blueprint $table) {
+            $table->dropColumn('reminder_message');
+        });
+    }
+};

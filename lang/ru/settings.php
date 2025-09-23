@@ -28,6 +28,8 @@ return [
     'email_notifications' => 'Email',
     'telegram_notifications' => 'Telegram',
     'sms_notifications' => 'SMS',
+    'reminder_message' => 'Текст автонапоминания клиенту',
+    'reminder_message_hint' => 'Используется при отправке напоминаний из раздела «Записи».',
     'integrations' => 'Подключения',
     'smsaero' => 'SmsAero',
     'smsaero_email' => 'Email',

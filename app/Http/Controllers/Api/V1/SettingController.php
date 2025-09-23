@@ -42,6 +42,7 @@ class SettingController extends Controller
                 'holidays' => $user->holidays()->pluck('date')->map(fn($d) => Carbon::parse($d)->toDateString()),
                 'address' => $settings->address,
                 'map_point' => $settings->map_point,
+                'reminder_message' => $settings->reminder_message,
             ],
         ]);
     }
@@ -76,6 +77,7 @@ class SettingController extends Controller
                 'yookassa_secret_key' => data_get($data, 'integrations.yookassa.secret_key'),
                 'address' => $data['address'] ?? null,
                 'map_point' => $data['map_point'] ?? null,
+                'reminder_message' => $data['reminder_message'] ?? null,
             ]
         );
 

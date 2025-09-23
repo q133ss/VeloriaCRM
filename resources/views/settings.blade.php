@@ -57,7 +57,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
-                                    <input type="text" class="form-control" id="phone" name="phone" />
+                                    <input type="text" class="form-control" id="phone" name="phone" data-phone-mask placeholder="+7(999)999-99-99" />
                                     <label for="phone">{{ __('settings.phone') }}</label>
                                 </div>
                             </div>
@@ -115,6 +115,18 @@
                                     <input class="form-check-input" type="checkbox" id="notif-sms" />
                                     <label class="form-check-label" for="notif-sms">{{ __('settings.sms_notifications') }}</label>
                                 </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating form-floating-outline">
+                                    <textarea
+                                        class="form-control"
+                                        id="reminder_message"
+                                        name="reminder_message"
+                                        style="height: 140px"
+                                    ></textarea>
+                                    <label for="reminder_message">{{ __('settings.reminder_message') }}</label>
+                                </div>
+                                <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
                             </div>
                             <div class="col-12">
                                 <h5 class="mt-4">{{ __('settings.integrations') }}</h5>
@@ -259,6 +271,9 @@
         form.name.value = data.user.name || '';
         form.email.value = data.user.email || '';
         form.phone.value = data.user.phone || '';
+        if (form.phone.hasAttribute('data-phone-mask')) {
+            form.phone.dispatchEvent(new Event('input'));
+        }
         form.timezone.value = data.user.timezone || '';
         form.time_format.value = data.user.time_format || '24h';
         document.getElementById('notif-email').checked = data.settings.notifications?.email ?? false;
@@ -292,6 +307,7 @@
         form.address.value = data.settings.address || '';
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
         form['map_point[lng]'].value = data.settings.map_point?.lng || '';
+        form.reminder_message.value = (data.settings && data.settings.reminder_message) || '';
     }
     loadSettings();
     document.getElementById('add-holiday').addEventListener('click', () => addHolidayRow());
@@ -329,6 +345,7 @@
             },
             holidays: Array.from(document.querySelectorAll('.holiday-date')).map(i=>i.value).filter(Boolean),
             address: form.address.value,
+            reminder_message: form.reminder_message.value,
             map_point: {
                 lat: form['map_point[lat]'].value,
                 lng: form['map_point[lng]'].value,
@@ -412,4 +429,5 @@
         }
     });
     </script>
+    @include('components.phone-mask-script')
 @endsection

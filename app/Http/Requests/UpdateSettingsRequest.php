@@ -38,6 +38,7 @@ class UpdateSettingsRequest extends BaseRequest
             'map_point' => ['nullable', 'array'],
             'map_point.lat' => ['nullable', 'numeric'],
             'map_point.lng' => ['nullable', 'numeric'],
+            'reminder_message' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }
