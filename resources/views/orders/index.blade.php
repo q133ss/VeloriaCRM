@@ -27,6 +27,13 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     @if(session('reminder_text'))
         <div class="alert alert-info alert-dismissible" role="alert">
             <strong>Текст автонапоминания:</strong>
@@ -91,7 +98,14 @@
                     <i class="ri ri-check-double-line me-1"></i>
                     Подтвердить выбранные
                 </button>
-                <button type="submit" name="action" value="remind" class="btn btn-info btn-sm text-white">
+                <button
+                    type="submit"
+                    name="action"
+                    value="remind"
+                    class="btn btn-info btn-sm text-white"
+                    {{ empty($reminderMessage) ? 'disabled' : '' }}
+                    @if(empty($reminderMessage)) title="Добавьте текст автонапоминания в настройках" @endif
+                >
                     <i class="ri ri-mail-line me-1"></i>
                     Напомнить о записи
                 </button>
@@ -207,13 +221,14 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
-                                    <select class="form-select" id="quick_master_id" name="master_id" required>
-                                        <option value="" disabled selected>Выберите мастера</option>
-                                        @foreach($masters as $master)
-                                            <option value="{{ $master->id }}">{{ $master->name ?? 'Без имени' }}</option>
-                                        @endforeach
-                                    </select>
-                                    <label for="quick_master_id">Мастер</label>
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="quick_master_name"
+                                        value="{{ auth()->user()?->name ?? 'Вы' }}"
+                                        readonly
+                                    />
+                                    <label for="quick_master_name">Мастер</label>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -224,7 +239,15 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
-                                    <input type="text" class="form-control" id="quick_client_phone" name="client_phone" placeholder="+79990000000" required />
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="quick_client_phone"
+                                        name="client_phone"
+                                        placeholder="+7(999)999-99-99"
+                                        data-phone-mask
+                                        required
+                                    />
                                     <label for="quick_client_phone">Телефон клиента</label>
                                 </div>
                             </div>
@@ -253,6 +276,7 @@
 @endsection
 
 @section('scripts')
+    @include('components.phone-mask-script')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const selectAll = document.getElementById('select-all');

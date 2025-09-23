@@ -38,7 +38,6 @@
         @include('orders.partials.form', [
             'order' => $order,
             'services' => $services,
-            'masters' => $masters,
             'client' => $client,
             'recommendedServices' => $recommendedServices,
         ])
@@ -51,5 +50,6 @@
 @endsection
 
 @section('scripts')
+    @include('components.phone-mask-script')
     @include('orders.partials.form-scripts')
 @endsection

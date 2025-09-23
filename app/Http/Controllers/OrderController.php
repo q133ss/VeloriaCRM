@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BulkOrderActionRequest;
+use App\Http\Requests\CancelOrderRequest;
+use App\Http\Requests\OrderFormRequest;
+use App\Http\Requests\QuickOrderRequest;
+use App\Http\Requests\RescheduleOrderRequest;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Service;
@@ -17,13 +22,14 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class OrderController extends Controller
 {
     public function index(Request $request): View
     {
+        $userId = $this->currentUserId();
+
         $filters = [
             'period' => $request->input('period', 'this_week'),
             'status' => $request->input('status', 'all'),
@@ -32,6 +38,7 @@ class OrderController extends Controller
 
         /** @var LengthAwarePaginator $orders */
         $orders = Order::with(['client', 'master'])
+            ->where('master_id', $userId)
             ->withFilter($filters)
             ->orderByDesc('scheduled_at')
             ->paginate(12)
@@ -49,23 +56,20 @@ class OrderController extends Controller
 
         $statusOptions = ['all' => 'Все статусы'] + Order::statusLabels();
         $settings = $this->resolveUserSettings();
-
-        $masters = User::orderBy('name')->get();
+        $reminderMessage = optional($settings)->reminder_message;
 
         return view('orders.index', [
             'orders' => $orders,
             'filters' => $filters,
             'periodOptions' => $periodOptions,
             'statusOptions' => $statusOptions,
-            'reminderMessage' => optional($settings)->reminder_message,
-            'masters' => $masters,
+            'reminderMessage' => $reminderMessage,
         ]);
     }
 
     public function create(Request $request): View
     {
-        $services = Service::orderBy('name')->get();
-        $masters = User::orderBy('name')->get();
+        $services = $this->getUserServices();
         $client = null;
 
         if ($request->filled('client_id')) {
@@ -79,17 +83,17 @@ class OrderController extends Controller
         return view('orders.create', [
             'order' => new Order(),
             'services' => $services,
-            'masters' => $masters,
             'client' => $client,
             'recommendedServices' => $recommendedServices,
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(OrderFormRequest $request): RedirectResponse
     {
-        $validated = $this->validateOrder($request);
+        $validated = $request->validated();
+        $masterId = $this->currentUserId();
 
-        $order = DB::transaction(function () use ($validated) {
+        $order = DB::transaction(function () use ($validated, $masterId) {
             $client = $this->resolveClient(
                 $validated['client_phone'],
                 Arr::get($validated, 'client_name'),
@@ -112,10 +116,10 @@ class OrderController extends Controller
                 $totalPrice = $services->sum('base_price');
             }
 
-            $recommended = $this->buildRecommendedServices($client, Service::orderBy('name')->get());
+            $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
             return Order::create([
-                'master_id' => $validated['master_id'],
+                'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => $servicePayload,
                 'scheduled_at' => Carbon::parse($validated['scheduled_at']),
@@ -137,6 +141,7 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
+        $this->ensureOrderBelongsToCurrentUser($order);
         $order->loadMissing(['client', 'master']);
         $hasProAccess = $this->userHasProAccess();
         $reminderMessage = optional($this->resolveUserSettings())->reminder_message;
@@ -150,26 +155,27 @@ class OrderController extends Controller
 
     public function edit(Order $order): View
     {
+        $this->ensureOrderBelongsToCurrentUser($order);
         $order->loadMissing(['client', 'master']);
-        $services = Service::orderBy('name')->get();
-        $masters = User::orderBy('name')->get();
+        $services = $this->getUserServices();
         $client = $order->client;
         $recommendedServices = $this->buildRecommendedServices($client, $services);
 
         return view('orders.edit', [
             'order' => $order,
             'services' => $services,
-            'masters' => $masters,
             'client' => $client,
             'recommendedServices' => $recommendedServices,
         ]);
     }
 
-    public function update(Request $request, Order $order): RedirectResponse
+    public function update(OrderFormRequest $request, Order $order): RedirectResponse
     {
-        $validated = $this->validateOrder($request, $order->id);
+        $this->ensureOrderBelongsToCurrentUser($order);
+        $validated = $request->validated();
+        $masterId = $this->currentUserId();
 
-        DB::transaction(function () use ($validated, $order) {
+        DB::transaction(function () use ($validated, $order, $masterId) {
             $client = $this->resolveClient(
                 $validated['client_phone'],
                 Arr::get($validated, 'client_name'),
@@ -193,7 +199,7 @@ class OrderController extends Controller
             }
 
             $order->update([
-                'master_id' => $validated['master_id'],
+                'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => $servicePayload,
                 'scheduled_at' => Carbon::parse($validated['scheduled_at']),
@@ -211,6 +217,7 @@ class OrderController extends Controller
 
     public function destroy(Order $order): RedirectResponse
     {
+        $this->ensureOrderBelongsToCurrentUser($order);
         $order->delete();
 
         return redirect()
@@ -218,15 +225,29 @@ class OrderController extends Controller
             ->with('status', 'Запись удалена.');
     }
 
-    public function bulkAction(Request $request): RedirectResponse
+    public function bulkAction(BulkOrderActionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'orders' => ['required', 'array'],
-            'orders.*' => ['integer', 'exists:orders,id'],
-            'action' => ['required', Rule::in(['confirm', 'remind', 'cancel'])],
-        ]);
+        $validated = $request->validated();
+        $userId = $this->currentUserId();
+        $settings = $this->resolveUserSettings();
+        $reminderMessage = optional($settings)->reminder_message;
 
-        $orders = Order::whereIn('id', $validated['orders'])->get();
+        if ($validated['action'] === 'remind' && empty($reminderMessage)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Добавьте текст автонапоминания в настройках, чтобы отправлять напоминания.');
+        }
+
+        $orders = Order::where('master_id', $userId)
+            ->whereIn('id', $validated['orders'])
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Выбранные записи не найдены.');
+        }
+
         $now = Carbon::now();
 
         $message = match ($validated['action']) {
@@ -260,31 +281,27 @@ class OrderController extends Controller
             }
         });
 
-        $settings = $this->resolveUserSettings();
+        $redirect = redirect()->back()->with('status', $message);
 
-        return redirect()
-            ->back()
-            ->with('status', $message)
-            ->with('reminder_text', optional($settings)->reminder_message);
+        if ($validated['action'] === 'remind' && $reminderMessage) {
+            $redirect = $redirect->with('reminder_text', $reminderMessage);
+        }
+
+        return $redirect;
     }
 
-    public function quickStore(Request $request): RedirectResponse
+    public function quickStore(QuickOrderRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'master_id' => ['required', 'exists:users,id'],
-            'client_phone' => ['required', 'string', 'min:5'],
-            'client_name' => ['nullable', 'string', 'max:255'],
-            'scheduled_at' => ['required', 'date'],
-            'note' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
+        $masterId = $this->currentUserId();
 
-        $order = DB::transaction(function () use ($validated) {
+        $order = DB::transaction(function () use ($validated, $masterId) {
             $client = $this->resolveClient($validated['client_phone'], Arr::get($validated, 'client_name'));
-            $services = Service::orderBy('name')->take(3)->get();
+            $services = $this->getUserServices(3);
             $recommended = $this->buildRecommendedServices($client, $services);
 
             return Order::create([
-                'master_id' => $validated['master_id'],
+                'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => [],
                 'scheduled_at' => Carbon::parse($validated['scheduled_at']),
@@ -302,6 +319,7 @@ class OrderController extends Controller
 
     public function complete(Order $order): RedirectResponse
     {
+        $this->ensureOrderBelongsToCurrentUser($order);
         $now = Carbon::now();
         $duration = null;
 
@@ -322,6 +340,7 @@ class OrderController extends Controller
 
     public function start(Order $order): RedirectResponse
     {
+        $this->ensureOrderBelongsToCurrentUser($order);
         $now = Carbon::now();
 
         $order->update([
@@ -336,6 +355,16 @@ class OrderController extends Controller
 
     public function remind(Order $order): RedirectResponse
     {
+        $this->ensureOrderBelongsToCurrentUser($order);
+        $settings = $this->resolveUserSettings();
+        $reminderMessage = optional($settings)->reminder_message;
+
+        if (empty($reminderMessage)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Добавьте текст автонапоминания в настройках, чтобы отправить напоминание.');
+        }
+
         $now = Carbon::now();
 
         $order->update([
@@ -343,19 +372,16 @@ class OrderController extends Controller
             'is_reminder_sent' => true,
         ]);
 
-        $settings = $this->resolveUserSettings();
-
         return redirect()
             ->back()
             ->with('status', 'Напоминание отмечено. Не забудьте отправить клиенту сообщение!')
-            ->with('reminder_text', optional($settings)->reminder_message);
+            ->with('reminder_text', $reminderMessage);
     }
 
-    public function cancel(Request $request, Order $order): RedirectResponse
+    public function cancel(CancelOrderRequest $request, Order $order): RedirectResponse
     {
-        $validated = $request->validate([
-            'reason' => ['nullable', 'string', 'max:500'],
-        ]);
+        $this->ensureOrderBelongsToCurrentUser($order);
+        $validated = $request->validated();
 
         $order->update([
             'status' => 'cancelled',
@@ -368,11 +394,10 @@ class OrderController extends Controller
             ->with('status', 'Запись отменена.');
     }
 
-    public function reschedule(Request $request, Order $order): RedirectResponse
+    public function reschedule(RescheduleOrderRequest $request, Order $order): RedirectResponse
     {
-        $validated = $request->validate([
-            'scheduled_at' => ['required', 'date'],
-        ]);
+        $this->ensureOrderBelongsToCurrentUser($order);
+        $validated = $request->validated();
 
         $previousDate = $order->scheduled_at;
         $order->update([
@@ -386,30 +411,27 @@ class OrderController extends Controller
             ->with('status', 'Запись перенесена.');
     }
 
-    protected function validateOrder(Request $request, ?int $orderId = null): array
-    {
-        return $request->validate([
-            'master_id' => ['required', 'exists:users,id'],
-            'client_phone' => ['required', 'string', 'min:5'],
-            'client_name' => ['nullable', 'string', 'max:255'],
-            'client_email' => ['nullable', 'email'],
-            'scheduled_at' => ['required', 'date'],
-            'services' => ['nullable', 'array'],
-            'services.*' => ['integer', 'exists:services,id'],
-            'note' => ['nullable', 'string'],
-            'total_price' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['required', Rule::in(array_keys(Order::statusLabels()))],
-            'source' => ['nullable', 'string', 'max:50'],
-        ]);
-    }
-
     protected function collectServices(array $serviceIds): Collection
     {
         if (empty($serviceIds)) {
             return new Collection();
         }
 
-        return Service::whereIn('id', $serviceIds)->get();
+        return Service::where('user_id', $this->currentUserId())
+            ->whereIn('id', $serviceIds)
+            ->get();
+    }
+
+    protected function getUserServices(?int $limit = null): Collection
+    {
+        $query = Service::where('user_id', $this->currentUserId())
+            ->orderBy('name');
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        return $query->get();
     }
 
     protected function resolveClient(string $phone, ?string $name = null, ?string $email = null): User
@@ -489,6 +511,24 @@ class OrderController extends Controller
                 'description' => 'Заглушка рекомендации ИИ на основе предыдущих визитов ' . ($client?->name ?? 'клиента') . '.',
             ];
         });
+    }
+
+    protected function ensureOrderBelongsToCurrentUser(Order $order): void
+    {
+        if ($order->master_id !== $this->currentUserId()) {
+            abort(403);
+        }
+    }
+
+    protected function currentUserId(): int
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            abort(403);
+        }
+
+        return $userId;
     }
 
     protected function resolveUserSettings(): ?Setting

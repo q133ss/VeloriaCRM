@@ -57,7 +57,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
-                                    <input type="text" class="form-control" id="phone" name="phone" />
+                                    <input type="text" class="form-control" id="phone" name="phone" data-phone-mask placeholder="+7(999)999-99-99" />
                                     <label for="phone">{{ __('settings.phone') }}</label>
                                 </div>
                             </div>
@@ -271,6 +271,9 @@
         form.name.value = data.user.name || '';
         form.email.value = data.user.email || '';
         form.phone.value = data.user.phone || '';
+        if (form.phone.hasAttribute('data-phone-mask')) {
+            form.phone.dispatchEvent(new Event('input'));
+        }
         form.timezone.value = data.user.timezone || '';
         form.time_format.value = data.user.time_format || '24h';
         document.getElementById('notif-email').checked = data.settings.notifications?.email ?? false;
@@ -426,4 +429,5 @@
         }
     });
     </script>
+    @include('components.phone-mask-script')
 @endsection

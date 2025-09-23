@@ -4,26 +4,25 @@
         ->all();
     $scheduledAt = old('scheduled_at', optional($order->scheduled_at)->format('Y-m-d\TH:i'));
     $selectedStatus = old('status', $order->status ?? 'new');
-    $selectedMaster = old('master_id', $order->master_id ?? auth()->id());
     $clientPhone = old('client_phone', $client->phone ?? '');
     $clientName = old('client_name', $client->name ?? '');
     $clientEmail = old('client_email', $client->email ?? '');
     $totalPrice = old('total_price', $order->total_price ?? null);
     $statusOptions = \App\Models\Order::statusLabels();
+    $currentMaster = auth()->user();
 @endphp
 
 <div class="row g-4">
     <div class="col-md-4">
         <div class="form-floating form-floating-outline">
-            <select class="form-select" id="master_id" name="master_id" required>
-                <option value="" disabled {{ $selectedMaster ? '' : 'selected' }}>Выберите мастера</option>
-                @foreach($masters as $master)
-                    <option value="{{ $master->id }}" {{ (int) $selectedMaster === $master->id ? 'selected' : '' }}>
-                        {{ $master->name ?? 'Без имени' }}
-                    </option>
-                @endforeach
-            </select>
-            <label for="master_id">Мастер</label>
+            <input
+                type="text"
+                class="form-control"
+                id="master_name"
+                value="{{ $order->master?->name ?? $currentMaster?->name ?? 'Не указан' }}"
+                readonly
+            />
+            <label for="master_name">Мастер</label>
         </div>
     </div>
     <div class="col-md-4">
@@ -34,7 +33,8 @@
                 id="client_phone"
                 name="client_phone"
                 value="{{ $clientPhone }}"
-                placeholder="+79990000000"
+                placeholder="+7(999)999-99-99"
+                data-phone-mask
                 required
             />
             <label for="client_phone">Телефон клиента</label>

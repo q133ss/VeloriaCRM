@@ -26,7 +26,12 @@
             </button>
             <form method="POST" action="{{ route('orders.remind', $order) }}" class="d-inline">
                 @csrf
-                <button type="submit" class="btn btn-info text-white">
+                <button
+                    type="submit"
+                    class="btn btn-info text-white"
+                    {{ empty($reminderMessage) ? 'disabled' : '' }}
+                    @if(empty($reminderMessage)) title="Добавьте текст автонапоминания в настройках" @endif
+                >
                     <i class="ri ri-mail-line me-1"></i>
                     Напомнить
                 </button>
@@ -61,6 +66,13 @@
     @if(session('status'))
         <div class="alert alert-success alert-dismissible" role="alert">
             {{ session('status') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
