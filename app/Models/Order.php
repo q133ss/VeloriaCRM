@@ -2,13 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class Order extends Model
 {
     use HasFactory;
+
+    public const STATUS_LABELS = [
+        'new' => 'Новая',
+        'confirmed' => 'Подтверждена',
+        'in_progress' => 'В работе',
+        'completed' => 'Завершена',
+        'cancelled' => 'Отменена',
+        'no_show' => 'Не пришёл',
+    ];
 
     protected $fillable = [
         'master_id',
@@ -78,5 +89,100 @@ class Order extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    public function scopeWithFilter(Builder $query, array $filters): Builder
+    {
+        if (($filters['period'] ?? null) && ($filters['period'] ?? null) !== 'all') {
+            $query->where(function (Builder $builder) use ($filters) {
+                $period = $filters['period'];
+                $now = Carbon::now();
+
+                $ranges = match ($period) {
+                    'today' => [
+                        $now->copy()->startOfDay(),
+                        $now->copy()->endOfDay(),
+                    ],
+                    'tomorrow' => [
+                        $now->copy()->addDay()->startOfDay(),
+                        $now->copy()->addDay()->endOfDay(),
+                    ],
+                    'this_week' => [
+                        $now->copy()->startOfWeek(),
+                        $now->copy()->endOfWeek(),
+                    ],
+                    'next_week' => [
+                        $now->copy()->addWeek()->startOfWeek(),
+                        $now->copy()->addWeek()->endOfWeek(),
+                    ],
+                    'this_month' => [
+                        $now->copy()->startOfMonth(),
+                        $now->copy()->endOfMonth(),
+                    ],
+                    'next_month' => [
+                        $now->copy()->addMonth()->startOfMonth(),
+                        $now->copy()->addMonth()->endOfMonth(),
+                    ],
+                    default => null,
+                };
+
+                if ($ranges) {
+                    $builder->whereBetween('scheduled_at', $ranges);
+                }
+            });
+        }
+
+        if (($filters['status'] ?? null) && ($filters['status'] ?? null) !== 'all') {
+            $query->where('status', $filters['status']);
+        }
+
+        if ($filters['search'] ?? null) {
+            $search = trim((string) $filters['search']);
+            $digits = preg_replace('/[^0-9]+/', '', $search);
+
+            $query->where(function (Builder $builder) use ($search, $digits) {
+                $builder->whereHas('client', function (Builder $clientQuery) use ($search, $digits) {
+                    $clientQuery->where(function (Builder $nested) use ($search, $digits) {
+                        $nested->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+
+                        if ($digits) {
+                            $normalized = '+' . ltrim($digits, '+');
+                            $nested->orWhere('phone', 'like', "%{$normalized}%");
+                        }
+                    });
+                });
+            });
+        }
+
+        return $query;
+    }
+
+    public static function statusLabels(): array
+    {
+        return self::STATUS_LABELS;
+    }
+
+    public static function statusBadgeClasses(): array
+    {
+        return [
+            'new' => 'bg-label-primary',
+            'confirmed' => 'bg-label-info',
+            'in_progress' => 'bg-label-warning',
+            'completed' => 'bg-label-success',
+            'cancelled' => 'bg-label-secondary',
+            'no_show' => 'bg-label-danger',
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? ucfirst($this->status);
+    }
+
+    public function getStatusClassAttribute(): string
+    {
+        return self::statusBadgeClasses()[$this->status] ?? 'bg-label-secondary';
     }
 }

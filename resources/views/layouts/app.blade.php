@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var BASE_MENU = [
         { label: 'Дашборд', href: '/dashboard', icon: 'ri-dashboard-2-line' },
         { label: 'Календарь', href: '/calendar', icon: 'ri-calendar-line' },
-        { label: 'Записи', href: '/appointments', icon: 'ri-calendar-check-line' },
+        { label: 'Записи', href: '/orders', icon: 'ri-calendar-check-line' },
         { label: 'Клиенты', href: '/clients', icon: 'ri-user-3-line' },
         { label: 'Услуги', href: '/services', icon: 'ri-scissors-2-line' },
         { label: 'Инвойсы', href: '/invoices', icon: 'ri-bill-line' },

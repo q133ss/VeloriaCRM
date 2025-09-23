@@ -117,6 +117,18 @@
                                 </div>
                             </div>
                             <div class="col-12">
+                                <div class="form-floating form-floating-outline">
+                                    <textarea
+                                        class="form-control"
+                                        id="reminder_message"
+                                        name="reminder_message"
+                                        style="height: 140px"
+                                    ></textarea>
+                                    <label for="reminder_message">{{ __('settings.reminder_message') }}</label>
+                                </div>
+                                <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
+                            </div>
+                            <div class="col-12">
                                 <h5 class="mt-4">{{ __('settings.integrations') }}</h5>
                             </div>
                             <div class="col-md-6">
@@ -292,6 +304,7 @@
         form.address.value = data.settings.address || '';
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
         form['map_point[lng]'].value = data.settings.map_point?.lng || '';
+        form.reminder_message.value = (data.settings && data.settings.reminder_message) || '';
     }
     loadSettings();
     document.getElementById('add-holiday').addEventListener('click', () => addHolidayRow());
@@ -329,6 +342,7 @@
             },
             holidays: Array.from(document.querySelectorAll('.holiday-date')).map(i=>i.value).filter(Boolean),
             address: form.address.value,
+            reminder_message: form.reminder_message.value,
             map_point: {
                 lat: form['map_point[lat]'].value,
                 lng: form['map_point[lng]'].value,

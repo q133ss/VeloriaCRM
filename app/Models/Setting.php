@@ -23,6 +23,7 @@ class Setting extends Model
         'smsaero_api_key',
         'yookassa_shop_id',
         'yookassa_secret_key',
+        'reminder_message',
     ];
 
     protected function casts(): array
