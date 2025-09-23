@@ -2,19 +2,18 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class BulkOrderActionRequest extends FormRequest
+class BulkOrderActionRequest extends BaseRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user('sanctum') !== null;
     }
 
     public function rules(): array
     {
-        $userId = $this->user()?->id ?? 0;
+        $userId = $this->user('sanctum')?->id ?? 0;
 
         return [
             'orders' => ['required', 'array'],

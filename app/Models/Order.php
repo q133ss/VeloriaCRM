@@ -21,6 +21,16 @@ class Order extends Model
         'no_show' => 'Не пришёл',
     ];
 
+    public const PERIOD_OPTIONS = [
+        'today' => 'Сегодня',
+        'tomorrow' => 'Завтра',
+        'this_week' => 'Текущая неделя',
+        'next_week' => 'Следующая неделя',
+        'this_month' => 'Текущий месяц',
+        'next_month' => 'Следующий месяц',
+        'all' => 'За всё время',
+    ];
+
     protected $fillable = [
         'master_id',
         'client_id',
@@ -162,6 +172,11 @@ class Order extends Model
     public static function statusLabels(): array
     {
         return self::STATUS_LABELS;
+    }
+
+    public static function periodOptions(): array
+    {
+        return self::PERIOD_OPTIONS;
     }
 
     public static function statusBadgeClasses(): array

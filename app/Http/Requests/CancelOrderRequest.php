@@ -2,13 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class CancelOrderRequest extends FormRequest
+class CancelOrderRequest extends BaseRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user('sanctum') !== null;
     }
 
     public function rules(): array

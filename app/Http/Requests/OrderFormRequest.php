@@ -3,20 +3,19 @@
 namespace App\Http\Requests;
 
 use App\Models\Order;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class OrderFormRequest extends FormRequest
+class OrderFormRequest extends BaseRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user('sanctum') !== null;
     }
 
     public function rules(): array
     {
         $statusKeys = array_keys(Order::statusLabels());
-        $userId = $this->user()?->id ?? 0;
+        $userId = $this->user('sanctum')?->id ?? 0;
 
         return [
             'client_phone' => ['required', 'string', 'max:20'],

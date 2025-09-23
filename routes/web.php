@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,12 +20,16 @@ Route::middleware('token.cookie')->group(function () {
     # TODO Даты выходных сделать календарем! Что бы выбирать период было удобнее
     Route::view('/settings', 'settings')->name('settings');
 
-    Route::post('/orders/bulk-action', [OrderController::class, 'bulkAction'])->name('orders.bulk-action');
-    Route::post('/orders/quick-create', [OrderController::class, 'quickStore'])->name('orders.quick-store');
-    Route::post('/orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
-    Route::post('/orders/{order}/start', [OrderController::class, 'start'])->name('orders.start');
-    Route::post('/orders/{order}/remind', [OrderController::class, 'remind'])->name('orders.remind');
-    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
-    Route::post('/orders/{order}/reschedule', [OrderController::class, 'reschedule'])->name('orders.reschedule');
-    Route::resource('orders', OrderController::class);
+    Route::get('/orders', function () {
+        return view('orders.index');
+    })->name('orders.index');
+    Route::get('/orders/create', function () {
+        return view('orders.create');
+    })->name('orders.create');
+    Route::get('/orders/{order}', function ($order) {
+        return view('orders.show', ['orderId' => $order]);
+    })->name('orders.show');
+    Route::get('/orders/{order}/edit', function ($order) {
+        return view('orders.edit', ['orderId' => $order]);
+    })->name('orders.edit');
 });
