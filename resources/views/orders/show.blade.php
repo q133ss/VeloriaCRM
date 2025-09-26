@@ -123,7 +123,7 @@
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h5 class="mb-0">Рекомендации ИИ</h5>
-                        <span class="badge bg-label-info">Заглушка</span>
+                        <span class="badge bg-label-secondary" id="ai-recommendations-badge">ИИ</span>
                     </div>
                     <div class="card-body" id="order-ai-recommendations">
                         <p class="text-muted mb-0">Загрузка...</p>
@@ -196,6 +196,7 @@
         const rescheduleForm = document.getElementById('reschedule-form');
         const rescheduleErrors = document.getElementById('reschedule-errors');
         const analyticsContent = document.getElementById('analytics-content');
+        const aiBadge = document.getElementById('ai-recommendations-badge');
 
         const actionEdit = document.getElementById('action-edit');
         const actionStart = document.getElementById('action-start');
@@ -207,6 +208,10 @@
 
         let currentOrder = null;
         let meta = { has_pro_access: false, reminder_message: null };
+        let analyticsData = null;
+        let analyticsLoaded = false;
+        let analyticsLoading = false;
+        let analyticsError = null;
 
         function showAlert(type, message, sticky = false) {
             const alert = document.createElement('div');
@@ -227,6 +232,20 @@
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return '—';
             return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatDate(value) {
+            if (!value) return '—';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '—';
+            return date.toLocaleDateString('ru-RU');
+        }
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '—';
+            const number = Number(value);
+            if (Number.isNaN(number)) return '—';
+            return number.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' });
         }
 
         function isoToLocalInput(value) {
@@ -289,29 +308,186 @@
             const container = document.getElementById('order-ai-recommendations');
             container.innerHTML = '';
             if (!meta.has_pro_access) {
+                if (aiBadge) {
+                    aiBadge.textContent = 'PRO';
+                    aiBadge.className = 'badge bg-label-secondary';
+                }
                 container.innerHTML = '<p class="text-muted mb-0">Доступно только в тарифах PRO и Elite.</p>';
                 return;
             }
-            if (!recommendations.length) {
+            if (aiBadge) {
+                aiBadge.textContent = 'ИИ';
+                aiBadge.className = 'badge bg-label-primary';
+            }
+            if (!Array.isArray(recommendations) || !recommendations.length) {
                 container.innerHTML = '<p class="text-muted mb-0">Рекомендаций пока нет.</p>';
                 return;
             }
             recommendations.forEach(item => {
                 const block = document.createElement('div');
                 block.className = 'mb-3';
+
+                const service = item.service || {};
+                const title = service.name || item.title || 'Рекомендация';
+                const price = typeof service.price === 'number' ? service.price : null;
+                const duration = typeof service.duration === 'number' ? service.duration : null;
+
+                let confidence = null;
+                if (typeof item.confidence === 'number' && !Number.isNaN(item.confidence)) {
+                    const normalized = Math.min(1, Math.max(0, item.confidence));
+                    confidence = Math.round(normalized * 100);
+                }
+
+                const metaParts = [];
+                if (price !== null) {
+                    metaParts.push(`${price.toLocaleString('ru-RU')} ₽`);
+                }
+                if (duration !== null) {
+                    metaParts.push(`${duration} мин`);
+                }
+                const meta = metaParts.length ? `<p class="small text-muted mb-2">${metaParts.join(' · ')}</p>` : '';
+
+                const insight = item.insight || 'Персонализированная рекомендация ИИ.';
+                const action = item.action ? `<p class="small mb-0">${item.action}</p>` : '';
+
                 block.innerHTML = `
-                    <strong>${item.name}</strong>
-                    <p class="text-muted small mb-0">${item.description || 'Персонализированная рекомендация ИИ.'}</p>
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <div class="flex-grow-1">
+                            <strong>${title}</strong>
+                            ${meta}
+                            <p class="text-muted small mb-1">${insight}</p>
+                            ${action}
+                        </div>
+                        ${confidence !== null ? `<span class="badge bg-label-info align-self-start">${confidence}%</span>` : ''}
+                    </div>
                 `;
                 container.appendChild(block);
             });
         }
 
+        function renderAnalytics(data) {
+            const metrics = data.metrics || {};
+            const insights = data.insights || {};
+            const favorites = Array.isArray(metrics.favorite_services) ? metrics.favorite_services : [];
+
+            let html = '';
+
+            if (insights.summary) {
+                html += `<div class="mb-3"><h6 class="fw-semibold mb-1">Краткий вывод</h6><p class="mb-0">${insights.summary}</p></div>`;
+            }
+
+            if (Array.isArray(insights.risk_flags) && insights.risk_flags.length) {
+                html += '<div class="mb-3"><h6 class="fw-semibold mb-1">Зоны внимания</h6><ul class="small mb-0">';
+                insights.risk_flags.forEach(flag => {
+                    html += `<li>${flag}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            if (Array.isArray(insights.recommendations) && insights.recommendations.length) {
+                html += '<div class="mb-3"><h6 class="fw-semibold mb-1">Что сделать</h6><ul class="small mb-0">';
+                insights.recommendations.forEach(rec => {
+                    html += `<li><strong>${rec.title}:</strong> ${rec.action}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            html += '<div><h6 class="fw-semibold mb-2">Ключевые метрики</h6><ul class="list-unstyled small mb-0">';
+            html += `<li>Всего визитов: <strong>${metrics.total_visits ?? 0}</strong></li>`;
+            html += `<li>Завершено: <strong>${metrics.completed_visits ?? 0}</strong></li>`;
+            html += `<li>Предстоящие: <strong>${metrics.upcoming_visits ?? 0}</strong></li>`;
+            html += `<li>Отмены: <strong>${metrics.cancelled_visits ?? 0}</strong></li>`;
+            html += `<li>Не пришёл: <strong>${metrics.no_show_visits ?? 0}</strong></li>`;
+            html += `<li>Средний чек: <strong>${formatCurrency(metrics.average_check)}</strong></li>`;
+            if (metrics.average_visit_interval_days) {
+                html += `<li>Средний интервал: <strong>${metrics.average_visit_interval_days} дн.</strong></li>`;
+            }
+            if (metrics.last_visit_at) {
+                html += `<li>Последний визит: <strong>${formatDate(metrics.last_visit_at)}</strong></li>`;
+            }
+            if (metrics.next_visit_at) {
+                html += `<li>Следующий визит: <strong>${formatDate(metrics.next_visit_at)}</strong></li>`;
+            }
+            html += `<li>Выручка за всё время: <strong>${formatCurrency(metrics.lifetime_value)}</strong></li>`;
+            if (favorites.length) {
+                html += '<li class="mt-2">Любимые услуги:<ul class="small ps-3 mb-0">';
+                favorites.forEach(service => {
+                    html += `<li>${service.name || 'Услуга'} — ${service.count || 0} виз., ср. чек ${formatCurrency(service.average_price)}</li>`;
+                });
+                html += '</ul></li>';
+            }
+            if (metrics.loyalty_level) {
+                html += `<li class="mt-2">Уровень лояльности: <strong>${metrics.loyalty_level}</strong></li>`;
+            }
+            html += '</ul></div>';
+
+            analyticsContent.innerHTML = html;
+        }
+
         function renderAnalyticsModal() {
-            if (meta.has_pro_access) {
-                analyticsContent.innerHTML = '<p>Глубокая аналитика по клиенту доступна в полной версии (заглушка).</p>';
-            } else {
+            if (!meta.has_pro_access) {
                 analyticsContent.innerHTML = '<p class="text-muted mb-0">Аналитика доступна только в тарифах PRO и Elite.</p>';
+                return;
+            }
+
+            if (analyticsLoading) {
+                analyticsContent.innerHTML = '<p class="text-muted mb-0">Аналитика загружается...</p>';
+                return;
+            }
+
+            if (analyticsError) {
+                analyticsContent.innerHTML = `<p class="text-danger mb-0">${analyticsError}</p>`;
+                return;
+            }
+
+            if (analyticsLoaded && analyticsData) {
+                renderAnalytics(analyticsData);
+                return;
+            }
+
+            analyticsContent.innerHTML = '<p class="text-muted mb-0">Запросите аналитику клиента.</p>';
+        }
+
+        async function loadAnalytics() {
+            if (!meta.has_pro_access) {
+                renderAnalyticsModal();
+                return;
+            }
+
+            if (analyticsLoading || analyticsLoaded) {
+                renderAnalyticsModal();
+                return;
+            }
+
+            analyticsLoading = true;
+            analyticsError = null;
+            analyticsData = null;
+            renderAnalyticsModal();
+
+            try {
+                const response = await fetch(`/api/v1/orders/${orderId}/analytics`, {
+                    headers: authHeaders(),
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    analyticsError = error.error?.message || 'Не удалось получить аналитику.';
+                    return;
+                }
+
+                analyticsData = await response.json();
+                analyticsLoaded = true;
+            } catch (error) {
+                analyticsError = 'Не удалось получить аналитику.';
+            } finally {
+                analyticsLoading = false;
+
+                if (analyticsError) {
+                    analyticsContent.innerHTML = `<p class="text-danger mb-0">${analyticsError}</p>`;
+                } else {
+                    renderAnalyticsModal();
+                }
             }
         }
 
@@ -449,7 +625,17 @@
         });
 
         actionAnalytics.addEventListener('click', function () {
-            renderAnalyticsModal();
+            if (!meta.has_pro_access) {
+                renderAnalyticsModal();
+                return;
+            }
+
+            if (analyticsLoaded) {
+                renderAnalyticsModal();
+                return;
+            }
+
+            loadAnalytics();
         });
 
         loadOrder();

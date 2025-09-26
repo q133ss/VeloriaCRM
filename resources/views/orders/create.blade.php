@@ -101,7 +101,7 @@
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h5 class="mb-0">Рекомендации ИИ</h5>
-                        <span class="badge bg-label-info">Заглушка</span>
+                        <span class="badge bg-label-primary">ИИ</span>
                     </div>
                     <div class="card-body" id="recommendations-container">
                         <p class="text-muted mb-0">Загрузка...</p>
@@ -232,9 +232,32 @@
             });
         }
 
+        function formatCurrency(value) {
+            return value.toLocaleString('ru-RU', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            });
+        }
+
+        function attachServiceHandler(button, serviceId) {
+            if (!button || !serviceId) {
+                return;
+            }
+
+            button.addEventListener('click', () => {
+                const checkbox = document.querySelector(`.service-checkbox[value="${serviceId}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                    showFormAlert('info', 'Добавьте услугу вручную — она пока не найдена в списке.');
+                }
+            });
+        }
+
         function renderRecommendations(recommendations) {
-            if (!recommendations.length) {
-                recommendationsContainer.innerHTML = '<p class="text-muted">Пока нет рекомендаций.</p>';
+            if (!Array.isArray(recommendations) || !recommendations.length) {
+                recommendationsContainer.innerHTML = '<p class="text-muted">Пока нет услуг для предложения.</p>';
                 return;
             }
 
@@ -242,25 +265,57 @@
             recommendations.forEach(item => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'mb-4';
-                wrapper.innerHTML = `
-                    <div class="d-flex align-items-center justify-content-between">
-                        <strong>${item.name}</strong>
-                        ${item.id ? `<button type="button" class="btn btn-sm btn-outline-primary js-recommend" data-service-id="${item.id}">Добавить</button>` : '<span class="badge bg-secondary">Скоро</span>'}
-                    </div>
-                    <p class="text-muted small mb-0">${item.description || 'ИИ предложит услугу на основе поведения клиента.'}</p>
-                `;
-                recommendationsContainer.appendChild(wrapper);
-            });
 
-            recommendationsContainer.querySelectorAll('.js-recommend').forEach(button => {
-                button.addEventListener('click', function () {
-                    const serviceId = this.getAttribute('data-service-id');
-                    const checkbox = document.querySelector(`#service-${serviceId}`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                        checkbox.dispatchEvent(new Event('change'));
+                const service = item.service || {};
+                const title = service.name || item.title || 'Рекомендация';
+                const price = typeof service.price === 'number' ? service.price : null;
+                const duration = typeof service.duration === 'number' ? service.duration : null;
+                const insight = item.insight || 'Персонализированная рекомендация ИИ.';
+                const action = item.action ? `<p class="small mb-0">${item.action}</p>` : '';
+
+                let meta = '';
+                if (price !== null || duration !== null) {
+                    const parts = [];
+                    if (price !== null) {
+                        parts.push(`${formatCurrency(price)} ₽`);
                     }
-                });
+                    if (duration !== null) {
+                        parts.push(`${duration} мин`);
+                    }
+                    if (parts.length) {
+                        meta = `<p class="small text-muted mb-2">${parts.join(' · ')}</p>`;
+                    }
+                }
+
+                let confidenceBlock = '';
+                if (typeof item.confidence === 'number' && !Number.isNaN(item.confidence)) {
+                    const normalized = Math.min(1, Math.max(0, item.confidence));
+                    const percent = Math.round(normalized * 100);
+                    confidenceBlock = `<span class="badge bg-label-info align-self-start">${percent}%</span>`;
+                }
+
+                wrapper.innerHTML = `
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <div class="flex-grow-1">
+                            <strong>${title}</strong>
+                            ${meta}
+                            <p class="text-muted small mb-1">${insight}</p>
+                            ${action}
+                        </div>
+                        ${confidenceBlock}
+                    </div>
+                `;
+
+                if (service.id) {
+                    const addButton = document.createElement('button');
+                    addButton.type = 'button';
+                    addButton.className = 'btn btn-sm btn-outline-primary mt-2';
+                    addButton.textContent = 'Добавить в заказ';
+                    attachServiceHandler(addButton, service.id);
+                    wrapper.appendChild(addButton);
+                }
+
+                recommendationsContainer.appendChild(wrapper);
             });
         }
 

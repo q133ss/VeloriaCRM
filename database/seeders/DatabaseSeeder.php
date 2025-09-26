@@ -94,6 +94,12 @@ class DatabaseSeeder extends Seeder
             'Классический маникюр',
         ])->get()->keyBy('name');
 
+        $femaleHaircut = $services->get('Стрижка женская');
+        $stylingService = $services->get('Укладка');
+        $coloringService = $services->get('Окрашивание');
+        $gelPolishService = $services->get('Покрытие гель-лаком');
+        $manicureService = $services->get('Классический маникюр');
+
         $completedScheduledAt = Carbon::now()->subDays(2)->setTime(11, 0);
         $completedStart = $completedScheduledAt->copy()->addMinutes(5);
         $completedFinish = $completedStart->copy()->addMinutes(95);
@@ -144,10 +150,16 @@ class DatabaseSeeder extends Seeder
                 'complexity_level' => 4,
                 'recommended_services' => [
                     [
-                        'id' => $services->get('Окрашивание')?->id,
-                        'name' => 'Окрашивание',
-                        'reason' => 'Клиент интересовалась обновлением оттенка на прошлом визите.',
+                        'title' => 'Обновить оттенок',
+                        'insight' => 'Клиент интересовалась обновлением цвета на прошлом визите.',
+                        'action' => 'Подготовьте палитру и обсудите более стойкие техники окрашивания.',
                         'confidence' => 0.62,
+                        'service' => [
+                            'id' => $coloringService?->id,
+                            'name' => $coloringService?->name,
+                            'price' => $coloringService ? (float) $coloringService->base_price : null,
+                            'duration' => $coloringService ? (int) $coloringService->duration_min : null,
+                        ],
                     ],
                 ],
             ]
@@ -195,11 +207,16 @@ class DatabaseSeeder extends Seeder
                 'complexity_level' => 5,
                 'recommended_services' => [
                     [
-                        'id' => $services->get('Укладка')?->id,
-                        'name' => 'Укладка',
-                        'price' => 800,
-                        'reason' => 'Рекомендация оформить укладку сразу после окрашивания.',
+                        'title' => 'Закрепить результат укладкой',
+                        'insight' => 'После окрашивания клиенту поможет укладка, чтобы увидеть финальный образ.',
+                        'action' => 'Предложите стайлинг или домашние средства для поддержания формы.',
                         'confidence' => 0.54,
+                        'service' => [
+                            'id' => $stylingService?->id,
+                            'name' => $stylingService?->name,
+                            'price' => $stylingService ? (float) $stylingService->base_price : null,
+                            'duration' => $stylingService ? (int) $stylingService->duration_min : null,
+                        ],
                     ],
                 ],
             ]
