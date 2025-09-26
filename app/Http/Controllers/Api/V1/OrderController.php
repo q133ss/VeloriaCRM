@@ -21,6 +21,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -116,7 +117,7 @@ class OrderController extends Controller
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
                 'source' => Arr::get($validated, 'source', 'manual'),
-                'recommended_services' => $recommended->map(fn ($service) => Arr::only($service, ['id', 'name', 'description']))->all(),
+                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['title', 'insight', 'action', 'confidence']))->all(),
             ]);
         });
 
@@ -184,7 +185,7 @@ class OrderController extends Controller
                 'duration_forecast' => $services->sum('duration_min') ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
-                'recommended_services' => $recommended->map(fn ($service) => Arr::only($service, ['id', 'name', 'description']))->all(),
+                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['title', 'insight', 'action', 'confidence']))->all(),
             ]);
         });
 
@@ -298,7 +299,7 @@ class OrderController extends Controller
                 'note' => Arr::get($validated, 'note'),
                 'total_price' => 0,
                 'status' => 'new',
-                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['id', 'name', 'description']))->all(),
+                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['title', 'insight', 'action', 'confidence']))->all(),
             ]);
         });
 
@@ -452,31 +453,49 @@ class OrderController extends Controller
             ->orderByDesc('scheduled_at')
             ->get();
 
-        $metrics = $this->buildClientAnalyticsMetrics($history);
+        $totalVisits = $history->count();
+        $completedVisits = $history->filter(fn (Order $item) => $item->status === 'completed')->count();
 
-        if ($clientProfile && $clientProfile->loyalty_level) {
-            $metrics['loyalty_level'] = $clientProfile->loyalty_level;
+        if ($totalVisits < 2 || $completedVisits === 0) {
+            return response()->json([
+                'error' => [
+                    'code' => 'not_enough_data',
+                    'message' => 'Недостаточно данных по визитам клиента для построения аналитики.',
+                ],
+            ], 422);
         }
 
-        $insights = $this->generateClientAnalyticsInsights($order->client, $clientProfile, $metrics, $history);
+        $cacheKey = $this->analyticsCacheKey($order, $history, $clientProfile);
 
-        return response()->json([
-            'client' => [
-                'id' => $order->client->id,
-                'name' => $order->client->name,
-                'phone' => $order->client->phone,
-                'email' => $order->client->email,
-                'profile' => $clientProfile ? [
-                    'loyalty_level' => $clientProfile->loyalty_level,
-                    'tags' => $clientProfile->tags ?? [],
-                    'allergies' => $clientProfile->allergies ?? [],
-                    'preferences' => $clientProfile->preferences ?? [],
-                    'notes' => $clientProfile->notes,
-                ] : null,
-            ],
-            'metrics' => $metrics,
-            'insights' => $insights,
-        ]);
+        $payload = Cache::remember($cacheKey, now()->addHours(12), function () use ($order, $clientProfile, $history) {
+            $metrics = $this->buildClientAnalyticsMetrics($history);
+
+            if ($clientProfile && $clientProfile->loyalty_level) {
+                $metrics['loyalty_level'] = $clientProfile->loyalty_level;
+            }
+
+            $insights = $this->generateClientAnalyticsInsights($order->client, $clientProfile, $metrics, $history);
+
+            return [
+                'client' => [
+                    'id' => $order->client->id,
+                    'name' => $order->client->name,
+                    'phone' => $order->client->phone,
+                    'email' => $order->client->email,
+                    'profile' => $clientProfile ? [
+                        'loyalty_level' => $clientProfile->loyalty_level,
+                        'tags' => $clientProfile->tags ?? [],
+                        'allergies' => $clientProfile->allergies ?? [],
+                        'preferences' => $clientProfile->preferences ?? [],
+                        'notes' => $clientProfile->notes,
+                    ] : null,
+                ],
+                'metrics' => $metrics,
+                'insights' => $insights,
+            ];
+        });
+
+        return response()->json($payload);
     }
 
     public function options(Request $request): JsonResponse
@@ -501,11 +520,12 @@ class OrderController extends Controller
             ])->values(),
             'status_options' => Order::statusLabels(),
             'default_status' => 'new',
-            'recommended_services' => $recommended->map(function ($service) {
+            'recommended_services' => $recommended->map(function ($item) {
                 return [
-                    'id' => $service['id'] ?? null,
-                    'name' => $service['name'] ?? 'Услуга',
-                    'description' => $service['description'] ?? null,
+                    'title' => $item['title'] ?? 'Рекомендация',
+                    'insight' => $item['insight'] ?? null,
+                    'action' => $item['action'] ?? null,
+                    'confidence' => isset($item['confidence']) ? (is_numeric($item['confidence']) ? (float) $item['confidence'] : null) : null,
                 ];
             })->values(),
         ]);
@@ -598,32 +618,35 @@ class OrderController extends Controller
     protected function buildRecommendedServices(?User $client, $services)
     {
         $serviceCollection = $services instanceof Collection ? $services : collect($services);
+        $clientProfile = $client ? Client::where('user_id', $client->id)->first() : null;
+        $history = $this->fetchClientHistory($client, 10);
 
-        if ($serviceCollection->isEmpty()) {
-            return $this->fallbackRecommendedServices($serviceCollection, $client);
+        if (! $client || $history->isEmpty() || ! $this->aiAvailable()) {
+            return $this->fallbackClientRecommendations($client, $history, $clientProfile, $serviceCollection);
         }
 
-        if (! $this->aiAvailable()) {
-            return $this->fallbackRecommendedServices($serviceCollection, $client);
+        $cacheKey = $this->recommendationCacheKey($client, $serviceCollection, $clientProfile, $history);
+
+        if ($cacheKey && Cache::has($cacheKey)) {
+            return collect(Cache::get($cacheKey));
         }
 
         try {
-            $context = $this->buildRecommendationContext($client, $serviceCollection);
+            $context = $this->buildRecommendationContext($client, $clientProfile, $serviceCollection, $history);
 
             $prompt = <<<'PROMPT'
-Вы — ИИ-ассистент бьюти-мастера. Проанализируйте профиль клиента, историю визитов и список доступных услуг.
-Предложите до трёх дополнительных услуг, которые помогут увеличить чек и улучшить впечатление клиента. 
-Учитывайте частоту визитов, любимые процедуры, аллергии и теги, если они указаны. 
-Возвращайте краткое описание выгоды для клиента и, если услуга есть в списке, указывайте её ID.
+Вы — ИИ-ассистент бьюти-мастера. Проанализируйте историю визитов клиента, его профиль и отметьте ключевые паттерны поведения.
+Сформулируйте до трёх персональных рекомендаций, которые помогут улучшить опыт клиента и увеличить выручку мастера.
+Каждая рекомендация должна содержать краткий заголовок, что именно замечено и какое действие стоит предпринять.
 PROMPT;
 
             $response = $this->openAI->respond($prompt, $context, [
-                'temperature' => 0.35,
+                'temperature' => 0.25,
                 'max_tokens' => 700,
                 'response_format' => [
                     'type' => 'json_schema',
                     'json_schema' => [
-                        'name' => 'service_recommendations',
+                        'name' => 'client_recommendations',
                         'schema' => [
                             'type' => 'object',
                             'properties' => [
@@ -632,15 +655,9 @@ PROMPT;
                                     'items' => [
                                         'type' => 'object',
                                         'properties' => [
-                                            'id' => [
-                                                'oneOf' => [
-                                                    ['type' => 'integer'],
-                                                    ['type' => 'string'],
-                                                    ['type' => 'null'],
-                                                ],
-                                            ],
-                                            'name' => ['type' => 'string'],
-                                            'description' => ['type' => 'string'],
+                                            'title' => ['type' => 'string'],
+                                            'insight' => ['type' => 'string'],
+                                            'action' => ['type' => 'string'],
                                             'confidence' => [
                                                 'oneOf' => [
                                                     ['type' => 'number'],
@@ -648,7 +665,7 @@ PROMPT;
                                                 ],
                                             ],
                                         ],
-                                        'required' => ['name'],
+                                        'required' => ['title', 'insight', 'action'],
                                     ],
                                 ],
                             ],
@@ -665,24 +682,16 @@ PROMPT;
             }
 
             $recommendations = collect($payload['recommendations'] ?? [])
-                ->take(3)
-                ->map(function ($item) use ($serviceCollection) {
+                ->map(function ($item) {
                     if (! is_array($item)) {
                         return null;
                     }
 
-                    $serviceId = Arr::get($item, 'id');
-                    $matchedService = null;
+                    $title = Arr::get($item, 'title');
+                    $insight = Arr::get($item, 'insight');
+                    $action = Arr::get($item, 'action');
 
-                    if ($serviceId !== null) {
-                        $matchedService = $serviceCollection->first(function (Service $service) use ($serviceId) {
-                            return (string) $service->id === (string) $serviceId;
-                        });
-                    }
-
-                    $name = Arr::get($item, 'name') ?: $matchedService?->name;
-
-                    if (! $name) {
+                    if (! is_string($title) || ! is_string($insight) || ! is_string($action)) {
                         return null;
                     }
 
@@ -691,17 +700,22 @@ PROMPT;
                         : null;
 
                     return [
-                        'id' => $matchedService?->id,
-                        'name' => $name,
-                        'description' => Arr::get($item, 'description'),
+                        'title' => trim($title),
+                        'insight' => trim($insight),
+                        'action' => trim($action),
                         'confidence' => $confidence,
                     ];
                 })
                 ->filter()
-                ->values();
+                ->values()
+                ->take(3);
 
             if ($recommendations->isEmpty()) {
-                return $this->fallbackRecommendedServices($serviceCollection, $client);
+                return $this->fallbackClientRecommendations($client, $history, $clientProfile, $serviceCollection);
+            }
+
+            if ($cacheKey) {
+                Cache::put($cacheKey, $recommendations->toArray(), now()->addHours(6));
             }
 
             return $recommendations;
@@ -711,36 +725,140 @@ PROMPT;
                 'client_id' => $client?->id,
                 'exception' => $exception->getMessage(),
             ]);
-
-            return $this->fallbackRecommendedServices($serviceCollection, $client);
         }
+
+        return $this->fallbackClientRecommendations($client, $history, $clientProfile, $serviceCollection);
     }
 
-    protected function fallbackRecommendedServices(Collection $services, ?User $client): Collection
+    protected function recommendationCacheKey(?User $client, Collection $services, ?Client $clientProfile, Collection $history): ?string
     {
-        if ($services->isEmpty()) {
-            return collect([
-                [
-                    'id' => null,
-                    'name' => 'Персональная консультация',
-                    'description' => 'Подберите дополнительную услугу вручную с учётом целей клиента.',
-                ],
+        if (! $client) {
+            return null;
+        }
+
+        $serviceSignature = $services->map(function (Service $service) {
+            return $service->id . ':' . optional($service->updated_at)->timestamp;
+        })->join('|');
+
+        $historySignature = $history->map(function (Order $order) {
+            return $order->id . ':' . optional($order->updated_at)->timestamp . ':' . optional($order->scheduled_at)->timestamp;
+        })->join('|');
+
+        $profileUpdated = optional($clientProfile?->updated_at)->timestamp ?? 0;
+
+        return 'orders:ai:recommendations:' . $this->currentUserId() . ':' . $client->id . ':' . sha1($serviceSignature . '|' . $historySignature . '|' . $profileUpdated);
+    }
+
+    protected function fetchClientHistory(?User $client, int $limit = 10): Collection
+    {
+        if (! $client) {
+            return collect();
+        }
+
+        return Order::where('master_id', $this->currentUserId())
+            ->where('client_id', $client->id)
+            ->orderByDesc('scheduled_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    protected function fallbackClientRecommendations(?User $client, Collection $history, ?Client $clientProfile, Collection $services): Collection
+    {
+        $name = $client?->name ?? 'клиента';
+        $suggestions = collect();
+
+        $completed = $history->filter(fn (Order $order) => $order->status === 'completed')->sortByDesc(fn (Order $order) => $order->scheduled_at);
+
+        $serviceStats = [];
+        foreach ($history as $historyOrder) {
+            foreach ((array) ($historyOrder->services ?? []) as $service) {
+                $serviceName = $service['name'] ?? null;
+                if (! $serviceName) {
+                    continue;
+                }
+
+                if (! isset($serviceStats[$serviceName])) {
+                    $serviceStats[$serviceName] = 0;
+                }
+
+                $serviceStats[$serviceName]++;
+            }
+        }
+
+        arsort($serviceStats);
+        $topService = array_key_first($serviceStats);
+
+        if ($topService) {
+            $suggestions->push([
+                'title' => 'Усилить любимую услугу',
+                'insight' => "$name чаще всего выбирает: $topService.",
+                'action' => 'Подготовьте рекомендации по домашнему уходу или бонус к этой процедуре, чтобы закрепить лояльность.',
+                'confidence' => null,
             ]);
         }
 
-        $name = $client?->name ?? 'клиента';
+        $intervals = [];
+        $completedWithDates = $completed->filter(fn (Order $order) => $order->scheduled_at)->values();
+        for ($i = 1; $i < $completedWithDates->count(); $i++) {
+            $previous = $completedWithDates->get($i - 1)->scheduled_at;
+            $current = $completedWithDates->get($i)->scheduled_at;
 
-        return $services->take(3)->map(function (Service $service) use ($name) {
-            return [
-                'id' => $service->id,
-                'name' => $service->name,
-                'description' => 'Популярное дополнение для ' . $name . '. Рассмотрите его как способ усилить эффект основного визита.',
+            if ($previous && $current) {
+                $intervals[] = $previous->diffInDays($current);
+            }
+        }
+
+        if (! empty($intervals)) {
+            $avgInterval = round(array_sum($intervals) / count($intervals));
+
+            if ($avgInterval < 30) {
+                $suggestions->push([
+                    'title' => 'Проконтролировать носку услуг',
+                    'insight' => "$name возвращается примерно каждые $avgInterval дней — это признак того, что услуга быстро теряет эффект.",
+                    'action' => 'Обсудите уход между визитами и предложите корректировку техники, чтобы продлить результат.',
+                    'confidence' => null,
+                ]);
+            } elseif ($avgInterval > 45) {
+                $suggestions->push([
+                    'title' => 'Подтолкнуть к регулярности',
+                    'insight' => "$name делает паузы около $avgInterval дней, можно мягко напомнить о плановом визите.",
+                    'action' => 'Отправьте персональное приглашение или бонус, чтобы клиент забронировал дату заранее.',
+                    'confidence' => null,
+                ]);
+            }
+        }
+
+        if ($clientProfile?->preferences) {
+            $suggestions->push([
+                'title' => 'Опора на предпочтения',
+                'insight' => 'В профиле указаны предпочтения: ' . implode(', ', (array) $clientProfile->preferences) . '.',
+                'action' => 'Подготовьте предложение, которое подчеркнёт эти пожелания в предстоящем визите.',
                 'confidence' => null,
-            ];
-        });
+            ]);
+        }
+
+        if ($suggestions->isEmpty()) {
+            $suggestions->push([
+                'title' => 'Поддерживать связь',
+                'insight' => 'Персональные советы по уходу помогают удерживать клиентов дольше.',
+                'action' => 'Напомните о преимуществах сервиса и поделитесь мини-гайдом по домашнему уходу.',
+                'confidence' => null,
+            ]);
+        }
+
+        if ($suggestions->count() < 3) {
+            $suggestions->push([
+                'title' => 'Запланировать следующий шаг',
+                'insight' => 'Чёткий план следующего визита снимает вопросы у клиента.',
+                'action' => 'Предложите несколько окон для записи и зафиксируйте подходящее время прямо сейчас.',
+                'confidence' => null,
+            ]);
+        }
+
+        return $suggestions->take(3);
     }
 
-    protected function buildRecommendationContext(?User $client, Collection $services): array
+    protected function buildRecommendationContext(User $client, ?Client $clientProfile, Collection $services, Collection $history): array
     {
         $payload = [
             'available_services' => $services->map(function (Service $service) {
@@ -752,19 +870,12 @@ PROMPT;
                     'upsell_suggestions' => $service->upsell_suggestions ?? [],
                 ];
             })->values()->toArray(),
-        ];
-
-        if (! $client) {
-            return $payload;
-        }
-
-        $clientProfile = Client::where('user_id', $client->id)->first();
-
-        $payload['client'] = [
-            'id' => $client->id,
-            'name' => $client->name,
-            'phone' => $client->phone,
-            'email' => $client->email,
+            'client' => [
+                'id' => $client->id,
+                'name' => $client->name,
+                'phone' => $client->phone,
+                'email' => $client->email,
+            ],
         ];
 
         if ($clientProfile) {
@@ -777,12 +888,6 @@ PROMPT;
                 'loyalty_level' => $clientProfile->loyalty_level,
             ];
         }
-
-        $history = Order::where('master_id', $this->currentUserId())
-            ->where('client_id', $client->id)
-            ->orderByDesc('scheduled_at')
-            ->limit(10)
-            ->get();
 
         $payload['order_history'] = $history->map(function (Order $order) {
             return [
@@ -797,6 +902,18 @@ PROMPT;
         })->values()->toArray();
 
         return $payload;
+    }
+
+    protected function analyticsCacheKey(Order $order, Collection $history, ?Client $clientProfile): string
+    {
+        $historySignature = $history->map(function (Order $item) {
+            return $item->id . ':' . optional($item->updated_at)->timestamp . ':' . optional($item->scheduled_at)->timestamp;
+        })->join('|');
+
+        $profileUpdated = optional($clientProfile?->updated_at)->timestamp ?? 0;
+        $orderUpdated = optional($order->updated_at)->timestamp ?? 0;
+
+        return 'orders:ai:analytics:' . $order->master_id . ':' . $order->client_id . ':' . sha1($historySignature . '|' . $profileUpdated . '|' . $orderUpdated);
     }
 
     protected function buildClientAnalyticsMetrics(Collection $orders): array
@@ -1139,11 +1256,19 @@ PROMPT;
             ];
         })->values();
 
-        $recommended = collect($order->recommended_services ?? [])->map(function ($service) {
+        $recommended = collect($order->recommended_services ?? [])->map(function ($item) {
+            $title = $item['title'] ?? $item['name'] ?? 'Рекомендация';
+            $insight = $item['insight'] ?? $item['description'] ?? null;
+            $action = $item['action'] ?? null;
+            $confidence = isset($item['confidence']) && is_numeric($item['confidence'])
+                ? (float) $item['confidence']
+                : null;
+
             return [
-                'id' => $service['id'] ?? null,
-                'name' => $service['name'] ?? null,
-                'description' => $service['description'] ?? null,
+                'title' => $title,
+                'insight' => $insight,
+                'action' => $action,
+                'confidence' => $confidence,
             ];
         })->values();
 

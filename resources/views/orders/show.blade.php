@@ -331,12 +331,17 @@
                     const normalized = Math.min(1, Math.max(0, item.confidence));
                     confidence = Math.round(normalized * 100);
                 }
+                const insight = item.insight || 'Персонализированная рекомендация ИИ.';
+                const action = item.action ? `<p class="small mb-0">${item.action}</p>` : '';
                 block.innerHTML = `
-                    <div class="d-flex align-items-center justify-content-between">
-                        <strong>${item.name}</strong>
-                        ${confidence !== null ? `<span class="badge bg-label-info">${confidence}% совпадение</span>` : ''}
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <div>
+                            <strong>${item.title || 'Рекомендация'}</strong>
+                            <p class="text-muted small mb-1">${insight}</p>
+                            ${action}
+                        </div>
+                        ${confidence !== null ? `<span class="badge bg-label-info align-self-start">${confidence}%</span>` : ''}
                     </div>
-                    <p class="text-muted small mb-0">${item.description || 'Персонализированная рекомендация ИИ.'}</p>
                 `;
                 container.appendChild(block);
             });
