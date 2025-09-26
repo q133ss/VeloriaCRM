@@ -123,7 +123,7 @@
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h5 class="mb-0">Рекомендации ИИ</h5>
-                        <span class="badge bg-label-info">Заглушка</span>
+                        <span class="badge bg-label-info" id="ai-recommendations-badge">Заглушка</span>
                     </div>
                     <div class="card-body" id="order-ai-recommendations">
                         <p class="text-muted mb-0">Загрузка...</p>
@@ -196,6 +196,7 @@
         const rescheduleForm = document.getElementById('reschedule-form');
         const rescheduleErrors = document.getElementById('reschedule-errors');
         const analyticsContent = document.getElementById('analytics-content');
+        const aiBadge = document.getElementById('ai-recommendations-badge');
 
         const actionEdit = document.getElementById('action-edit');
         const actionStart = document.getElementById('action-start');
@@ -307,8 +308,16 @@
             const container = document.getElementById('order-ai-recommendations');
             container.innerHTML = '';
             if (!meta.has_pro_access) {
+                if (aiBadge) {
+                    aiBadge.textContent = 'PRO';
+                    aiBadge.className = 'badge bg-label-secondary';
+                }
                 container.innerHTML = '<p class="text-muted mb-0">Доступно только в тарифах PRO и Elite.</p>';
                 return;
+            }
+            if (aiBadge) {
+                aiBadge.textContent = 'ИИ';
+                aiBadge.className = 'badge bg-label-primary';
             }
             if (!Array.isArray(recommendations) || !recommendations.length) {
                 container.innerHTML = '<p class="text-muted mb-0">Рекомендаций пока нет.</p>';
