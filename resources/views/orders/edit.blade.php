@@ -253,9 +253,17 @@
             recommendations.forEach(item => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'mb-4';
+                let confidence = null;
+                if (typeof item.confidence === 'number' && !Number.isNaN(item.confidence)) {
+                    const normalized = Math.min(1, Math.max(0, item.confidence));
+                    confidence = Math.round(normalized * 100);
+                }
                 wrapper.innerHTML = `
-                    <div class="d-flex align-items-center justify-content-between">
-                        <strong>${item.name}</strong>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>${item.name}</strong>
+                            ${confidence !== null ? `<span class="badge bg-label-info">${confidence}%</span>` : ''}
+                        </div>
                         ${item.id ? `<button type="button" class="btn btn-sm btn-outline-primary js-recommend" data-service-id="${item.id}">Добавить</button>` : '<span class="badge bg-secondary">Скоро</span>'}
                     </div>
                     <p class="text-muted small mb-0">${item.description || 'ИИ предложит услугу на основе поведения клиента.'}</p>

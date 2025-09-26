@@ -31,5 +31,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{order}/remind', [ApiOrderController::class, 'remind']);
         Route::post('/orders/{order}/cancel', [ApiOrderController::class, 'cancel']);
         Route::post('/orders/{order}/reschedule', [ApiOrderController::class, 'reschedule']);
+        Route::get('/orders/{order}/analytics', [ApiOrderController::class, 'analytics']);
     });
 });

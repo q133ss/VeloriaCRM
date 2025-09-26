@@ -14,16 +14,24 @@ use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\OpenAIService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private readonly OpenAIService $openAI,
+    ) {
+    }
     public function index(OrderFilterRequest $request): JsonResponse
     {
         $userId = $this->currentUserId();
@@ -414,6 +422,63 @@ class OrderController extends Controller
         ]);
     }
 
+    public function analytics(Order $order): JsonResponse
+    {
+        $this->ensureOrderBelongsToCurrentUser($order);
+        $order->loadMissing(['client']);
+
+        if (! $this->userHasProAccess()) {
+            return response()->json([
+                'error' => [
+                    'code' => 'feature_unavailable',
+                    'message' => 'Аналитика доступна только в тарифах PRO и Elite.',
+                ],
+            ], 403);
+        }
+
+        if (! $order->client) {
+            return response()->json([
+                'error' => [
+                    'code' => 'client_not_found',
+                    'message' => 'Для этой записи не найден клиент.',
+                ],
+            ], 404);
+        }
+
+        $clientProfile = Client::where('user_id', $order->client_id)->first();
+
+        $history = Order::where('master_id', $order->master_id)
+            ->where('client_id', $order->client_id)
+            ->orderByDesc('scheduled_at')
+            ->get();
+
+        $metrics = $this->buildClientAnalyticsMetrics($history);
+
+        if ($clientProfile && $clientProfile->loyalty_level) {
+            $metrics['loyalty_level'] = $clientProfile->loyalty_level;
+        }
+
+        $insights = $this->generateClientAnalyticsInsights($order->client, $clientProfile, $metrics, $history);
+
+        return response()->json([
+            'client' => [
+                'id' => $order->client->id,
+                'name' => $order->client->name,
+                'phone' => $order->client->phone,
+                'email' => $order->client->email,
+                'profile' => $clientProfile ? [
+                    'loyalty_level' => $clientProfile->loyalty_level,
+                    'tags' => $clientProfile->tags ?? [],
+                    'allergies' => $clientProfile->allergies ?? [],
+                    'preferences' => $clientProfile->preferences ?? [],
+                    'notes' => $clientProfile->notes,
+                ] : null,
+            ],
+            'metrics' => $metrics,
+            'insights' => $insights,
+        ]);
+    }
+
     public function options(Request $request): JsonResponse
     {
         $services = $this->getUserServices();
@@ -525,27 +590,493 @@ class OrderController extends Controller
         return '+' . $digits;
     }
 
+    protected function aiAvailable(): bool
+    {
+        return $this->userHasProAccess() && filled(config('openai.api_key'));
+    }
+
     protected function buildRecommendedServices(?User $client, $services)
     {
-        $suggestions = $services->take(3);
+        $serviceCollection = $services instanceof Collection ? $services : collect($services);
 
-        if ($suggestions->isEmpty()) {
+        if ($serviceCollection->isEmpty()) {
+            return $this->fallbackRecommendedServices($serviceCollection, $client);
+        }
+
+        if (! $this->aiAvailable()) {
+            return $this->fallbackRecommendedServices($serviceCollection, $client);
+        }
+
+        try {
+            $context = $this->buildRecommendationContext($client, $serviceCollection);
+
+            $prompt = <<<'PROMPT'
+Вы — ИИ-ассистент бьюти-мастера. Проанализируйте профиль клиента, историю визитов и список доступных услуг.
+Предложите до трёх дополнительных услуг, которые помогут увеличить чек и улучшить впечатление клиента. 
+Учитывайте частоту визитов, любимые процедуры, аллергии и теги, если они указаны. 
+Возвращайте краткое описание выгоды для клиента и, если услуга есть в списке, указывайте её ID.
+PROMPT;
+
+            $response = $this->openAI->respond($prompt, $context, [
+                'temperature' => 0.35,
+                'max_tokens' => 700,
+                'response_format' => [
+                    'type' => 'json_schema',
+                    'json_schema' => [
+                        'name' => 'service_recommendations',
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'recommendations' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'id' => [
+                                                'oneOf' => [
+                                                    ['type' => 'integer'],
+                                                    ['type' => 'string'],
+                                                    ['type' => 'null'],
+                                                ],
+                                            ],
+                                            'name' => ['type' => 'string'],
+                                            'description' => ['type' => 'string'],
+                                            'confidence' => [
+                                                'oneOf' => [
+                                                    ['type' => 'number'],
+                                                    ['type' => 'null'],
+                                                ],
+                                            ],
+                                        ],
+                                        'required' => ['name'],
+                                    ],
+                                ],
+                            ],
+                            'required' => ['recommendations'],
+                        ],
+                    ],
+                ],
+            ]);
+
+            $payload = json_decode($response['content'] ?? '', true);
+
+            if (! is_array($payload)) {
+                throw new \UnexpectedValueException('Invalid response payload for recommendations.');
+            }
+
+            $recommendations = collect($payload['recommendations'] ?? [])
+                ->take(3)
+                ->map(function ($item) use ($serviceCollection) {
+                    if (! is_array($item)) {
+                        return null;
+                    }
+
+                    $serviceId = Arr::get($item, 'id');
+                    $matchedService = null;
+
+                    if ($serviceId !== null) {
+                        $matchedService = $serviceCollection->first(function (Service $service) use ($serviceId) {
+                            return (string) $service->id === (string) $serviceId;
+                        });
+                    }
+
+                    $name = Arr::get($item, 'name') ?: $matchedService?->name;
+
+                    if (! $name) {
+                        return null;
+                    }
+
+                    $confidence = Arr::has($item, 'confidence') && Arr::get($item, 'confidence') !== null
+                        ? (float) Arr::get($item, 'confidence')
+                        : null;
+
+                    return [
+                        'id' => $matchedService?->id,
+                        'name' => $name,
+                        'description' => Arr::get($item, 'description'),
+                        'confidence' => $confidence,
+                    ];
+                })
+                ->filter()
+                ->values();
+
+            if ($recommendations->isEmpty()) {
+                return $this->fallbackRecommendedServices($serviceCollection, $client);
+            }
+
+            return $recommendations;
+        } catch (Throwable $exception) {
+            Log::warning('Failed to build AI recommendations.', [
+                'user_id' => $this->currentUserId(),
+                'client_id' => $client?->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return $this->fallbackRecommendedServices($serviceCollection, $client);
+        }
+    }
+
+    protected function fallbackRecommendedServices(Collection $services, ?User $client): Collection
+    {
+        if ($services->isEmpty()) {
             return collect([
                 [
                     'id' => null,
-                    'name' => 'Персонализированная консультация',
-                    'description' => 'ИИ предложит услугу исходя из предпочтений клиента (заглушка).',
+                    'name' => 'Персональная консультация',
+                    'description' => 'Подберите дополнительную услугу вручную с учётом целей клиента.',
                 ],
             ]);
         }
 
-        return $suggestions->map(function (Service $service) use ($client) {
+        $name = $client?->name ?? 'клиента';
+
+        return $services->take(3)->map(function (Service $service) use ($name) {
             return [
                 'id' => $service->id,
                 'name' => $service->name,
-                'description' => 'Заглушка рекомендации ИИ на основе предыдущих визитов ' . ($client?->name ?? 'клиента') . '.',
+                'description' => 'Популярное дополнение для ' . $name . '. Рассмотрите его как способ усилить эффект основного визита.',
+                'confidence' => null,
             ];
         });
+    }
+
+    protected function buildRecommendationContext(?User $client, Collection $services): array
+    {
+        $payload = [
+            'available_services' => $services->map(function (Service $service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'base_price' => (float) $service->base_price,
+                    'duration_min' => (int) $service->duration_min,
+                    'upsell_suggestions' => $service->upsell_suggestions ?? [],
+                ];
+            })->values()->toArray(),
+        ];
+
+        if (! $client) {
+            return $payload;
+        }
+
+        $clientProfile = Client::where('user_id', $client->id)->first();
+
+        $payload['client'] = [
+            'id' => $client->id,
+            'name' => $client->name,
+            'phone' => $client->phone,
+            'email' => $client->email,
+        ];
+
+        if ($clientProfile) {
+            $payload['client_profile'] = [
+                'tags' => $clientProfile->tags ?? [],
+                'allergies' => $clientProfile->allergies ?? [],
+                'preferences' => $clientProfile->preferences ?? [],
+                'notes' => $clientProfile->notes,
+                'last_visit_at' => optional($clientProfile->last_visit_at)->toIso8601String(),
+                'loyalty_level' => $clientProfile->loyalty_level,
+            ];
+        }
+
+        $history = Order::where('master_id', $this->currentUserId())
+            ->where('client_id', $client->id)
+            ->orderByDesc('scheduled_at')
+            ->limit(10)
+            ->get();
+
+        $payload['order_history'] = $history->map(function (Order $order) {
+            return [
+                'scheduled_at' => optional($order->scheduled_at)->toIso8601String(),
+                'status' => $order->status,
+                'total_price' => $order->total_price !== null ? (float) $order->total_price : null,
+                'services' => collect($order->services ?? [])->map(function ($service) {
+                    return Arr::only($service, ['id', 'name', 'price', 'duration']);
+                })->values()->toArray(),
+                'note' => $order->note,
+            ];
+        })->values()->toArray();
+
+        return $payload;
+    }
+
+    protected function buildClientAnalyticsMetrics(Collection $orders): array
+    {
+        $totalVisits = $orders->count();
+        $completedOrders = $orders->filter(fn (Order $order) => $order->status === 'completed');
+        $upcomingOrders = $orders->filter(fn (Order $order) => in_array($order->status, ['new', 'confirmed', 'in_progress']));
+        $cancelledOrders = $orders->filter(fn (Order $order) => $order->status === 'cancelled');
+        $noShowOrders = $orders->filter(fn (Order $order) => $order->status === 'no_show');
+
+        $totalRevenue = $completedOrders->reduce(function ($carry, Order $order) {
+            return $carry + (float) ($order->total_price ?? 0);
+        }, 0.0);
+
+        $averageCheck = $completedOrders->count() > 0
+            ? round($totalRevenue / $completedOrders->count(), 2)
+            : 0.0;
+
+        $completedWithDates = $completedOrders
+            ->filter(fn (Order $order) => $order->scheduled_at)
+            ->sortBy(fn (Order $order) => $order->scheduled_at)
+            ->values();
+
+        $intervals = [];
+        for ($i = 1; $i < $completedWithDates->count(); $i++) {
+            $previous = $completedWithDates->get($i - 1)->scheduled_at;
+            $current = $completedWithDates->get($i)->scheduled_at;
+
+            if ($previous && $current) {
+                $intervals[] = $previous->diffInDays($current);
+            }
+        }
+
+        $averageInterval = ! empty($intervals)
+            ? round(array_sum($intervals) / count($intervals), 1)
+            : null;
+
+        $lastVisit = $completedOrders->sortByDesc(fn (Order $order) => $order->scheduled_at)->first();
+        $nextVisit = $upcomingOrders->sortBy(fn (Order $order) => $order->scheduled_at)->first();
+
+        $serviceStats = [];
+
+        foreach ($orders as $historyOrder) {
+            foreach ((array) ($historyOrder->services ?? []) as $service) {
+                $name = $service['name'] ?? ('Услуга #' . ($service['id'] ?? '?'));
+
+                if (! isset($serviceStats[$name])) {
+                    $serviceStats[$name] = [
+                        'name' => $name,
+                        'count' => 0,
+                        'total_spent' => 0.0,
+                    ];
+                }
+
+                $serviceStats[$name]['count']++;
+                $serviceStats[$name]['total_spent'] += isset($service['price']) ? (float) $service['price'] : 0.0;
+            }
+        }
+
+        $favoriteServices = collect($serviceStats)
+            ->map(function (array $stat) {
+                $count = max(1, $stat['count']);
+
+                return [
+                    'name' => $stat['name'],
+                    'count' => $stat['count'],
+                    'average_price' => round($stat['total_spent'] / $count, 2),
+                ];
+            })
+            ->sort(function ($a, $b) {
+                if ($a['count'] === $b['count']) {
+                    return $b['average_price'] <=> $a['average_price'];
+                }
+
+                return $b['count'] <=> $a['count'];
+            })
+            ->values()
+            ->take(3)
+            ->toArray();
+
+        return [
+            'total_visits' => $totalVisits,
+            'completed_visits' => $completedOrders->count(),
+            'upcoming_visits' => $upcomingOrders->count(),
+            'cancelled_visits' => $cancelledOrders->count(),
+            'no_show_visits' => $noShowOrders->count(),
+            'lifetime_value' => round($totalRevenue, 2),
+            'average_check' => $averageCheck,
+            'average_visit_interval_days' => $averageInterval,
+            'last_visit_at' => optional($lastVisit?->scheduled_at)->toIso8601String(),
+            'next_visit_at' => optional($nextVisit?->scheduled_at)->toIso8601String(),
+            'favorite_services' => $favoriteServices,
+        ];
+    }
+
+    protected function fallbackAnalyticsInsights(array $metrics): array
+    {
+        $parts = [
+            'Всего визитов: ' . ($metrics['total_visits'] ?? 0),
+            'Завершено: ' . ($metrics['completed_visits'] ?? 0),
+        ];
+
+        if (! empty($metrics['average_check'])) {
+            $parts[] = 'Средний чек: ' . number_format((float) $metrics['average_check'], 0, ',', ' ') . ' ₽';
+        }
+
+        if (! empty($metrics['last_visit_at'])) {
+            try {
+                $parts[] = 'Последний визит: ' . Carbon::parse($metrics['last_visit_at'])->format('d.m.Y');
+            } catch (Throwable) {
+                // ignore invalid date
+            }
+        }
+
+        $summary = implode('. ', $parts) . '.';
+
+        $riskFlags = [];
+
+        if (($metrics['cancelled_visits'] ?? 0) > 0) {
+            $riskFlags[] = 'Были отмены — уточните причину и подтвердите следующий визит.';
+        }
+
+        if (($metrics['no_show_visits'] ?? 0) > 0) {
+            $riskFlags[] = 'Бывали пропуски визитов. Усильте напоминания или попросите предоплату.';
+        }
+
+        if (($metrics['average_visit_interval_days'] ?? 0) && $metrics['average_visit_interval_days'] > 45) {
+            $riskFlags[] = 'Интервал между визитами увеличивается — клиент может уйти к конкурентам.';
+        }
+
+        $recommendations = [];
+
+        if (($metrics['upcoming_visits'] ?? 0) === 0) {
+            $recommendations[] = [
+                'title' => 'Запланируйте следующий визит',
+                'action' => 'Свяжитесь с клиентом и предложите время, пока впечатление от услуги свежее.',
+            ];
+        }
+
+        if (! empty($metrics['favorite_services'][0]['name'])) {
+            $recommendations[] = [
+                'title' => 'Подчеркните любимые услуги',
+                'action' => 'Напомните о ' . $metrics['favorite_services'][0]['name'] . ' и предложите комплиментарный уход.',
+            ];
+        }
+
+        if (empty($recommendations)) {
+            $recommendations[] = [
+                'title' => 'Поддерживайте контакт',
+                'action' => 'Отправьте персональный совет по уходу или бонус к следующему визиту.',
+            ];
+        }
+
+        return [
+            'summary' => $summary,
+            'risk_flags' => array_values(array_unique($riskFlags)),
+            'recommendations' => $recommendations,
+        ];
+    }
+
+    protected function generateClientAnalyticsInsights(User $client, ?Client $clientProfile, array $metrics, Collection $orders): array
+    {
+        $insights = $this->fallbackAnalyticsInsights($metrics);
+
+        if (! $this->aiAvailable()) {
+            return $insights;
+        }
+
+        try {
+            $context = [
+                'client' => [
+                    'name' => $client->name,
+                    'loyalty_level' => $clientProfile?->loyalty_level,
+                    'tags' => $clientProfile?->tags ?? [],
+                    'preferences' => $clientProfile?->preferences ?? [],
+                    'allergies' => $clientProfile?->allergies ?? [],
+                ],
+                'metrics' => $metrics,
+                'order_history' => $orders->take(12)->map(function (Order $order) {
+                    return [
+                        'scheduled_at' => optional($order->scheduled_at)->toIso8601String(),
+                        'status' => $order->status,
+                        'total_price' => $order->total_price !== null ? (float) $order->total_price : null,
+                        'services' => collect($order->services ?? [])->map(function ($service) {
+                            return Arr::only($service, ['id', 'name', 'price', 'duration']);
+                        })->values()->toArray(),
+                    ];
+                })->values()->toArray(),
+            ];
+
+            if ($clientProfile?->notes) {
+                $context['client_notes'] = Str::limit($clientProfile->notes, 500);
+            }
+
+            $prompt = <<<'PROMPT'
+Вы — аналитик в CRM для бьюти-мастера. Используйте метрики и историю визитов, чтобы кратко описать состояние клиента,
+пометить риски (если они есть) и предложить конкретные следующие шаги для удержания и увеличения выручки. Пишите по-русски,
+с фокусом на заботу о клиенте и бизнес-задачи мастера.
+PROMPT;
+
+            $response = $this->openAI->respond($prompt, $context, [
+                'temperature' => 0.3,
+                'max_tokens' => 750,
+                'response_format' => [
+                    'type' => 'json_schema',
+                    'json_schema' => [
+                        'name' => 'client_analytics',
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'summary' => ['type' => 'string'],
+                                'risk_flags' => [
+                                    'type' => 'array',
+                                    'items' => ['type' => 'string'],
+                                ],
+                                'recommendations' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'title' => ['type' => 'string'],
+                                            'action' => ['type' => 'string'],
+                                        ],
+                                        'required' => ['title', 'action'],
+                                    ],
+                                ],
+                            ],
+                            'required' => ['summary'],
+                        ],
+                    ],
+                ],
+            ]);
+
+            $payload = json_decode($response['content'] ?? '', true);
+
+            if (is_array($payload)) {
+                if (! empty($payload['summary']) && is_string($payload['summary'])) {
+                    $insights['summary'] = trim($payload['summary']);
+                }
+
+                if (! empty($payload['risk_flags']) && is_array($payload['risk_flags'])) {
+                    $insights['risk_flags'] = collect($payload['risk_flags'])
+                        ->filter(fn ($flag) => is_string($flag) && $flag !== '')
+                        ->values()
+                        ->all();
+                }
+
+                if (! empty($payload['recommendations']) && is_array($payload['recommendations'])) {
+                    $insights['recommendations'] = collect($payload['recommendations'])
+                        ->map(function ($item) {
+                            if (! is_array($item)) {
+                                return null;
+                            }
+
+                            $title = Arr::get($item, 'title');
+                            $action = Arr::get($item, 'action');
+
+                            if (! is_string($title) || ! is_string($action) || $title === '' || $action === '') {
+                                return null;
+                            }
+
+                            return [
+                                'title' => trim($title),
+                                'action' => trim($action),
+                            ];
+                        })
+                        ->filter()
+                        ->values()
+                        ->all();
+                }
+            }
+        } catch (Throwable $exception) {
+            Log::warning('Failed to generate AI analytics insights.', [
+                'user_id' => $this->currentUserId(),
+                'client_id' => $client->id,
+                'exception' => $exception->getMessage(),
+            ]);
+        }
+
+        return $insights;
     }
 
     protected function ensureOrderBelongsToCurrentUser(Order $order): void
