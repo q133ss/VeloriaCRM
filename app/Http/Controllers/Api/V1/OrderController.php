@@ -117,7 +117,7 @@ class OrderController extends Controller
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
                 'source' => Arr::get($validated, 'source', 'manual'),
-                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['title', 'insight', 'action', 'confidence']))->all(),
+                'recommended_services' => $this->serializeRecommendations($recommended),
             ]);
         });
 
@@ -185,7 +185,7 @@ class OrderController extends Controller
                 'duration_forecast' => $services->sum('duration_min') ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
-                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['title', 'insight', 'action', 'confidence']))->all(),
+                'recommended_services' => $this->serializeRecommendations($recommended),
             ]);
         });
 
@@ -299,7 +299,7 @@ class OrderController extends Controller
                 'note' => Arr::get($validated, 'note'),
                 'total_price' => 0,
                 'status' => 'new',
-                'recommended_services' => $recommended->map(fn ($item) => Arr::only($item, ['title', 'insight', 'action', 'confidence']))->all(),
+                'recommended_services' => $this->serializeRecommendations($recommended),
             ]);
         });
 
@@ -520,14 +520,7 @@ class OrderController extends Controller
             ])->values(),
             'status_options' => Order::statusLabels(),
             'default_status' => 'new',
-            'recommended_services' => $recommended->map(function ($item) {
-                return [
-                    'title' => $item['title'] ?? 'Рекомендация',
-                    'insight' => $item['insight'] ?? null,
-                    'action' => $item['action'] ?? null,
-                    'confidence' => isset($item['confidence']) ? (is_numeric($item['confidence']) ? (float) $item['confidence'] : null) : null,
-                ];
-            })->values(),
+            'recommended_services' => $this->serializeRecommendations($recommended),
         ]);
     }
 
@@ -628,16 +621,22 @@ class OrderController extends Controller
         $cacheKey = $this->recommendationCacheKey($client, $serviceCollection, $clientProfile, $history);
 
         if ($cacheKey && Cache::has($cacheKey)) {
-            return collect(Cache::get($cacheKey));
+            $cached = collect(Cache::get($cacheKey));
+            return $this->finalizeRecommendations($cached, $serviceCollection);
         }
 
         try {
             $context = $this->buildRecommendationContext($client, $clientProfile, $serviceCollection, $history);
 
             $prompt = <<<'PROMPT'
-Вы — ИИ-ассистент бьюти-мастера. Проанализируйте историю визитов клиента, его профиль и отметьте ключевые паттерны поведения.
-Сформулируйте до трёх персональных рекомендаций, которые помогут улучшить опыт клиента и увеличить выручку мастера.
-Каждая рекомендация должна содержать краткий заголовок, что именно замечено и какое действие стоит предпринять.
+Вы — ИИ-ассистент бьюти-мастера. Используя список доступных услуг, историю клиента и его профиль, подберите до трёх услуг, которые стоит предложить клиенту дополнительно.
+Для каждой рекомендации обязательно укажите:
+- service_id из available_services, на которую вы ссылаетесь,
+- короткий заголовок предложения,
+- insight — почему услуга актуальна,
+- action — как предложить её клиенту,
+- confidence от 0 до 1 (или null, если оценка невозможна).
+Фокусируйтесь на практических улучшениях сервиса и росте выручки мастера.
 PROMPT;
 
             $response = $this->openAI->respond($prompt, $context, [
@@ -655,6 +654,12 @@ PROMPT;
                                     'items' => [
                                         'type' => 'object',
                                         'properties' => [
+                                            'service_id' => [
+                                                'oneOf' => [
+                                                    ['type' => 'integer'],
+                                                    ['type' => 'string'],
+                                                ],
+                                            ],
                                             'title' => ['type' => 'string'],
                                             'insight' => ['type' => 'string'],
                                             'action' => ['type' => 'string'],
@@ -665,7 +670,7 @@ PROMPT;
                                                 ],
                                             ],
                                         ],
-                                        'required' => ['title', 'insight', 'action'],
+                                        'required' => ['service_id', 'title', 'insight', 'action'],
                                     ],
                                 ],
                             ],
@@ -690,6 +695,8 @@ PROMPT;
                     $title = Arr::get($item, 'title');
                     $insight = Arr::get($item, 'insight');
                     $action = Arr::get($item, 'action');
+                    $serviceId = Arr::get($item, 'service_id');
+                    $serviceName = Arr::get($item, 'service_name');
 
                     if (! is_string($title) || ! is_string($insight) || ! is_string($action)) {
                         return null;
@@ -699,26 +706,39 @@ PROMPT;
                         ? (float) Arr::get($item, 'confidence')
                         : null;
 
+                    if (is_string($serviceId) && is_numeric($serviceId)) {
+                        $serviceId = (int) $serviceId;
+                    } elseif (is_int($serviceId) || is_float($serviceId)) {
+                        $serviceId = (int) $serviceId;
+                    } else {
+                        $serviceId = null;
+                    }
+
+                    $serviceName = is_string($serviceName) ? trim($serviceName) : null;
+
                     return [
                         'title' => trim($title),
                         'insight' => trim($insight),
                         'action' => trim($action),
                         'confidence' => $confidence,
+                        'service_id' => $serviceId,
+                        'service_name' => $serviceName,
                     ];
                 })
                 ->filter()
-                ->values()
-                ->take(3);
+                ->values();
 
             if ($recommendations->isEmpty()) {
                 return $this->fallbackClientRecommendations($client, $history, $clientProfile, $serviceCollection);
             }
 
             if ($cacheKey) {
-                Cache::put($cacheKey, $recommendations->toArray(), now()->addHours(6));
+                $cached = $this->finalizeRecommendations($recommendations->take(3), $serviceCollection);
+                Cache::put($cacheKey, $cached->toArray(), now()->addHours(6));
+                return $cached;
             }
 
-            return $recommendations;
+            return $this->finalizeRecommendations($recommendations->take(3), $serviceCollection);
         } catch (Throwable $exception) {
             Log::warning('Failed to build AI recommendations.', [
                 'user_id' => $this->currentUserId(),
@@ -764,98 +784,340 @@ PROMPT;
 
     protected function fallbackClientRecommendations(?User $client, Collection $history, ?Client $clientProfile, Collection $services): Collection
     {
+        $serviceCollection = $services->filter(fn ($service) => $service instanceof Service)->values();
+
+        if ($serviceCollection->isEmpty()) {
+            $name = $client?->name ?? 'клиента';
+
+            return collect([
+                [
+                    'title' => 'Поддерживать связь',
+                    'insight' => "Персональные советы по уходу помогают удерживать $name дольше.",
+                    'action' => 'Напомните о преимуществах сервиса и поделитесь мини-гайдом по домашнему уходу.',
+                    'confidence' => null,
+                ],
+                [
+                    'title' => 'Запланировать следующий шаг',
+                    'insight' => 'Чёткий план следующего визита снимает вопросы у клиента.',
+                    'action' => 'Предложите несколько окон для записи и зафиксируйте подходящее время прямо сейчас.',
+                    'confidence' => null,
+                ],
+            ])->take(3);
+        }
+
         $name = $client?->name ?? 'клиента';
         $suggestions = collect();
 
-        $completed = $history->filter(fn (Order $order) => $order->status === 'completed')->sortByDesc(fn (Order $order) => $order->scheduled_at);
+        $serviceCounts = [];
+        $serviceVisits = [];
 
-        $serviceStats = [];
         foreach ($history as $historyOrder) {
-            foreach ((array) ($historyOrder->services ?? []) as $service) {
-                $serviceName = $service['name'] ?? null;
-                if (! $serviceName) {
+            $scheduledAt = $historyOrder->scheduled_at ? $historyOrder->scheduled_at->copy() : null;
+
+            foreach ((array) ($historyOrder->services ?? []) as $serviceData) {
+                $serviceModel = $this->resolveServiceFromHistory($serviceData, $serviceCollection);
+
+                if (! $serviceModel) {
                     continue;
                 }
 
-                if (! isset($serviceStats[$serviceName])) {
-                    $serviceStats[$serviceName] = 0;
+                $serviceId = $serviceModel->id;
+                $serviceCounts[$serviceId] = ($serviceCounts[$serviceId] ?? 0) + 1;
+
+                if ($scheduledAt) {
+                    $serviceVisits[$serviceId] ??= [];
+                    $serviceVisits[$serviceId][] = $scheduledAt;
+                }
+            }
+        }
+
+        $serviceCountsCollection = collect($serviceCounts)->sortDesc();
+        $topServiceId = $serviceCountsCollection->keys()->first();
+        $topService = $topServiceId ? $serviceCollection->firstWhere('id', $topServiceId) : null;
+
+        $avgInterval = null;
+
+        if ($topService && isset($serviceVisits[$topService->id]) && count($serviceVisits[$topService->id]) > 1) {
+            $dates = $serviceVisits[$topService->id];
+            usort($dates, function ($a, $b) {
+                if ($a && $b) {
+                    if ($a->lt($b)) {
+                        return -1;
+                    }
+
+                    if ($a->gt($b)) {
+                        return 1;
+                    }
                 }
 
-                $serviceStats[$serviceName]++;
+                return 0;
+            });
+
+            $intervals = [];
+
+            for ($i = 1; $i < count($dates); $i++) {
+                $previous = $dates[$i - 1];
+                $current = $dates[$i];
+
+                if ($previous && $current) {
+                    $intervals[] = $previous->diffInDays($current);
+                }
+            }
+
+            if (! empty($intervals)) {
+                $avgInterval = (int) round(array_sum($intervals) / count($intervals));
             }
         }
 
-        arsort($serviceStats);
-        $topService = array_key_first($serviceStats);
+        $upsellService = null;
+        $upsellBase = null;
 
-        if ($topService) {
-            $suggestions->push([
-                'title' => 'Усилить любимую услугу',
-                'insight' => "$name чаще всего выбирает: $topService.",
-                'action' => 'Подготовьте рекомендации по домашнему уходу или бонус к этой процедуре, чтобы закрепить лояльность.',
-                'confidence' => null,
-            ]);
-        }
+        foreach ($serviceCountsCollection->keys() as $serviceId) {
+            $base = $serviceCollection->firstWhere('id', $serviceId);
 
-        $intervals = [];
-        $completedWithDates = $completed->filter(fn (Order $order) => $order->scheduled_at)->values();
-        for ($i = 1; $i < $completedWithDates->count(); $i++) {
-            $previous = $completedWithDates->get($i - 1)->scheduled_at;
-            $current = $completedWithDates->get($i)->scheduled_at;
+            if (! $base) {
+                continue;
+            }
 
-            if ($previous && $current) {
-                $intervals[] = $previous->diffInDays($current);
+            foreach ((array) ($base->upsell_suggestions ?? []) as $candidateId) {
+                $candidate = $serviceCollection->firstWhere('id', $candidateId);
+
+                if ($candidate && $candidate->id !== $base->id) {
+                    $upsellService = $candidate;
+                    $upsellBase = $base;
+                    break 2;
+                }
             }
         }
 
-        if (! empty($intervals)) {
-            $avgInterval = round(array_sum($intervals) / count($intervals));
+        if ($upsellService) {
+            $insight = "$name регулярно выбирает {$upsellBase->name}. Дополнительный сервис поможет закрепить результат.";
 
-            if ($avgInterval < 30) {
-                $suggestions->push([
-                    'title' => 'Проконтролировать носку услуг',
-                    'insight' => "$name возвращается примерно каждые $avgInterval дней — это признак того, что услуга быстро теряет эффект.",
-                    'action' => 'Обсудите уход между визитами и предложите корректировку техники, чтобы продлить результат.',
-                    'confidence' => null,
-                ]);
-            } elseif ($avgInterval > 45) {
-                $suggestions->push([
-                    'title' => 'Подтолкнуть к регулярности',
-                    'insight' => "$name делает паузы около $avgInterval дней, можно мягко напомнить о плановом визите.",
-                    'action' => 'Отправьте персональное приглашение или бонус, чтобы клиент забронировал дату заранее.',
-                    'confidence' => null,
-                ]);
+            if ($avgInterval !== null) {
+                $insight .= " Средний интервал между визитами — {$avgInterval} дней.";
+            }
+
+            $action = "Предложите {$upsellService->name} в комплекте с {$upsellBase->name}, чтобы клиент почувствовал заботу и увидел мгновенный эффект.";
+
+            $suggestions->push($this->makeServiceRecommendation($upsellService, $insight, $action));
+        }
+
+        if ($topService && ! $suggestions->pluck('service_id')->contains($topService->id)) {
+            $insight = "$name чаще всего выбирает {$topService->name}.";
+
+            if ($avgInterval !== null) {
+                if ($avgInterval < 30) {
+                    $insight .= " Клиент возвращается примерно каждые {$avgInterval} дней.";
+                    $action = 'Обсудите, как улучшить стойкость результата, и предложите укрепляющий уход.';
+                } elseif ($avgInterval > 45) {
+                    $insight .= " Пауза между визитами составляет около {$avgInterval} дней.";
+                    $action = 'Предложите зафиксировать следующую дату заранее и подготовьте бонус за раннюю запись.';
+                } else {
+                    $action = 'Поддержите интерес клиента мини-бонусом и обсудите план последующего ухода.';
+                }
+            } else {
+                $action = 'Предложите небольшое улучшение для любимой услуги: спа-уход, дополнительное покрытие или расширенный контроль качества.';
+            }
+
+            $suggestions->push($this->makeServiceRecommendation($topService, $insight, $action));
+        }
+
+        $unusedServices = $serviceCollection->filter(fn (Service $service) => ! array_key_exists($service->id, $serviceCounts));
+
+        if ($unusedServices->isNotEmpty()) {
+            $freshService = $unusedServices->sortByDesc('base_price')->first();
+
+            if ($freshService && ! $suggestions->pluck('service_id')->contains($freshService->id)) {
+                $insight = "$name ещё не пробовал {$freshService->name}. Это разнообразит впечатления от сервиса.";
+
+                if (! empty($clientProfile?->preferences)) {
+                    $insight .= ' В профиле отмечены предпочтения: ' . implode(', ', (array) $clientProfile->preferences) . '.';
+                }
+
+                $action = 'Расскажите, какой результат даёт эта процедура, и предложите протестировать её со скидкой или бонусом.';
+
+                $suggestions->push($this->makeServiceRecommendation($freshService, $insight, $action));
             }
         }
 
-        if ($clientProfile?->preferences) {
-            $suggestions->push([
-                'title' => 'Опора на предпочтения',
-                'insight' => 'В профиле указаны предпочтения: ' . implode(', ', (array) $clientProfile->preferences) . '.',
-                'action' => 'Подготовьте предложение, которое подчеркнёт эти пожелания в предстоящем визите.',
-                'confidence' => null,
-            ]);
+        $usedIds = $suggestions->pluck('service_id')->filter()->all();
+
+        $remaining = $serviceCollection
+            ->sortByDesc('base_price')
+            ->filter(fn (Service $service) => ! in_array($service->id, $usedIds, true));
+
+        foreach ($remaining as $serviceOption) {
+            if ($suggestions->count() >= 3) {
+                break;
+            }
+
+            $insight = "{$serviceOption->name} поможет подчеркнуть результат и повысить средний чек.";
+
+            if (! empty($clientProfile?->preferences)) {
+                $insight .= ' Учитывайте предпочтения: ' . implode(', ', (array) $clientProfile->preferences) . '.';
+            }
+
+            $action = 'Предложите услугу как дополнение после основного визита и уточните, сколько времени потребуется.';
+
+            $suggestions->push($this->makeServiceRecommendation($serviceOption, $insight, $action));
         }
 
-        if ($suggestions->isEmpty()) {
-            $suggestions->push([
-                'title' => 'Поддерживать связь',
-                'insight' => 'Персональные советы по уходу помогают удерживать клиентов дольше.',
-                'action' => 'Напомните о преимуществах сервиса и поделитесь мини-гайдом по домашнему уходу.',
-                'confidence' => null,
-            ]);
+        if ($suggestions->isEmpty() && $serviceCollection->isNotEmpty()) {
+            $defaultService = $serviceCollection->first();
+
+            $suggestions->push($this->makeServiceRecommendation(
+                $defaultService,
+                "Порекомендуйте {$defaultService->name}, чтобы расширить привычный сценарий визитов $name.",
+                'Сформулируйте выгоды и предложите забронировать время прямо сейчас.'
+            ));
         }
 
-        if ($suggestions->count() < 3) {
-            $suggestions->push([
-                'title' => 'Запланировать следующий шаг',
-                'insight' => 'Чёткий план следующего визита снимает вопросы у клиента.',
-                'action' => 'Предложите несколько окон для записи и зафиксируйте подходящее время прямо сейчас.',
-                'confidence' => null,
-            ]);
+        return $this->finalizeRecommendations($suggestions->take(3), $serviceCollection);
+    }
+
+    protected function makeServiceRecommendation(Service $service, string $insight, string $action, ?float $confidence = null): array
+    {
+        return [
+            'title' => $service->name,
+            'insight' => $insight,
+            'action' => $action,
+            'confidence' => $confidence,
+            'service_id' => $service->id,
+            'service' => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'price' => (float) $service->base_price,
+                'duration' => (int) $service->duration_min,
+            ],
+        ];
+    }
+
+    protected function resolveServiceFromHistory(array $serviceData, Collection $services): ?Service
+    {
+        $serviceId = Arr::get($serviceData, 'id');
+
+        if ($serviceId !== null) {
+            $service = $services->firstWhere('id', $serviceId);
+
+            if ($service instanceof Service) {
+                return $service;
+            }
         }
 
-        return $suggestions->take(3);
+        $serviceName = Arr::get($serviceData, 'name');
+
+        if (is_string($serviceName) && $serviceName !== '') {
+            $normalized = Str::lower(trim($serviceName));
+
+            return $services->first(function (Service $service) use ($normalized) {
+                return Str::lower($service->name) === $normalized;
+            });
+        }
+
+        return null;
+    }
+
+    protected function finalizeRecommendations(Collection $recommendations, Collection $services): Collection
+    {
+        $serviceModels = $services->filter(fn ($service) => $service instanceof Service);
+        $servicesById = $serviceModels->keyBy('id');
+        $servicesByName = $serviceModels->mapWithKeys(function (Service $service) {
+            return [Str::lower($service->name) => $service];
+        });
+
+        return $recommendations->map(function ($item) use ($servicesById, $servicesByName) {
+            if (! is_array($item)) {
+                return null;
+            }
+
+            $serviceData = Arr::get($item, 'service');
+            $serviceId = Arr::get($item, 'service_id');
+            $serviceName = Arr::get($item, 'service_name');
+
+            if (is_array($serviceData)) {
+                $serviceId ??= Arr::get($serviceData, 'id');
+                $serviceName ??= Arr::get($serviceData, 'name');
+            }
+
+            $matchedService = null;
+
+            if ($serviceId !== null && $servicesById->has((int) $serviceId)) {
+                $matchedService = $servicesById->get((int) $serviceId);
+            } elseif (is_string($serviceName) && $serviceName !== '') {
+                $lookup = Str::lower(trim($serviceName));
+
+                if ($servicesByName->has($lookup)) {
+                    $matchedService = $servicesByName->get($lookup);
+                }
+            }
+
+            if ($matchedService instanceof Service) {
+                $servicePayload = [
+                    'id' => $matchedService->id,
+                    'name' => $matchedService->name,
+                    'price' => (float) $matchedService->base_price,
+                    'duration' => (int) $matchedService->duration_min,
+                ];
+            } elseif (is_array($serviceData)) {
+                $price = Arr::get($serviceData, 'price');
+                $duration = Arr::get($serviceData, 'duration');
+
+                $servicePayload = [
+                    'id' => Arr::get($serviceData, 'id'),
+                    'name' => Arr::get($serviceData, 'name'),
+                    'price' => is_numeric($price) ? (float) $price : null,
+                    'duration' => is_numeric($duration) ? (int) $duration : null,
+                ];
+            } else {
+                $servicePayload = null;
+            }
+
+            $confidence = Arr::get($item, 'confidence');
+            $confidence = is_numeric($confidence) ? (float) $confidence : null;
+
+            return [
+                'title' => Arr::get($item, 'title', $servicePayload['name'] ?? 'Рекомендация'),
+                'insight' => Arr::get($item, 'insight'),
+                'action' => Arr::get($item, 'action'),
+                'confidence' => $confidence,
+                'service' => $servicePayload,
+            ];
+        })->filter()->values();
+    }
+
+    protected function serializeRecommendations(Collection $recommendations): array
+    {
+        return $recommendations->map(function ($item) {
+            if (! is_array($item)) {
+                return null;
+            }
+
+            $service = Arr::get($item, 'service');
+            $servicePayload = null;
+
+            if (is_array($service)) {
+                $price = Arr::get($service, 'price');
+                $duration = Arr::get($service, 'duration');
+
+                $servicePayload = [
+                    'id' => Arr::get($service, 'id'),
+                    'name' => Arr::get($service, 'name'),
+                    'price' => is_numeric($price) ? (float) $price : null,
+                    'duration' => is_numeric($duration) ? (int) $duration : null,
+                ];
+            }
+
+            $confidence = Arr::get($item, 'confidence');
+            $confidence = is_numeric($confidence) ? (float) $confidence : null;
+
+            return [
+                'title' => Arr::get($item, 'title', $servicePayload['name'] ?? 'Рекомендация'),
+                'insight' => Arr::get($item, 'insight'),
+                'action' => Arr::get($item, 'action'),
+                'confidence' => $confidence,
+                'service' => $servicePayload,
+            ];
+        })->filter()->values()->all();
     }
 
     protected function buildRecommendationContext(User $client, ?Client $clientProfile, Collection $services, Collection $history): array
@@ -1257,18 +1519,34 @@ PROMPT;
         })->values();
 
         $recommended = collect($order->recommended_services ?? [])->map(function ($item) {
-            $title = $item['title'] ?? $item['name'] ?? 'Рекомендация';
-            $insight = $item['insight'] ?? $item['description'] ?? null;
-            $action = $item['action'] ?? null;
-            $confidence = isset($item['confidence']) && is_numeric($item['confidence'])
-                ? (float) $item['confidence']
-                : null;
+            $title = Arr::get($item, 'title') ?? Arr::get($item, 'name') ?? 'Рекомендация';
+            $insight = Arr::get($item, 'insight') ?? Arr::get($item, 'description');
+            $action = Arr::get($item, 'action');
+            $confidence = Arr::get($item, 'confidence');
+            $confidence = is_numeric($confidence) ? (float) $confidence : null;
+
+            $serviceData = Arr::get($item, 'service');
+            $service = null;
+
+            if (is_array($serviceData)) {
+                $price = Arr::get($serviceData, 'price');
+                $duration = Arr::get($serviceData, 'duration');
+
+                $service = [
+                    'id' => Arr::get($serviceData, 'id'),
+                    'name' => Arr::get($serviceData, 'name'),
+                    'price' => is_numeric($price) ? (float) $price : null,
+                    'duration' => is_numeric($duration) ? (int) $duration : null,
+                ];
+                $title = $title ?? ($service['name'] ?? 'Рекомендация');
+            }
 
             return [
                 'title' => $title,
                 'insight' => $insight,
                 'action' => $action,
                 'confidence' => $confidence,
+                'service' => $service,
             ];
         })->values();
 

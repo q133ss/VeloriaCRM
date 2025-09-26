@@ -123,7 +123,7 @@
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h5 class="mb-0">Рекомендации ИИ</h5>
-                        <span class="badge bg-label-info" id="ai-recommendations-badge">Заглушка</span>
+                        <span class="badge bg-label-secondary" id="ai-recommendations-badge">ИИ</span>
                     </div>
                     <div class="card-body" id="order-ai-recommendations">
                         <p class="text-muted mb-0">Загрузка...</p>
@@ -326,17 +326,35 @@
             recommendations.forEach(item => {
                 const block = document.createElement('div');
                 block.className = 'mb-3';
+
+                const service = item.service || {};
+                const title = service.name || item.title || 'Рекомендация';
+                const price = typeof service.price === 'number' ? service.price : null;
+                const duration = typeof service.duration === 'number' ? service.duration : null;
+
                 let confidence = null;
                 if (typeof item.confidence === 'number' && !Number.isNaN(item.confidence)) {
                     const normalized = Math.min(1, Math.max(0, item.confidence));
                     confidence = Math.round(normalized * 100);
                 }
+
+                const metaParts = [];
+                if (price !== null) {
+                    metaParts.push(`${price.toLocaleString('ru-RU')} ₽`);
+                }
+                if (duration !== null) {
+                    metaParts.push(`${duration} мин`);
+                }
+                const meta = metaParts.length ? `<p class="small text-muted mb-2">${metaParts.join(' · ')}</p>` : '';
+
                 const insight = item.insight || 'Персонализированная рекомендация ИИ.';
                 const action = item.action ? `<p class="small mb-0">${item.action}</p>` : '';
+
                 block.innerHTML = `
                     <div class="d-flex align-items-start justify-content-between gap-3">
-                        <div>
-                            <strong>${item.title || 'Рекомендация'}</strong>
+                        <div class="flex-grow-1">
+                            <strong>${title}</strong>
+                            ${meta}
                             <p class="text-muted small mb-1">${insight}</p>
                             ${action}
                         </div>
