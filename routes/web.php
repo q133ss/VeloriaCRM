@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ClientController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -19,6 +20,8 @@ Route::middleware('token.cookie')->group(function () {
     Route::view('/profile', 'profile')->name('profile');
     # TODO Даты выходных сделать календарем! Что бы выбирать период было удобнее
     Route::view('/settings', 'settings')->name('settings');
+
+    Route::resource('clients', ClientController::class);
 
     Route::get('/orders', function () {
         return view('orders.index');
