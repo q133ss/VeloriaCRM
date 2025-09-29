@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -18,6 +19,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::delete('/user', [UserController::class, 'destroy']);
+        Route::get('/clients/options', [ApiClientController::class, 'options']);
+        Route::get('/clients', [ApiClientController::class, 'index']);
+        Route::post('/clients', [ApiClientController::class, 'store']);
+        Route::get('/clients/{client}', [ApiClientController::class, 'show']);
+        Route::patch('/clients/{client}', [ApiClientController::class, 'update']);
+        Route::delete('/clients/{client}', [ApiClientController::class, 'destroy']);
         Route::get('/orders/options', [ApiOrderController::class, 'options']);
         Route::get('/orders', [ApiOrderController::class, 'index']);
         Route::post('/orders', [ApiOrderController::class, 'store']);
