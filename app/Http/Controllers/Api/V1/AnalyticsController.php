@@ -559,8 +559,15 @@ class AnalyticsController extends Controller
                 ->filter(fn (array $tx) => $this->isWithinPeriod($tx['date'], $segment['start'], $segment['end']))
                 ->sum('amount'), 2);
 
-            $previousStart = $compareFrom->copy()->addDays($segment['offset']);
-            $previousEnd = $previousStart->copy()->addDays($segment['span']);
+            $previousStart = $compareFrom
+                ->copy()
+                ->addDays($segment['offset'])
+                ->startOfDay();
+
+            $previousEnd = $previousStart
+                ->copy()
+                ->addDays($segment['span'])
+                ->endOfDay();
             if ($previousEnd->greaterThan($compareTo)) {
                 $previousEnd = $compareTo->copy();
             }
