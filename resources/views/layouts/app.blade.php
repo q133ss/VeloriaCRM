@@ -394,11 +394,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var PLAN_ADDITIONS = {
         lite: [],
         pro: [
+            menuItem('landings', '/landings', 'ri-layout-4-line'),
             menuItem('marketing', '/marketing', 'ri-megaphone-line'),
             menuItem('learning', '/learning', 'ri-lightbulb-line'),
             menuItem('veloryStudio', '/velory', 'ri-robot-line')
         ],
         elite: [
+            menuItem('landings', '/landings', 'ri-layout-4-line'),
             menuItem('marketing', '/marketing', 'ri-megaphone-line'),
             menuItem('learning', '/learning', 'ri-lightbulb-line'),
             menuItem('automations', '/automations', 'ri-magic-line'),
