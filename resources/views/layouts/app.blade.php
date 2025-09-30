@@ -214,21 +214,6 @@
                         </div>
                     </div>
 
-                    @php
-                        $user = auth()->user();
-                        $userName = $user?->name ?? '';
-                        $userInitial = '?';
-                        if ($userName !== '') {
-                            $candidateInitial = (string) \Illuminate\Support\Str::of($userName)
-                                ->trim()
-                                ->substr(0, 1)
-                                ->upper();
-                            if ($candidateInitial !== '') {
-                                $userInitial = $candidateInitial;
-                            }
-                        }
-                    @endphp
-
                     <ul class="navbar-nav flex-row align-items-center ms-md-auto">
                         <!-- User -->
                         <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -237,8 +222,8 @@
                                 href="javascript:void(0);"
                                 data-bs-toggle="dropdown">
                                 <div class="avatar avatar-online">
-                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold">
-                                        {{ $userInitial }}
+                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>
+                                        ?
                                     </span>
                                 </div>
                             </a>
@@ -248,13 +233,13 @@
                                         <div class="d-flex">
                                             <div class="flex-shrink-0 me-3">
                                                 <div class="avatar avatar-online">
-                                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold">
-                                                        {{ $userInitial }}
+                                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>
+                                                        ?
                                                     </span>
                                                 </div>
                                             </div>
                                             <div class="flex-grow-1">
-                                                <h6 class="mb-0">{{ $userName }}</h6>
+                                                <h6 class="mb-0" data-user-name></h6>
                                             </div>
                                         </div>
                                     </a>
@@ -270,10 +255,9 @@
                                 <li>
                                     <a class="dropdown-item" href="/subscripe">
                                         <span class="d-flex align-items-center align-middle">
-                          <i class="flex-shrink-0 icon-base ri ri-bank-card-line icon-22px me-3"></i
-                          ><span class="flex-grow-1 align-middle ms-1">{{ __('navigation.subscription') }}</span>
-                          <span class="flex-shrink-0 badge rounded-pill bg-danger">4</span>
-                        </span>
+                                            <i class="flex-shrink-0 icon-base ri ri-bank-card-line icon-22px me-3"></i>
+                                            <span class="flex-grow-1 align-middle ms-1">{{ __('navigation.subscription') }}</span>
+                                        </span>
                                     </a>
                                 </li>
                                 <li>
@@ -439,6 +423,19 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (res) { return res.ok ? res.json() : {}; })
         .then(function (data) {
             var user = data.user || {};
+            var userName = typeof user.name === 'string' ? user.name : '';
+            var trimmedName = userName.trim();
+            var userInitial = trimmedName ? trimmedName.charAt(0).toUpperCase() : '?';
+
+            var nameTarget = document.querySelector('[data-user-name]');
+            if (nameTarget) {
+                nameTarget.textContent = trimmedName;
+            }
+
+            document.querySelectorAll('[data-user-initial]').forEach(function (el) {
+                el.textContent = userInitial;
+            });
+
             var slug = user.plan && user.plan.slug ? String(user.plan.slug).toLowerCase() : 'lite';
             if (['lite', 'pro', 'elite'].indexOf(slug) === -1) slug = 'lite';
 
