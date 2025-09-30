@@ -117,19 +117,8 @@
                 <form id="quick-create-form" onsubmit="return false;">
                     <div class="modal-body">
                         <p class="text-muted">Укажите телефон клиента и время визита. Если клиента нет в базе, мы создадим его автоматически.</p>
+                        <input type="hidden" id="quick_master_name" value="{{ auth()->user()?->name ?? 'Вы' }}" />
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline">
-                                    <input
-                                        type="text"
-                                        class="form-control"
-                                        id="quick_master_name"
-                                        value="{{ auth()->user()?->name ?? 'Вы' }}"
-                                        readonly
-                                    />
-                                    <label for="quick_master_name">Мастер</label>
-                                </div>
-                            </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
                                     <input type="datetime-local" class="form-control" id="quick_scheduled_at" name="scheduled_at" required />
@@ -149,6 +138,7 @@
                                     />
                                     <label for="quick_client_phone">Телефон клиента</label>
                                 </div>
+                                <div id="quick-client-suggestions" class="list-group list-group-flush border rounded-3 shadow-sm mt-2 d-none"></div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
@@ -230,6 +220,7 @@
         const quickServicesSummary = document.getElementById('quick-services-summary');
         const quickClientPhoneInput = document.getElementById('quick_client_phone');
         const quickClientNameInput = document.getElementById('quick_client_name');
+        const quickClientSuggestions = document.getElementById('quick-client-suggestions');
         let quickLookupController = null;
         let quickLookupTimer = null;
 
@@ -349,6 +340,88 @@
             return `${value.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
         }
 
+        function formatSuggestionPhone(phone) {
+            const digits = (phone || '').replace(/\D/g, '');
+
+            if (!digits.length) {
+                return '';
+            }
+
+            let normalized = digits;
+
+            if (normalized.length === 10) {
+                normalized = '7' + normalized;
+            }
+
+            if (normalized.length !== 11) {
+                return phone || '';
+            }
+
+            const country = normalized[0];
+            const city = normalized.slice(1, 4);
+            const first = normalized.slice(4, 7);
+            const second = normalized.slice(7, 9);
+            const third = normalized.slice(9, 11);
+
+            return `+${country} (${city}) ${first}-${second}-${third}`;
+        }
+
+        function clearQuickClientSuggestions() {
+            if (!quickClientSuggestions) {
+                return;
+            }
+
+            quickClientSuggestions.innerHTML = '';
+            quickClientSuggestions.classList.add('d-none');
+        }
+
+        function renderQuickClientSuggestions(suggestions) {
+            if (!quickClientSuggestions) {
+                return;
+            }
+
+            quickClientSuggestions.innerHTML = '';
+
+            if (!Array.isArray(suggestions) || !suggestions.length) {
+                quickClientSuggestions.classList.add('d-none');
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'list-group-item small text-muted';
+            header.textContent = 'Существующие клиенты';
+            header.tabIndex = -1;
+            quickClientSuggestions.appendChild(header);
+
+            suggestions.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action d-flex flex-column align-items-start';
+                button.innerHTML = `
+                    <span class="fw-medium">${item.name || 'Без имени'}</span>
+                    <span class="small text-muted">${formatSuggestionPhone(item.phone)}</span>
+                `;
+                button.addEventListener('click', () => {
+                    if (quickClientPhoneInput) {
+                        quickClientPhoneInput.value = item.phone || '';
+                        quickClientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        quickClientPhoneInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+
+                    if (quickClientNameInput) {
+                        quickClientNameInput.value = item.name || '';
+                    }
+
+                    clearQuickClientSuggestions();
+                    lookupQuickClient(item.phone || '');
+                });
+
+                quickClientSuggestions.appendChild(button);
+            });
+
+            quickClientSuggestions.classList.remove('d-none');
+        }
+
         function updateQuickSummary() {
             if (!quickForm || !quickServicesSummary) {
                 return;
@@ -442,7 +515,20 @@
         }
 
         async function lookupQuickClient(phone) {
-            if (!quickClientPhoneInput || !phone) {
+            if (!quickClientPhoneInput) {
+                return;
+            }
+
+            const value = (phone || '').toString().trim();
+            const digits = value.replace(/[^0-9]+/g, '');
+
+            if (!value || !digits.length) {
+                clearQuickClientSuggestions();
+                return;
+            }
+
+            if (digits.length < 3) {
+                clearQuickClientSuggestions();
                 return;
             }
 
@@ -453,7 +539,7 @@
             quickLookupController = new AbortController();
 
             try {
-                const params = new URLSearchParams({ client_phone: phone });
+                const params = new URLSearchParams({ client_phone: value });
                 const response = await fetch(`/api/v1/orders/options?${params.toString()}`, {
                     headers: authHeaders(),
                     credentials: 'include',
@@ -461,18 +547,27 @@
                 });
 
                 if (!response.ok) {
+                    clearQuickClientSuggestions();
                     return;
                 }
 
                 const data = await response.json();
 
-                if (data.client && quickClientNameInput) {
+                if (Array.isArray(data.suggestions)) {
+                    renderQuickClientSuggestions(data.suggestions);
+                } else {
+                    clearQuickClientSuggestions();
+                }
+
+                if (data.client && quickClientNameInput && !quickClientNameInput.matches(':focus')) {
                     quickClientNameInput.value = data.client.name || '';
                 }
             } catch (error) {
                 if (error?.name === 'AbortError') {
                     return;
                 }
+
+                clearQuickClientSuggestions();
             }
         }
 
@@ -683,6 +778,7 @@
         if (quickClientPhoneInput) {
             quickClientPhoneInput.addEventListener('input', function () {
                 const value = this.value.trim();
+                const digits = value.replace(/[^0-9]+/g, '');
 
                 if (quickLookupTimer) {
                     clearTimeout(quickLookupTimer);
@@ -692,6 +788,12 @@
                     if (quickClientNameInput && !quickClientNameInput.matches(':focus')) {
                         quickClientNameInput.value = '';
                     }
+                    clearQuickClientSuggestions();
+                    return;
+                }
+
+                if (digits.length < 3) {
+                    clearQuickClientSuggestions();
                     return;
                 }
 
@@ -702,6 +804,8 @@
                 const value = this.value.trim();
                 if (value) {
                     lookupQuickClient(value);
+                } else {
+                    clearQuickClientSuggestions();
                 }
             });
         }
@@ -719,70 +823,89 @@
                     quickForm.reset();
                     updateQuickSummary();
                 }
+                clearQuickClientSuggestions();
             });
         }
 
-        loadQuickServices();
-
-        document.getElementById('quick-create-form').addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const form = event.target;
-            const errorsContainer = document.getElementById('quick-create-errors');
-            errorsContainer.innerHTML = '';
-
-            const payload = {
-                client_phone: form.client_phone.value.trim(),
-                client_name: form.client_name.value.trim(),
-                scheduled_at: form.scheduled_at.value,
-                note: form.note.value,
-            };
-
-            const selectedServices = Array.from(form.querySelectorAll('.quick-service-checkbox:checked'));
-            const services = selectedServices.map(cb => Number(cb.value));
-            const totalPrice = selectedServices.reduce((sum, checkbox) => {
-                return sum + Number(checkbox.getAttribute('data-price') || 0);
-            }, 0);
-
-            payload.services = services;
-            payload.total_price = services.length ? Number(totalPrice.toFixed(2)) : null;
-
-            const response = await fetch('/api/v1/orders/quick-create', {
-                method: 'POST',
-                headers: authHeaders(),
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-
-            const result = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                const fields = result.error?.fields || {};
-                if (Object.keys(fields).length) {
-                    const list = document.createElement('ul');
-                    list.className = 'text-danger mb-0';
-                    Object.keys(fields).forEach(key => {
-                        const li = document.createElement('li');
-                        li.textContent = fields[key][0];
-                        list.appendChild(li);
-                    });
-                    errorsContainer.appendChild(list);
-                } else {
-                    errorsContainer.innerHTML = '<div class="text-danger">' + (result.error?.message || 'Не удалось создать запись.') + '</div>';
-                }
+        document.addEventListener('click', function (event) {
+            if (!quickClientSuggestions || quickClientSuggestions.classList.contains('d-none')) {
                 return;
             }
 
-            const modal = bootstrap.Modal.getInstance(document.getElementById('quickCreateModal'));
-            if (modal) {
-                modal.hide();
+            if (event.target === quickClientPhoneInput) {
+                return;
             }
-            showAlert('success', result.message || 'Запись создана.');
-            if (result.data?.id) {
-                window.location.href = `/orders/${result.data.id}`;
-            } else {
-                loadOrders(1);
+
+            if (quickClientSuggestions.contains(event.target)) {
+                return;
             }
+
+            clearQuickClientSuggestions();
         });
+
+        loadQuickServices();
+
+        if (quickForm) {
+            quickForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const form = event.target;
+                const errorsContainer = document.getElementById('quick-create-errors');
+                errorsContainer.innerHTML = '';
+
+                const payload = {
+                    client_phone: form.client_phone.value.trim(),
+                    client_name: form.client_name.value.trim(),
+                    scheduled_at: form.scheduled_at.value,
+                    note: form.note.value,
+                };
+
+                const selectedServices = Array.from(form.querySelectorAll('.quick-service-checkbox:checked'));
+                const services = selectedServices.map(cb => Number(cb.value));
+                const totalPrice = selectedServices.reduce((sum, checkbox) => {
+                    return sum + Number(checkbox.getAttribute('data-price') || 0);
+                }, 0);
+
+                payload.services = services;
+                payload.total_price = services.length ? Number(totalPrice.toFixed(2)) : null;
+
+                const response = await fetch('/api/v1/orders/quick-create', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    const fields = result.error?.fields || {};
+                    if (Object.keys(fields).length) {
+                        const list = document.createElement('ul');
+                        list.className = 'text-danger mb-0';
+                        Object.keys(fields).forEach(key => {
+                            const li = document.createElement('li');
+                            li.textContent = fields[key][0];
+                            list.appendChild(li);
+                        });
+                        errorsContainer.appendChild(list);
+                    } else {
+                        errorsContainer.innerHTML = '<div class="text-danger">' + (result.error?.message || 'Не удалось создать запись.') + '</div>';
+                    }
+                    return;
+                }
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickCreateModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                showAlert('success', result.message || 'Запись создана.');
+                if (result.data?.id) {
+                    window.location.href = `/orders/${result.data.id}`;
+                } else {
+                    loadOrders(1);
+                }
+            });
+        }
 
         loadOrders();
     </script>
