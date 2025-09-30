@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,7 +19,7 @@ Route::view('/forgot-password', 'auth.forgot')->name('password.request');
 
 # TODO Мидлвар: редирект на login если не авторизован
 Route::middleware('token.cookie')->group(function () {
-    Route::view('/dashboard', 'dashboard')->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
     Route::view('/profile', 'profile')->name('profile');
     # TODO Даты выходных сделать календарем! Что бы выбирать период было удобнее
     Route::view('/settings', 'settings')->name('settings');

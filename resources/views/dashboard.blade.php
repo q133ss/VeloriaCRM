@@ -128,35 +128,12 @@
 
 @section('content')
     @php
-        $todayAppointments = [
-            [
-                'time' => '09:00',
-                'client' => 'Мария Петрова',
-                'service' => 'Наращивание ресниц',
-                'note' => 'Любит классический изгиб, попросила напомнить про уход',
-                'indicator' => ['type' => 'green', 'label' => '🟢 Высокая явка'],
-            ],
-            [
-                'time' => '11:30',
-                'client' => 'Анна Смирнова',
-                'service' => 'Ламинирование бровей',
-                'note' => 'В прошлый раз опаздывала на 15 минут',
-                'indicator' => ['type' => 'yellow', 'label' => '🟡 Риск неявки'],
-            ],
-            [
-                'time' => '14:00',
-                'client' => 'Ольга Иванова',
-                'service' => 'Чистка + маска «стеклянная кожа»',
-                'note' => 'Завтра День рождения, ждет рекомендации по подарку',
-                'indicator' => ['type' => 'green', 'label' => '🟢 Высокая явка'],
-            ],
-            [
-                'time' => '16:30',
-                'client' => 'Елена Котова',
-                'service' => 'Коррекция бровей и окрашивание',
-                'note' => 'Просила подготовить новую палитру оттенков',
-                'indicator' => ['type' => 'red', 'label' => '🔴 Сложный визит'],
-            ],
+        $formatServices = static fn (array $services): string => collect($services)->filter()->implode(', ');
+        $maxMarginValue = $marginData->max('value') ?? 0;
+        $priorityStyles = [
+            'urgent' => ['badge' => 'bg-label-danger', 'button' => 'btn-danger'],
+            'high' => ['badge' => 'bg-label-primary', 'button' => 'btn-primary'],
+            'normal' => ['badge' => 'bg-label-secondary', 'button' => 'btn-outline-primary'],
         ];
     @endphp
 
@@ -167,7 +144,7 @@
                 <h4 class="mb-0">Фокус на сегодня</h4>
             </div>
             <div class="text-lg-end small text-muted">
-                Обновлено <span id="dashboard-updated-at">только что</span>
+                Обновлено {{ $updated_at->copy()->locale(app()->getLocale())->diffForHumans() }}
             </div>
         </div>
 
@@ -184,7 +161,7 @@
                         </div>
 
                         <div class="dashboard-timeline">
-                            @foreach ($todayAppointments as $appointment)
+                            @forelse ($schedule as $appointment)
                                 <div class="dashboard-timeline-item">
                                     <div class="dashboard-timeline-dot bg-primary-subtle text-primary fw-semibold">
                                         {{ $loop->iteration }}
@@ -194,9 +171,11 @@
                                             <div class="d-flex flex-column flex-sm-row flex-sm-wrap gap-2 align-items-sm-center">
                                                 <span class="fw-semibold fs-6">{{ $appointment['time'] }}</span>
                                                 <span class="fw-semibold">{{ $appointment['client'] }}</span>
-                                                <span class="text-muted">{{ $appointment['service'] }}</span>
+                                                <span class="text-muted">{{ $formatServices($appointment['services']) }}</span>
                                             </div>
-                                            <p class="mb-1 small text-muted mt-1">{{ $appointment['note'] }}</p>
+                                            @if (! empty($appointment['note']))
+                                                <p class="mb-1 small text-muted mt-1">{{ $appointment['note'] }}</p>
+                                            @endif
                                             <div class="d-flex flex-wrap gap-2">
                                                 <span class="dashboard-indicator" data-type="{{ $appointment['indicator']['type'] }}">
                                                     {{ $appointment['indicator']['label'] }}
@@ -207,7 +186,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
+                            @empty
+                                <div class="text-muted text-center py-4">
+                                    Сегодня нет запланированных визитов — самое время заняться привлечением клиентов.
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -217,38 +200,38 @@
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                             <h5 class="mb-0">Сегодня в цифрах</h5>
                             <span class="dashboard-metric-pill">
-                                Цель дня — <span class="fw-semibold" data-dashboard-goal>8 000 ₽</span>
+                                Цель дня — <span class="fw-semibold">{{ $metrics['goal_formatted'] }}</span>
                             </span>
                         </div>
                         <div class="row g-3">
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
                                     <p class="text-muted mb-1 small">Выручка</p>
-                                    <h4 class="mb-1" data-dashboard-revenue>—</h4>
+                                    <h4 class="mb-1">{{ $metrics['revenue_formatted'] }}</h4>
                                     <p class="mb-0 small text-muted">Факт против цели</p>
                                     <div class="progress mt-2" style="height: 0.5rem;">
-                                        <div class="progress-bar" role="progressbar" style="width: 0%;" data-dashboard-revenue-progress></div>
+                                        <div class="progress-bar" role="progressbar" style="width: {{ $metrics['revenue_progress'] }}%;"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
                                     <p class="text-muted mb-1 small">Клиенты сегодня</p>
-                                    <h4 class="mb-1" data-dashboard-clients>—</h4>
+                                    <h4 class="mb-1">{{ $metrics['clients_summary'] }}</h4>
                                     <p class="mb-0 small text-muted">Записано клиентов</p>
                                 </div>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
                                     <p class="text-muted mb-1 small">Средний чек</p>
-                                    <h4 class="mb-1" data-dashboard-average>—</h4>
+                                    <h4 class="mb-1">{{ $metrics['average_ticket_formatted'] }}</h4>
                                     <p class="mb-0 small text-muted">Чистая выручка за визит</p>
                                 </div>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
                                     <p class="text-muted mb-1 small">Повторные визиты</p>
-                                    <h4 class="mb-1" data-dashboard-retention>—</h4>
+                                    <h4 class="mb-1">{{ $metrics['retention_rate_formatted'] }}</h4>
                                     <p class="mb-0 small text-muted">Доля клиентов, вернувшихся</p>
                                 </div>
                             </div>
@@ -267,30 +250,36 @@
                             </div>
                             <span class="badge bg-label-primary text-uppercase">В приоритете</span>
                         </div>
-                        <div class="d-flex flex-column gap-3" data-dashboard-ai-suggestions>
-                            <div class="border rounded-2 p-3 dashboard-card-action">
-                                <p class="fw-semibold mb-2">У вас 2 свободных слота завтра.</p>
-                                <p class="text-muted mb-3">Предложите Марии запись на коррекцию ресниц.</p>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <button class="btn btn-sm btn-primary" type="button">Отправить предложение</button>
-                                    <button class="btn btn-sm btn-outline-secondary" type="button">Позвонить</button>
+                        <div class="d-flex flex-column gap-3">
+                            @forelse ($aiSuggestions as $suggestion)
+                                @php
+                                    $priority = $suggestion['priority'] ?? 'normal';
+                                    $styles = $priorityStyles[$priority] ?? $priorityStyles['normal'];
+                                    $actions = collect($suggestion['actions'] ?? []);
+                                @endphp
+                                <div class="border rounded-2 p-3 dashboard-card-action">
+                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                        <p class="fw-semibold mb-0">{{ $suggestion['title'] }}</p>
+                                        <span class="badge {{ $styles['badge'] }} text-uppercase">{{ \Illuminate\Support\Str::title($priority) }}</span>
+                                    </div>
+                                    <p class="text-muted mb-3">{{ $suggestion['description'] }}</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @if ($actions->isNotEmpty())
+                                            @foreach ($actions as $index => $action)
+                                                <button class="btn btn-sm {{ $index === 0 ? $styles['button'] : 'btn-outline-secondary' }}" type="button">
+                                                    {{ $action }}
+                                                </button>
+                                            @endforeach
+                                        @else
+                                            <button class="btn btn-sm {{ $styles['button'] }}" type="button">Перейти к клиентам</button>
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="border rounded-2 p-3 dashboard-card-action">
-                                <p class="fw-semibold mb-2">Клиентка Анна — в группе риска по неявке.</p>
-                                <p class="text-muted mb-3">Напомните ей двойным сообщением в чат и WhatsApp.</p>
-                                <button class="btn btn-sm btn-warning" type="button">Отправить напоминание</button>
-                            </div>
-                            <div class="border rounded-2 p-3 dashboard-card-action">
-                                <p class="fw-semibold mb-2">Завтра у Ольги День рождения.</p>
-                                <p class="text-muted mb-3">Предложите подарок-пробник для ухода за кожей.</p>
-                                <button class="btn btn-sm btn-outline-primary" type="button">Создать предложение</button>
-                            </div>
-                            <div class="border rounded-2 p-3 dashboard-card-action">
-                                <p class="fw-semibold mb-2">Следующий визит у Елены — сложный.</p>
-                                <p class="text-muted mb-3">Подготовьте дополнительные материалы и уточните пожелания заранее.</p>
-                                <button class="btn btn-sm btn-outline-secondary" type="button">Подготовить чек-лист</button>
-                            </div>
+                            @empty
+                                <div class="text-muted text-center py-4">
+                                    Пока нет рекомендаций — данные обновятся после новых записей и платежей.
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -316,10 +305,32 @@
                                 <h5 class="mb-1">Маржа/час</h5>
                                 <p class="text-muted mb-0">В какие дни работа приносит максимум</p>
                             </div>
-                            <span class="badge bg-label-success" data-dashboard-margin-insight>ИИ: В пятницу маржа выше на 25%.</span>
+                            @if ($marginInsight)
+                                <span class="badge bg-label-success">Лучший день: {{ $marginInsight['label'] }} — {{ $marginInsight['display'] }}</span>
+                            @else
+                                <span class="badge bg-label-secondary">Недостаточно данных</span>
+                            @endif
                         </div>
-                        <div class="d-flex flex-column gap-3" data-dashboard-margin-list>
-                            <div class="d-flex justify-content-center text-muted">Загрузка…</div>
+                        <div class="d-flex flex-column gap-3">
+                            @forelse ($marginData as $item)
+                                @php
+                                    $ratio = $maxMarginValue > 0 ? ($item['value'] / $maxMarginValue) * 100 : 0;
+                                @endphp
+                                <div class="border rounded-2 p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">{{ $item['label'] }}</span>
+                                        <span class="small text-muted">{{ $item['hours_display'] }}</span>
+                                    </div>
+                                    <div class="dashboard-bar-wrapper">
+                                        <div class="dashboard-bar">
+                                            <div class="dashboard-bar-fill" style="width: {{ number_format($ratio, 1, '.', '') }}%;"></div>
+                                        </div>
+                                        <span class="fw-semibold">{{ $item['display'] }}</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="d-flex justify-content-center text-muted">Недостаточно данных</div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -330,10 +341,35 @@
                                 <h5 class="mb-1">Выручка за период</h5>
                                 <p class="text-muted mb-0">Сравнение с прошлым периодом</p>
                             </div>
-                            <span class="dashboard-metric-pill" data-dashboard-revenue-delta>—</span>
+                            <span class="dashboard-metric-pill">
+                                @if ($revenueDelta === null)
+                                    Нет данных для сравнения
+                                @else
+                                    VS прошлый период: {{ ($revenueDelta > 0 ? '+' : '') . number_format($revenueDelta, 1, '.', '') }}%
+                                @endif
+                            </span>
                         </div>
-                        <div class="d-flex flex-column gap-3" data-dashboard-revenue-trend>
-                            <div class="d-flex justify-content-center text-muted">Загрузка…</div>
+                        <div class="d-flex flex-column gap-3">
+                            @forelse ($revenueTrend as $item)
+                                @php
+                                    $delta = $item['previous'] > 0 ? (($item['current'] - $item['previous']) / max($item['previous'], 1)) * 100 : null;
+                                @endphp
+                                <div class="border rounded-2 p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">{{ $item['label'] }}</span>
+                                        <span class="small text-muted">{{ number_format($item['current'], 0, '.', ' ') }} ₽</span>
+                                    </div>
+                                    <p class="small mb-0 text-muted">
+                                        @if ($delta === null)
+                                            Нет данных для сравнения
+                                        @else
+                                            {{ $delta >= 0 ? 'Рост' : 'Падение' }} {{ number_format(abs($delta), 1, '.', '') }}% vs прошлый период
+                                        @endif
+                                    </p>
+                                </div>
+                            @empty
+                                <div class="d-flex justify-content-center text-muted">Недостаточно данных</div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -343,21 +379,45 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="mb-3">Топ-3 маржинальных услуг</h5>
-                        <ul class="list-unstyled mb-0" data-dashboard-services>
-                            <li class="text-muted">Данные загружаются…</li>
+                        <ul class="list-unstyled mb-0">
+                            @forelse ($topServices as $service)
+                                <li class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <div class="fw-semibold">{{ $service['name'] }}</div>
+                                        <div class="small text-muted">Средняя длительность: {{ $service['avg_duration'] }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-semibold">{{ $service['margin_per_hour_formatted'] }}</span>
+                                        <div class="small text-muted">₽/час</div>
+                                    </div>
+                                </li>
+                            @empty
+                                <li class="text-muted">Пока нет данных по услугам</li>
+                            @endforelse
                         </ul>
-                        <p class="small text-muted mt-3" data-dashboard-services-insight>
-                            ИИ: Наращивание ресниц приносит 1500 ₽/час, ламинирование бровей — 1200 ₽/час.
+                        <p class="small text-muted mt-3">
+                            {{ $servicesInsight ?? 'Когда появятся новые продажи, мы подсветим самые выгодные услуги.' }}
                         </p>
                     </div>
                 </div>
                 <div class="card">
                     <div class="card-body">
                         <h5 class="mb-3">Лучшие клиенты</h5>
-                        <ul class="list-unstyled mb-0" data-dashboard-clients-top>
-                            <li class="text-muted">Данные загружаются…</li>
+                        <ul class="list-unstyled mb-0">
+                            @forelse ($topClients as $client)
+                                <li class="border rounded-2 p-3 mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-semibold">{{ $client['name'] }}</span>
+                                        <span class="badge bg-label-info">{{ $client['loyalty_badge'] }}</span>
+                                    </div>
+                                    <p class="small text-muted mb-1">LTV: {{ $client['total_spent_formatted'] }}</p>
+                                    <p class="small text-muted mb-0">Последний визит: {{ $client['last_visit'] }}</p>
+                                </li>
+                            @empty
+                                <li class="text-muted">Пока нет рекомендованных клиентов</li>
+                            @endforelse
                         </ul>
-                        <p class="small text-muted mt-3">Отмечаем тех, кто чаще рекомендует и оставляет отзывы.</p>
+                        <p class="small text-muted mt-3">Отмечаем тех, кто чаще рекомендует и возвращается.</p>
                     </div>
                 </div>
             </div>
@@ -370,254 +430,13 @@
                 <div>
                     <p class="text-uppercase text-muted fw-medium mb-1 small">Микро-обучение и тренды</p>
                     <h4 class="mb-2">Совет дня от Veloria</h4>
-                    <p class="mb-0" data-dashboard-tip>
-                        На этой неделе запрос на «эффект стеклянной кожи» вырос на 40%. Упомяните его в сторис и предложите пробный набор.
-                    </p>
+                    <p class="mb-0">{{ $dailyTip['text'] ?? 'Следите за обновлениями — скоро здесь появится персональный совет от Veloria.' }}</p>
                 </div>
                 <div class="text-lg-end">
                     <button class="btn btn-primary" type="button">Подробнее</button>
-                    <p class="small text-muted mb-0 mt-2" data-dashboard-tip-source>Источник: трендовые запросы клиентов Veloria</p>
+                    <p class="small text-muted mb-0 mt-2">Источник: {{ $dailyTip['source'] ?? 'Veloria AI ассистент' }}</p>
                 </div>
             </div>
         </div>
     </div>
-@endsection
-
-@section('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var revenueEl = document.querySelector('[data-dashboard-revenue]');
-            if (!revenueEl) return;
-
-            var goal = 8000;
-            var marginList = document.querySelector('[data-dashboard-margin-list]');
-            var revenueTrendEl = document.querySelector('[data-dashboard-revenue-trend]');
-            var servicesEl = document.querySelector('[data-dashboard-services]');
-            var topClientsEl = document.querySelector('[data-dashboard-clients-top]');
-            var revenueProgressEl = document.querySelector('[data-dashboard-revenue-progress]');
-            var clientsEl = document.querySelector('[data-dashboard-clients]');
-            var averageEl = document.querySelector('[data-dashboard-average]');
-            var retentionEl = document.querySelector('[data-dashboard-retention]');
-            var revenueDeltaEl = document.querySelector('[data-dashboard-revenue-delta]');
-            var goalEl = document.querySelector('[data-dashboard-goal]');
-            var marginInsightEl = document.querySelector('[data-dashboard-margin-insight]');
-
-            if (goalEl) {
-                goalEl.textContent = new Intl.NumberFormat('ru-RU').format(goal) + ' ₽';
-            }
-
-            function getCookie(name) {
-                var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-                return match ? decodeURIComponent(match[1]) : null;
-            }
-
-            function formatCurrency(value) {
-                return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(value);
-            }
-
-            function formatDelta(delta) {
-                if (delta === null || isNaN(delta)) return '—';
-                var sign = delta > 0 ? '+' : '';
-                var emoji = delta > 0 ? '✅' : (delta < 0 ? '⚠️' : '➖');
-                return emoji + ' ' + sign + delta.toFixed(1) + '%';
-            }
-
-            function renderMargin(items) {
-                if (!marginList) return;
-                marginList.innerHTML = '';
-                if (!items.length) {
-                    marginList.innerHTML = '<div class="d-flex justify-content-center text-muted">Недостаточно данных</div>';
-                    return;
-                }
-
-                var maxValue = Math.max.apply(null, items.map(function (item) { return item.value; }));
-                items.forEach(function (item) {
-                    var wrapper = document.createElement('div');
-                    wrapper.className = 'border rounded-2 p-3';
-                    wrapper.innerHTML = '
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-semibold">' + item.label + '</span>
-                            <span class="small text-muted">' + item.duration + '</span>
-                        </div>
-                        <div class="dashboard-bar-wrapper">
-                            <div class="dashboard-bar">
-                                <div class="dashboard-bar-fill" style="width: ' + (maxValue > 0 ? (item.value / maxValue * 100).toFixed(1) : 0) + '%"></div>
-                            </div>
-                            <span class="fw-semibold">' + item.display + '</span>
-                        </div>
-                    ';
-                    marginList.appendChild(wrapper);
-                });
-            }
-
-            function renderRevenueTrend(data) {
-                if (!revenueTrendEl) return;
-                revenueTrendEl.innerHTML = '';
-                if (!data.labels || !data.labels.length) {
-                    revenueTrendEl.innerHTML = '<div class="d-flex justify-content-center text-muted">Недостаточно данных</div>';
-                    return;
-                }
-
-                data.labels.forEach(function (label, index) {
-                    var card = document.createElement('div');
-                    card.className = 'border rounded-2 p-3';
-                    var current = data.current[index] || 0;
-                    var previous = data.previous[index] || 0;
-                    var delta = previous === 0 ? null : ((current - previous) / Math.max(previous, 1)) * 100;
-                    card.innerHTML = '
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-semibold">' + label + '</span>
-                            <span class="small text-muted">' + formatCurrency(current) + '</span>
-                        </div>
-                        <p class="small mb-0 text-muted">' + (delta === null ? 'Нет данных для сравнения' : (delta >= 0 ? 'Рост ' : 'Падение ') + Math.abs(delta).toFixed(1) + '% vs прошлый период') + '</p>
-                    ';
-                    revenueTrendEl.appendChild(card);
-                });
-            }
-
-            function renderServices(services) {
-                if (!servicesEl) return;
-                servicesEl.innerHTML = '';
-                if (!services.length) {
-                    servicesEl.innerHTML = '<li class="text-muted">Данных пока нет</li>';
-                    return;
-                }
-
-                services.slice(0, 3).forEach(function (service, index) {
-                    var li = document.createElement('li');
-                    li.className = 'd-flex justify-content-between align-items-start mb-3';
-                    var name = service.name || service.title || service.label || ('Услуга #' + (index + 1));
-                    var marginValue = service.margin_per_hour || service.value || service.amount || 0;
-                    var duration = service.duration || service.default_duration || '60 мин';
-                    li.innerHTML = '
-                        <div>
-                            <div class="fw-semibold">' + name + '</div>
-                            <div class="small text-muted">' + duration + '</div>
-                        </div>
-                        <div class="text-end">
-                            <span class="fw-semibold">' + formatCurrency(marginValue) + '</span>
-                            <div class="small text-muted">₽/час</div>
-                        </div>
-                    ';
-                    servicesEl.appendChild(li);
-                });
-            }
-
-            function renderClients(clients) {
-                if (!topClientsEl) return;
-                topClientsEl.innerHTML = '';
-                if (!clients.length) {
-                    topClientsEl.innerHTML = '<li class="text-muted">Пока нет рекомендованных клиентов</li>';
-                    return;
-                }
-
-                clients.slice(0, 5).forEach(function (client) {
-                    var li = document.createElement('li');
-                    li.className = 'border rounded-2 p-3 mb-2';
-                    var loyalty = client.loyalty_level ? client.loyalty_level.toUpperCase() : 'LTV';
-                    var lastVisit = client.last_purchase_at ? new Date(client.last_purchase_at).toLocaleDateString('ru-RU') : (client.last_visit || client.last_visited_at || '—');
-                    li.innerHTML = '
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-semibold">' + client.name + '</span>
-                            <span class="badge bg-label-info">' + loyalty + '</span>
-                        </div>
-                        <p class="small text-muted mb-1">LTV: ' + formatCurrency(client.total_spent || client.amount || client.ltv || 0) + '</p>
-                        <p class="small text-muted mb-0">Последний визит: ' + lastVisit + '</p>
-                    ';
-                    topClientsEl.appendChild(li);
-                });
-            }
-
-            var token = getCookie('token');
-            var headers = { 'Accept': 'application/json' };
-            if (token) headers['Authorization'] = 'Bearer ' + token;
-
-            fetch('/api/v1/analytics/overview', { headers: headers })
-                .then(function (response) {
-                    if (!response.ok) throw new Error('Ошибка загрузки данных');
-                    return response.json();
-                })
-                .then(function (payload) {
-                    var summary = payload.data && payload.data.summary ? payload.data.summary : {};
-                    var financial = payload.data && payload.data.financial ? payload.data.financial : {};
-                    var topClients = payload.data && payload.data.top_clients ? payload.data.top_clients : [];
-                    var trend = financial.revenue_trend || {};
-                    trend.labels = Array.isArray(trend.labels) ? trend.labels : [];
-                    trend.current = Array.isArray(trend.current) ? trend.current : [];
-                    trend.previous = Array.isArray(trend.previous) ? trend.previous : [];
-                    var services = (financial.service_share && (financial.service_share.items || financial.service_share.data)) || [];
-
-                    var currentRevenue = summary.revenue ? summary.revenue.current || 0 : 0;
-                    var revenueDelta = summary.revenue ? summary.revenue.delta : null;
-                    var transactions = summary.transactions ? summary.transactions.current || 0 : 0;
-                    var clientsTarget = 5;
-
-                    revenueEl.textContent = formatCurrency(currentRevenue);
-                    if (revenueProgressEl) {
-                        var progress = Math.min(100, Math.round((currentRevenue / goal) * 100));
-                        revenueProgressEl.style.width = progress + '%';
-                    }
-
-                    if (clientsEl) {
-                        clientsEl.textContent = transactions + ' из ' + clientsTarget;
-                    }
-
-                    if (averageEl && summary.average_ticket) {
-                        averageEl.textContent = formatCurrency(summary.average_ticket.current || 0);
-                    }
-
-                    if (retentionEl && summary.retention_rate) {
-                        retentionEl.textContent = (summary.retention_rate.current || 0).toFixed(1) + '%';
-                    }
-
-                    if (revenueDeltaEl) {
-                        revenueDeltaEl.textContent = 'VS прошлый период: ' + formatDelta(revenueDelta);
-                    }
-
-                    renderRevenueTrend(trend);
-
-                    var marginItems = [];
-                    if (trend.labels && trend.labels.length) {
-                        var hoursPerDay = 6;
-                        var labelsSlice = trend.labels.slice(-7);
-                        var currentSlice = trend.current.slice(-7);
-                        var total = labelsSlice.map(function (label, idx) {
-                            var value = currentSlice[idx] || 0;
-                            return { label: label, value: value / hoursPerDay };
-                        });
-                        marginItems = total.map(function (item) {
-                            return {
-                                label: item.label,
-                                value: Math.round(item.value),
-                                display: formatCurrency(item.value),
-                                duration: hoursPerDay + ' ч в работе',
-                            };
-                        });
-                    }
-                    renderMargin(marginItems);
-
-                    if (marginInsightEl && marginItems.length) {
-                        var best = marginItems.slice().sort(function (a, b) { return b.value - a.value; })[0];
-                        marginInsightEl.textContent = 'ИИ: ' + best.label + ' приносит больше всего — ' + best.display + '. Перенесем туда ключевых клиентов?';
-                    }
-
-                    renderServices(services);
-                    renderClients(topClients || []);
-                })
-                .catch(function () {
-                    if (marginList) {
-                        marginList.innerHTML = '<div class="d-flex justify-content-center text-muted">Не удалось загрузить данные</div>';
-                    }
-                    if (revenueTrendEl) {
-                        revenueTrendEl.innerHTML = '<div class="d-flex justify-content-center text-muted">Не удалось загрузить данные</div>';
-                    }
-                    if (servicesEl) {
-                        servicesEl.innerHTML = '<li class="text-muted">Не удалось загрузить данные</li>';
-                    }
-                    if (revenueDeltaEl) {
-                        revenueDeltaEl.textContent = 'Нет данных для сравнения';
-                    }
-                });
-        });
-    </script>
 @endsection
