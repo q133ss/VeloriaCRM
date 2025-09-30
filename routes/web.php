@@ -1,10 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LandingPageController;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/l/{slug}', LandingPageController::class)->name('landings.public');
 
 # TODO Дизайн страниц делаем сами, остальное за нейронкой!
 
@@ -53,6 +56,18 @@ Route::middleware('token.cookie')->group(function () {
     Route::get('/services', function () {
         return view('services.index');
     })->name('services.index');
+
+    Route::get('/landings', function () {
+        return view('landings.index');
+    })->name('landings.index');
+
+    Route::get('/landings/create', function () {
+        return view('landings.create');
+    })->name('landings.create');
+
+    Route::get('/landings/{landing}/edit', function ($landing) {
+        return view('landings.edit', ['landingId' => $landing]);
+    })->name('landings.edit');
 
     Route::view('/marketing', 'marketing.index')->name('marketing');
     Route::view('/help', 'help.index')->name('help');

@@ -16,5 +16,6 @@ return [
     'learning' => 'Learning',
     'veloryStudio' => 'Velory Studio',
     'automations' => 'Automations',
+    'landings' => 'Landings',
     'loading' => 'Loading...',
 ];

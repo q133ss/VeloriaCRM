@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\HelpCenterController;
 use App\Http\Controllers\Api\V1\Marketing\MarketingCampaignController;
 use App\Http\Controllers\Api\V1\Marketing\PromotionController;
 use App\Http\Controllers\Api\V1\Marketing\WarmupController;
+use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 
 Route::prefix('v1')->group(function () {
@@ -62,6 +63,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/services/{service}', [ServiceController::class, 'show']);
         Route::patch('/services/{service}', [ServiceController::class, 'update']);
         Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+        Route::get('/landings/options', [LandingController::class, 'options']);
+        Route::apiResource('landings', LandingController::class);
         Route::prefix('marketing')->group(function () {
             Route::get('/campaigns', [MarketingCampaignController::class, 'index']);
             Route::post('/campaigns', [MarketingCampaignController::class, 'store']);
