@@ -157,6 +157,16 @@
                                 </div>
                             </div>
                             <div class="col-12">
+                                <label class="form-label">Услуги</label>
+                                <div class="row g-2" id="quick-services-container">
+                                    <div class="col-12 text-muted">Загрузка услуг...</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+                                    <span>Предварительная сумма</span>
+                                    <span id="quick-services-summary">0 ₽</span>
+                                </div>
+                            </div>
+                            <div class="col-12">
                                 <div class="form-floating form-floating-outline">
                                     <textarea class="form-control" id="quick_note" name="note" style="height: 120px"></textarea>
                                     <label for="quick_note">Комментарий</label>
@@ -215,6 +225,13 @@
         const selectAllCheckbox = document.getElementById('select-all');
         const bulkButtons = document.querySelectorAll('.bulk-action-btn');
         const bulkRemindBtn = document.getElementById('bulk-remind-btn');
+        const quickForm = document.getElementById('quick-create-form');
+        const quickServicesContainer = document.getElementById('quick-services-container');
+        const quickServicesSummary = document.getElementById('quick-services-summary');
+        const quickClientPhoneInput = document.getElementById('quick_client_phone');
+        const quickClientNameInput = document.getElementById('quick_client_name');
+        let quickLookupController = null;
+        let quickLookupTimer = null;
 
         function showAlert(type, message, sticky = false) {
             const wrapper = document.createElement('div');
@@ -326,6 +343,137 @@
 
                 ordersBody.appendChild(tr);
             });
+        }
+
+        function formatQuickCurrency(value) {
+            return `${value.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
+        }
+
+        function updateQuickSummary() {
+            if (!quickForm || !quickServicesSummary) {
+                return;
+            }
+
+            let totalPrice = 0;
+            quickForm.querySelectorAll('.quick-service-checkbox:checked').forEach(checkbox => {
+                totalPrice += Number(checkbox.getAttribute('data-price') || 0);
+            });
+
+            quickServicesSummary.textContent = formatQuickCurrency(totalPrice);
+        }
+
+        function renderQuickServices(services) {
+            if (!quickServicesContainer) {
+                return;
+            }
+
+            quickServicesContainer.innerHTML = '';
+
+            if (!Array.isArray(services) || !services.length) {
+                const empty = document.createElement('div');
+                empty.className = 'col-12 text-muted';
+                empty.textContent = 'Услуги ещё не добавлены.';
+                quickServicesContainer.appendChild(empty);
+                updateQuickSummary();
+                return;
+            }
+
+            services.forEach(service => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6';
+                col.innerHTML = `
+                    <div class="form-check custom-option custom-option-basic">
+                        <label class="form-check-label custom-option-content w-100" for="quick-service-${service.id}">
+                            <input
+                                type="checkbox"
+                                class="form-check-input quick-service-checkbox"
+                                id="quick-service-${service.id}"
+                                value="${service.id}"
+                                data-price="${service.price || 0}"
+                                data-duration="${service.duration || 0}"
+                            />
+                            <span class="custom-option-body">
+                                <span class="custom-option-title d-flex justify-content-between align-items-center">
+                                    <span>${service.name}</span>
+                                    <span class="badge bg-label-primary">${Number(service.price || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
+                                </span>
+                                <small class="text-muted">~ ${service.duration || 0} мин</small>
+                            </span>
+                        </label>
+                    </div>
+                `;
+                quickServicesContainer.appendChild(col);
+            });
+
+            quickServicesContainer.querySelectorAll('.quick-service-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateQuickSummary);
+            });
+
+            updateQuickSummary();
+        }
+
+        async function loadQuickServices() {
+            if (!quickServicesContainer) {
+                return;
+            }
+
+            quickServicesContainer.innerHTML = '<div class="col-12 text-muted">Загрузка услуг...</div>';
+
+            try {
+                const response = await fetch('/api/v1/orders/options', {
+                    headers: authHeaders(),
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    quickServicesContainer.innerHTML = '<div class="col-12 text-danger">Не удалось загрузить услуги.</div>';
+                    return;
+                }
+
+                const data = await response.json();
+                renderQuickServices(data.services || []);
+            } catch (error) {
+                if (error?.name === 'AbortError') {
+                    return;
+                }
+
+                quickServicesContainer.innerHTML = '<div class="col-12 text-danger">Не удалось загрузить услуги.</div>';
+            }
+        }
+
+        async function lookupQuickClient(phone) {
+            if (!quickClientPhoneInput || !phone) {
+                return;
+            }
+
+            if (quickLookupController) {
+                quickLookupController.abort();
+            }
+
+            quickLookupController = new AbortController();
+
+            try {
+                const params = new URLSearchParams({ client_phone: phone });
+                const response = await fetch(`/api/v1/orders/options?${params.toString()}`, {
+                    headers: authHeaders(),
+                    credentials: 'include',
+                    signal: quickLookupController.signal,
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.client && quickClientNameInput) {
+                    quickClientNameInput.value = data.client.name || '';
+                }
+            } catch (error) {
+                if (error?.name === 'AbortError') {
+                    return;
+                }
+            }
         }
 
         function updateBulkButtons() {
@@ -532,6 +680,50 @@
             loadOrders(state.page);
         }
 
+        if (quickClientPhoneInput) {
+            quickClientPhoneInput.addEventListener('input', function () {
+                const value = this.value.trim();
+
+                if (quickLookupTimer) {
+                    clearTimeout(quickLookupTimer);
+                }
+
+                if (!value) {
+                    if (quickClientNameInput && !quickClientNameInput.matches(':focus')) {
+                        quickClientNameInput.value = '';
+                    }
+                    return;
+                }
+
+                quickLookupTimer = setTimeout(() => lookupQuickClient(value), 400);
+            });
+
+            quickClientPhoneInput.addEventListener('blur', function () {
+                const value = this.value.trim();
+                if (value) {
+                    lookupQuickClient(value);
+                }
+            });
+        }
+
+        const quickModalElement = document.getElementById('quickCreateModal');
+        if (quickModalElement) {
+            quickModalElement.addEventListener('shown.bs.modal', () => {
+                if (quickClientPhoneInput && quickClientPhoneInput.value.trim()) {
+                    lookupQuickClient(quickClientPhoneInput.value.trim());
+                }
+            });
+
+            quickModalElement.addEventListener('hidden.bs.modal', () => {
+                if (quickForm) {
+                    quickForm.reset();
+                    updateQuickSummary();
+                }
+            });
+        }
+
+        loadQuickServices();
+
         document.getElementById('quick-create-form').addEventListener('submit', async function (event) {
             event.preventDefault();
             const form = event.target;
@@ -539,11 +731,20 @@
             errorsContainer.innerHTML = '';
 
             const payload = {
-                client_phone: form.client_phone.value,
-                client_name: form.client_name.value,
+                client_phone: form.client_phone.value.trim(),
+                client_name: form.client_name.value.trim(),
                 scheduled_at: form.scheduled_at.value,
                 note: form.note.value,
             };
+
+            const selectedServices = Array.from(form.querySelectorAll('.quick-service-checkbox:checked'));
+            const services = selectedServices.map(cb => Number(cb.value));
+            const totalPrice = selectedServices.reduce((sum, checkbox) => {
+                return sum + Number(checkbox.getAttribute('data-price') || 0);
+            }, 0);
+
+            payload.services = services;
+            payload.total_price = services.length ? Number(totalPrice.toFixed(2)) : null;
 
             const response = await fetch('/api/v1/orders/quick-create', {
                 method: 'POST',
