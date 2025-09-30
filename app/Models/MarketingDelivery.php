@@ -5,28 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class MarketingCampaignVariant extends Model
+class MarketingDelivery extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'campaign_id',
-        'label',
-        'subject',
-        'content',
-        'sample_size',
-        'delivered_count',
-        'read_count',
-        'click_count',
+        'variant_id',
+        'client_id',
+        'channel',
         'status',
+        'sent_at',
+        'meta',
     ];
 
     protected function casts(): array
     {
         return [
-            'sample_size' => 'integer',
+            'sent_at' => 'datetime',
+            'meta' => 'array',
         ];
     }
 
@@ -35,8 +33,13 @@ class MarketingCampaignVariant extends Model
         return $this->belongsTo(MarketingCampaign::class, 'campaign_id');
     }
 
-    public function deliveries(): HasMany
+    public function variant(): BelongsTo
     {
-        return $this->hasMany(MarketingDelivery::class, 'variant_id');
+        return $this->belongsTo(MarketingCampaignVariant::class, 'variant_id');
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class, 'client_id');
     }
 }

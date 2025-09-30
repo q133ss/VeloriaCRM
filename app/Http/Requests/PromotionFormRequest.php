@@ -14,9 +14,9 @@ class PromotionFormRequest extends BaseRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('value')) {
+        if ($this->has('percent')) {
             $this->merge([
-                'value' => is_numeric($this->input('value')) ? (float) $this->input('value') : $this->input('value'),
+                'percent' => is_numeric($this->input('percent')) ? (float) $this->input('percent') : $this->input('percent'),
             ]);
         }
     }
@@ -25,22 +25,14 @@ class PromotionFormRequest extends BaseRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', Rule::in(['percentage', 'fixed', 'gift', 'bogo', 'loyalty'])],
-            'value' => ['nullable', 'numeric', 'min:0'],
+            'type' => ['required', 'string', Rule::in(['order_percent', 'service_percent', 'category_percent', 'free_service'])],
+            'percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_id' => ['nullable', 'integer', 'exists:services,id'],
+            'service_category_id' => ['nullable', 'integer', 'exists:service_categories,id'],
             'gift_description' => ['nullable', 'string', 'max:255'],
             'promo_code' => ['nullable', 'string', 'max:100'],
-            'audience' => ['required', 'string', Rule::in(['all', 'new', 'loyal', 'custom'])],
-            'conditions' => ['nullable', 'array'],
-            'conditions.service_ids' => ['nullable', 'array'],
-            'conditions.service_ids.*' => ['integer', 'exists:services,id'],
-            'conditions.product_ids' => ['nullable', 'array'],
-            'conditions.product_ids.*' => ['integer'],
-            'conditions.client_tags' => ['nullable', 'array'],
-            'conditions.client_tags.*' => ['string'],
-            'conditions.minimum_orders' => ['nullable', 'integer', 'min:0'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'status' => ['nullable', 'string', Rule::in(['draft', 'scheduled', 'active', 'archived'])],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
             'metadata' => ['nullable', 'array'],
         ];
@@ -50,18 +42,24 @@ class PromotionFormRequest extends BaseRequest
     {
         $validator->after(function (Validator $validator) {
             $type = $this->input('type');
-            $value = $this->input('value');
+            $percent = $this->input('percent');
 
-            if (in_array($type, ['percentage', 'fixed', 'loyalty'], true) && ! is_numeric($value)) {
-                $validator->errors()->add('value', __('marketing.validation.value_required'));
+            if (in_array($type, ['order_percent', 'service_percent', 'category_percent'], true)) {
+                if (! is_numeric($percent) || $percent <= 0) {
+                    $validator->errors()->add('percent', __('marketing.validation.value_required'));
+                }
             }
 
-            if ($type === 'percentage' && is_numeric($value) && ($value <= 0 || $value > 100)) {
-                $validator->errors()->add('value', __('marketing.validation.percentage_range'));
+            if ($type === 'service_percent' && ! $this->filled('service_id')) {
+                $validator->errors()->add('service_id', __('validation.required', ['attribute' => 'service_id']));
             }
 
-            if ($type === 'gift' && ! $this->filled('gift_description')) {
-                $validator->errors()->add('gift_description', __('marketing.validation.gift_required'));
+            if ($type === 'category_percent' && ! $this->filled('service_category_id')) {
+                $validator->errors()->add('service_category_id', __('validation.required', ['attribute' => 'service_category_id']));
+            }
+
+            if ($type === 'free_service' && ! $this->filled('service_id')) {
+                $validator->errors()->add('service_id', __('validation.required', ['attribute' => 'service_id']));
             }
         });
     }

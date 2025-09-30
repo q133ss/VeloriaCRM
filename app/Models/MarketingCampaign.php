@@ -61,6 +61,11 @@ class MarketingCampaign extends Model
         return $this->belongsTo(MarketingCampaignVariant::class, 'winning_variant_id');
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(MarketingDelivery::class, 'campaign_id');
+    }
+
     public function scopeForUser($query, int $userId)
     {
         return $query->where('user_id', $userId);

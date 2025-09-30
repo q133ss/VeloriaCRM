@@ -21,6 +21,17 @@ class Setting extends Model
         'map_point',
         'smsaero_email',
         'smsaero_api_key',
+        'smtp_host',
+        'smtp_port',
+        'smtp_username',
+        'smtp_password',
+        'smtp_encryption',
+        'smtp_from_address',
+        'smtp_from_name',
+        'whatsapp_api_key',
+        'whatsapp_sender',
+        'telegram_bot_token',
+        'telegram_sender',
         'yookassa_shop_id',
         'yookassa_secret_key',
         'reminder_message',
@@ -36,6 +47,7 @@ class Setting extends Model
             'notification_prefs' => 'array',
             'branding' => 'array',
             'map_point' => 'array',
+            'smtp_port' => 'integer',
         ];
     }
 

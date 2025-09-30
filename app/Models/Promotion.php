@@ -16,26 +16,25 @@ class Promotion extends Model
         'user_id',
         'name',
         'type',
-        'value',
+        'percent',
+        'service_id',
+        'service_category_id',
         'gift_description',
         'promo_code',
-        'audience',
-        'conditions',
         'starts_at',
         'ends_at',
-        'status',
         'usage_limit',
         'usage_count',
         'unique_clients',
         'revenue_generated',
         'metadata',
+        'archived_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'value' => 'float',
-            'conditions' => 'array',
+            'percent' => 'float',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'usage_limit' => 'integer',
@@ -43,6 +42,7 @@ class Promotion extends Model
             'unique_clients' => 'integer',
             'revenue_generated' => 'float',
             'metadata' => 'array',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -63,19 +63,37 @@ class Promotion extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        $now = Carbon::now();
+
+        return $query
+            ->whereNull('archived_at')
+            ->where(function ($builder) use ($now) {
+                $builder
+                    ->whereNull('starts_at')
+                    ->orWhere('starts_at', '<=', $now);
+            })
+            ->where(function ($builder) use ($now) {
+                $builder
+                    ->whereNull('ends_at')
+                    ->orWhere('ends_at', '>=', $now);
+            })
+            ->where(function ($builder) {
+                $builder
+                    ->whereNull('usage_limit')
+                    ->orWhereColumn('usage_count', '<', 'usage_limit');
+            });
     }
 
     public function scopeArchived($query)
     {
-        return $query->where('status', 'archived');
+        return $query->whereNotNull('archived_at');
     }
 
     public function isActive(): bool
     {
         $now = Carbon::now();
 
-        if ($this->status !== 'active') {
+        if ($this->archived_at !== null) {
             return false;
         }
 

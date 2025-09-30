@@ -179,18 +179,17 @@
                             <label for="promotion-type" class="form-label">Тип акции</label>
                             <select id="promotion-type" class="form-select" required></select>
                         </div>
-                        <div class="col-md-3">
-                            <label for="promotion-audience" class="form-label">Аудитория</label>
-                            <select id="promotion-audience" class="form-select" required></select>
+                        <div class="col-md-3" data-promotion-field="percent" style="display: none;">
+                            <label for="promotion-percent" class="form-label">Процент кэшбэка</label>
+                            <input type="number" class="form-control" id="promotion-percent" placeholder="15" min="1" max="100" />
                         </div>
-                        <div class="col-md-4" data-promotion-field="value" style="display: none;">
-                            <label for="promotion-value" class="form-label">Размер скидки</label>
-                            <input type="number" class="form-control" id="promotion-value" placeholder="20" min="0" />
-                            <div class="form-text">Для процентов укажите число 1–100, для суммы — в валюте аккаунта.</div>
+                        <div class="col-md-3" data-promotion-field="service" style="display: none;">
+                            <label for="promotion-service" class="form-label">Услуга</label>
+                            <select id="promotion-service" class="form-select"></select>
                         </div>
-                        <div class="col-md-4" data-promotion-field="gift" style="display: none;">
-                            <label for="promotion-gift" class="form-label">Описание подарка</label>
-                            <input type="text" class="form-control" id="promotion-gift" placeholder="Спа-процедура в подарок" />
+                        <div class="col-md-3" data-promotion-field="category" style="display: none;">
+                            <label for="promotion-category" class="form-label">Категория услуг</label>
+                            <select id="promotion-category" class="form-select"></select>
                         </div>
                         <div class="col-md-4">
                             <label for="promotion-code" class="form-label">Промокод</label>
@@ -209,16 +208,8 @@
                             <input type="date" class="form-control" id="promotion-end" />
                         </div>
                         <div class="col-12">
-                            <label for="promotion-conditions" class="form-label">Условия</label>
-                            <textarea class="form-control" id="promotion-conditions" rows="3" placeholder="Для новых клиентов на услугу «Комплексный уход»"></textarea>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="promotion-status" class="form-label">Статус</label>
-                            <select id="promotion-status" class="form-select">
-                                <option value="draft">Черновик</option>
-                                <option value="active">Активна</option>
-                                <option value="scheduled">Запланирована</option>
-                            </select>
+                            <label for="promotion-note" class="form-label">Комментарий для команды</label>
+                            <textarea class="form-control" id="promotion-note" rows="3" placeholder="Например: предложить кэшбэк к годовщине посещения"></textarea>
                         </div>
                         <div class="col-12 text-end">
                             <button type="submit" class="btn btn-outline-primary">
@@ -481,6 +472,11 @@
                     totals: { active: 0, archived: 0 },
                     suggestions: [],
                 },
+                promotionOptions: {
+                    types: [],
+                    services: [],
+                    categories: [],
+                },
                 warmup: null,
                 warmupMeta: {},
             };
@@ -676,45 +672,77 @@
             }
 
             function buildPromotionCard(promotion) {
-                var statusBadge = promotion.status === 'archived'
-                    ? '<span class="badge bg-label-secondary">Архив</span>'
-                    : promotion.status === 'active'
-                        ? '<span class="badge bg-label-success">Активна</span>'
-                        : '<span class="badge bg-label-warning">' + promotion.status + '</span>';
                 var metrics = promotion.metrics || {};
-                var valueInfo = '';
-                if (promotion.type === 'percentage') {
-                    valueInfo = promotion.value ? promotion.value + '% скидка' : '';
-                } else if (promotion.type === 'fixed') {
-                    valueInfo = promotion.value ? 'Скидка ' + promotion.value : '';
-                } else if (promotion.type === 'gift') {
-                    valueInfo = promotion.gift_description || '';
-                } else if (promotion.type === 'bogo') {
-                    valueInfo = '2 по цене 1';
-                } else if (promotion.type === 'loyalty') {
-                    valueInfo = 'Накопительная программа';
+                var typeLabel = '';
+                var serviceName = null;
+                var categoryName = null;
+
+                if (promotion.service_id) {
+                    var serviceMatch = state.promotionOptions.services.find(function (service) {
+                        return Number(service.id) === Number(promotion.service_id);
+                    });
+                    serviceName = serviceMatch ? serviceMatch.name : null;
                 }
+
+                if (promotion.service_category_id) {
+                    var categoryMatch = state.promotionOptions.categories.find(function (category) {
+                        return Number(category.id) === Number(promotion.service_category_id);
+                    });
+                    categoryName = categoryMatch ? categoryMatch.name : null;
+                }
+
+                switch (promotion.type) {
+                    case 'order_percent':
+                        typeLabel = (promotion.percent || 0) + '% на весь заказ';
+                        break;
+                    case 'service_percent':
+                        typeLabel = (promotion.percent || 0) + '% на услугу' + (serviceName ? ' «' + serviceName + '»' : '');
+                        break;
+                    case 'category_percent':
+                        typeLabel = (promotion.percent || 0) + '% на категорию' + (categoryName ? ' «' + categoryName + '»' : '');
+                        break;
+                    case 'free_service':
+                        typeLabel = 'Бесплатная услуга' + (serviceName ? ' «' + serviceName + '»' : '');
+                        break;
+                    default:
+                        typeLabel = 'Специальное предложение';
+                        break;
+                }
+
+                var now = new Date();
+                var statusBadge;
+                if (promotion.is_archived) {
+                    statusBadge = '<span class="badge bg-label-secondary">Архив</span>';
+                } else if (promotion.is_active) {
+                    statusBadge = '<span class="badge bg-label-success">Активна</span>';
+                } else if (promotion.starts_at && new Date(promotion.starts_at) > now) {
+                    statusBadge = '<span class="badge bg-label-info">Запланирована</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-label-warning">Готова</span>';
+                }
+
+                var note = (promotion.metadata && promotion.metadata.note) || '';
 
                 return (
                     '<div class="border rounded-2 p-3" data-id="' + promotion.id + '">' +
                     '<div class="d-flex justify-content-between align-items-start mb-2">' +
                     '<div>' +
                     '<div class="fw-semibold">' + promotion.name + '</div>' +
-                    '<div class="text-muted small">' + (valueInfo || 'Специальное предложение') + '</div>' +
+                    '<div class="text-muted small">' + (typeLabel || 'Специальное предложение') + '</div>' +
                     '</div>' +
                     statusBadge +
                     '</div>' +
-                    '<div class="text-muted small mb-2">' + (promotion.conditions || 'Без доп. условий') + '</div>' +
+                    '<div class="text-muted small mb-2">' + (note || 'Без доп. комментариев') + '</div>' +
                     '<div class="row g-2 text-center small mb-3">' +
                     '<div class="col"><div class="fw-semibold">' + (metrics.usage_count || 0) + '</div><div class="text-muted">Использований</div></div>' +
                     '<div class="col"><div class="fw-semibold">' + (metrics.unique_clients || 0) + '</div><div class="text-muted">Клиентов</div></div>' +
                     '<div class="col"><div class="fw-semibold">' + ((metrics.revenue_generated || 0).toFixed ? metrics.revenue_generated.toFixed(2) : metrics.revenue_generated || 0) + '</div><div class="text-muted">Выручка</div></div>' +
                     '</div>' +
                     '<div class="d-flex flex-wrap gap-2">' +
-                    (promotion.status !== 'archived'
+                    (!promotion.is_archived
                         ? '<button class="btn btn-sm btn-outline-success" data-action="usage">Зафиксировать использование</button>'
                         : '') +
-                    (promotion.status !== 'archived'
+                    (!promotion.is_archived
                         ? '<button class="btn btn-sm btn-outline-secondary" data-action="archive">В архив</button>'
                         : '') +
                     '</div>' +
@@ -728,10 +756,10 @@
                 if (!activeContainer || !archivedContainer) return;
 
                 var active = state.promotions.filter(function (promo) {
-                    return promo.status !== 'archived';
+                    return !promo.is_archived;
                 });
                 var archived = state.promotions.filter(function (promo) {
-                    return promo.status === 'archived';
+                    return promo.is_archived;
                 });
 
                 activeContainer.innerHTML = active.length
@@ -886,31 +914,48 @@
             function fetchPromotionOptions() {
                 return apiRequest('/api/v1/marketing/promotions/options').then(function (data) {
                     var options = data.data || {};
+                    state.promotionOptions = {
+                        types: options.types || [],
+                        services: options.services || [],
+                        categories: options.categories || [],
+                    };
+
                     var typeSelect = document.getElementById('promotion-type');
-                    var audienceSelect = document.getElementById('promotion-audience');
+                    var serviceSelect = document.getElementById('promotion-service');
+                    var categorySelect = document.getElementById('promotion-category');
+
                     if (typeSelect) {
                         typeSelect.innerHTML = '';
-                        (options.types || []).forEach(function (option) {
+                        state.promotionOptions.types.forEach(function (option) {
                             var opt = document.createElement('option');
                             opt.value = option.value;
                             opt.textContent = option.label;
                             typeSelect.appendChild(opt);
                         });
                     }
-                    if (audienceSelect) {
-                        audienceSelect.innerHTML = '';
-                        (options.audiences || []).forEach(function (option) {
-                            var label = option.label;
-                            if (option.count !== undefined) {
-                                label += ' (' + option.count + ')';
-                            }
+
+                    if (serviceSelect) {
+                        serviceSelect.innerHTML = '<option value="">Выберите услугу</option>';
+                        state.promotionOptions.services.forEach(function (service) {
                             var opt = document.createElement('option');
-                            opt.value = option.value;
-                            opt.textContent = label;
-                            audienceSelect.appendChild(opt);
+                            opt.value = service.id;
+                            opt.textContent = service.name;
+                            serviceSelect.appendChild(opt);
                         });
                     }
+
+                    if (categorySelect) {
+                        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+                        state.promotionOptions.categories.forEach(function (category) {
+                            var opt = document.createElement('option');
+                            opt.value = category.id;
+                            opt.textContent = category.name;
+                            categorySelect.appendChild(opt);
+                        });
+                    }
+
                     handlePromotionTypeChange(typeSelect ? typeSelect.value : null);
+                    renderPromotions();
                 });
             }
 
@@ -1125,21 +1170,37 @@
             }
 
             function handlePromotionTypeChange(type) {
-                var valueField = document.querySelector('[data-promotion-field="value"]');
-                var giftField = document.querySelector('[data-promotion-field="gift"]');
-                if (valueField) valueField.style.display = 'none';
-                if (giftField) giftField.style.display = 'none';
-                if (type === 'percentage' || type === 'fixed') {
-                    if (valueField) valueField.style.display = '';
-                } else if (type === 'gift') {
-                    if (giftField) giftField.style.display = '';
+                var percentField = document.querySelector('[data-promotion-field="percent"]');
+                var serviceField = document.querySelector('[data-promotion-field="service"]');
+                var categoryField = document.querySelector('[data-promotion-field="category"]');
+
+                if (percentField) {
+                    percentField.style.display =
+                        type === 'order_percent' || type === 'service_percent' || type === 'category_percent'
+                            ? ''
+                            : 'none';
+                }
+
+                if (serviceField) {
+                    serviceField.style.display =
+                        type === 'service_percent' || type === 'free_service' ? '' : 'none';
+                }
+
+                if (categoryField) {
+                    categoryField.style.display = type === 'category_percent' ? '' : 'none';
                 }
             }
 
             function resetPromotionForm() {
                 var form = document.getElementById('promotion-form');
-                if (form) form.reset();
-                handlePromotionTypeChange(document.getElementById('promotion-type').value);
+                if (form) {
+                    form.reset();
+                }
+                var typeSelect = document.getElementById('promotion-type');
+                if (typeSelect && typeSelect.options.length) {
+                    typeSelect.selectedIndex = 0;
+                }
+                handlePromotionTypeChange(typeSelect ? typeSelect.value : null);
             }
 
             function handlePromotionFormSubmit(event) {
@@ -1148,13 +1209,10 @@
                 var payload = {
                     name: document.getElementById('promotion-name').value.trim(),
                     type: document.getElementById('promotion-type').value,
-                    audience: document.getElementById('promotion-audience').value,
                     promo_code: document.getElementById('promotion-code').value.trim() || null,
                     usage_limit: document.getElementById('promotion-usage-limit').value || null,
                     starts_at: document.getElementById('promotion-start').value || null,
                     ends_at: document.getElementById('promotion-end').value || null,
-                    conditions: document.getElementById('promotion-conditions').value.trim() || null,
-                    status: document.getElementById('promotion-status').value,
                 };
 
                 if (payload.usage_limit) {
@@ -1163,20 +1221,40 @@
                     delete payload.usage_limit;
                 }
 
-                if (payload.type === 'percentage' || payload.type === 'fixed') {
-                    var value = document.getElementById('promotion-value').value;
-                    if (!value) {
-                        showAlert('warning', 'Укажите размер скидки.');
+                var note = document.getElementById('promotion-note').value.trim();
+                if (note) {
+                    payload.metadata = { note: note };
+                }
+
+                if (
+                    payload.type === 'order_percent' ||
+                    payload.type === 'service_percent' ||
+                    payload.type === 'category_percent'
+                ) {
+                    var percentValue = document.getElementById('promotion-percent').value;
+                    if (!percentValue) {
+                        showAlert('warning', 'Укажите процент кэшбэка.');
                         return;
                     }
-                    payload.value = parseFloat(value);
-                } else if (payload.type === 'gift') {
-                    var gift = document.getElementById('promotion-gift').value.trim();
-                    if (!gift) {
-                        showAlert('warning', 'Опишите подарок для клиента.');
+                    payload.percent = parseFloat(percentValue);
+                }
+
+                if (payload.type === 'service_percent' || payload.type === 'free_service') {
+                    var serviceId = parseInt(document.getElementById('promotion-service').value || '0', 10);
+                    if (!serviceId) {
+                        showAlert('warning', 'Выберите услугу для акции.');
                         return;
                     }
-                    payload.gift_description = gift;
+                    payload.service_id = serviceId;
+                }
+
+                if (payload.type === 'category_percent') {
+                    var categoryId = parseInt(document.getElementById('promotion-category').value || '0', 10);
+                    if (!categoryId) {
+                        showAlert('warning', 'Выберите категорию услуг.');
+                        return;
+                    }
+                    payload.service_category_id = categoryId;
                 }
 
                 apiRequest('/api/v1/marketing/promotions', {

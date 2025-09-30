@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Api\V1\Marketing;
 use App\Http\Requests\PromotionFilterRequest;
 use App\Http\Requests\PromotionFormRequest;
 use App\Http\Requests\PromotionUsageRequest;
-use App\Models\Client;
 use App\Models\Promotion;
 use App\Models\PromotionUsage;
+use App\Models\Service;
+use App\Models\ServiceCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -22,34 +23,34 @@ class PromotionController extends MarketingController
 
         $query = Promotion::with('usages')->forUser($userId)->orderByDesc('created_at');
 
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (! empty($filters['audience'])) {
-            $query->where('audience', $filters['audience']);
+        if (array_key_exists('archived', $filters) && $filters['archived'] !== null) {
+            if ($filters['archived']) {
+                $query->whereNotNull('archived_at');
+            } else {
+                $query->whereNull('archived_at');
+            }
         }
 
         $promotions = $query->get();
 
-        $statusCounts = Promotion::forUser($userId)
-            ->selectRaw('status, COUNT(*) as aggregate')
-            ->groupBy('status')
-            ->pluck('aggregate', 'status')
+        $typeCounts = Promotion::forUser($userId)
+            ->selectRaw('type, COUNT(*) as aggregate')
+            ->groupBy('type')
+            ->pluck('aggregate', 'type')
             ->all();
 
         return response()->json([
             'data' => $promotions->map(fn (Promotion $promotion) => $this->transformPromotion($promotion))->all(),
             'meta' => [
                 'filters' => $filters,
-                'status_counts' => $statusCounts,
+                'type_counts' => $typeCounts,
                 'totals' => [
                     'active' => $promotions->filter(fn (Promotion $promotion) => $promotion->isActive())->count(),
-                    'archived' => $promotions->where('status', 'archived')->count(),
+                    'archived' => $promotions->whereNotNull('archived_at')->count(),
                 ],
                 'suggestions' => $this->buildPromotionSuggestions($promotions),
             ],
@@ -65,14 +66,13 @@ class PromotionController extends MarketingController
             'user_id' => $userId,
             'name' => $validated['name'],
             'type' => $validated['type'],
-            'value' => Arr::get($validated, 'value'),
+            'percent' => Arr::get($validated, 'percent'),
+            'service_id' => Arr::get($validated, 'service_id'),
+            'service_category_id' => Arr::get($validated, 'service_category_id'),
             'gift_description' => Arr::get($validated, 'gift_description'),
             'promo_code' => Arr::get($validated, 'promo_code'),
-            'audience' => $validated['audience'],
-            'conditions' => Arr::get($validated, 'conditions'),
             'starts_at' => Arr::get($validated, 'starts_at') ? Carbon::parse($validated['starts_at']) : null,
             'ends_at' => Arr::get($validated, 'ends_at') ? Carbon::parse($validated['ends_at']) : null,
-            'status' => $validated['status'] ?? 'draft',
             'usage_limit' => Arr::get($validated, 'usage_limit'),
             'metadata' => Arr::get($validated, 'metadata'),
         ]);
@@ -107,14 +107,13 @@ class PromotionController extends MarketingController
         $promotion->update([
             'name' => $validated['name'] ?? $promotion->name,
             'type' => $validated['type'] ?? $promotion->type,
-            'value' => Arr::get($validated, 'value', $promotion->value),
+            'percent' => Arr::get($validated, 'percent', $promotion->percent),
+            'service_id' => Arr::get($validated, 'service_id', $promotion->service_id),
+            'service_category_id' => Arr::get($validated, 'service_category_id', $promotion->service_category_id),
             'gift_description' => Arr::get($validated, 'gift_description', $promotion->gift_description),
             'promo_code' => Arr::get($validated, 'promo_code', $promotion->promo_code),
-            'audience' => $validated['audience'] ?? $promotion->audience,
-            'conditions' => Arr::get($validated, 'conditions', $promotion->conditions),
             'starts_at' => Arr::get($validated, 'starts_at') ? Carbon::parse($validated['starts_at']) : $promotion->starts_at,
             'ends_at' => Arr::get($validated, 'ends_at') ? Carbon::parse($validated['ends_at']) : $promotion->ends_at,
-            'status' => $validated['status'] ?? $promotion->status,
             'usage_limit' => Arr::get($validated, 'usage_limit', $promotion->usage_limit),
             'metadata' => Arr::get($validated, 'metadata', $promotion->metadata),
         ]);
@@ -130,7 +129,7 @@ class PromotionController extends MarketingController
     public function archive(Promotion $promotion): JsonResponse
     {
         $this->ensurePromotionBelongsToUser($promotion);
-        $promotion->update(['status' => 'archived']);
+        $promotion->update(['archived_at' => Carbon::now()]);
 
         return response()->json([
             'data' => $this->transformPromotion($promotion->fresh('usages')),
@@ -170,22 +169,28 @@ class PromotionController extends MarketingController
     protected function promotionOptions(): array
     {
         $userId = $this->currentUserId();
-        $clients = Client::where('user_id', $userId)->count();
+        $services = Service::where('user_id', $userId)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        $categories = ServiceCategory::where('user_id', $userId)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return [
             'types' => [
-                ['value' => 'percentage', 'label' => __('marketing.promotions.types.percentage')],
-                ['value' => 'fixed', 'label' => __('marketing.promotions.types.fixed')],
-                ['value' => 'gift', 'label' => __('marketing.promotions.types.gift')],
-                ['value' => 'bogo', 'label' => __('marketing.promotions.types.bogo')],
-                ['value' => 'loyalty', 'label' => __('marketing.promotions.types.loyalty')],
+                ['value' => 'order_percent', 'label' => __('marketing.promotions.types.order_percent')],
+                ['value' => 'service_percent', 'label' => __('marketing.promotions.types.service_percent')],
+                ['value' => 'category_percent', 'label' => __('marketing.promotions.types.category_percent')],
+                ['value' => 'free_service', 'label' => __('marketing.promotions.types.free_service')],
             ],
-            'audiences' => [
-                ['value' => 'all', 'label' => __('marketing.promotions.audiences.all'), 'count' => $clients],
-                ['value' => 'new', 'label' => __('marketing.promotions.audiences.new')],
-                ['value' => 'loyal', 'label' => __('marketing.promotions.audiences.loyal')],
-                ['value' => 'custom', 'label' => __('marketing.promotions.audiences.custom')],
-            ],
+            'services' => $services->map(fn ($service) => [
+                'id' => $service->id,
+                'name' => $service->name,
+            ])->values()->all(),
+            'categories' => $categories->map(fn ($category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+            ])->values()->all(),
         ];
     }
 
@@ -213,17 +218,18 @@ class PromotionController extends MarketingController
             'id' => $promotion->id,
             'name' => $promotion->name,
             'type' => $promotion->type,
-            'value' => $promotion->value,
+            'percent' => $promotion->percent,
+            'service_id' => $promotion->service_id,
+            'service_category_id' => $promotion->service_category_id,
             'gift_description' => $promotion->gift_description,
             'promo_code' => $promotion->promo_code,
-            'audience' => $promotion->audience,
-            'conditions' => $promotion->conditions,
             'starts_at' => optional($promotion->starts_at)->toIso8601String(),
             'ends_at' => optional($promotion->ends_at)->toIso8601String(),
-            'status' => $promotion->status,
             'usage_limit' => $promotion->usage_limit,
             'metrics' => $analytics,
             'is_active' => $isActive,
+            'is_archived' => (bool) $promotion->archived_at,
+            'archived_at' => optional($promotion->archived_at)->toIso8601String(),
             'created_at' => optional($promotion->created_at)->toIso8601String(),
             'updated_at' => optional($promotion->updated_at)->toIso8601String(),
         ];
@@ -258,14 +264,18 @@ class PromotionController extends MarketingController
         }
 
         $active = $promotions->filter(fn (Promotion $promotion) => $promotion->isActive());
-        $drafts = $promotions->where('status', 'draft');
+        $upcoming = $promotions->filter(function (Promotion $promotion) {
+            return $promotion->archived_at === null
+                && $promotion->starts_at !== null
+                && $promotion->starts_at->isFuture();
+        });
 
         $suggestions = [];
 
-        if ($drafts->isNotEmpty()) {
+        if ($upcoming->isNotEmpty()) {
             $suggestions[] = [
                 'title' => __('marketing.promotions.suggestions.finish_title'),
-                'description' => __('marketing.promotions.suggestions.finish_description', ['count' => $drafts->count()]),
+                'description' => __('marketing.promotions.suggestions.finish_description', ['count' => $upcoming->count()]),
             ];
         }
 

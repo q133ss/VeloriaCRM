@@ -23,6 +23,10 @@ return [
         'launched' => 'Campaign launch scheduled.',
         'winner_selected' => 'Winning variant saved. The campaign is completed.',
         'variant_not_found' => 'Selected variant not found for this campaign.',
+        'channel_not_configured' => 'Channel :channel is not configured in settings. Please complete the integration first.',
+        'no_recipients' => 'There are no recipients in the selected segment for this channel.',
+        'ab_test_requires_winner' => 'Select a winning variant before sending the full campaign.',
+        'test_group_missing' => 'Specify a test group size for A/B testing mode.',
         'ab_test_tip' => 'Test two hypotheses on a small group first — the system will highlight the winner by engagement.',
     ],
     'suggestions' => [
@@ -41,17 +45,10 @@ return [
         'archived' => 'Promotion archived.',
         'usage_recorded' => 'Promotion usage has been registered.',
         'types' => [
-            'percentage' => 'Percentage discount',
-            'fixed' => 'Fixed amount discount',
-            'gift' => 'Gift with purchase',
-            'bogo' => '2 for the price of 1',
-            'loyalty' => 'Loyalty card',
-        ],
-        'audiences' => [
-            'all' => 'All clients',
-            'new' => 'New clients',
-            'loyal' => 'Loyal clients',
-            'custom' => 'Custom audience',
+            'order_percent' => 'Percent cashback on entire order',
+            'service_percent' => 'Percent cashback on service',
+            'category_percent' => 'Percent cashback on service category',
+            'free_service' => 'Free service cashback',
         ],
         'suggestions' => [
             'start_title' => 'Create your first promo',
