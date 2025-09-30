@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\V1\ServiceCategoryController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\Marketing\MarketingCampaignController;
+use App\Http\Controllers\Api\V1\Marketing\PromotionController;
+use App\Http\Controllers\Api\V1\Marketing\WarmupController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -52,6 +55,26 @@ Route::prefix('v1')->group(function () {
         Route::get('/services/{service}', [ServiceController::class, 'show']);
         Route::patch('/services/{service}', [ServiceController::class, 'update']);
         Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+        Route::prefix('marketing')->group(function () {
+            Route::get('/campaigns', [MarketingCampaignController::class, 'index']);
+            Route::post('/campaigns', [MarketingCampaignController::class, 'store']);
+            Route::get('/campaigns/options', [MarketingCampaignController::class, 'options']);
+            Route::get('/campaigns/{campaign}', [MarketingCampaignController::class, 'show']);
+            Route::patch('/campaigns/{campaign}', [MarketingCampaignController::class, 'update']);
+            Route::delete('/campaigns/{campaign}', [MarketingCampaignController::class, 'destroy']);
+            Route::post('/campaigns/{campaign}/launch', [MarketingCampaignController::class, 'launch']);
+            Route::post('/campaigns/{campaign}/winner', [MarketingCampaignController::class, 'selectWinner']);
+
+            Route::get('/promotions', [PromotionController::class, 'index']);
+            Route::post('/promotions', [PromotionController::class, 'store']);
+            Route::get('/promotions/options', [PromotionController::class, 'options']);
+            Route::get('/promotions/{promotion}', [PromotionController::class, 'show']);
+            Route::patch('/promotions/{promotion}', [PromotionController::class, 'update']);
+            Route::post('/promotions/{promotion}/archive', [PromotionController::class, 'archive']);
+            Route::post('/promotions/{promotion}/usage', [PromotionController::class, 'recordUsage']);
+
+            Route::get('/warmup', [WarmupController::class, 'index']);
+        });
         Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
         Route::post('/service-categories', [ServiceCategoryController::class, 'store']);
         Route::patch('/service-categories/{category}', [ServiceCategoryController::class, 'update']);

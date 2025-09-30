@@ -143,6 +143,87 @@
                                     <label for="smsaero_api_key">{{ __('settings.smsaero_api_key') }}</label>
                                 </div>
                             </div>
+                            <div class="col-12">
+                                <h6 class="mt-2">{{ __('settings.smtp') }}</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="smtp_host" name="integrations[smtp][host]" />
+                                    <label for="smtp_host">{{ __('settings.smtp_host') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="number" class="form-control" id="smtp_port" name="integrations[smtp][port]" min="1" max="65535" />
+                                    <label for="smtp_port">{{ __('settings.smtp_port') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <select class="form-select" id="smtp_encryption" name="integrations[smtp][encryption]">
+                                        <option value="">—</option>
+                                        <option value="tls">TLS</option>
+                                        <option value="ssl">SSL</option>
+                                        <option value="starttls">STARTTLS</option>
+                                        <option value="none">{{ __('settings.smtp_encryption_none') }}</option>
+                                    </select>
+                                    <label for="smtp_encryption">{{ __('settings.smtp_encryption') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="smtp_username" name="integrations[smtp][username]" />
+                                    <label for="smtp_username">{{ __('settings.smtp_username') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="password" class="form-control" id="smtp_password" name="integrations[smtp][password]" />
+                                    <label for="smtp_password">{{ __('settings.smtp_password') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="email" class="form-control" id="smtp_from_address" name="integrations[smtp][from_address]" />
+                                    <label for="smtp_from_address">{{ __('settings.smtp_from_address') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="smtp_from_name" name="integrations[smtp][from_name]" />
+                                    <label for="smtp_from_name">{{ __('settings.smtp_from_name') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <h6 class="mt-2">{{ __('settings.whatsapp') }}</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="whatsapp_api_key" name="integrations[whatsapp][api_key]" />
+                                    <label for="whatsapp_api_key">{{ __('settings.whatsapp_api_key') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="whatsapp_sender" name="integrations[whatsapp][sender]" />
+                                    <label for="whatsapp_sender">{{ __('settings.whatsapp_sender') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <h6 class="mt-2">{{ __('settings.telegram_notifications') }}</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="telegram_bot_token" name="integrations[telegram][bot_token]" />
+                                    <label for="telegram_bot_token">{{ __('settings.telegram_bot_token') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline mb-4">
+                                    <input type="text" class="form-control" id="telegram_sender" name="integrations[telegram][sender]" />
+                                    <label for="telegram_sender">{{ __('settings.telegram_sender') }}</label>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="yookassa_shop_id" name="integrations[yookassa][shop_id]" />
@@ -283,6 +364,17 @@
         document.getElementById('notif-sms').disabled = !data.user.phone;
         form['integrations[smsaero][email]'].value = data.settings.integrations.smsaero.email || '';
         form['integrations[smsaero][api_key]'].value = data.settings.integrations.smsaero.api_key || '';
+        form['integrations[smtp][host]'].value = data.settings.integrations.smtp.host || '';
+        form['integrations[smtp][port]'].value = data.settings.integrations.smtp.port || '';
+        form['integrations[smtp][username]'].value = data.settings.integrations.smtp.username || '';
+        form['integrations[smtp][password]'].value = data.settings.integrations.smtp.password || '';
+        form['integrations[smtp][encryption]'].value = data.settings.integrations.smtp.encryption || '';
+        form['integrations[smtp][from_address]'].value = data.settings.integrations.smtp.from_address || '';
+        form['integrations[smtp][from_name]'].value = data.settings.integrations.smtp.from_name || '';
+        form['integrations[whatsapp][api_key]'].value = data.settings.integrations.whatsapp.api_key || '';
+        form['integrations[whatsapp][sender]'].value = data.settings.integrations.whatsapp.sender || '';
+        form['integrations[telegram][bot_token]'].value = data.settings.integrations.telegram.bot_token || '';
+        form['integrations[telegram][sender]'].value = data.settings.integrations.telegram.sender || '';
         form['integrations[yookassa][shop_id]'].value = data.settings.integrations.yookassa.shop_id || '';
         form['integrations[yookassa][secret_key]'].value = data.settings.integrations.yookassa.secret_key || '';
         const days = ['mon','tue','wed','thu','fri','sat','sun'];
@@ -337,6 +429,23 @@
                 smsaero: {
                     email: form['integrations[smsaero][email]'].value,
                     api_key: form['integrations[smsaero][api_key]'].value,
+                },
+                smtp: {
+                    host: form['integrations[smtp][host]'].value,
+                    port: form['integrations[smtp][port]'].value,
+                    username: form['integrations[smtp][username]'].value,
+                    password: form['integrations[smtp][password]'].value,
+                    encryption: form['integrations[smtp][encryption]'].value,
+                    from_address: form['integrations[smtp][from_address]'].value,
+                    from_name: form['integrations[smtp][from_name]'].value,
+                },
+                whatsapp: {
+                    api_key: form['integrations[whatsapp][api_key]'].value,
+                    sender: form['integrations[whatsapp][sender]'].value,
+                },
+                telegram: {
+                    bot_token: form['integrations[telegram][bot_token]'].value,
+                    sender: form['integrations[telegram][sender]'].value,
                 },
                 yookassa: {
                     shop_id: form['integrations[yookassa][shop_id]'].value,
