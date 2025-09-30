@@ -138,7 +138,7 @@
                 <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link">
                         <i class="menu-icon icon-base ri ri-loader-4-line"></i>
-                        <div>Loading...</div>
+                        <div>{{ __('menu.loading') }}</div>
                     </a>
                 </li>
             </ul>

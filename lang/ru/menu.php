@@ -16,4 +16,5 @@ return [
     'learning' => 'Обучение',
     'veloryStudio' => 'Velory Studio',
     'automations' => 'Автоматизации',
+    'loading' => 'Загрузка...',
 ];
