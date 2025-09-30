@@ -26,7 +26,7 @@ class DashboardController extends Controller
 
     public function show(Request $request): View
     {
-        $user = $request->user() ?? Auth::user();
+        $user = $request->user() ?? Auth::guard('sanctum')->user();
 
         abort_unless($user, 403);
 
