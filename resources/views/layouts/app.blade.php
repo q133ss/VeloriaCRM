@@ -222,7 +222,9 @@
                                 href="javascript:void(0);"
                                 data-bs-toggle="dropdown">
                                 <div class="avatar avatar-online">
-                                    <img src="/assets/img/avatars/1.png" alt="avatar" class="rounded-circle" />
+                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>
+                                        ?
+                                    </span>
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -231,15 +233,13 @@
                                         <div class="d-flex">
                                             <div class="flex-shrink-0 me-3">
                                                 <div class="avatar avatar-online">
-                                                    <img
-                                                        src="/assets/img/avatars/1.png"
-                                                        alt="avatar"
-                                                        class="w-px-40 h-auto rounded-circle" />
+                                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>
+                                                        ?
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div class="flex-grow-1">
-                                                <h6 class="mb-0">John Doe</h6>
-                                                <small class="text-body-secondary">Admin</small>
+                                                <h6 class="mb-0" data-user-name></h6>
                                             </div>
                                         </div>
                                     </a>
@@ -248,22 +248,16 @@
                                     <div class="dropdown-divider my-1"></div>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#">
-                                        <i class="icon-base ri ri-user-line icon-22px me-3"></i><span>My Profile</span>
+                                    <a class="dropdown-item" href="/settings">
+                                        <i class="icon-base ri ri-settings-4-line icon-22px me-3"></i><span>{{ __('navigation.settings') }}</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#">
-                                        <i class="icon-base ri ri-settings-4-line icon-22px me-3"></i><span>Settings</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="#">
-                        <span class="d-flex align-items-center align-middle">
-                          <i class="flex-shrink-0 icon-base ri ri-bank-card-line icon-22px me-3"></i
-                          ><span class="flex-grow-1 align-middle ms-1">Billing Plan</span>
-                          <span class="flex-shrink-0 badge rounded-pill bg-danger">4</span>
-                        </span>
+                                    <a class="dropdown-item" href="/subscripe">
+                                        <span class="d-flex align-items-center align-middle">
+                                            <i class="flex-shrink-0 icon-base ri ri-bank-card-line icon-22px me-3"></i>
+                                            <span class="flex-grow-1 align-middle ms-1">{{ __('navigation.subscription') }}</span>
+                                        </span>
                                     </a>
                                 </li>
                                 <li>
@@ -271,10 +265,10 @@
                                 </li>
                                 <li>
                                     <div class="d-grid px-4 pt-2 pb-1">
-                                        <a class="btn btn-danger d-flex" href="javascript:void(0);">
-                                            <small class="align-middle">Logout</small>
+                                        <button type="button" class="btn btn-danger d-flex align-items-center justify-content-center" data-logout-button>
+                                            <small class="align-middle">{{ __('navigation.logout') }}</small>
                                             <i class="icon-base ri ri-logout-box-r-line ms-2 icon-16px"></i>
-                                        </a>
+                                        </button>
                                     </div>
                                 </li>
                             </ul>
@@ -413,14 +407,35 @@ document.addEventListener('DOMContentLoaded', function () {
         return match ? match[1] : null;
     }
 
+    function deleteCookie(name) {
+        document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        document.cookie = name + '=; path=/; Max-Age=0;';
+    }
+
     var token = getCookie('token');
-    var headers = { 'Accept': 'application/json' };
+    var headers = {
+        'Accept': 'application/json',
+        'Accept-Language': document.documentElement.lang || 'en'
+    };
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
     fetch('/api/v1/auth/me', { headers: headers })
         .then(function (res) { return res.ok ? res.json() : {}; })
         .then(function (data) {
             var user = data.user || {};
+            var userName = typeof user.name === 'string' ? user.name : '';
+            var trimmedName = userName.trim();
+            var userInitial = trimmedName ? trimmedName.charAt(0).toUpperCase() : '?';
+
+            var nameTarget = document.querySelector('[data-user-name]');
+            if (nameTarget) {
+                nameTarget.textContent = trimmedName;
+            }
+
+            document.querySelectorAll('[data-user-initial]').forEach(function (el) {
+                el.textContent = userInitial;
+            });
+
             var slug = user.plan && user.plan.slug ? String(user.plan.slug).toLowerCase() : 'lite';
             if (['lite', 'pro', 'elite'].indexOf(slug) === -1) slug = 'lite';
 
@@ -449,6 +464,45 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         })
         .catch(function () {});
+
+    var logoutButton = document.querySelector('[data-logout-button]');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            if (logoutButton.disabled) {
+                return;
+            }
+
+            logoutButton.disabled = true;
+
+            var logoutHeaders = {
+                'Accept': 'application/json',
+                'Accept-Language': document.documentElement.lang || 'en',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+
+            var token = getCookie('token');
+            if (token) {
+                logoutHeaders['Authorization'] = 'Bearer ' + token;
+            }
+
+            var finalizeLogout = function () {
+                deleteCookie('token');
+                window.location.href = '/login';
+            };
+
+            fetch('/api/v1/logout', {
+                method: 'POST',
+                headers: logoutHeaders
+            })
+                .then(function () {
+                    finalizeLogout();
+                })
+                .catch(function () {
+                    finalizeLogout();
+                });
+        });
+    }
 });
 </script>
 @yield('scripts')
