@@ -156,21 +156,57 @@
                             <div class="col-md-4">
                                 <label for="service-cost" class="form-label">{{ __('services.modals.service.cost') }}</label>
                                 <input type="number" class="form-control" id="service-cost" name="cost" min="0" step="0.01" />
+                                <div class="form-text">{{ __('services.modals.service.cost_hint') }}</div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="cost-calculator-toggle">
+                                    {{ __('services.modals.service.cost_calculator.open') }}
+                                </button>
                             </div>
                             <div class="col-md-4">
                                 <label for="service-duration" class="form-label">{{ __('services.modals.service.duration_min') }}</label>
                                 <input type="number" class="form-control" id="service-duration" name="duration_min" min="5" step="5" required />
                             </div>
                             <div class="col-12">
-                                <label for="service-upsell" class="form-label">{{ __('services.modals.service.upsell') }}</label>
-                                <textarea class="form-control" id="service-upsell" name="upsell_suggestions" rows="3"></textarea>
-                                <div class="form-text">{{ __('services.modals.service.upsell_hint') }}</div>
+                                <div id="cost-calculator-panel" class="border rounded p-3 d-none">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label for="cost-calculator-materials" class="form-label">{{ __('services.modals.service.cost_calculator.materials') }}</label>
+                                            <input type="number" class="form-control" id="cost-calculator-materials" min="0" step="0.01" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="cost-calculator-staff" class="form-label">{{ __('services.modals.service.cost_calculator.staff') }}</label>
+                                            <input type="number" class="form-control" id="cost-calculator-staff" min="0" step="0.01" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="cost-calculator-other" class="form-label">{{ __('services.modals.service.cost_calculator.other') }}</label>
+                                            <input type="number" class="form-control" id="cost-calculator-other" min="0" step="0.01" />
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-3 mt-3">
+                                        <div>
+                                            <div class="text-muted small">{{ __('services.modals.service.cost_calculator.total') }}</div>
+                                            <div class="fw-semibold" id="cost-calculator-total">—</div>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-light border" id="cost-calculator-reset">{{ __('services.modals.service.cost_calculator.reset') }}</button>
+                                            <button type="button" class="btn btn-primary" id="cost-calculator-apply">{{ __('services.modals.service.cost_calculator.apply') }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-2 mt-2 p-3 border rounded bg-light" id="service-margin-wrapper">
+                                    <div class="text-muted">{{ __('services.modals.service.margin_label') }}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-label-success" id="service-margin-indicator">—</span>
+                                        <span class="text-muted small" id="service-margin-hint">{{ __('services.modals.service.margin_hint') }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div id="service-form-errors" class="alert alert-danger mt-3 d-none"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@lang('Cancel')</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('services.actions.cancel') }}</button>
                         <button type="submit" class="btn btn-primary" id="service-form-submit">{{ __('services.modals.service.create') }}</button>
                     </div>
                 </form>
@@ -192,7 +228,7 @@
                         <div id="category-form-errors" class="alert alert-danger mt-3 d-none"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@lang('Cancel')</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('services.actions.cancel') }}</button>
                         <button type="submit" class="btn btn-primary" id="category-form-submit">{{ __('services.modals.category.create') }}</button>
                     </div>
                 </form>
@@ -209,7 +245,7 @@
                 </div>
                 <div class="modal-body" id="confirmModalBody"></div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@lang('Cancel')</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('services.actions.cancel') }}</button>
                     <button type="button" class="btn btn-danger" id="confirmModalConfirm">{{ __('services.modals.confirm.confirm') }}</button>
                 </div>
             </div>
@@ -223,6 +259,11 @@
             const locale = document.documentElement.lang || 'ru';
 
             const translations = {
+                actions: {
+                    createService: @json(__('services.actions.create_service')),
+                    createCategory: @json(__('services.actions.create_category')),
+                    cancel: @json(__('services.actions.cancel')),
+                },
                 alerts: {
                     loadError: @json(__('services.alerts.load_error')),
                     noServices: @json(__('services.alerts.no_services')),
@@ -232,8 +273,31 @@
                     service: {
                         createTitle: @json(__('services.modals.service.create_title')),
                         editTitle: @json(__('services.modals.service.edit_title')),
-                        createButton: @json(__('services.modals.service.create')),
+                        name: @json(__('services.modals.service.name')),
+                        category: @json(__('services.modals.service.category')),
+                        categoryPlaceholder: @json(__('services.modals.service.category_placeholder')),
+                        basePrice: @json(__('services.modals.service.base_price')),
+                        cost: @json(__('services.modals.service.cost')),
+                        costHint: @json(__('services.modals.service.cost_hint')),
+                        durationMin: @json(__('services.modals.service.duration_min')),
+                        costCalculator: {
+                            open: @json(__('services.modals.service.cost_calculator.open')),
+                            close: @json(__('services.modals.service.cost_calculator.close')),
+                            materials: @json(__('services.modals.service.cost_calculator.materials')),
+                            staff: @json(__('services.modals.service.cost_calculator.staff')),
+                            other: @json(__('services.modals.service.cost_calculator.other')),
+                            total: @json(__('services.modals.service.cost_calculator.total')),
+                            apply: @json(__('services.modals.service.cost_calculator.apply')),
+                            reset: @json(__('services.modals.service.cost_calculator.reset')),
+                        },
+                    margin: {
+                        label: @json(__('services.modals.service.margin_label')),
+                        hint: @json(__('services.modals.service.margin_hint')),
+                        positiveHint: @json(__('services.modals.service.margin_positive_hint')),
+                        negativeHint: @json(__('services.modals.service.margin_negative_hint')),
+                    },
                         saveButton: @json(__('services.modals.service.save')),
+                        createButton: @json(__('services.modals.service.create')),
                     },
                     category: {
                         createTitle: @json(__('services.modals.category.create_title')),
@@ -268,7 +332,6 @@
                     duration: @json(__('services.table.duration')),
                     cost: @json(__('services.table.cost')),
                     margin: @json(__('services.table.margin')),
-                    upsell: @json(__('services.table.upsell')),
                     updatedAt: @json(__('services.table.updated_at', ['date' => ':date'])),
                 },
                 groups: {
@@ -411,7 +474,16 @@
             const servicePriceInput = document.getElementById('service-price');
             const serviceCostInput = document.getElementById('service-cost');
             const serviceDurationInput = document.getElementById('service-duration');
-            const serviceUpsellTextarea = document.getElementById('service-upsell');
+            const costCalculatorToggle = document.getElementById('cost-calculator-toggle');
+            const costCalculatorPanel = document.getElementById('cost-calculator-panel');
+            const costCalculatorMaterialsInput = document.getElementById('cost-calculator-materials');
+            const costCalculatorStaffInput = document.getElementById('cost-calculator-staff');
+            const costCalculatorOtherInput = document.getElementById('cost-calculator-other');
+            const costCalculatorTotal = document.getElementById('cost-calculator-total');
+            const costCalculatorApply = document.getElementById('cost-calculator-apply');
+            const costCalculatorReset = document.getElementById('cost-calculator-reset');
+            const serviceMarginIndicator = document.getElementById('service-margin-indicator');
+            const serviceMarginHint = document.getElementById('service-margin-hint');
             const serviceFormErrors = document.getElementById('service-form-errors');
             const serviceFormSubmit = document.getElementById('service-form-submit');
 
@@ -428,6 +500,112 @@
             const confirmModalLabel = document.getElementById('confirmModalLabel');
             const confirmModalBody = document.getElementById('confirmModalBody');
             const confirmModalConfirm = document.getElementById('confirmModalConfirm');
+
+            function calculatorInputs() {
+                return [costCalculatorMaterialsInput, costCalculatorStaffInput, costCalculatorOtherInput].filter(Boolean);
+            }
+
+            function setCalculatorVisibility(visible) {
+                if (!costCalculatorPanel || !costCalculatorToggle) {
+                    return;
+                }
+
+                costCalculatorPanel.classList.toggle('d-none', !visible);
+                costCalculatorToggle.textContent = visible
+                    ? translations.modals.service.costCalculator.close
+                    : translations.modals.service.costCalculator.open;
+                costCalculatorToggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+            }
+
+            function calculateCalculatorTotal() {
+                if (!costCalculatorTotal) {
+                    return null;
+                }
+
+                let total = 0;
+                let hasValue = false;
+
+                calculatorInputs().forEach(function (input) {
+                    const value = parseNumber(input.value);
+                    if (value !== null) {
+                        total += value;
+                        hasValue = true;
+                    }
+                });
+
+                if (costCalculatorTotal) {
+                    costCalculatorTotal.textContent = hasValue ? formatCurrency(total) : '—';
+                }
+
+                if (costCalculatorApply) {
+                    costCalculatorApply.disabled = !hasValue;
+                }
+
+                return hasValue ? Number(total.toFixed(2)) : null;
+            }
+
+            function resetCostCalculator(hidePanel = true) {
+                calculatorInputs().forEach(function (input) {
+                    input.value = '';
+                });
+
+                calculateCalculatorTotal();
+
+                if (costCalculatorApply) {
+                    costCalculatorApply.disabled = true;
+                }
+
+                if (hidePanel) {
+                    setCalculatorVisibility(false);
+                }
+            }
+
+            function applyCostFromCalculator() {
+                const total = calculateCalculatorTotal();
+                if (total === null) {
+                    return;
+                }
+
+                if (serviceCostInput) {
+                    const normalized = Number(total.toFixed(2));
+                    serviceCostInput.value = Number.isInteger(normalized)
+                        ? normalized.toString()
+                        : normalized.toFixed(2);
+                    serviceCostInput.dispatchEvent(new Event('input'));
+                }
+
+                setCalculatorVisibility(false);
+            }
+
+            function updateMarginIndicator() {
+                if (!serviceMarginIndicator || !serviceMarginHint) {
+                    return;
+                }
+
+                const price = parseNumber(servicePriceInput?.value);
+                const cost = parseNumber(serviceCostInput?.value);
+
+                if (price === null || cost === null) {
+                    serviceMarginIndicator.textContent = '—';
+                    serviceMarginIndicator.classList.remove('bg-label-danger');
+                    serviceMarginIndicator.classList.add('bg-label-success');
+                    serviceMarginHint.textContent = translations.modals.service.margin.hint;
+                    return;
+                }
+
+                const margin = Number((price - cost).toFixed(2));
+                serviceMarginIndicator.textContent = formatCurrency(margin);
+
+                if (margin < 0) {
+                    serviceMarginIndicator.classList.add('bg-label-danger');
+                    serviceMarginIndicator.classList.remove('bg-label-success');
+                    serviceMarginHint.textContent = translations.modals.service.margin.negativeHint;
+                } else {
+                    serviceMarginIndicator.classList.remove('bg-label-danger');
+                    serviceMarginIndicator.classList.add('bg-label-success');
+                    serviceMarginHint.textContent = translations.modals.service.margin.positiveHint;
+                }
+            }
 
             const state = {
                 filters: {
@@ -457,6 +635,46 @@
                 editingCategoryId: null,
                 confirmAction: null,
             };
+
+            if (costCalculatorToggle) {
+                costCalculatorToggle.addEventListener('click', function () {
+                    const isVisible = costCalculatorPanel && !costCalculatorPanel.classList.contains('d-none');
+                    setCalculatorVisibility(!isVisible);
+                    calculateCalculatorTotal();
+                });
+            }
+
+            calculatorInputs().forEach(function (input) {
+                input.addEventListener('input', function () {
+                    calculateCalculatorTotal();
+                });
+            });
+
+            if (costCalculatorApply) {
+                costCalculatorApply.addEventListener('click', function () {
+                    applyCostFromCalculator();
+                    updateMarginIndicator();
+                });
+            }
+
+            if (costCalculatorReset) {
+                costCalculatorReset.addEventListener('click', function () {
+                    resetCostCalculator(false);
+                    calculateCalculatorTotal();
+                    updateMarginIndicator();
+                });
+            }
+
+            if (servicePriceInput) {
+                servicePriceInput.addEventListener('input', updateMarginIndicator);
+            }
+
+            if (serviceCostInput) {
+                serviceCostInput.addEventListener('input', updateMarginIndicator);
+            }
+
+            resetCostCalculator();
+            updateMarginIndicator();
 
             function setFiltersFromState() {
                 searchInput.value = state.filters.search;
@@ -540,10 +758,6 @@
                 const html = state.groups.map(function (group) {
                     const totalInCategory = totalForCategory(group.id);
                     const servicesHtml = (group.services || []).map(function (service) {
-                        const upsell = (service.upsell_suggestions || []).map(function (item) {
-                            return '<span class="badge bg-label-primary me-1 mb-1">' + escapeHtml(item) + '</span>';
-                        }).join('');
-
                         const metadataItems = [
                             { icon: 'ri-time-line', label: translations.table.duration, value: formatDuration(service.duration_min) },
                         ];
@@ -563,7 +777,7 @@
                         const updated = service.updated_at ? escapeHtml(translations.table.updatedAt.replace(':date', formatDate(service.updated_at))) : '';
 
                         return (
-                            '<div class="col-12 col-lg-4">' +
+                            '<div class="col-12 col-lg-12">' +
                                 '<div class="card h-100 shadow-none border">' +
                                     '<div class="card-body d-flex flex-column">' +
                                         '<div class="d-flex justify-content-between align-items-start mb-3">' +
@@ -577,13 +791,16 @@
                                             '</div>' +
                                         '</div>' +
                                         '<ul class="list-unstyled small text-muted mb-3 d-flex flex-column gap-1">' + (metadataHtml || '') + '</ul>' +
-                                        (upsell ? '<div class="small mb-3"><span class="text-muted d-block mb-1">' + escapeHtml(translations.table.upsell) + ':</span>' + upsell + '</div>' : '') +
                                         (updated ? '<div class="mt-auto text-muted small">' + updated + '</div>' : '') +
                                     '</div>' +
                                 '</div>' +
                             '</div>'
                         );
                     }).join('');
+
+                    const servicesContent = servicesHtml
+                        ? '<div class="row g-3">' + servicesHtml + '</div>'
+                        : '<div class="text-muted">' + escapeHtml(translations.alerts.noServices) + '</div>';
 
                     const categoryActions = group.id !== null
                         ? '<div class="btn-group btn-group-sm">' +
@@ -606,9 +823,7 @@
                                     '</div>' +
                                     categoryActions +
                                 '</div>' +
-                                '<div class="card-body">' +
-                                    (servicesHtml || '<div class="text-muted">' + escapeHtml(translations.alerts.noServices) + '</div>') +
-                                '</div>' +
+                                '<div class="card-body">' + servicesContent + '</div>' +
                             '</div>' +
                         '</div>'
                     );
@@ -690,6 +905,8 @@
                 serviceForm.reset();
                 clearFormErrors(serviceFormErrors);
                 serviceCategorySelect.value = '';
+                resetCostCalculator();
+                updateMarginIndicator();
                 serviceModalLabel.textContent = translations.modals.service.createTitle;
                 serviceFormSubmit.textContent = translations.modals.service.createButton;
                 serviceModal.show();
@@ -770,7 +987,8 @@
                 servicePriceInput.value = service.base_price !== null && service.base_price !== undefined ? service.base_price : '';
                 serviceCostInput.value = service.cost !== null && service.cost !== undefined ? service.cost : '';
                 serviceDurationInput.value = service.duration_min !== null && service.duration_min !== undefined ? service.duration_min : '';
-                serviceUpsellTextarea.value = (service.upsell_suggestions || []).join('\n');
+                resetCostCalculator();
+                updateMarginIndicator();
                 clearFormErrors(serviceFormErrors);
                 serviceModal.show();
             }
@@ -831,9 +1049,6 @@
                     base_price: parseNumber(servicePriceInput.value),
                     cost: parseNumber(serviceCostInput.value),
                     duration_min: parseNumber(serviceDurationInput.value),
-                    upsell_suggestions: serviceUpsellTextarea.value
-                        ? serviceUpsellTextarea.value.split(/\r?\n/).map(function (item) { return item.trim(); }).filter(Boolean)
-                        : [],
                 };
 
                 const method = state.editingServiceId ? 'PATCH' : 'POST';

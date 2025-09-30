@@ -29,33 +29,12 @@ class ServiceController extends Controller
             $direction = 'asc';
         }
 
-        $query = Service::with('category')->where('user_id', $userId);
-
-        if ($filters['search'] ?? null) {
-            $query->where('name', 'like', '%' . $filters['search'] . '%');
-        }
-
-        if (($filters['category_id'] ?? null) !== null) {
-            $query->where('category_id', $filters['category_id']);
-        }
-
-        if (($filters['price_min'] ?? null) !== null) {
-            $query->where('base_price', '>=', $filters['price_min']);
-        }
-
-        if (($filters['price_max'] ?? null) !== null) {
-            $query->where('base_price', '<=', $filters['price_max']);
-        }
-
-        if (($filters['duration_min'] ?? null) !== null) {
-            $query->where('duration_min', '>=', $filters['duration_min']);
-        }
-
-        if (($filters['duration_max'] ?? null) !== null) {
-            $query->where('duration_min', '<=', $filters['duration_max']);
-        }
-
-        $services = $query->orderBy($sort, $direction)->get();
+        $services = Service::query()
+            ->with('category')
+            ->forUser($userId)
+            ->withFilters($filters)
+            ->orderBy($sort, $direction)
+            ->get();
 
         $categories = ServiceCategory::where('user_id', $userId)
             ->orderBy('name')
@@ -63,7 +42,7 @@ class ServiceController extends Controller
 
         $groups = $this->groupServicesByCategory($services, $categories);
 
-        $allServicesQuery = Service::where('user_id', $userId);
+        $allServicesQuery = Service::query()->forUser($userId);
         $globalCounts = (clone $allServicesQuery)
             ->selectRaw('category_id, COUNT(*) as aggregate')
             ->groupBy('category_id')
