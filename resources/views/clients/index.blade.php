@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@php($clients = $clients ?? [])
+
 @section('title', 'Клиенты')
 
 @section('content')
