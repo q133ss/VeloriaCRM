@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Дашборд')
+@section('title', __('dashboard.title'))
 
 @section('meta')
     <style>
@@ -135,16 +135,17 @@
             'high' => ['badge' => 'bg-label-primary', 'button' => 'btn-primary'],
             'normal' => ['badge' => 'bg-label-secondary', 'button' => 'btn-outline-primary'],
         ];
+        $priorityLabels = trans('dashboard.sections.focus.ai.priority');
     @endphp
 
     <div class="dashboard-section">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
             <div>
-                <p class="text-uppercase text-muted fw-medium mb-1 small">Главный экран</p>
-                <h4 class="mb-0">Фокус на сегодня</h4>
+                <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('dashboard.sections.focus.label') }}</p>
+                <h4 class="mb-0">{{ __('dashboard.sections.focus.title') }}</h4>
             </div>
             <div class="text-lg-end small text-muted">
-                Обновлено {{ $updated_at->copy()->locale(app()->getLocale())->diffForHumans() }}
+                {{ __('dashboard.sections.focus.updated', ['time' => $updated_at->copy()->locale(app()->getLocale())->diffForHumans()]) }}
             </div>
         </div>
 
@@ -154,10 +155,10 @@
                     <div class="card-body">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                             <div>
-                                <h5 class="mb-1">Расписание на сегодня</h5>
-                                <p class="text-muted mb-0">Следите за ключевыми визитами и сигналами от ИИ</p>
+                                <h5 class="mb-1">{{ __('dashboard.sections.focus.schedule.title') }}</h5>
+                                <p class="text-muted mb-0">{{ __('dashboard.sections.focus.schedule.subtitle') }}</p>
                             </div>
-                            <button type="button" class="btn btn-primary" data-action="quick-book">Быстрая запись</button>
+                            <button type="button" class="btn btn-primary" data-action="quick-book">{{ __('dashboard.sections.focus.schedule.quick_book') }}</button>
                         </div>
 
                         <div class="dashboard-timeline">
@@ -180,15 +181,15 @@
                                                 <span class="dashboard-indicator" data-type="{{ $appointment['indicator']['type'] }}">
                                                     {{ $appointment['indicator']['label'] }}
                                                 </span>
-                                                <button class="btn btn-sm btn-outline-secondary" type="button">Напомнить</button>
-                                                <button class="btn btn-sm btn-outline-primary" type="button">Открыть карточку</button>
+                                                <button class="btn btn-sm btn-outline-secondary" type="button">{{ __('dashboard.sections.focus.schedule.remind') }}</button>
+                                                <button class="btn btn-sm btn-outline-primary" type="button">{{ __('dashboard.sections.focus.schedule.open_card') }}</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             @empty
                                 <div class="text-muted text-center py-4">
-                                    Сегодня нет запланированных визитов — самое время заняться привлечением клиентов.
+                                    {{ __('dashboard.sections.focus.schedule.empty') }}
                                 </div>
                             @endforelse
                         </div>
@@ -198,17 +199,17 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                            <h5 class="mb-0">Сегодня в цифрах</h5>
+                            <h5 class="mb-0">{{ __('dashboard.sections.focus.metrics.title') }}</h5>
                             <span class="dashboard-metric-pill">
-                                Цель дня — <span class="fw-semibold">{{ $metrics['goal_formatted'] }}</span>
+                                {{ __('dashboard.sections.focus.metrics.forecast_pill', ['amount' => $metrics['forecast_profit_formatted']]) }}
                             </span>
                         </div>
                         <div class="row g-3">
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">Выручка</p>
+                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.revenue.label') }}</p>
                                     <h4 class="mb-1">{{ $metrics['revenue_formatted'] }}</h4>
-                                    <p class="mb-0 small text-muted">Факт против цели</p>
+                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.revenue.description') }}</p>
                                     <div class="progress mt-2" style="height: 0.5rem;">
                                         <div class="progress-bar" role="progressbar" style="width: {{ $metrics['revenue_progress'] }}%;"></div>
                                     </div>
@@ -216,23 +217,23 @@
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">Клиенты сегодня</p>
+                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.clients.label') }}</p>
                                     <h4 class="mb-1">{{ $metrics['clients_summary'] }}</h4>
-                                    <p class="mb-0 small text-muted">Записано клиентов</p>
+                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.clients.description') }}</p>
                                 </div>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">Средний чек</p>
+                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.avg_ticket.label') }}</p>
                                     <h4 class="mb-1">{{ $metrics['average_ticket_formatted'] }}</h4>
-                                    <p class="mb-0 small text-muted">Чистая выручка за визит</p>
+                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.avg_ticket.description') }}</p>
                                 </div>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">Повторные визиты</p>
+                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.retention.label') }}</p>
                                     <h4 class="mb-1">{{ $metrics['retention_rate_formatted'] }}</h4>
-                                    <p class="mb-0 small text-muted">Доля клиентов, вернувшихся</p>
+                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.retention.description') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -245,10 +246,10 @@
                     <div class="card-body">
                         <div class="d-flex align-items-start justify-content-between mb-3">
                             <div>
-                                <h5 class="mb-1">Советы ИИ-ассистента</h5>
-                                <p class="text-muted mb-0">Что можно сделать прямо сейчас</p>
+                                <h5 class="mb-1">{{ __('dashboard.sections.focus.ai.title') }}</h5>
+                                <p class="text-muted mb-0">{{ __('dashboard.sections.focus.ai.subtitle') }}</p>
                             </div>
-                            <span class="badge bg-label-primary text-uppercase">В приоритете</span>
+                            <span class="badge bg-label-primary text-uppercase">{{ __('dashboard.sections.focus.ai.badge') }}</span>
                         </div>
                         <div class="d-flex flex-column gap-3">
                             @forelse ($aiSuggestions as $suggestion)
@@ -260,7 +261,7 @@
                                 <div class="border rounded-2 p-3 dashboard-card-action">
                                     <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                         <p class="fw-semibold mb-0">{{ $suggestion['title'] }}</p>
-                                        <span class="badge {{ $styles['badge'] }} text-uppercase">{{ \Illuminate\Support\Str::title($priority) }}</span>
+                                        <span class="badge {{ $styles['badge'] }} text-uppercase">{{ $priorityLabels[$priority] ?? \Illuminate\Support\Str::title($priority) }}</span>
                                     </div>
                                     <p class="text-muted mb-3">{{ $suggestion['description'] }}</p>
                                     <div class="d-flex flex-wrap gap-2">
@@ -271,13 +272,13 @@
                                                 </button>
                                             @endforeach
                                         @else
-                                            <button class="btn btn-sm {{ $styles['button'] }}" type="button">Перейти к клиентам</button>
+                                            <button class="btn btn-sm {{ $styles['button'] }}" type="button">{{ __('dashboard.sections.focus.ai.fallback_action') }}</button>
                                         @endif
                                     </div>
                                 </div>
                             @empty
                                 <div class="text-muted text-center py-4">
-                                    Пока нет рекомендаций — данные обновятся после новых записей и платежей.
+                                    {{ __('dashboard.sections.focus.ai.empty') }}
                                 </div>
                             @endforelse
                         </div>
@@ -290,10 +291,10 @@
     <div class="dashboard-section">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
             <div>
-                <p class="text-uppercase text-muted fw-medium mb-1 small">Аналитика роста</p>
-                <h4 class="mb-0">Финансы и эффективность</h4>
+                <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('dashboard.sections.finance.label') }}</p>
+                <h4 class="mb-0">{{ __('dashboard.sections.finance.title') }}</h4>
             </div>
-            <a class="btn btn-outline-secondary btn-sm" href="{{ route('analytics') }}">Открыть полную аналитику</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ route('analytics') }}">{{ __('dashboard.sections.finance.cta') }}</a>
         </div>
 
         <div class="row g-4">
@@ -302,13 +303,13 @@
                     <div class="card-body">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                             <div>
-                                <h5 class="mb-1">Маржа/час</h5>
-                                <p class="text-muted mb-0">В какие дни работа приносит максимум</p>
+                                <h5 class="mb-1">{{ __('dashboard.sections.finance.margin.title') }}</h5>
+                                <p class="text-muted mb-0">{{ __('dashboard.sections.finance.margin.subtitle') }}</p>
                             </div>
                             @if ($marginInsight)
-                                <span class="badge bg-label-success">Лучший день: {{ $marginInsight['label'] }} — {{ $marginInsight['display'] }}</span>
+                                <span class="badge bg-label-success">{{ __('dashboard.sections.finance.margin.best_day', ['day' => $marginInsight['label'], 'value' => $marginInsight['display']]) }}</span>
                             @else
-                                <span class="badge bg-label-secondary">Недостаточно данных</span>
+                                <span class="badge bg-label-secondary">{{ __('dashboard.messages.not_enough_data') }}</span>
                             @endif
                         </div>
                         <div class="d-flex flex-column gap-3">
@@ -329,7 +330,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <div class="d-flex justify-content-center text-muted">Недостаточно данных</div>
+                                <div class="d-flex justify-content-center text-muted">{{ __('dashboard.messages.not_enough_data') }}</div>
                             @endforelse
                         </div>
                     </div>
@@ -338,14 +339,14 @@
                     <div class="card-body">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                             <div>
-                                <h5 class="mb-1">Выручка за период</h5>
-                                <p class="text-muted mb-0">Сравнение с прошлым периодом</p>
+                                <h5 class="mb-1">{{ __('dashboard.sections.finance.revenue.title') }}</h5>
+                                <p class="text-muted mb-0">{{ __('dashboard.sections.finance.revenue.subtitle') }}</p>
                             </div>
                             <span class="dashboard-metric-pill">
                                 @if ($revenueDelta === null)
-                                    Нет данных для сравнения
+                                    {{ __('dashboard.messages.no_comparison') }}
                                 @else
-                                    VS прошлый период: {{ ($revenueDelta > 0 ? '+' : '') . number_format($revenueDelta, 1, '.', '') }}%
+                                    {{ __('dashboard.sections.finance.revenue.delta', ['value' => ($revenueDelta > 0 ? '+' : '') . number_format($revenueDelta, 1, '.', '')]) }}
                                 @endif
                             </span>
                         </div>
@@ -361,14 +362,16 @@
                                     </div>
                                     <p class="small mb-0 text-muted">
                                         @if ($delta === null)
-                                            Нет данных для сравнения
+                                            {{ __('dashboard.messages.no_comparison') }}
                                         @else
-                                            {{ $delta >= 0 ? 'Рост' : 'Падение' }} {{ number_format(abs($delta), 1, '.', '') }}% vs прошлый период
+                                            {{ $delta >= 0
+                                                ? __('dashboard.sections.finance.revenue.growth', ['value' => number_format(abs($delta), 1, '.', '')])
+                                                : __('dashboard.sections.finance.revenue.decline', ['value' => number_format(abs($delta), 1, '.', '')]) }}
                                         @endif
                                     </p>
                                 </div>
                             @empty
-                                <div class="d-flex justify-content-center text-muted">Недостаточно данных</div>
+                                <div class="d-flex justify-content-center text-muted">{{ __('dashboard.messages.not_enough_data') }}</div>
                             @endforelse
                         </div>
                     </div>
@@ -378,46 +381,43 @@
             <div class="col-12 col-xl-5 d-flex flex-column gap-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="mb-3">Топ-3 маржинальных услуг</h5>
+                        <h5 class="mb-3">{{ __('dashboard.sections.finance.services.title') }}</h5>
                         <ul class="list-unstyled mb-0">
                             @forelse ($topServices as $service)
                                 <li class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
                                         <div class="fw-semibold">{{ $service['name'] }}</div>
-                                        <div class="small text-muted">Средняя длительность: {{ $service['avg_duration'] }}</div>
+                                        <div class="small text-muted">{{ __('dashboard.sections.finance.services.avg_duration', ['value' => $service['avg_duration']]) }}</div>
                                     </div>
                                     <div class="text-end">
                                         <span class="fw-semibold">{{ $service['margin_per_hour_formatted'] }}</span>
-                                        <div class="small text-muted">₽/час</div>
+                                        <div class="small text-muted">{{ __('dashboard.sections.finance.services.per_hour') }}</div>
                                     </div>
                                 </li>
                             @empty
-                                <li class="text-muted">Пока нет данных по услугам</li>
+                                <li class="text-muted">{{ __('dashboard.sections.finance.services.empty') }}</li>
                             @endforelse
                         </ul>
                         <p class="small text-muted mt-3">
-                            {{ $servicesInsight ?? 'Когда появятся новые продажи, мы подсветим самые выгодные услуги.' }}
+                            {{ $servicesInsight ?? __('dashboard.sections.finance.services.empty_insight') }}
                         </p>
                     </div>
                 </div>
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="mb-3">Лучшие клиенты</h5>
+                        <h5 class="mb-3">{{ __('dashboard.sections.finance.clients.title') }}</h5>
                         <ul class="list-unstyled mb-0">
                             @forelse ($topClients as $client)
                                 <li class="border rounded-2 p-3 mb-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-semibold">{{ $client['name'] }}</span>
-                                        <span class="badge bg-label-info">{{ $client['loyalty_badge'] }}</span>
-                                    </div>
-                                    <p class="small text-muted mb-1">LTV: {{ $client['total_spent_formatted'] }}</p>
-                                    <p class="small text-muted mb-0">Последний визит: {{ $client['last_visit'] }}</p>
+                                    <div class="fw-semibold mb-1">{{ $client['name'] }}</div>
+                                    <p class="small text-muted mb-1">{{ __('dashboard.sections.finance.clients.ltv', ['value' => $client['total_spent_formatted']]) }}</p>
+                                    <p class="small text-muted mb-0">{{ __('dashboard.sections.finance.clients.last_visit', ['date' => $client['last_visit']]) }}</p>
                                 </li>
                             @empty
-                                <li class="text-muted">Пока нет рекомендованных клиентов</li>
+                                <li class="text-muted">{{ __('dashboard.sections.finance.clients.empty') }}</li>
                             @endforelse
                         </ul>
-                        <p class="small text-muted mt-3">Отмечаем тех, кто чаще рекомендует и возвращается.</p>
+                        <p class="small text-muted mt-3">{{ __('dashboard.sections.finance.clients.note') }}</p>
                     </div>
                 </div>
             </div>
@@ -428,13 +428,13 @@
         <div class="card">
             <div class="card-body d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
                 <div>
-                    <p class="text-uppercase text-muted fw-medium mb-1 small">Микро-обучение и тренды</p>
-                    <h4 class="mb-2">Совет дня от Veloria</h4>
-                    <p class="mb-0">{{ $dailyTip['text'] ?? 'Следите за обновлениями — скоро здесь появится персональный совет от Veloria.' }}</p>
+                    <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('dashboard.sections.learning.label') }}</p>
+                    <h4 class="mb-2">{{ __('dashboard.sections.learning.title') }}</h4>
+                    <p class="mb-0">{{ $dailyTip['text'] ?? __('dashboard.sections.learning.fallback') }}</p>
                 </div>
                 <div class="text-lg-end">
-                    <button class="btn btn-primary" type="button">Подробнее</button>
-                    <p class="small text-muted mb-0 mt-2">Источник: {{ $dailyTip['source'] ?? 'Veloria AI ассистент' }}</p>
+                    <button class="btn btn-primary" type="button">{{ __('dashboard.sections.learning.button') }}</button>
+                    <p class="small text-muted mb-0 mt-2">{{ __('dashboard.sections.learning.source', ['value' => $dailyTip['source'] ?? __('dashboard.sections.learning.default_source')]) }}</p>
                 </div>
             </div>
         </div>

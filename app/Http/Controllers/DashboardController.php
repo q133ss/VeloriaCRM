@@ -30,6 +30,8 @@ class DashboardController extends Controller
 
         abort_unless($user, 403);
 
+        Carbon::setLocale(app()->getLocale());
+
         $timezone = $user->timezone ?? config('app.timezone');
         $now = Carbon::now($timezone);
         $todayStart = $now->copy()->startOfDay();
@@ -86,6 +88,7 @@ class DashboardController extends Controller
         })->values();
 
         $todayExpectedRevenue = $appointmentsToday->sum(fn (Appointment $appt) => $this->resolveServiceData($services, $appt->service_ids ?? [])['price']);
+        $todayExpectedProfit = $appointmentsToday->sum(fn (Appointment $appt) => $this->resolveServiceData($services, $appt->service_ids ?? [])['margin']);
         $todayPayments = Payment::where('user_id', $user->id)
             ->whereBetween('paid_at', [$todayStart, $todayEnd])
             ->get();
@@ -107,19 +110,26 @@ class DashboardController extends Controller
             ->count();
         $retentionRate = $bookedClients > 0 ? round(($retainedClients / $bookedClients) * 100, 1) : 0.0;
 
-        $goal = $todayExpectedRevenue > 0 ? $todayExpectedRevenue : $this->resolveAverageRevenue($user->id, $todayStart, $timezone);
-        $goal = $goal > 0 ? $goal : 0;
-        $progress = $goal > 0 ? min(100, round(($todayRevenue / $goal) * 100)) : 0;
+        $revenueTarget = $todayExpectedRevenue > 0 ? $todayExpectedRevenue : $this->resolveAverageRevenue($user->id, $todayStart, $timezone);
+        $revenueTarget = $revenueTarget > 0 ? $revenueTarget : 0;
+        $progress = $revenueTarget > 0 ? min(100, round(($todayRevenue / $revenueTarget) * 100)) : 0;
 
         $metrics = [
-            'goal' => $goal,
-            'goal_formatted' => $this->formatCurrency($goal),
+            'forecast_profit' => $todayExpectedProfit,
+            'forecast_profit_formatted' => $this->formatCurrency($todayExpectedProfit),
+            'revenue_target' => $revenueTarget,
+            'revenue_target_formatted' => $this->formatCurrency($revenueTarget),
             'revenue' => $todayRevenue,
             'revenue_formatted' => $this->formatCurrency($todayRevenue),
             'revenue_progress' => $progress,
             'clients_summary' => $capacity > 0
-                ? sprintf('%d из %d', $appointmentsToday->count(), $capacity)
-                : sprintf('%d', $appointmentsToday->count()),
+                ? __('dashboard.metrics.clients_summary.with_capacity', [
+                    'booked' => $appointmentsToday->count(),
+                    'capacity' => $capacity,
+                ])
+                : __('dashboard.metrics.clients_summary.without_capacity', [
+                    'booked' => $appointmentsToday->count(),
+                ]),
             'average_ticket' => $avgTicket,
             'average_ticket_formatted' => $this->formatCurrency($avgTicket),
             'retention_rate' => $retentionRate,
@@ -141,7 +151,8 @@ class DashboardController extends Controller
             'timezone' => $timezone,
             'metrics' => [
                 'revenue_today' => round($todayRevenue, 2),
-                'goal' => round($goal, 2),
+                'goal' => round($revenueTarget, 2),
+                'forecast_profit' => round($todayExpectedProfit, 2),
                 'clients_booked' => $appointmentsToday->count(),
                 'clients_capacity' => $capacity,
                 'average_ticket' => round($avgTicket, 2),
@@ -248,14 +259,14 @@ class DashboardController extends Controller
         $fit = (float) ($appointment->fit_score ?? 0);
 
         if ($cancellations >= 2 || $fit <= 0.5) {
-            return ['type' => 'red', 'label' => '🔴 Сложный визит'];
+            return ['type' => 'red', 'label' => __('dashboard.indicators.complex_visit')];
         }
 
         if ($risk >= 0.3) {
-            return ['type' => 'yellow', 'label' => '🟡 Риск неявки'];
+            return ['type' => 'yellow', 'label' => __('dashboard.indicators.no_show_risk')];
         }
 
-        return ['type' => 'green', 'label' => '🟢 Высокая явка'];
+        return ['type' => 'green', 'label' => __('dashboard.indicators.high_attendance')];
     }
 
     protected function buildMarginData(Collection $appointments, Collection $services, CarbonInterface $todayStart, string $timezone): Collection
@@ -265,7 +276,7 @@ class DashboardController extends Controller
 
         for ($i = 0; $i < 7; $i++) {
             $day = $start->copy()->addDays($i);
-            $label = $day->locale(app()->getLocale())->translatedFormat('d MMM, EEE');
+            $label = $day->locale(app()->getLocale())->isoFormat('D MMM, ddd');
             $days->put($day->toDateString(), [
                 'label' => Str::ucfirst($label),
                 'margin' => 0.0,
@@ -316,7 +327,7 @@ class DashboardController extends Controller
 
         for ($i = $periodDays - 1; $i >= 0; $i--) {
             $day = $currentStart->copy()->addDays($i);
-            $label = Str::ucfirst($day->locale(app()->getLocale())->translatedFormat('d MMM'));
+            $label = Str::ucfirst($day->locale(app()->getLocale())->isoFormat('D MMM'));
             $currentDays->push([
                 'date' => $day->toDateString(),
                 'label' => $label,
@@ -400,16 +411,18 @@ class DashboardController extends Controller
         $second = $top[1] ?? null;
 
         if ($second) {
-            return sprintf(
-                'ИИ: %s приносит %s за час, следом %s — %s.',
-                $first['name'],
-                $first['margin_per_hour_formatted'],
-                $second['name'],
-                $second['margin_per_hour_formatted'],
-            );
+            return __('dashboard.finance.services.insight.multi', [
+                'first_service' => $first['name'],
+                'first_margin' => $first['margin_per_hour_formatted'],
+                'second_service' => $second['name'],
+                'second_margin' => $second['margin_per_hour_formatted'],
+            ]);
         }
 
-        return sprintf('ИИ: самая высокая маржа сейчас у услуги «%s» — %s в час.', $first['name'], $first['margin_per_hour_formatted']);
+        return __('dashboard.finance.services.insight.single', [
+            'service' => $first['name'],
+            'margin' => $first['margin_per_hour_formatted'],
+        ]);
     }
 
     protected function resolveTopClients(int $userId, Collection $appointments, string $timezone): Collection
@@ -438,12 +451,11 @@ class DashboardController extends Controller
             $lastVisit = $visits->sortByDesc(fn (Appointment $appt) => $appt->starts_at)->first()?->starts_at
                 ?->copy()->timezone($timezone)
                 ->locale(app()->getLocale())
-                ->translatedFormat('d MMMM');
+                ->isoFormat('D MMMM');
 
             $scores->push([
                 'name' => $client->name,
                 'loyalty_level' => $client->loyalty_level,
-                'loyalty_badge' => strtoupper($client->loyalty_level ?? 'LTV'),
                 'total_spent' => $totalSpent,
                 'total_spent_formatted' => $this->formatCurrency($totalSpent),
                 'last_visit' => $lastVisit ?? '—',
@@ -508,7 +520,9 @@ class DashboardController extends Controller
 
     protected function formatCurrency(float $value): string
     {
-        return number_format(max(0, $value), 0, '.', ' ') . ' ₽';
+        return __('dashboard.currency', [
+            'amount' => number_format(max(0, $value), 0, '.', ' '),
+        ]);
     }
 
     protected function formatHours(float $hours): string
@@ -518,14 +532,14 @@ class DashboardController extends Controller
         $m = $totalMinutes % 60;
 
         if ($h > 0 && $m > 0) {
-            return sprintf('%d ч %d мин', $h, $m);
+            return __('dashboard.time.hours_minutes', ['hours' => $h, 'minutes' => $m]);
         }
 
         if ($h > 0) {
-            return sprintf('%d ч', $h);
+            return __('dashboard.time.hours_only', ['hours' => $h]);
         }
 
-        return sprintf('%d мин', $m);
+        return __('dashboard.time.minutes_only', ['minutes' => $m]);
     }
 
     protected function percentChange(float $current, float $previous): ?float

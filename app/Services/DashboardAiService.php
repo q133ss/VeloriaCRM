@@ -166,7 +166,7 @@ PROMPT;
 
                 return [
                     'text' => $text,
-                    'source' => $source !== '' ? $source : 'Veloria AI ассистент',
+                    'source' => $source !== '' ? $source : __('dashboard.sections.learning.default_source'),
                 ];
             } catch (Throwable $exception) {
                 Log::warning('Failed to generate dashboard AI tip.', [
