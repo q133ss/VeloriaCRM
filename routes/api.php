@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\HelpCenterController;
 use App\Http\Controllers\Api\V1\Marketing\MarketingCampaignController;
 use App\Http\Controllers\Api\V1\Marketing\PromotionController;
 use App\Http\Controllers\Api\V1\Marketing\WarmupController;
+use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 
@@ -27,6 +28,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
+        Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
         Route::delete('/user', [UserController::class, 'destroy']);
         Route::get('/clients/options', [ApiClientController::class, 'options']);
         Route::get('/clients', [ApiClientController::class, 'index']);
