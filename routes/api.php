@@ -23,6 +23,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/clients', [ApiClientController::class, 'index']);
         Route::post('/clients', [ApiClientController::class, 'store']);
         Route::get('/clients/{client}', [ApiClientController::class, 'show']);
+        Route::get('/clients/{client}/analytics', [ApiClientController::class, 'analytics']);
+        Route::get('/clients/{client}/recommendations', [ApiClientController::class, 'recommendations']);
         Route::patch('/clients/{client}', [ApiClientController::class, 'update']);
         Route::delete('/clients/{client}', [ApiClientController::class, 'destroy']);
         Route::get('/orders/options', [ApiOrderController::class, 'options']);
