@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\HelpCenterController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Marketing\MarketingCampaignController;
 use App\Http\Controllers\Api\V1\Marketing\PromotionController;
 use App\Http\Controllers\Api\V1\Marketing\WarmupController;
@@ -28,6 +29,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::delete('/user', [UserController::class, 'destroy']);
+        Route::get('/dashboard', [DashboardController::class, 'show']);
         Route::get('/clients/options', [ApiClientController::class, 'options']);
         Route::get('/clients', [ApiClientController::class, 'index']);
         Route::post('/clients', [ApiClientController::class, 'store']);
