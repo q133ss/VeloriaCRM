@@ -57,6 +57,7 @@ if (typeof TemplateCustomizer !== 'undefined') {
     displayCustomizer: false,
     // defaultTextDir: 'rtl',
     // defaultTheme: 'dark',
+    defaultPrimaryColor: '#FF00FC',
     controls: ['color', 'theme', 'rtl']
   });
 }

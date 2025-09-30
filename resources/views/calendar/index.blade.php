@@ -38,11 +38,11 @@
         }
 
         #crm-calendar .fc .fc-highlight {
-            background-color: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.12);
+            background-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
         }
 
         #crm-calendar .fc .fc-daygrid-day.fc-day-today {
-            background-color: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.08);
+            background-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
         }
 
         #crm-calendar .fc-theme-standard td,
@@ -58,7 +58,7 @@
         }
 
         .calendar-order-card:hover {
-            border-color: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.4);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.4);
             box-shadow: 0 0.75rem 1.25rem -0.75rem rgba(58, 53, 65, 0.45);
         }
 
@@ -72,7 +72,7 @@
             gap: 0.35rem;
             padding: 0.35rem 0.65rem;
             border-radius: 999px;
-            background-color: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.12);
+            background-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
             color: var(--bs-primary-color);
             font-size: 0.75rem;
         }
