@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\PhoneNumberRule;
 use Illuminate\Validation\Rule;
 
 class QuickOrderRequest extends BaseRequest
@@ -16,7 +17,7 @@ class QuickOrderRequest extends BaseRequest
         $userId = $this->user('sanctum')?->id ?? 0;
 
         return [
-            'client_phone' => ['required', 'string', 'max:20'],
+            'client_phone' => ['required', 'string', 'max:20', new PhoneNumberRule()],
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
             'scheduled_at' => ['required', 'date'],

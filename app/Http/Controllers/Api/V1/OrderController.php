@@ -524,11 +524,13 @@ class OrderController extends Controller
         $services = $this->getUserServices();
         $client = null;
         $clientProfile = null;
+        $suggestions = collect();
 
         if ($request->filled('client_id')) {
             $client = User::find($request->input('client_id'));
         } elseif ($request->filled('client_phone')) {
             $client = User::where('phone', $this->normalizePhone($request->input('client_phone')))->first();
+            $suggestions = $this->buildClientSuggestions($request->input('client_phone'));
         }
 
         if ($client) {
@@ -553,7 +555,78 @@ class OrderController extends Controller
                 'phone' => $client->phone,
                 'email' => $clientProfile?->email ?? $client->email,
             ] : null,
+            'suggestions' => $suggestions->values(),
         ]);
+    }
+
+    protected function buildClientSuggestions(?string $phone): Collection
+    {
+        if ($phone === null || $phone === '') {
+            return collect();
+        }
+
+        $digits = preg_replace('/[^0-9]+/', '', $phone);
+
+        if (strlen($digits) < 3) {
+            return collect();
+        }
+
+        $normalizedPrefix = $this->normalizePhone($phone);
+        $pattern = $normalizedPrefix . '%';
+        $userId = $this->currentUserId();
+
+        $suggestions = collect();
+
+        $clientProfiles = Client::query()
+            ->where('user_id', $userId)
+            ->where('phone', 'like', $pattern)
+            ->orderBy('name')
+            ->limit(5)
+            ->get(['name', 'phone']);
+
+        foreach ($clientProfiles as $profile) {
+            if (! $profile->phone) {
+                continue;
+            }
+
+            $suggestions->put($profile->phone, [
+                'name' => $profile->name,
+                'phone' => $profile->phone,
+            ]);
+        }
+
+        if ($suggestions->count() < 5) {
+            $orders = Order::query()
+                ->with('client')
+                ->where('master_id', $userId)
+                ->whereHas('client', function ($query) use ($pattern) {
+                    $query->where('phone', 'like', $pattern);
+                })
+                ->latest('scheduled_at')
+                ->limit(10)
+                ->get();
+
+            foreach ($orders as $order) {
+                $orderClient = $order->client;
+
+                if (! $orderClient || ! $orderClient->phone) {
+                    continue;
+                }
+
+                if (! $suggestions->has($orderClient->phone)) {
+                    $suggestions->put($orderClient->phone, [
+                        'name' => $orderClient->name ?? 'Без имени',
+                        'phone' => $orderClient->phone,
+                    ]);
+                }
+
+                if ($suggestions->count() >= 5) {
+                    break;
+                }
+            }
+        }
+
+        return $suggestions->values();
     }
 
     protected function collectServices(array $serviceIds)

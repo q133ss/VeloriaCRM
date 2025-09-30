@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Order;
+use App\Rules\PhoneNumberRule;
 use Illuminate\Validation\Rule;
 
 class OrderFormRequest extends BaseRequest
@@ -18,7 +19,7 @@ class OrderFormRequest extends BaseRequest
         $userId = $this->user('sanctum')?->id ?? 0;
 
         return [
-            'client_phone' => ['required', 'string', 'max:20'],
+            'client_phone' => ['required', 'string', 'max:20', new PhoneNumberRule()],
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
             'scheduled_at' => ['required', 'date'],
