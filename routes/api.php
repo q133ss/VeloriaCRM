@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
@@ -28,6 +29,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::delete('/user', [UserController::class, 'destroy']);
+        Route::get('/analytics/overview', [AnalyticsController::class, 'index']);
         Route::get('/clients/options', [ApiClientController::class, 'options']);
         Route::get('/clients', [ApiClientController::class, 'index']);
         Route::post('/clients', [ApiClientController::class, 'store']);
