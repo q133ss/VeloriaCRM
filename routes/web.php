@@ -55,4 +55,5 @@ Route::middleware('token.cookie')->group(function () {
     })->name('services.index');
 
     Route::view('/marketing', 'marketing.index')->name('marketing');
+    Route::view('/help', 'help.index')->name('help');
 });

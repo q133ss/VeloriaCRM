@@ -9,9 +9,11 @@ use App\Http\Controllers\Api\V1\ServiceCategoryController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\HelpCenterController;
 use App\Http\Controllers\Api\V1\Marketing\MarketingCampaignController;
 use App\Http\Controllers\Api\V1\Marketing\PromotionController;
 use App\Http\Controllers\Api\V1\Marketing\WarmupController;
+use App\Http\Controllers\Api\V1\SupportTicketController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -49,6 +51,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{order}/analytics', [ApiOrderController::class, 'analytics']);
         Route::get('/calendar/events', [CalendarController::class, 'events']);
         Route::get('/calendar/day', [CalendarController::class, 'day']);
+        Route::get('/help/overview', [HelpCenterController::class, 'overview']);
+        Route::get('/help/tickets', [SupportTicketController::class, 'index']);
+        Route::post('/help/tickets', [SupportTicketController::class, 'store']);
+        Route::get('/help/tickets/{ticket}', [SupportTicketController::class, 'show']);
+        Route::post('/help/tickets/{ticket}/messages', [SupportTicketController::class, 'reply']);
         Route::get('/services/options', [ServiceController::class, 'options']);
         Route::get('/services', [ServiceController::class, 'index']);
         Route::post('/services', [ServiceController::class, 'store']);
