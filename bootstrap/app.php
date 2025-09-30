@@ -1,8 +1,10 @@
 <?php
 
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Str;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,5 +21,26 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (QueryException $exception, $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
+            $status = 500;
+            if ($exception->getCode() === '23505') {
+                $status = 409;
+            }
+
+            $message = trim($exception->getMessage());
+            if (Str::contains($message, '(Connection:')) {
+                $message = trim(Str::before($message, '(Connection:'));
+            }
+
+            return response()->json([
+                'error' => [
+                    'code' => 'database_error',
+                    'message' => $message,
+                ],
+            ], $status);
+        });
     })->create();

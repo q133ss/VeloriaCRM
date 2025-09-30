@@ -287,18 +287,39 @@ class OrderController extends Controller
         $masterId = $this->currentUserId();
 
         $order = DB::transaction(function () use ($validated, $masterId) {
-            $client = $this->resolveClient($validated['client_phone'], Arr::get($validated, 'client_name'));
-            $services = $this->getUserServices(3);
-            $recommended = $this->buildRecommendedServices($client, $services);
+            $client = $this->resolveClient(
+                $validated['client_phone'],
+                Arr::get($validated, 'client_name'),
+                Arr::get($validated, 'client_email')
+            );
+
+            $services = $this->collectServices(Arr::get($validated, 'services', []));
+
+            $servicePayload = $services->map(function (Service $service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'price' => (float) $service->base_price,
+                    'duration' => (int) $service->duration_min,
+                ];
+            })->values()->all();
+
+            $totalPrice = Arr::get($validated, 'total_price');
+            if ($totalPrice === null) {
+                $totalPrice = $services->sum('base_price');
+            }
+
+            $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
             return Order::create([
                 'master_id' => $masterId,
                 'client_id' => $client->id,
-                'services' => [],
+                'services' => $servicePayload,
                 'scheduled_at' => Carbon::parse($validated['scheduled_at']),
                 'note' => Arr::get($validated, 'note'),
-                'total_price' => 0,
+                'total_price' => $totalPrice ?? 0,
                 'status' => 'new',
+                'source' => 'quick_modal',
                 'recommended_services' => $this->serializeRecommendations($recommended),
             ]);
         });
@@ -502,11 +523,16 @@ class OrderController extends Controller
     {
         $services = $this->getUserServices();
         $client = null;
+        $clientProfile = null;
 
         if ($request->filled('client_id')) {
             $client = User::find($request->input('client_id'));
         } elseif ($request->filled('client_phone')) {
             $client = User::where('phone', $this->normalizePhone($request->input('client_phone')))->first();
+        }
+
+        if ($client) {
+            $clientProfile = Client::where('user_id', $client->id)->first();
         }
 
         $recommended = $this->buildRecommendedServices($client, $services);
@@ -521,6 +547,12 @@ class OrderController extends Controller
             'status_options' => Order::statusLabels(),
             'default_status' => 'new',
             'recommended_services' => $this->serializeRecommendations($recommended),
+            'client' => $client ? [
+                'id' => $client->id,
+                'name' => $clientProfile?->name ?? $client->name,
+                'phone' => $client->phone,
+                'email' => $clientProfile?->email ?? $client->email,
+            ] : null,
         ]);
     }
 
@@ -550,8 +582,16 @@ class OrderController extends Controller
     protected function resolveClient(string $phone, ?string $name = null, ?string $email = null): User
     {
         $normalizedPhone = $this->normalizePhone($phone);
+        $email = $email !== null ? trim($email) : null;
+        if ($email === '') {
+            $email = null;
+        }
 
         $user = User::where('phone', $normalizedPhone)->first();
+
+        if (! $user && $email) {
+            $user = User::where('email', $email)->first();
+        }
 
         if (! $user) {
             $user = User::create([
@@ -573,7 +613,7 @@ class OrderController extends Controller
             [
                 'name' => $name ?: $user->name,
                 'phone' => $normalizedPhone,
-                'email' => $email,
+                'email' => $email ?: $user->email,
             ]
         );
 
