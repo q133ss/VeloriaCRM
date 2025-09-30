@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
+use App\Http\Controllers\Api\V1\ServiceCategoryController;
+use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\UserController;
 
@@ -41,5 +43,15 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{order}/cancel', [ApiOrderController::class, 'cancel']);
         Route::post('/orders/{order}/reschedule', [ApiOrderController::class, 'reschedule']);
         Route::get('/orders/{order}/analytics', [ApiOrderController::class, 'analytics']);
+        Route::get('/services/options', [ServiceController::class, 'options']);
+        Route::get('/services', [ServiceController::class, 'index']);
+        Route::post('/services', [ServiceController::class, 'store']);
+        Route::get('/services/{service}', [ServiceController::class, 'show']);
+        Route::patch('/services/{service}', [ServiceController::class, 'update']);
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+        Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
+        Route::post('/service-categories', [ServiceCategoryController::class, 'store']);
+        Route::patch('/service-categories/{category}', [ServiceCategoryController::class, 'update']);
+        Route::delete('/service-categories/{category}', [ServiceCategoryController::class, 'destroy']);
     });
 });

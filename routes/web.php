@@ -48,4 +48,8 @@ Route::middleware('token.cookie')->group(function () {
     Route::get('/orders/{order}/edit', function ($order) {
         return view('orders.edit', ['orderId' => $order]);
     })->name('orders.edit');
+
+    Route::get('/services', function () {
+        return view('services.index');
+    })->name('services.index');
 });
