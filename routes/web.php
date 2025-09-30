@@ -23,6 +23,7 @@ Route::middleware('token.cookie')->group(function () {
     # TODO Даты выходных сделать календарем! Что бы выбирать период было удобнее
     Route::view('/settings', 'settings')->name('settings');
     Route::view('/calendar', 'calendar.index')->name('calendar');
+    Route::view('/analytics', 'analytics.index')->name('analytics');
 
     Route::get('/clients', function () {
         return view('clients.index');
