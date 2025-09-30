@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
 use App\Http\Controllers\Api\V1\ServiceCategoryController;
@@ -43,6 +44,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{order}/cancel', [ApiOrderController::class, 'cancel']);
         Route::post('/orders/{order}/reschedule', [ApiOrderController::class, 'reschedule']);
         Route::get('/orders/{order}/analytics', [ApiOrderController::class, 'analytics']);
+        Route::get('/calendar/events', [CalendarController::class, 'events']);
+        Route::get('/calendar/day', [CalendarController::class, 'day']);
         Route::get('/services/options', [ServiceController::class, 'options']);
         Route::get('/services', [ServiceController::class, 'index']);
         Route::post('/services', [ServiceController::class, 'store']);
