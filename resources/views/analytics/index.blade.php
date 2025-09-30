@@ -2,6 +2,19 @@
 
 @section('title', __('analytics.title'))
 
+@section('meta')
+    <style>
+        .analytics-chart {
+            position: relative;
+            height: 320px;
+        }
+
+        .analytics-chart--share {
+            height: 260px;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
         <div>
@@ -153,7 +166,9 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    <canvas id="analytics-revenue-chart" height="260"></canvas>
+                    <div class="analytics-chart">
+                        <canvas id="analytics-revenue-chart"></canvas>
+                    </div>
                     <div class="mt-3 small" id="analytics-financial-insights"></div>
                 </div>
             </div>
@@ -167,8 +182,8 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <canvas id="analytics-share-chart" height="220"></canvas>
+                    <div class="mb-3 analytics-chart analytics-chart--share">
+                        <canvas id="analytics-share-chart"></canvas>
                     </div>
                     <div class="small" id="analytics-share-legend"></div>
                 </div>
