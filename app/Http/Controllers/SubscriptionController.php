@@ -26,7 +26,9 @@ class SubscriptionController extends Controller
 
         $currentPlan = $user->plans()->orderByDesc('plan_user.created_at')->first();
         $activePlan = null;
-        if ($currentPlan && (is_null($currentPlan->pivot->ends_at) || $currentPlan->pivot->ends_at->isFuture())) {
+        $currentPlanEndsAt = $currentPlan?->pivot?->ends_at;
+
+        if ($currentPlan && (! $currentPlanEndsAt || Carbon::parse($currentPlanEndsAt)->isFuture())) {
             $activePlan = $currentPlan;
         }
 
