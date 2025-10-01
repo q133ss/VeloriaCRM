@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SubscriptionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -77,8 +76,6 @@ Route::middleware('token.cookie')->group(function () {
     Route::view('/help', 'help.index')->name('help');
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription');
-        Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('subscription.upgrade');
-        Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+        Route::view('/subscription', 'subscription.index')->name('subscription');
     });
 });

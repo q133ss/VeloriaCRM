@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\Learning\KnowledgeController as LearningKnowledgeController;
 use App\Http\Controllers\Api\V1\Learning\LearningPlanController;
 use App\Http\Controllers\Api\V1\Learning\LessonController as LearningLessonController;
+use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -101,5 +102,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/lessons', [LearningLessonController::class, 'index']);
             Route::get('/knowledge', [LearningKnowledgeController::class, 'index']);
         });
+
+        Route::get('/subscription', [ApiSubscriptionController::class, 'show']);
+        Route::post('/subscription/upgrade', [ApiSubscriptionController::class, 'upgrade']);
+        Route::post('/subscription/cancel', [ApiSubscriptionController::class, 'cancel']);
     });
 });
