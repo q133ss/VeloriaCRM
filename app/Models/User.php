@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Plan;
+use App\Models\SubscriptionTransaction;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
@@ -71,5 +72,10 @@ class User extends Authenticatable
     public function clients(): HasMany
     {
         return $this->hasMany(Client::class);
+    }
+
+    public function subscriptionTransactions(): HasMany
+    {
+        return $this->hasMany(SubscriptionTransaction::class);
     }
 }

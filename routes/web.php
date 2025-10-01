@@ -74,4 +74,8 @@ Route::middleware('token.cookie')->group(function () {
 
     Route::view('/marketing', 'marketing.index')->name('marketing');
     Route::view('/help', 'help.index')->name('help');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::view('/subscription', 'subscription.index')->name('subscription');
+    });
 });

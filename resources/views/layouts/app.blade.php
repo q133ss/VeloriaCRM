@@ -254,7 +254,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="/subscripe">
+                                    <a class="dropdown-item" href="{{ route('subscription') }}">
                                         <span class="d-flex align-items-center align-middle">
                                             <i class="flex-shrink-0 icon-base ri ri-bank-card-line icon-22px me-3"></i>
                                             <span class="flex-grow-1 align-middle ms-1">{{ __('navigation.subscription') }}</span>
