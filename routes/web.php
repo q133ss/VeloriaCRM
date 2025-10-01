@@ -25,6 +25,7 @@ Route::middleware('token.cookie')->group(function () {
     Route::view('/settings', 'settings')->name('settings');
     Route::view('/calendar', 'calendar.index')->name('calendar');
     Route::view('/analytics', 'analytics.index')->name('analytics');
+    Route::view('/learning', 'learning.index')->name('learning');
 
     Route::get('/clients', function () {
         return view('clients.index');
