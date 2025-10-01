@@ -16,6 +16,9 @@ use App\Http\Controllers\Api\V1\Marketing\WarmupController;
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
+use App\Http\Controllers\Api\V1\Learning\KnowledgeController as LearningKnowledgeController;
+use App\Http\Controllers\Api\V1\Learning\LearningPlanController;
+use App\Http\Controllers\Api\V1\Learning\LessonController as LearningLessonController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -91,5 +94,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/service-categories', [ServiceCategoryController::class, 'store']);
         Route::patch('/service-categories/{category}', [ServiceCategoryController::class, 'update']);
         Route::delete('/service-categories/{category}', [ServiceCategoryController::class, 'destroy']);
+
+        Route::prefix('learning')->group(function () {
+            Route::get('/plan', [LearningPlanController::class, 'show']);
+            Route::patch('/tasks/{task}', [LearningPlanController::class, 'updateTask']);
+            Route::get('/lessons', [LearningLessonController::class, 'index']);
+            Route::get('/knowledge', [LearningKnowledgeController::class, 'index']);
+        });
     });
 });

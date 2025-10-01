@@ -271,5 +271,7 @@ class DatabaseSeeder extends Seeder
                 'recommended_services' => [],
             ]
         );
+
+        $this->call(LearningSeeder::class);
     }
 }
