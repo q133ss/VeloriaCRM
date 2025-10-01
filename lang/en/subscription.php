@@ -127,6 +127,7 @@ return [
     ],
     'cancel' => [
         'title' => 'What happens after cancellation',
+        'description' => 'Here is what changes once your paid access ends.',
         'keep_title' => '✅ You keep:',
         'lose_title' => '⛔ You lose access to:',
         'keep' => [

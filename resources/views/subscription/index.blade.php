@@ -40,6 +40,17 @@
         .subscription-keep-lose li + li {
             margin-top: 0.5rem;
         }
+
+        .subscription-current-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100%;
+        }
+
+        .subscription-current-actions {
+            margin-top: auto;
+        }
     </style>
 @endsection
 
@@ -60,75 +71,84 @@
 
     <div class="card subscription-current-card mb-4">
         <div class="card-body">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-4">
-                <div class="flex-grow-1">
-                    <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('subscription.current_plan.title') }}</p>
-                    <h3 class="mb-3">{{ __('subscription.subtitle') }}</h3>
+            <div class="row gy-4 align-items-start">
+                <div class="col-lg-4">
+                    <div class="subscription-current-summary">
+                        <div>
+                            <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('subscription.current_plan.title') }}</p>
+                            <h3 class="mb-4">{{ __('subscription.subtitle') }}</h3>
 
-                    @if ($currentPlan)
-                        @php
-                            $endsAt = $currentPlan->pivot->ends_at;
-                            $planDetailsEntry = $planDetails->get($currentPlan->slug, []);
-                            if ($endsAt && ! $endsAt instanceof \Carbon\CarbonInterface) {
-                                $endsAt = \Illuminate\Support\Carbon::parse($endsAt);
-                            }
-                        @endphp
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="avatar avatar-lg bg-primary text-white">
-                                <span class="avatar-initial fw-semibold text-uppercase">{{ \Illuminate\Support\Str::limit($currentPlan->slug, 2, '') }}</span>
-                            </div>
-                            <div>
-                                <h4 class="mb-1">{{ \Illuminate\Support\Arr::get($planDetailsEntry, 'name', ucfirst($currentPlan->slug)) }}</h4>
-                                <div class="text-muted small">{{ \Illuminate\Support\Arr::get($planDetailsEntry, 'tagline') }}</div>
-                            </div>
-                        </div>
+                            @if ($currentPlan)
+                                @php
+                                    $endsAt = $currentPlan->pivot->ends_at;
+                                    $planDetailsEntry = $planDetails->get($currentPlan->slug, []);
+                                    if ($endsAt && ! $endsAt instanceof \Carbon\CarbonInterface) {
+                                        $endsAt = \Illuminate\Support\Carbon::parse($endsAt);
+                                    }
+                                @endphp
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar avatar-lg bg-primary text-white">
+                                        <span class="avatar-initial fw-semibold text-uppercase">{{ \Illuminate\Support\Str::limit($currentPlan->slug, 2, '') }}</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-1">{{ \Illuminate\Support\Arr::get($planDetailsEntry, 'name', ucfirst($currentPlan->slug)) }}</h4>
+                                        <div class="text-muted small">{{ \Illuminate\Support\Arr::get($planDetailsEntry, 'tagline') }}</div>
+                                    </div>
+                                </div>
 
-                        <div class="border rounded p-3 bg-white">
-                            @if ($endsAt)
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="ri ri-time-line text-primary"></i>
-                                    <span class="small text-muted">{{ __('subscription.current_plan.active_until', ['date' => $endsAt?->copy()->locale(app()->getLocale())->isoFormat('D MMMM YYYY')]) }}</span>
+                                <div class="border rounded p-3 bg-white">
+                                    @if ($endsAt)
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="ri ri-time-line text-primary"></i>
+                                            <span class="small text-muted">{{ __('subscription.current_plan.active_until', ['date' => $endsAt?->copy()->locale(app()->getLocale())->isoFormat('D MMMM YYYY')]) }}</span>
+                                        </div>
+                                    @else
+                                        <div class="small text-muted">{{ __('subscription.current_plan.free_plan') }}</div>
+                                    @endif
                                 </div>
                             @else
-                                <div class="small text-muted">{{ __('subscription.current_plan.free_plan') }}</div>
+                                <p class="text-muted mb-0">{{ __('subscription.current_plan.no_plan') }}</p>
                             @endif
                         </div>
-                    @else
-                        <p class="text-muted mb-0">{{ __('subscription.current_plan.no_plan') }}</p>
-                    @endif
-                </div>
 
-                <div class="d-flex flex-column gap-3 align-self-stretch">
-                    <form method="POST" action="{{ route('subscription.cancel') }}">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-danger px-4" {{ $activePlan ? '' : 'disabled' }}>
-                            {{ __('subscription.actions.cancel') }}
-                        </button>
-                    </form>
-                    <small class="text-muted">{{ __('subscription.cancel.note') }}</small>
-                </div>
-            </div>
-
-            <hr class="my-4">
-
-            <div class="subscription-keep-lose">
-                <h5 class="mb-3">{{ __('subscription.cancel.title') }}</h5>
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <h6 class="fw-semibold mb-3">{{ __('subscription.cancel.keep_title') }}</h6>
-                        <ul class="text-muted mb-0">
-                            @foreach (__('subscription.cancel.keep') as $item)
-                                <li>{{ $item }}</li>
-                            @endforeach
-                        </ul>
+                        <div class="subscription-current-actions">
+                            <form method="POST" action="{{ route('subscription.cancel') }}" class="mb-2">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger w-100" {{ $activePlan ? '' : 'disabled' }}>
+                                    {{ __('subscription.actions.cancel') }}
+                                </button>
+                            </form>
+                            <small class="text-muted d-block">{{ __('subscription.cancel.note') }}</small>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <h6 class="fw-semibold mb-3">{{ __('subscription.cancel.lose_title') }}</h6>
-                        <ul class="text-muted mb-0">
-                            @foreach (__('subscription.cancel.lose') as $item)
-                                <li>{{ $item }}</li>
-                            @endforeach
-                        </ul>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="subscription-keep-lose h-100">
+                        <h5 class="fw-semibold mb-3">{{ __('subscription.cancel.title') }}</h5>
+                        <p class="text-muted mb-4">{{ __('subscription.cancel.description') }}</p>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="bg-white border rounded h-100 p-4">
+                                    <h6 class="fw-semibold mb-3 text-success">{{ __('subscription.cancel.keep_title') }}</h6>
+                                    <ul class="text-muted mb-0">
+                                        @foreach (__('subscription.cancel.keep') as $item)
+                                            <li>{{ $item }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="bg-white border rounded h-100 p-4">
+                                    <h6 class="fw-semibold mb-3 text-danger">{{ __('subscription.cancel.lose_title') }}</h6>
+                                    <ul class="text-muted mb-0">
+                                        @foreach (__('subscription.cancel.lose') as $item)
+                                            <li>{{ $item }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
