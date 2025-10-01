@@ -104,6 +104,9 @@
                         @php
                             $endsAt = $currentPlan->pivot->ends_at;
                             $planDetailsEntry = $planDetails->get($currentPlan->slug, []);
+                            if ($endsAt && ! $endsAt instanceof \Carbon\CarbonInterface) {
+                                $endsAt = \Illuminate\Support\Carbon::parse($endsAt);
+                            }
                         @endphp
                         <div class="d-flex align-items-center gap-3">
                             <div class="avatar avatar-lg bg-primary text-white">
@@ -119,7 +122,7 @@
                             @if ($endsAt)
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="ri ri-time-line text-primary"></i>
-                                    <span class="small text-muted">{{ __('subscription.current_plan.active_until', ['date' => $endsAt->locale(app()->getLocale())->translatedFormat('d MMMM YYYY')]) }}</span>
+                                    <span class="small text-muted">{{ __('subscription.current_plan.active_until', ['date' => $endsAt?->copy()->locale(app()->getLocale())->translatedFormat('d MMMM YYYY')]) }}</span>
                                 </div>
                             @else
                                 <div class="small text-muted">{{ __('subscription.current_plan.free_plan') }}</div>
