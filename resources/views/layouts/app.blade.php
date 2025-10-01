@@ -240,6 +240,7 @@
                                             </div>
                                             <div class="flex-grow-1">
                                                 <h6 class="mb-0" data-user-name></h6>
+                                                <small class="text-body-secondary" data-user-plan></small>
                                             </div>
                                         </div>
                                     </a>
@@ -438,6 +439,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var slug = user.plan && user.plan.slug ? String(user.plan.slug).toLowerCase() : 'lite';
             if (['lite', 'pro', 'elite'].indexOf(slug) === -1) slug = 'lite';
+
+            var planTarget = document.querySelector('[data-user-plan]');
+            if (planTarget) {
+                planTarget.textContent = slug;
+            }
 
             var menu = BASE_MENU.slice();
             (PLAN_ADDITIONS[slug] || []).forEach(function (item) {
