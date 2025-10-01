@@ -138,7 +138,7 @@ class SubscriptionController extends Controller
         ]);
 
         return back()->with('status', __('subscription.alerts.cancel_success', [
-            'date' => $now->locale(app()->getLocale())->translatedFormat('d MMMM YYYY'),
+            'date' => $now->locale(app()->getLocale())->isoFormat('D MMMM YYYY'),
         ]));
     }
 }
