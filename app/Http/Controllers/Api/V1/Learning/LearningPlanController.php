@@ -45,7 +45,7 @@ class LearningPlanController extends Controller
             'period' => [
                 'start' => $weekStart->toDateString(),
                 'end' => $weekEnd->toDateString(),
-                'label' => $weekStart->locale($locale)->translatedFormat('d MMM') . ' — ' . $weekEnd->locale($locale)->translatedFormat('d MMM'),
+                'label' => $this->formatDateRangeLabel($weekStart, $weekEnd, $locale),
             ],
             'ai' => $aiSummary,
             'insights' => $insights->map(fn (LearningRecommendation $insight) => $this->transformInsight($insight, $locale))->values()->all(),
@@ -103,6 +103,26 @@ class LearningPlanController extends Controller
         ]);
     }
 
+    protected function formatDateRangeLabel(Carbon $start, Carbon $end, string $locale): string
+    {
+        $startDate = $start->copy()->locale($locale);
+        $endDate = $end->copy()->locale($locale);
+
+        if ($startDate->isSameMonth($endDate)) {
+            return sprintf(
+                '%s — %s',
+                $startDate->isoFormat('D'),
+                $endDate->isoFormat('D MMMM')
+            );
+        }
+
+        return sprintf(
+            '%s — %s',
+            $startDate->isoFormat('D MMMM'),
+            $endDate->isoFormat('D MMMM')
+        );
+    }
+
     protected function transformInsight(LearningRecommendation $insight, string $locale): array
     {
         return [
@@ -130,7 +150,7 @@ class LearningPlanController extends Controller
             'description' => $task->getTranslationAsString('description', $locale, 'en'),
             'status' => $task->status,
             'due_on' => $task->due_on?->toDateString(),
-            'due_label' => $task->due_on?->locale($locale)->translatedFormat('d MMM'),
+            'due_label' => $task->due_on?->locale($locale)->isoFormat('D MMMM'),
             'progress' => [
                 'current' => $task->progress_current,
                 'target' => $task->progress_target,
