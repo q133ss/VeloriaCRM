@@ -374,22 +374,22 @@
 
                     const badge = plan.badge ? '<span class="badge bg-label-primary">' + plan.badge + '</span>' : '';
 
-                    col.innerHTML = '
-                        <div class="' + cardClasses.join(' ') + '">
+                    col.innerHTML = `
+                        <div class="${cardClasses.join(' ')}">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
-                                        <h5 class="mb-1">' + plan.name + '</h5>
-                                        <p class="text-muted mb-0">' + (plan.tagline || '') + '</p>
+                                        <h5 class="mb-1">${plan.name}</h5>
+                                        <p class="text-muted mb-0">${plan.tagline || ''}</p>
                                     </div>
-                                    ' + badge + '
+                                    ${badge}
                                 </div>
-                                <div class="mb-3">' + priceBlock + '</div>
-                                ' + featuresList + '
-                                <div class="mt-auto">' + actionButton + '</div>
+                                <div class="mb-3">${priceBlock}</div>
+                                ${featuresList}
+                                <div class="mt-auto">${actionButton}</div>
                             </div>
                         </div>
-                    ';
+                    `;
 
                     plansContainer.appendChild(col);
                 });
