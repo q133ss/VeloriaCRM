@@ -301,34 +301,34 @@
 
                 const planTagline = plan.tagline ? '<div class="text-muted small">' + plan.tagline + '</div>' : '';
                 const badge = plan.badge ? '<span class="badge bg-label-primary">' + plan.badge + '</span>' : '';
-                const nameRow = '
+                const nameRow = `
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <div class="avatar avatar-lg bg-primary text-white">
-                            <span class="avatar-initial fw-semibold text-uppercase">' + initials + '</span>
+                            <span class="avatar-initial fw-semibold text-uppercase">${initials}</span>
                         </div>
                         <div>
-                            <h4 class="mb-1">' + plan.name + '</h4>
-                            ' + planTagline + '
+                            <h4 class="mb-1">${plan.name}</h4>
+                            ${planTagline}
                         </div>
-                        ' + badge + '
+                        ${badge}
                     </div>
-                ';
+                `;
 
                 let statusBlock = '';
                 if (plan.active_until_label) {
-                    statusBlock = '
+                    statusBlock = `
                         <div class="d-flex align-items-center gap-2">
                             <i class="ri ri-time-line text-primary"></i>
-                            <span class="small text-muted">' + plan.active_until_label + '</span>
+                            <span class="small text-muted">${plan.active_until_label}</span>
                         </div>
-                    ';
+                    `;
                 } else {
                     statusBlock = '<div class="small text-muted">' + STRINGS.currentPlan.freePlan + '</div>';
                 }
 
-                currentPlanContainer.innerHTML = nameRow + '
-                    <div class="border rounded p-3 bg-white">' + statusBlock + '</div>
-                ';
+                currentPlanContainer.innerHTML = nameRow + `
+                    <div class="border rounded p-3 bg-white">${statusBlock}</div>
+                `;
 
                 if (cancelButton) {
                     cancelButton.disabled = !plan.is_active;
