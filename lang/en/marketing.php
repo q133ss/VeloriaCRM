@@ -6,6 +6,8 @@ return [
         'value_required' => 'Specify the value for this promotion type.',
         'percentage_range' => 'Percentage discount must be between 1 and 100%.',
         'gift_required' => 'Describe the gift that the client will receive.',
+        'selected_clients_required' => 'Select at least one client for this segment.',
+        'ab_test_email_subjects' => 'Provide a subject for every email variant.',
     ],
     'segments' => [
         'all' => 'All clients',
@@ -15,6 +17,7 @@ return [
         'by_service' => 'By service',
         'by_master' => 'By specialist',
         'custom' => 'Custom filter',
+        'selected' => 'Selected clients',
     ],
     'campaigns' => [
         'created' => 'Campaign created successfully.',
@@ -24,10 +27,13 @@ return [
         'winner_selected' => 'Winning variant saved. The campaign is completed.',
         'variant_not_found' => 'Selected variant not found for this campaign.',
         'channel_not_configured' => 'Channel :channel is not configured in settings. Please complete the integration first.',
+        'no_channels_available' => 'Configure your integrations first — there are no available channels yet.',
         'no_recipients' => 'There are no recipients in the selected segment for this channel.',
         'ab_test_requires_winner' => 'Select a winning variant before sending the full campaign.',
         'test_group_missing' => 'Specify a test group size for A/B testing mode.',
         'ab_test_tip' => 'Test two hypotheses on a small group first — the system will highlight the winner by engagement.',
+        'default_subject' => 'Marketing message',
+        'unnamed_client' => 'Client #:id',
     ],
     'suggestions' => [
         'start_title' => 'Launch your first campaign',
