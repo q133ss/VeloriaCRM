@@ -67,15 +67,30 @@
             text-overflow: ellipsis;
         }
 
-        #crm-calendar .fc .fc-daygrid-more-link {
+        #crm-calendar .fc .fc-daygrid-day-events {
+            overflow: hidden;
+        }
+
+        #crm-calendar .fc .fc-daygrid-more-link,
+        #crm-calendar .fc .calendar-more-placeholder {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 999px;
-            background-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
-            color: var(--bs-primary-color);
-            font-weight: 500;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            padding: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--bs-secondary-color);
+            font-weight: 600;
+            pointer-events: none;
+            cursor: default;
+            text-decoration: none;
+        }
+
+        #crm-calendar .fc .fc-daygrid-more-link:focus,
+        #crm-calendar .fc .fc-daygrid-more-link:active {
+            outline: none;
         }
 
         #crm-calendar .fc .fc-popover {
@@ -319,8 +334,6 @@
             const todayBtn = document.getElementById('calendar-today');
             const navButtons = document.querySelectorAll('[data-calendar-nav]');
             const viewButtons = document.querySelectorAll('[data-calendar-view]');
-            const moreLinkMap = translations.labels ? translations.labels.more_link : null;
-
             let selectedDate = null;
 
             function toggle(el, show) {
@@ -605,14 +618,23 @@
                 noEventsContent: function () {
                     return { html: translations.noEvents };
                 },
-                moreLinkContent: function (args) {
-                    const count = args.num || 0;
-                    let text = moreLinkMap ? pluralize(moreLinkMap, count) : '';
-                    if (!text || text === String(count)) {
-                        const fallbackLabel = locale.startsWith('ru') ? ' ещё' : ' more';
-                        text = '+' + count + fallbackLabel;
+                moreLinkContent: function () {
+                    return '…';
+                },
+                moreLinkDidMount: function (args) {
+                    if (!args.el) {
+                        return;
                     }
-                    return text;
+                    args.el.classList.add('calendar-more-placeholder');
+                    args.el.setAttribute('aria-hidden', 'true');
+                    args.el.setAttribute('tabindex', '-1');
+                },
+                moreLinkClick: function (info) {
+                    if (info && info.jsEvent) {
+                        info.jsEvent.preventDefault();
+                        info.jsEvent.stopPropagation();
+                    }
+                    return null;
                 },
                 eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
                 events: function (fetchInfo, successCallback, failureCallback) {
