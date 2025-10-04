@@ -22,6 +22,9 @@ return [
         'day' => 'Day',
         'list' => 'Agenda',
     ],
+    'labels' => [
+        'all_day' => 'All day',
+    ],
     'day' => [
         'panel_title' => 'Day details',
         'subtitle' => [

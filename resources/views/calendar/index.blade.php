@@ -25,16 +25,27 @@
 @section('meta')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css">
     <style>
+        .calendar-card-body {
+            display: flex;
+        }
+
         #crm-calendar {
+            flex: 1 1 auto;
             min-height: 640px;
+            height: 100%;
         }
 
         #crm-calendar .fc .fc-toolbar-title {
             font-size: 1.15rem;
         }
 
+        #crm-calendar .fc {
+            height: 100%;
+        }
+
         #crm-calendar .fc .fc-view-harness {
             min-height: 560px;
+            height: 100%;
         }
 
         #crm-calendar .fc .fc-highlight {
@@ -48,6 +59,18 @@
         #crm-calendar .fc-theme-standard td,
         #crm-calendar .fc-theme-standard th {
             border-color: var(--bs-border-color);
+        }
+
+        #crm-calendar .fc .fc-col-header,
+        #crm-calendar .fc .fc-col-header-cell,
+        #crm-calendar .fc .fc-timegrid-axis,
+        #crm-calendar .fc .fc-list-table thead tr {
+            background-color: var(--bs-card-bg);
+        }
+
+        #crm-calendar .fc .fc-col-header-cell-cushion,
+        #crm-calendar .fc .fc-timegrid-axis-cushion {
+            color: var(--bs-body-color);
         }
 
         .calendar-order-card {
@@ -145,7 +168,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0 calendar-card-body">
                     <div id="crm-calendar"></div>
                 </div>
             </div>
@@ -219,6 +242,7 @@
                 day: @json($calendarDayTranslations),
                 actions: @json($calendarActions),
                 views: @json($calendarViews),
+                labels: @json(trans('calendar.labels')),
                 noEvents: @json(__('calendar.no_events')),
                 unnamedClient: @json(__('calendar.unnamed_client')),
             };
@@ -231,6 +255,10 @@
                 day: translations.views.day || 'Day',
                 list: translations.views.list || 'Agenda',
             };
+
+            const allDayText = (translations.labels && translations.labels.all_day)
+                ? translations.labels.all_day
+                : 'All day';
 
             const pluralRules = new Intl.PluralRules(locale);
             const eventsErrorEl = document.getElementById('calendar-events-error');
@@ -531,8 +559,8 @@
                 selectMirror: true,
                 expandRows: true,
                 dayMaxEvents: 4,
-                height: 'auto',
-                contentHeight: 'auto',
+                height: '100%',
+                allDayText: allDayText,
                 buttonText: buttonText,
                 noEventsContent: function () {
                     return { html: translations.noEvents };
