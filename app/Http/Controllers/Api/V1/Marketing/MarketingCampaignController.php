@@ -9,6 +9,7 @@ use App\Http\Requests\CampaignWinnerRequest;
 use App\Models\MarketingCampaign;
 use App\Models\MarketingCampaignVariant;
 use App\Services\Marketing\MarketingCampaignService;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
