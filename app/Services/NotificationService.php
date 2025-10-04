@@ -6,22 +6,30 @@ use App\Events\UserNotificationCreated;
 use App\Models\Notification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationService
 {
+
     /**
      * Создаёт и отсылает уведомление пользователю.
      */
-    public function send(int $userId, string $title, string $message): Notification
+    public function send(int $userId, string $title, string $message, ?string $actionUrl = null): Notification
     {
-        return DB::transaction(function () use ($userId, $title, $message) {
-            /** @var Notification $notification */
-            // Сохраняем уведомление в рамках транзакции, чтобы не отправить лишний пуш при ошибке БД.
-            $notification = Notification::query()->create([
+        return DB::transaction(function () use ($userId, $title, $message, $actionUrl) {
+            $attributes = [
                 'user_id' => $userId,
                 'title' => $title,
                 'message' => $message,
-            ]);
+            ];
+
+            if (Schema::hasColumn('notifications', 'action_url')) {
+                $attributes['action_url'] = $actionUrl;
+            }
+
+            /** @var Notification $notification */
+            // Сохраняем уведомление в рамках транзакции, чтобы не отправить лишний пуш при ошибке БД.
+            $notification = Notification::query()->create($attributes);
 
             // Отправляем событие в Pusher, чтобы фронтенд увидел уведомление мгновенно.
             broadcast(new UserNotificationCreated($notification))->toOthers();

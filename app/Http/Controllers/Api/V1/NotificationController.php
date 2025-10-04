@@ -34,6 +34,7 @@ class NotificationController extends Controller
                 'id' => $notification->id,
                 'title' => $notification->title,
                 'message' => $notification->message,
+                'action_url' => $notification->action_url,
                 'is_read' => (bool) $notification->is_read,
                 'created_at' => $notification->created_at?->toIso8601String(),
             ];
@@ -81,6 +82,7 @@ class NotificationController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string'],
             'user_id' => ['nullable', 'integer', 'min:1'],
+            'action_url' => ['nullable', 'string', 'max:2048'],
         ]);
 
         $user = $request->user();
@@ -90,7 +92,8 @@ class NotificationController extends Controller
         $notification = $this->notifications->send(
             $targetUserId,
             $data['title'],
-            $data['message']
+            $data['message'],
+            $data['action_url'] ?? null,
         );
 
         return response()->json([

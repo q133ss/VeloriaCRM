@@ -15,6 +15,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\OpenAIService;
+use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -31,6 +32,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OpenAIService $openAI,
+        private readonly OrderService $orderService,
     ) {
     }
     public function index(OrderFilterRequest $request): JsonResponse
@@ -123,6 +125,8 @@ class OrderController extends Controller
 
         $order->load(['client', 'master']);
 
+        $this->orderService->scheduleStartReminder($order);
+
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись успешно создана.',
@@ -151,7 +155,9 @@ class OrderController extends Controller
         $validated = $request->validated();
         $masterId = $this->currentUserId();
 
-        DB::transaction(function () use ($validated, $order, $masterId) {
+        $scheduledChanged = false;
+
+        DB::transaction(function () use ($validated, $order, $masterId, &$scheduledChanged) {
             $client = $this->resolveClient(
                 $validated['client_phone'],
                 Arr::get($validated, 'client_name'),
@@ -176,20 +182,33 @@ class OrderController extends Controller
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
-            $order->update([
+            $newScheduledAt = Carbon::parse($validated['scheduled_at']);
+            $scheduledChanged = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
+
+            $payload = [
                 'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => $servicePayload,
-                'scheduled_at' => Carbon::parse($validated['scheduled_at']),
+                'scheduled_at' => $newScheduledAt,
                 'note' => Arr::get($validated, 'note'),
                 'duration_forecast' => $services->sum('duration_min') ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
                 'recommended_services' => $this->serializeRecommendations($recommended),
-            ]);
+            ];
+
+            if ($scheduledChanged) {
+                $payload['start_confirmation_notified_at'] = null;
+            }
+
+            $order->update($payload);
         });
 
         $order->refresh()->loadMissing(['client', 'master']);
+
+        if ($scheduledChanged) {
+            $this->orderService->scheduleStartReminder($order);
+        }
 
         return response()->json([
             'data' => $this->decorateOrder($order),
@@ -326,6 +345,8 @@ class OrderController extends Controller
 
         $order->load(['client', 'master']);
 
+        $this->orderService->scheduleStartReminder($order);
+
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись создана через быстрое создание.',
@@ -356,14 +377,30 @@ class OrderController extends Controller
         ]);
     }
 
-    public function start(Order $order): JsonResponse
+    public function start(Order $order, Request $request): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
         $now = Carbon::now();
 
+        $startedAt = $request->input('started_at');
+        $actualStartedAt = $now;
+
+        if ($startedAt) {
+            try {
+                $actualStartedAt = Carbon::parse($startedAt);
+            } catch (Throwable $exception) {
+                return response()->json([
+                    'error' => [
+                        'code' => 'invalid_started_at',
+                        'message' => 'Некорректный формат времени начала процедуры.',
+                    ],
+                ], 422);
+            }
+        }
+
         $order->update([
             'status' => 'in_progress',
-            'actual_started_at' => $now,
+            'actual_started_at' => $actualStartedAt,
         ]);
 
         $order->refresh();
@@ -434,9 +471,12 @@ class OrderController extends Controller
             'rescheduled_from' => $previousDate && !$order->rescheduled_from ? $previousDate : $order->rescheduled_from,
             'scheduled_at' => Carbon::parse($validated['scheduled_at']),
             'reschedule_count' => ($order->reschedule_count ?? 0) + 1,
+            'start_confirmation_notified_at' => null,
         ]);
 
         $order->refresh();
+
+        $this->orderService->scheduleStartReminder($order);
 
         return response()->json([
             'data' => $this->decorateOrder($order),

@@ -13,6 +13,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+
 Artisan::command('marketing:dispatch-scheduled', function () {
     /** @var MarketingCampaignService $service */
     $service = app(MarketingCampaignService::class);
