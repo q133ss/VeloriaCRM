@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ServiceCategoryController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
@@ -106,5 +107,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/subscription', [ApiSubscriptionController::class, 'show']);
         Route::post('/subscription/upgrade', [ApiSubscriptionController::class, 'upgrade']);
         Route::post('/subscription/cancel', [ApiSubscriptionController::class, 'cancel']);
+
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications', [NotificationController::class, 'store']);
+        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
     });
 });
