@@ -2,6 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Setting;
+use App\Services\Marketing\MarketingCampaignService;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class CampaignFormRequest extends BaseRequest
@@ -18,15 +22,32 @@ class CampaignFormRequest extends BaseRequest
                 'is_ab_test' => filter_var($this->input('is_ab_test'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
             ]);
         }
+
+        if ($this->has('variants') && is_array($this->input('variants'))) {
+            $variants = array_values($this->input('variants'));
+
+            foreach ($variants as $index => &$variant) {
+                if (! isset($variant['label']) || $variant['label'] === '') {
+                    $variant['label'] = chr(65 + $index);
+                }
+            }
+
+            $this->merge(['variants' => $variants]);
+        }
     }
 
     public function rules(): array
     {
+        $availableChannels = $this->availableChannelValues();
+
         return [
             'template_id' => ['nullable', 'integer', 'exists:message_templates,id'],
             'name' => ['required', 'string', 'max:255'],
-            'channel' => ['required', 'string', 'in:sms,email,telegram,whatsapp'],
-            'segment' => ['required', 'string', 'in:all,new,loyal,sleeping,by_service,by_master,custom'],
+            'channel' => array_merge(
+                ['required', 'string'],
+                $this->channelValidationRules($availableChannels)
+            ),
+            'segment' => ['required', 'string', 'in:all,new,loyal,sleeping,by_service,by_master,custom,selected'],
             'segment_filters' => ['nullable', 'array'],
             'segment_filters.service_ids' => ['nullable', 'array'],
             'segment_filters.service_ids.*' => ['integer', 'exists:services,id'],
@@ -34,6 +55,8 @@ class CampaignFormRequest extends BaseRequest
             'segment_filters.master_ids.*' => ['integer', 'exists:users,id'],
             'segment_filters.tags' => ['nullable', 'array'],
             'segment_filters.tags.*' => ['string'],
+            'segment_filters.client_ids' => ['nullable', 'array'],
+            'segment_filters.client_ids.*' => ['integer', 'exists:clients,id'],
             'is_ab_test' => ['nullable', 'boolean'],
             'status' => ['nullable', 'string', 'max:50'],
             'scheduled_at' => ['nullable', 'date'],
@@ -60,6 +83,41 @@ class CampaignFormRequest extends BaseRequest
                     $validator->errors()->add('variants', __('marketing.validation.ab_test_variants'));
                 }
             }
+
+            if ($this->input('segment') === 'selected') {
+                $clientIds = Arr::get($this->input('segment_filters', []), 'client_ids', []);
+
+                if (! is_array($clientIds) || empty(array_filter($clientIds))) {
+                    $validator->errors()->add('segment_filters.client_ids', __('marketing.validation.selected_clients_required'));
+                }
+            }
         });
+    }
+
+    protected function availableChannelValues(): array
+    {
+        $user = $this->user('sanctum') ?? $this->user();
+        if (! $user) {
+            return [];
+        }
+
+        $settings = Setting::where('user_id', $user->id)->first();
+
+        return collect(app(MarketingCampaignService::class)->availableChannels($settings))
+            ->pluck('value')
+            ->all();
+    }
+
+    protected function channelValidationRules(array $availableChannels): array
+    {
+        if (! empty($availableChannels)) {
+            return [Rule::in($availableChannels)];
+        }
+
+        return [
+            function (string $attribute, $value, $fail) {
+                $fail(__('marketing.campaigns.no_channels_available'));
+            },
+        ];
     }
 }
