@@ -61,36 +61,44 @@
             border-color: var(--bs-border-color);
         }
 
-        #crm-calendar .fc .fc-daygrid-event {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         #crm-calendar .fc .fc-daygrid-day-events {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            max-height: 2.25rem;
             overflow: hidden;
+            align-content: flex-start;
         }
 
-        #crm-calendar .fc .fc-daygrid-more-link,
-        #crm-calendar .fc .calendar-more-placeholder {
+        #crm-calendar .fc .fc-daygrid-event {
+            flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 1.75rem;
-            height: 1.75rem;
+            width: 0.75rem;
+            height: 0.75rem;
             padding: 0;
+            border: none;
             border-radius: 50%;
             background: transparent;
-            color: var(--bs-secondary-color);
-            font-weight: 600;
-            pointer-events: none;
-            cursor: default;
-            text-decoration: none;
+            box-shadow: none;
         }
 
-        #crm-calendar .fc .fc-daygrid-more-link:focus,
-        #crm-calendar .fc .fc-daygrid-more-link:active {
-            outline: none;
+        #crm-calendar .fc .fc-daygrid-event:focus {
+            box-shadow: none;
+            outline: 0;
+        }
+
+        #crm-calendar .fc .calendar-event-dot {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: var(--calendar-event-dot-color, var(--bs-primary-color));
+        }
+
+        #crm-calendar .fc .fc-daygrid-event .fc-event-time,
+        #crm-calendar .fc .fc-daygrid-event .fc-event-title {
+            display: none;
         }
 
         #crm-calendar .fc .fc-popover {
@@ -609,32 +617,20 @@
                 selectable: true,
                 selectMirror: true,
                 expandRows: true,
-                dayMaxEvents: 4,
-                dayMaxEventRows: 4,
-                eventMaxStack: 4,
                 height: '100%',
                 allDayText: allDayText,
                 buttonText: buttonText,
                 noEventsContent: function () {
                     return { html: translations.noEvents };
                 },
-                moreLinkContent: function () {
-                    return '…';
-                },
-                moreLinkDidMount: function (args) {
-                    if (!args.el) {
-                        return;
+                eventContent: function (arg) {
+                    const dot = document.createElement('span');
+                    dot.className = 'calendar-event-dot';
+                    const color = arg.event.backgroundColor || arg.event.borderColor || null;
+                    if (color) {
+                        dot.style.setProperty('--calendar-event-dot-color', color);
                     }
-                    args.el.classList.add('calendar-more-placeholder');
-                    args.el.setAttribute('aria-hidden', 'true');
-                    args.el.setAttribute('tabindex', '-1');
-                },
-                moreLinkClick: function (info) {
-                    if (info && info.jsEvent) {
-                        info.jsEvent.preventDefault();
-                        info.jsEvent.stopPropagation();
-                    }
-                    return null;
+                    return { domNodes: [dot] };
                 },
                 eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
                 events: function (fetchInfo, successCallback, failureCallback) {
@@ -680,6 +676,7 @@
                 },
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
+                    info.jsEvent.stopPropagation();
                     if (info.event.start) {
                         calendar.select(info.event.start);
                     }
