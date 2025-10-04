@@ -82,6 +82,7 @@
             border-radius: 50%;
             background: transparent;
             box-shadow: none;
+            cursor: default;
         }
 
         #crm-calendar .fc .fc-daygrid-event:focus {
@@ -93,12 +94,17 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background-color: var(--calendar-event-dot-color, var(--bs-primary-color));
+            background-color: var(--calendar-event-dot-color, var(--bs-primary, #7367f0));
+            display: inline-block;
         }
 
         #crm-calendar .fc .fc-daygrid-event .fc-event-time,
         #crm-calendar .fc .fc-daygrid-event .fc-event-title {
             display: none;
+        }
+
+        #crm-calendar .fc .fc-daygrid-more-link {
+            display: none !important;
         }
 
         #crm-calendar .fc .fc-popover {
@@ -630,6 +636,11 @@
                     if (color) {
                         dot.style.setProperty('--calendar-event-dot-color', color);
                     }
+
+                    if (arg.event.title) {
+                        dot.setAttribute('aria-label', arg.event.title);
+                    }
+
                     return { domNodes: [dot] };
                 },
                 eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
@@ -677,12 +688,10 @@
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
                     info.jsEvent.stopPropagation();
-                    if (info.event.start) {
-                        calendar.select(info.event.start);
-                    }
-                    if (info.jsEvent.metaKey || info.jsEvent.ctrlKey) {
-                        window.open('/orders/' + info.event.id, '_blank');
-                    }
+                    return false;
+                },
+                moreLinkClick: function () {
+                    return false;
                 },
                 eventDidMount: function (info) {
                     const parts = [];
