@@ -231,6 +231,7 @@
             const reminderChannels = document.getElementById('reminder-channels');
             const reminderErrors = document.getElementById('reminder-errors');
             const reminderSendBtn = document.getElementById('reminder-send');
+            const reminderSendBtnDefaultText = reminderSendBtn ? reminderSendBtn.textContent : '';
 
             let reminderMessageTemplate = '';
             let currentClient = null;
@@ -242,6 +243,15 @@
             let recommendationsLoaded = false;
             let recommendationsLoading = false;
             let recommendationsError = null;
+
+            function setReminderLoading(isLoading) {
+                if (!reminderSendBtn) {
+                    return;
+                }
+
+                reminderSendBtn.disabled = isLoading;
+                reminderSendBtn.textContent = isLoading ? 'Отправка...' : (reminderSendBtnDefaultText || 'Отправить');
+            }
 
             function showAlert(type, message) {
                 const alert = document.createElement('div');
@@ -724,18 +734,28 @@
                 reminderChannels.innerHTML = '';
                 const channels = Array.isArray(client.available_channels) ? client.available_channels : [];
                 if (!channels.length) {
-                    reminderChannels.innerHTML = '<p class="text-muted mb-0">Добавьте телефон или email, чтобы выбрать канал связи.</p>';
+                    reminderChannels.innerHTML = '<p class="text-muted mb-0">Добавьте телефон, чтобы выбрать канал связи.</p>';
                     reminderSendBtn.disabled = true;
                     return;
                 }
+                const integrations = clientMeta.integrations || {};
                 channels.forEach(function (channel, index) {
                     const id = `reminder-channel-${channel.key}-${client.id}`;
                     const wrapper = document.createElement('div');
                     wrapper.className = 'form-check';
+                    const isConfigured = !!integrations[channel.key];
                     wrapper.innerHTML = `
                         <input class="form-check-input" type="radio" name="reminder-channel" id="${id}" value="${channel.key}" ${index === 0 ? 'checked' : ''} />
-                        <label class="form-check-label" for="${id}">${channel.label}</label>
+                        <label class="form-check-label" for="${id}">${channel.label}${isConfigured ? '' : ' <span class="text-muted">(требует настройки)</span>'}</label>
                     `;
+                    if (!isConfigured) {
+                        const hint = document.createElement('div');
+                        hint.className = 'text-muted small ms-4';
+                        hint.textContent = channel.key === 'sms'
+                            ? 'Добавьте API ключ SmsAero в настройках.'
+                            : 'Добавьте API для WhatsApp в настройках.';
+                        wrapper.appendChild(hint);
+                    }
                     reminderChannels.appendChild(wrapper);
                 });
                 reminderSendBtn.disabled = false;
@@ -744,6 +764,7 @@
             function fillClient(client, meta) {
                 currentClient = client;
                 clientMeta = meta || {};
+                clientMeta.integrations = Object.assign({ sms: false, whatsapp: false }, clientMeta.integrations || {});
                 reminderMessageTemplate = clientMeta.reminder_message || '';
                 analyticsData = null;
                 analyticsLoaded = false;
@@ -814,6 +835,7 @@
                 reminderTitle.textContent = `Автонапоминание для ${currentClient.name || 'клиента'}`;
                 reminderMessageInput.value = reminderMessageTemplate || '';
                 reminderErrors.textContent = '';
+                setReminderLoading(false);
                 renderReminderChannels(currentClient);
                 reminderModal.show();
             }
@@ -832,6 +854,24 @@
                 reminderButton.addEventListener('click', openReminderModal);
             }
 
+            if (reminderChannels) {
+                reminderChannels.addEventListener('change', function (event) {
+                    if (!event.target || event.target.name !== 'reminder-channel') {
+                        return;
+                    }
+
+                    const selectedChannel = event.target.value;
+                    const integrations = clientMeta.integrations || {};
+                    if (selectedChannel === 'sms' && !integrations.sms) {
+                        reminderErrors.textContent = 'Укажите API для SMS в настройках.';
+                    } else if (selectedChannel === 'whatsapp' && !integrations.whatsapp) {
+                        reminderErrors.textContent = 'Укажите API для WhatsApp в настройках.';
+                    } else {
+                        reminderErrors.textContent = '';
+                    }
+                });
+            }
+
             if (reminderSendBtn) {
                 reminderSendBtn.addEventListener('click', async function () {
                     reminderErrors.textContent = '';
@@ -848,20 +888,54 @@
                         return;
                     }
 
-                    try {
-                        if (navigator.clipboard && navigator.clipboard.writeText) {
-                            await navigator.clipboard.writeText(message);
-                            showAlert('info', 'Текст напоминания скопирован. Отправьте его клиенту через выбранный канал.');
-                        } else {
-                            showAlert('info', 'Скопируйте текст напоминания вручную и отправьте клиенту.');
-                        }
-                    } catch (error) {
-                        console.warn('Clipboard copy failed', error);
-                        showAlert('info', 'Не удалось скопировать текст автоматически. Скопируйте вручную.');
+                    const channel = channelInput.value;
+                    const integrations = clientMeta.integrations || {};
+
+                    if (channel === 'sms' && !integrations.sms) {
+                        reminderErrors.textContent = 'Укажите API для SMS в настройках.';
+                        return;
                     }
 
-                    if (reminderModal) {
-                        reminderModal.hide();
+                    if (channel === 'whatsapp' && !integrations.whatsapp) {
+                        reminderErrors.textContent = 'Укажите API для WhatsApp в настройках.';
+                        return;
+                    }
+
+                    if (!currentClient) {
+                        showAlert('danger', 'Клиент не выбран.');
+                        return;
+                    }
+
+                    setReminderLoading(true);
+
+                    try {
+                        const response = await fetch(`/api/v1/clients/${currentClient.id}/reminders`, {
+                            method: 'POST',
+                            headers: authHeaders(),
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                channel: channel,
+                                message: message,
+                            }),
+                        });
+
+                        const result = await response.json().catch(() => ({}));
+
+                        if (!response.ok) {
+                            reminderErrors.textContent = result.error?.message || 'Не удалось отправить напоминание.';
+                            return;
+                        }
+
+                        if (reminderModal) {
+                            reminderModal.hide();
+                        }
+
+                        showAlert('success', result.message || 'Напоминание отправлено.');
+                    } catch (error) {
+                        console.error(error);
+                        reminderErrors.textContent = 'Не удалось отправить напоминание. Попробуйте позже.';
+                    } finally {
+                        setReminderLoading(false);
                     }
                 });
             }

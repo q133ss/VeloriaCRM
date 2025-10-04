@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ClientFilterRequest;
 use App\Http\Requests\ClientFormRequest;
+use App\Http\Requests\SendReminderRequest;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Services\OpenAIService;
+use App\Services\ReminderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -24,6 +26,7 @@ class ClientController extends Controller
 {
     public function __construct(
         private readonly OpenAIService $openAI,
+        private readonly ReminderService $reminders,
     ) {
     }
 
@@ -94,6 +97,7 @@ class ClientController extends Controller
                 ],
                 'loyalty_options' => ['' => 'Все уровни'] + Client::loyaltyLevels(),
                 'reminder_message' => optional($settings)->reminder_message,
+                'integrations' => $this->reminderIntegrations($settings),
             ],
             'links' => [
                 'first' => $clients->url(1),
@@ -134,7 +138,56 @@ class ClientController extends Controller
                 'statistics' => $this->buildClientStatistics($client),
                 'has_pro_access' => $this->userHasProAccess(),
                 'risk' => $this->calculateNoShowRisk($client),
+                'integrations' => $this->reminderIntegrations($settings),
             ],
+        ]);
+    }
+
+    public function sendReminder(
+        SendReminderRequest $request,
+        Client $client,
+    ): JsonResponse {
+        $this->ensureClientBelongsToCurrentUser($client);
+
+        $data = $request->validated();
+        $settings = $this->resolveUserSettings();
+
+        if (! $this->reminders->isChannelConfigured($data['channel'], $settings)) {
+            $message = $data['channel'] === 'sms'
+                ? 'Укажите API для SMS в настройках.'
+                : 'Укажите API для WhatsApp в настройках.';
+
+            return response()->json([
+                'error' => [
+                    'message' => $message,
+                ],
+            ], 422);
+        }
+
+        try {
+            $this->reminders->send($data['channel'], $data['message'], $client, $settings);
+        } catch (\RuntimeException $exception) {
+            return response()->json([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                ],
+            ], 422);
+        } catch (Throwable $exception) {
+            Log::error('Не удалось отправить напоминание клиенту.', [
+                'client_id' => $client->id,
+                'channel' => $data['channel'],
+                'exception' => $exception,
+            ]);
+
+            return response()->json([
+                'error' => [
+                    'message' => 'Не удалось отправить напоминание. Попробуйте позже.',
+                ],
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => 'Напоминание отправлено.',
         ]);
     }
 
@@ -476,11 +529,15 @@ class ClientController extends Controller
             $channels[] = ['key' => 'whatsapp', 'label' => 'WhatsApp'];
         }
 
-        if ($client->email) {
-            $channels[] = ['key' => 'email', 'label' => 'Email'];
-        }
-
         return $channels;
+    }
+
+    protected function reminderIntegrations(?Setting $settings): array
+    {
+        return [
+            'sms' => $this->reminders->isSmsConfigured($settings),
+            'whatsapp' => $this->reminders->isWhatsappConfigured($settings),
+        ];
     }
 
     protected function collectSuggestions(Collection $collection, string $field): array

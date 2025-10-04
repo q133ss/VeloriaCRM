@@ -42,6 +42,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/clients/{client}/recommendations', [ApiClientController::class, 'recommendations']);
         Route::patch('/clients/{client}', [ApiClientController::class, 'update']);
         Route::delete('/clients/{client}', [ApiClientController::class, 'destroy']);
+        Route::post('/clients/{client}/reminders', [ApiClientController::class, 'sendReminder']);
         Route::get('/orders/options', [ApiOrderController::class, 'options']);
         Route::get('/orders', [ApiOrderController::class, 'index']);
         Route::post('/orders', [ApiOrderController::class, 'store']);

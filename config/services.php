@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    'smsaero' => [
+        'endpoint' => env('SMSAERO_ENDPOINT', 'https://gate.smsaero.ru/v2'),
+        'sign' => env('SMSAERO_SIGN'),
+    ],
+
+    'whatsapp_reminders' => [
+        'endpoint' => env('WHATSAPP_REMINDERS_ENDPOINT'),
+    ],
+
     'yookassa' => [
         'shop_id' => env('YOOKASSA_SHOP_ID'),
         'secret_key' => env('YOOKASSA_SECRET_KEY'),
