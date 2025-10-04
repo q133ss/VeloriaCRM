@@ -19,8 +19,8 @@ class SendOrderStartReminderJob implements ShouldQueue
     use SerializesModels;
 
     public function __construct(
-        private readonly int $orderId,
-        private readonly string $scheduledAtIso,
+        public readonly int $orderId,
+        public readonly int $scheduledAtTimestamp,
     ) {
     }
 
@@ -42,7 +42,7 @@ class SendOrderStartReminderJob implements ShouldQueue
             return;
         }
 
-        if (! $order->scheduled_at->equalTo(Carbon::parse($this->scheduledAtIso))) {
+        if ($order->scheduled_at->getTimestamp() !== $this->scheduledAtTimestamp) {
             return;
         }
 
@@ -59,7 +59,7 @@ class SendOrderStartReminderJob implements ShouldQueue
         }
 
         $now = Carbon::now();
-        $threshold = $order->scheduled_at->copy()->addMinutes(10);
+        $threshold = Carbon::createFromTimestamp($this->scheduledAtTimestamp)->addMinutes(10);
 
         if ($now->lessThan($threshold)) {
             return;

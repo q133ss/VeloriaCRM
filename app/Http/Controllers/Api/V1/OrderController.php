@@ -15,7 +15,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\OpenAIService;
-use App\Services\OrderStartReminderService;
+use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -32,7 +32,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OpenAIService $openAI,
-        private readonly OrderStartReminderService $orderStartReminder,
+        private readonly OrderService $orderService,
     ) {
     }
     public function index(OrderFilterRequest $request): JsonResponse
@@ -125,7 +125,7 @@ class OrderController extends Controller
 
         $order->load(['client', 'master']);
 
-        $this->orderStartReminder->schedule($order);
+        $this->orderService->scheduleStartReminder($order);
 
         return response()->json([
             'data' => $this->decorateOrder($order),
@@ -207,7 +207,7 @@ class OrderController extends Controller
         $order->refresh()->loadMissing(['client', 'master']);
 
         if ($scheduledChanged) {
-            $this->orderStartReminder->schedule($order);
+            $this->orderService->scheduleStartReminder($order);
         }
 
         return response()->json([
@@ -345,7 +345,7 @@ class OrderController extends Controller
 
         $order->load(['client', 'master']);
 
-        $this->orderStartReminder->schedule($order);
+        $this->orderService->scheduleStartReminder($order);
 
         return response()->json([
             'data' => $this->decorateOrder($order),
@@ -476,7 +476,7 @@ class OrderController extends Controller
 
         $order->refresh();
 
-        $this->orderStartReminder->schedule($order);
+        $this->orderService->scheduleStartReminder($order);
 
         return response()->json([
             'data' => $this->decorateOrder($order),
