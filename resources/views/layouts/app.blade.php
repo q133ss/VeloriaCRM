@@ -7,7 +7,12 @@
     data-skin="default"
     data-bs-theme="light"
     data-assets-path="/assets/"
-    data-template="vertical-menu-template-starter">
+    data-template="vertical-menu-template-starter"
+    data-pusher-key="{{ config('broadcasting.connections.pusher.key') }}"
+    data-pusher-cluster="{{ config('broadcasting.connections.pusher.options.cluster') }}"
+    data-pusher-host="{{ config('broadcasting.connections.pusher.options.host') }}"
+    data-pusher-port="{{ config('broadcasting.connections.pusher.options.port') }}"
+    data-pusher-scheme="{{ config('broadcasting.connections.pusher.options.scheme') }}">
 <head>
     <meta charset="utf-8" />
     <meta
@@ -216,6 +221,40 @@
                     </div>
 
                     <ul class="navbar-nav flex-row align-items-center ms-md-auto">
+                        <li class="nav-item dropdown me-2 me-lg-3" data-notifications-root>
+                            <a
+                                class="nav-link btn-icon dropdown-toggle hide-arrow position-relative"
+                                href="javascript:void(0);"
+                                data-bs-toggle="dropdown"
+                                data-notifications-toggle
+                            >
+                                <i class="icon-base ri ri-notification-3-line icon-22px"></i>
+                                <span
+                                    class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle d-none"
+                                    data-notifications-count
+                                >0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end w-px-320" data-notifications-menu>
+                                <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold">Уведомления</span>
+                                    <button type="button" class="btn btn-link btn-sm p-0" data-notifications-mark-all>
+                                        Отметить все
+                                    </button>
+                                </li>
+                                <li><div class="dropdown-divider"></div></li>
+                                <li>
+                                    <div class="list-group list-group-flush" data-notifications-list>
+                                        <span class="dropdown-item-text text-muted small py-3 text-center">
+                                            Загрузка...
+                                        </span>
+                                    </div>
+                                </li>
+                                <li><div class="dropdown-divider"></div></li>
+                                <li>
+                                    <a class="dropdown-item text-center" href="/notifications">Показать все</a>
+                                </li>
+                            </ul>
+                        </li>
                         <!-- User -->
                         <li class="nav-item navbar-dropdown dropdown-user dropdown">
                             <a
@@ -360,6 +399,8 @@
 <!-- Main JS -->
 
 <script src="/assets/js/main.js"></script>
+<script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var MENU_LABELS = @json(trans('menu'));
@@ -420,6 +461,239 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
+    // DOM-элементы выпадающего списка уведомлений.
+    var notificationsRoot = document.querySelector('[data-notifications-root]');
+    var notificationsList = document.querySelector('[data-notifications-list]');
+    var notificationsCount = document.querySelector('[data-notifications-count]');
+    var notificationsMarkAll = document.querySelector('[data-notifications-mark-all]');
+    var notificationsState = {
+        items: [],
+        unreadCount: 0,
+        echo: null,
+        channel: null,
+        userId: null,
+    };
+
+    // Экранируем пользовательский ввод перед вставкой в HTML.
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Форматируем дату уведомления для отображения в шапке.
+    function formatNotificationDate(isoString) {
+        if (!isoString) {
+            return '';
+        }
+
+        try {
+            return new Date(isoString).toLocaleString();
+        } catch (error) {
+            return isoString;
+        }
+    }
+
+    // Рисуем список уведомлений в выпадающем меню рядом с аватаром.
+    function renderNotificationDropdown() {
+        if (!notificationsList) {
+            return;
+        }
+
+        if (!notificationsState.items.length) {
+            notificationsList.innerHTML = '<span class="dropdown-item-text text-muted small py-3 text-center">Непрочитанных уведомлений нет</span>';
+            return;
+        }
+
+        notificationsList.innerHTML = notificationsState.items.map(function (item) {
+            return (
+                '<a class="list-group-item list-group-item-action py-3" href="/notifications">' +
+                '<div class="d-flex justify-content-between align-items-start">' +
+                '<div class="me-2">' +
+                '<div class="fw-semibold text-truncate">' + escapeHtml(item.title || 'Без заголовка') + '</div>' +
+                '<div class="small text-muted mt-1">' + escapeHtml(item.message || '') + '</div>' +
+                '</div>' +
+                '<small class="text-muted ms-2">' + formatNotificationDate(item.created_at) + '</small>' +
+                '</div>' +
+                '</a>'
+            );
+        }).join('');
+    }
+
+    // Показываем/скрываем бейдж с количеством непрочитанных.
+    function updateNotificationBadge(count) {
+        notificationsState.unreadCount = count;
+
+        if (!notificationsCount) {
+            return;
+        }
+
+        if (count > 0) {
+            notificationsCount.textContent = count > 99 ? '99+' : String(count);
+            notificationsCount.classList.remove('d-none');
+        } else {
+            notificationsCount.classList.add('d-none');
+        }
+    }
+
+    // Создаём (один раз) экземпляр Laravel Echo с авторизацией по Bearer токену.
+    function ensureEchoInstance() {
+        if (notificationsState.echo) {
+            return notificationsState.echo;
+        }
+
+        if (typeof window.Echo !== 'function') {
+            return null;
+        }
+
+        var root = document.documentElement;
+        var key = root.getAttribute('data-pusher-key');
+        if (!key) {
+            return null;
+        }
+
+        var cluster = root.getAttribute('data-pusher-cluster') || undefined;
+        var host = root.getAttribute('data-pusher-host') || undefined;
+        var port = root.getAttribute('data-pusher-port');
+        var scheme = root.getAttribute('data-pusher-scheme') || 'https';
+        var forceTLS = scheme !== 'http';
+
+        var echoOptions = {
+            broadcaster: 'pusher',
+            key: key,
+            cluster: cluster,
+            forceTLS: forceTLS,
+            encrypted: true,
+            authorizer: function (channel) {
+                return {
+                    authorize: function (socketId, callback) {
+                        fetch('/broadcasting/auth', {
+                            method: 'POST',
+                            headers: Object.assign({}, headers, {
+                                'Content-Type': 'application/json',
+                            }),
+                            body: JSON.stringify({
+                                socket_id: socketId,
+                                channel_name: channel.name,
+                            }),
+                        })
+                            .then(function (response) { return response.json(); })
+                            .then(function (data) { callback(false, data); })
+                            .catch(function (error) { callback(true, error); });
+                    },
+                };
+            },
+            enabledTransports: ['ws', 'wss'],
+        };
+
+        if (host) {
+            echoOptions.wsHost = host;
+            echoOptions.wssHost = host;
+        }
+
+        if (port) {
+            var parsedPort = parseInt(port, 10);
+            if (!Number.isNaN(parsedPort)) {
+                echoOptions.wsPort = parsedPort;
+                echoOptions.wssPort = parsedPort;
+            }
+        }
+
+        notificationsState.echo = new window.Echo(echoOptions);
+
+        return notificationsState.echo;
+    }
+
+    // Загружаем последние непрочитанные уведомления через REST API.
+    function loadUnreadNotifications() {
+        if (!notificationsRoot || notificationsRoot.classList.contains('d-none')) {
+            return;
+        }
+
+        fetch('/api/v1/notifications?unread=1&per_page=5', { headers: headers })
+            .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+            .then(function (payload) {
+                notificationsState.items = Array.isArray(payload.data) ? payload.data.slice(0, 5) : [];
+                renderNotificationDropdown();
+                updateNotificationBadge(payload.unread_count || 0);
+            })
+            .catch(function () {
+                if (notificationsList) {
+                    notificationsList.innerHTML = '<span class="dropdown-item-text text-danger small py-3 text-center">Не удалось загрузить уведомления</span>';
+                }
+            });
+    }
+
+    // Отмечаем все уведомления прочитанными через API.
+    function markAllNotificationsRead() {
+        fetch('/api/v1/notifications/mark-as-read', {
+            method: 'POST',
+            headers: Object.assign({}, headers, {
+                'Content-Type': 'application/json',
+            }),
+            body: JSON.stringify({ ids: [] }),
+        })
+            .then(function () {
+                notificationsState.items = [];
+                updateNotificationBadge(0);
+                renderNotificationDropdown();
+                loadUnreadNotifications();
+            })
+            .catch(function () {})
+            .finally(function () {
+                if (notificationsMarkAll) {
+                    notificationsMarkAll.disabled = false;
+                }
+            });
+    }
+
+    // Подписываемся на приватный канал пользователя и обрабатываем пуш-события от Pusher.
+    function subscribeToNotifications(userId) {
+        var echo = ensureEchoInstance();
+        if (!echo || !userId) {
+            return;
+        }
+
+        if (notificationsState.channel) {
+            echo.leave('notifications.' + notificationsState.userId);
+        }
+
+        notificationsState.userId = userId;
+        notificationsState.channel = echo.private('notifications.' + userId);
+        notificationsState.channel.listen('.UserNotificationCreated', function (event) {
+            var item = {
+                id: event.id,
+                title: event.title,
+                message: event.message,
+                created_at: event.created_at,
+            };
+            notificationsState.items.unshift(item);
+            notificationsState.items = notificationsState.items.slice(0, 5);
+            updateNotificationBadge(notificationsState.unreadCount + 1);
+            renderNotificationDropdown();
+        });
+    }
+
+    if (notificationsMarkAll) {
+        notificationsMarkAll.addEventListener('click', function (event) {
+            event.preventDefault();
+            if (notificationsMarkAll.disabled) {
+                return;
+            }
+            notificationsMarkAll.disabled = true;
+            markAllNotificationsRead();
+        });
+    }
+
+    if (notificationsRoot) {
+        notificationsRoot.addEventListener('show.bs.dropdown', function () {
+            loadUnreadNotifications();
+        });
+    }
+
     fetch('/api/v1/auth/me', { headers: headers })
         .then(function (res) { return res.ok ? res.json() : {}; })
         .then(function (data) {
@@ -468,8 +742,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 li.appendChild(a);
                 menuEl.appendChild(li);
             });
+            if (!user.id) {
+                if (notificationsRoot) {
+                    notificationsRoot.classList.add('d-none');
+                }
+            } else {
+                if (notificationsRoot) {
+                    notificationsRoot.classList.remove('d-none');
+                }
+                loadUnreadNotifications();
+                subscribeToNotifications(user.id);
+            }
         })
-        .catch(function () {});
+        .catch(function () {
+            if (notificationsRoot) {
+                notificationsRoot.classList.add('d-none');
+            }
+        });
 
     var logoutButton = document.querySelector('[data-logout-button]');
     if (logoutButton) {
@@ -512,6 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @yield('scripts')
+@stack('scripts')
 <!-- Page JS -->
 </body>
 </html>
