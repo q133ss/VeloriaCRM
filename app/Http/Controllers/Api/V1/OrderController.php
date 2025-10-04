@@ -176,17 +176,26 @@ class OrderController extends Controller
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
-            $order->update([
+            $newScheduledAt = Carbon::parse($validated['scheduled_at']);
+            $shouldResetStartPrompt = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
+
+            $payload = [
                 'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => $servicePayload,
-                'scheduled_at' => Carbon::parse($validated['scheduled_at']),
+                'scheduled_at' => $newScheduledAt,
                 'note' => Arr::get($validated, 'note'),
                 'duration_forecast' => $services->sum('duration_min') ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
                 'recommended_services' => $this->serializeRecommendations($recommended),
-            ]);
+            ];
+
+            if ($shouldResetStartPrompt) {
+                $payload['start_confirmation_notified_at'] = null;
+            }
+
+            $order->update($payload);
         });
 
         $order->refresh()->loadMissing(['client', 'master']);
@@ -356,14 +365,30 @@ class OrderController extends Controller
         ]);
     }
 
-    public function start(Order $order): JsonResponse
+    public function start(Order $order, Request $request): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
         $now = Carbon::now();
 
+        $startedAt = $request->input('started_at');
+        $actualStartedAt = $now;
+
+        if ($startedAt) {
+            try {
+                $actualStartedAt = Carbon::parse($startedAt);
+            } catch (Throwable $exception) {
+                return response()->json([
+                    'error' => [
+                        'code' => 'invalid_started_at',
+                        'message' => 'Некорректный формат времени начала процедуры.',
+                    ],
+                ], 422);
+            }
+        }
+
         $order->update([
             'status' => 'in_progress',
-            'actual_started_at' => $now,
+            'actual_started_at' => $actualStartedAt,
         ]);
 
         $order->refresh();
@@ -434,6 +459,7 @@ class OrderController extends Controller
             'rescheduled_from' => $previousDate && !$order->rescheduled_from ? $previousDate : $order->rescheduled_from,
             'scheduled_at' => Carbon::parse($validated['scheduled_at']),
             'reschedule_count' => ($order->reschedule_count ?? 0) + 1,
+            'start_confirmation_notified_at' => null,
         ]);
 
         $order->refresh();

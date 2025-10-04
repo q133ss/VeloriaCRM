@@ -55,6 +55,9 @@ Route::middleware('token.cookie')->group(function () {
     Route::get('/orders/{order}/edit', function ($order) {
         return view('orders.edit', ['orderId' => $order]);
     })->name('orders.edit');
+    Route::get('/orders/{order}/start-confirmation', function ($order) {
+        return view('orders.start-confirmation', ['orderId' => $order]);
+    })->name('orders.start-confirmation');
 
     Route::get('/services', function () {
         return view('services.index');

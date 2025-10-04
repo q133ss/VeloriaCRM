@@ -509,8 +509,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         notificationsList.innerHTML = notificationsState.items.map(function (item) {
+            var targetUrl = item.action_url || '/notifications';
+
             return (
-                '<a class="list-group-item list-group-item-action py-3" href="/notifications">' +
+                '<a class="list-group-item list-group-item-action py-3" href="' + targetUrl + '">' +
                 '<div class="d-flex justify-content-between align-items-start">' +
                 '<div class="me-2">' +
                 '<div class="fw-semibold text-truncate">' + escapeHtml(item.title || 'Без заголовка') + '</div>' +

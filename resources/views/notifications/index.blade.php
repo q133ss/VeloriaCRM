@@ -25,11 +25,12 @@
                             <th>Сообщение</th>
                             <th>Получено</th>
                             <th class="text-center">Статус</th>
+                            <th class="text-center">Действие</th>
                         </tr>
                     </thead>
                     <tbody data-notifications-table>
                         <tr>
-                            <td colspan="4" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 Загрузка...
                             </td>
                         </tr>
@@ -75,20 +76,27 @@
 
             const renderRows = (items) => {
                 if (!items.length) {
-                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Уведомлений пока нет</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Уведомлений пока нет</td></tr>';
                     return;
                 }
 
-                tableBody.innerHTML = items.map((item) => `
-                    <tr>
-                        <td class="fw-semibold">${item.title}</td>
-                        <td>${item.message}</td>
-                        <td>${formatDate(item.created_at)}</td>
-                        <td class="text-center">
-                            ${item.is_read ? '<span class="badge bg-success-subtle text-success">Прочитано</span>' : '<span class="badge bg-warning-subtle text-warning">Непрочитано</span>'}
-                        </td>
-                    </tr>
-                `).join('');
+                tableBody.innerHTML = items.map((item) => {
+                    const actionHtml = item.action_url
+                        ? `<a class="btn btn-sm btn-outline-primary" href="${item.action_url}">Открыть</a>`
+                        : '<span class="text-muted">—</span>';
+
+                    return `
+                        <tr>
+                            <td class="fw-semibold">${item.title}</td>
+                            <td>${item.message}</td>
+                            <td>${formatDate(item.created_at)}</td>
+                            <td class="text-center">
+                                ${item.is_read ? '<span class="badge bg-success-subtle text-success">Прочитано</span>' : '<span class="badge bg-warning-subtle text-warning">Непрочитано</span>'}
+                            </td>
+                            <td class="text-center">${actionHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
             };
 
             const renderPagination = (meta) => {
@@ -124,7 +132,7 @@
             };
 
             const loadData = () => {
-                tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-5">Загрузка...</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5">Загрузка...</td></tr>';
 
                 const params = new URLSearchParams({ page: currentPage });
                 if (currentSearch) params.set('search', currentSearch);
@@ -136,7 +144,7 @@
                         renderPagination(payload.meta || {});
                     })
                     .catch(() => {
-                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-danger">Не удалось загрузить уведомления</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger">Не удалось загрузить уведомления</td></tr>';
                         paginationEl.innerHTML = '';
                         paginationSummary.textContent = '';
                     });
