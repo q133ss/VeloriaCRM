@@ -57,6 +57,11 @@
                                             <input type="text" class="form-control" id="segment-tags" placeholder="VIP, Маникюр" />
                                             <div class="form-text">Перечислите теги клиентов через запятую.</div>
                                         </div>
+                                        <div class="col-12" data-segment-field="client_ids" style="display: none;">
+                                            <label for="segment-client-ids" class="form-label">Выбранные клиенты</label>
+                                            <select id="segment-client-ids" class="form-select" multiple size="6"></select>
+                                            <div class="form-text">Отправьте сообщение только отмеченным клиентам.</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -74,11 +79,11 @@
                                 <label class="form-check-label" for="campaign-is-ab">Запустить A/B-тест</label>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="campaign-subject-wrapper">
                             <label for="campaign-subject" class="form-label">Тема письма / превью</label>
                             <input type="text" class="form-control" id="campaign-subject" name="subject" placeholder="Например, «Дарим -20% на любимую услугу»" />
                         </div>
-                        <div class="col-12">
+                        <div class="col-12" id="campaign-content-wrapper">
                             <label for="campaign-content" class="form-label">Текст сообщения</label>
                             <textarea class="form-control" id="campaign-content" name="content" rows="4" placeholder="Расскажите о предложении и добавьте CTA"></textarea>
                         </div>
@@ -459,6 +464,7 @@
                     channels: [],
                     segments: [],
                     templates: [],
+                    clients: [],
                     ab_test_tip: '',
                 },
                 templatesMap: {},
@@ -493,9 +499,11 @@
             var CHANNEL_ICONS = {
                 sms: 'ri-chat-3-line',
                 email: 'ri-mail-send-line',
-                telegram: 'ri-telegram-line',
                 whatsapp: 'ri-whatsapp-line',
             };
+
+            var EMAIL_VARIANT_SUBJECT_WARNING = @json(__('marketing.validation.ab_test_email_subjects'));
+            var NO_CHANNELS_TEXT = @json(__('marketing.campaigns.no_channels_available'));
 
             function formatDateTime(value) {
                 if (!value) return '—';
@@ -515,16 +523,39 @@
                 var channelSelect = document.getElementById('campaign-channel');
                 var segmentSelect = document.getElementById('campaign-segment');
                 var templateSelect = document.getElementById('campaign-template');
+                var clientSelect = document.getElementById('segment-client-ids');
+                var submitButton = document.querySelector('#campaign-create-form button[type="submit"]');
                 if (!channelSelect || !segmentSelect || !templateSelect) return;
 
+                var currentChannel = channelSelect.value;
                 channelSelect.innerHTML = '';
-                state.campaignOptions.channels.forEach(function (channel) {
-                    var option = document.createElement('option');
-                    option.value = channel.value;
-                    option.textContent = channel.label;
-                    channelSelect.appendChild(option);
-                });
 
+                if (!state.campaignOptions.channels || state.campaignOptions.channels.length === 0) {
+                    var placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = NO_CHANNELS_TEXT;
+                    channelSelect.appendChild(placeholder);
+                    channelSelect.disabled = true;
+                    if (submitButton) submitButton.disabled = true;
+                } else {
+                    state.campaignOptions.channels.forEach(function (channel) {
+                        var option = document.createElement('option');
+                        option.value = channel.value;
+                        option.textContent = channel.label;
+                        channelSelect.appendChild(option);
+                    });
+
+                    if (state.campaignOptions.channels.some(function (channel) { return channel.value === currentChannel; })) {
+                        channelSelect.value = currentChannel;
+                    } else if (channelSelect.options.length) {
+                        channelSelect.selectedIndex = 0;
+                    }
+
+                    channelSelect.disabled = false;
+                    if (submitButton) submitButton.disabled = false;
+                }
+
+                var currentSegment = segmentSelect.value;
                 segmentSelect.innerHTML = '';
                 state.campaignOptions.segments.forEach(function (segment) {
                     var option = document.createElement('option');
@@ -537,6 +568,10 @@
                     segmentSelect.appendChild(option);
                 });
 
+                if (state.campaignOptions.segments.some(function (segment) { return segment.value === currentSegment; })) {
+                    segmentSelect.value = currentSegment;
+                }
+
                 templateSelect.innerHTML = '<option value="">— Выберите шаблон —</option>';
                 state.templatesMap = {};
                 state.campaignOptions.templates.forEach(function (template) {
@@ -547,32 +582,141 @@
                     templateSelect.appendChild(option);
                 });
 
+                if (clientSelect) {
+                    var selectedClients = Array.prototype.map.call(clientSelect.selectedOptions || [], function (opt) {
+                        return opt.value;
+                    });
+                    clientSelect.innerHTML = '';
+
+                    state.campaignOptions.clients.forEach(function (client) {
+                        var option = document.createElement('option');
+                        option.value = String(client.id);
+                        var label = client.name || ('Клиент #' + client.id);
+                        var details = [];
+                        if (client.phone) details.push(client.phone);
+                        if (client.email) details.push(client.email);
+                        if (details.length) {
+                            label += ' · ' + details.join(' / ');
+                        }
+                        option.textContent = label;
+                        if (selectedClients.indexOf(String(client.id)) !== -1) {
+                            option.selected = true;
+                        }
+                        clientSelect.appendChild(option);
+                    });
+                }
+
                 document.getElementById('campaign-ab-tip').textContent = state.campaignOptions.ab_test_tip || '';
+
+                handleChannelChange();
             }
 
             function updateSegmentExtraFields(segment) {
                 var wrapper = document.getElementById('campaign-segment-extra');
-                var serviceField = wrapper ? wrapper.querySelector('[data-segment-field="service_ids"]') : null;
-                var masterField = wrapper ? wrapper.querySelector('[data-segment-field="master_ids"]') : null;
-                var tagsField = wrapper ? wrapper.querySelector('[data-segment-field="tags"]') : null;
-
                 if (!wrapper) return;
 
+                var serviceField = wrapper.querySelector('[data-segment-field="service_ids"]');
+                var masterField = wrapper.querySelector('[data-segment-field="master_ids"]');
+                var tagsField = wrapper.querySelector('[data-segment-field="tags"]');
+                var clientField = wrapper.querySelector('[data-segment-field="client_ids"]');
+
                 wrapper.style.display = 'none';
-                [serviceField, masterField, tagsField].forEach(function (field) {
+                [serviceField, masterField, tagsField, clientField].forEach(function (field) {
                     if (field) field.style.display = 'none';
                 });
 
-                if (segment === 'by_service') {
+                if (segment === 'by_service' && serviceField) {
                     wrapper.style.display = '';
-                    if (serviceField) serviceField.style.display = '';
-                } else if (segment === 'by_master') {
+                    serviceField.style.display = '';
+                } else if (segment === 'by_master' && masterField) {
                     wrapper.style.display = '';
-                    if (masterField) masterField.style.display = '';
-                } else if (segment === 'custom') {
+                    masterField.style.display = '';
+                } else if (segment === 'custom' && tagsField) {
                     wrapper.style.display = '';
-                    if (tagsField) tagsField.style.display = '';
+                    tagsField.style.display = '';
+                } else if (segment === 'selected' && clientField) {
+                    wrapper.style.display = '';
+                    clientField.style.display = '';
                 }
+            }
+
+            function isEmailChannel(channel) {
+                return channel === 'email';
+            }
+
+            function updateSubjectVisibility(channel, isAbTest) {
+                var subjectWrapper = document.getElementById('campaign-subject-wrapper');
+                var contentWrapper = document.getElementById('campaign-content-wrapper');
+                var subjectInput = document.getElementById('campaign-subject');
+
+                if (contentWrapper) {
+                    contentWrapper.style.display = isAbTest ? 'none' : '';
+                }
+
+                if (subjectWrapper) {
+                    if (isAbTest || !isEmailChannel(channel)) {
+                        subjectWrapper.style.display = 'none';
+                        if (!isEmailChannel(channel) && subjectInput) {
+                            subjectInput.value = '';
+                        }
+                    } else {
+                        subjectWrapper.style.display = '';
+                    }
+                }
+            }
+
+            function updateVariantSubjectVisibility(channel) {
+                var variantBlocks = document.querySelectorAll('#variant-list [data-variant]');
+                var showSubject = isEmailChannel(channel);
+
+                Array.prototype.forEach.call(variantBlocks, function (block) {
+                    var subjectWrapper = block.querySelector('[data-role="variant-subject"]');
+                    if (subjectWrapper) {
+                        subjectWrapper.style.display = showSubject ? '' : 'none';
+                    }
+                    if (!showSubject) {
+                        var subjectInput = block.querySelector('[data-field="subject"]');
+                        if (subjectInput) {
+                            subjectInput.value = '';
+                        }
+                    }
+                });
+            }
+
+            function handleChannelChange() {
+                var channelSelect = document.getElementById('campaign-channel');
+                var segmentSelect = document.getElementById('campaign-segment');
+                var channel = channelSelect ? channelSelect.value : '';
+                var isAbTest = document.getElementById('campaign-is-ab').checked;
+
+                updateSubjectVisibility(channel, isAbTest);
+                updateVariantSubjectVisibility(channel);
+
+                if (segmentSelect) {
+                    updateSegmentExtraFields(segmentSelect.value);
+                }
+            }
+
+            function toggleAbTestFields(isAbTest) {
+                var variantsContainer = document.getElementById('campaign-variants');
+                var variantList = document.getElementById('variant-list');
+                var channel = document.getElementById('campaign-channel').value;
+
+                if (variantsContainer) {
+                    variantsContainer.style.display = isAbTest ? '' : 'none';
+                }
+
+                if (isAbTest) {
+                    if (variantList && variantList.children.length === 0) {
+                        addVariantBlock();
+                        addVariantBlock();
+                    }
+                } else if (variantList) {
+                    variantList.innerHTML = '';
+                }
+
+                updateSubjectVisibility(channel, isAbTest);
+                updateVariantSubjectVisibility(channel);
             }
 
             function renderCampaignMetrics() {
@@ -1024,9 +1168,10 @@
                 var variantsContainer = document.getElementById('variant-list');
                 if (!variantsContainer) return [];
                 var blocks = variantsContainer.querySelectorAll('[data-variant]');
-                return Array.prototype.map.call(blocks, function (block) {
-                    var label = block.querySelector('[data-field="label"]').value.trim();
-                    var subject = block.querySelector('[data-field="subject"]').value.trim();
+                return Array.prototype.map.call(blocks, function (block, index) {
+                    var label = String.fromCharCode(65 + index);
+                    var subjectInput = block.querySelector('[data-field="subject"]');
+                    var subject = subjectInput ? subjectInput.value.trim() : '';
                     var content = block.querySelector('[data-field="content"]').value.trim();
                     var sampleSize = block.querySelector('[data-field="sample_size"]').value;
                     return {
@@ -1036,7 +1181,7 @@
                         sample_size: sampleSize ? parseInt(sampleSize, 10) : null,
                     };
                 }).filter(function (variant) {
-                    return variant.label && variant.content;
+                    return variant.content;
                 });
             }
 
@@ -1045,34 +1190,32 @@
                 if (!container) return;
                 var count = container.querySelectorAll('[data-variant]').length;
                 if (count >= 5) return;
-                var index = count + 1;
+                var label = String.fromCharCode(65 + count);
+                var variantNumber = count + 1;
                 var div = document.createElement('div');
                 div.className = 'col-12';
-                div.setAttribute('data-variant', index);
+                div.setAttribute('data-variant', label);
                 div.innerHTML =
                     '<div class="border rounded-2 p-3 position-relative">' +
                     '<button type="button" class="btn btn-sm btn-icon btn-outline-danger position-absolute top-0 end-0 m-2" data-action="remove-variant">' +
                     '<i class="ri ri-close-line"></i></button>' +
                     '<div class="row g-2">' +
-                    '<div class="col-sm-3">' +
-                    '<label class="form-label">Метка</label>' +
-                    '<input type="text" class="form-control" data-field="label" placeholder="A/B" value="' + (defaults && defaults.label ? defaults.label : (index === 1 ? 'A' : index === 2 ? 'B' : 'V' + index)) + '" />' +
+                    '<div class="col-sm-4" data-role="variant-subject">' +
+                    '<label class="form-label">Тема варианта ' + variantNumber + '</label>' +
+                    '<input type="text" class="form-control" data-field="subject" placeholder="Например, «Мы скучаем»" value="' + (defaults && defaults.subject ? defaults.subject : '') + '" />' +
                     '</div>' +
                     '<div class="col-sm-4">' +
-                    '<label class="form-label">Тема</label>' +
-                    '<input type="text" class="form-control" data-field="subject" value="' + (defaults && defaults.subject ? defaults.subject : '') + '" />' +
-                    '</div>' +
-                    '<div class="col-sm-5">' +
                     '<label class="form-label">Размер выборки</label>' +
                     '<input type="number" class="form-control" min="0" data-field="sample_size" value="' + (defaults && defaults.sample_size ? defaults.sample_size : '') + '" />' +
                     '</div>' +
                     '<div class="col-12">' +
-                    '<label class="form-label">Текст</label>' +
-                    '<textarea class="form-control" rows="3" data-field="content">' + (defaults && defaults.content ? defaults.content : '') + '</textarea>' +
+                    '<label class="form-label">Текст варианта ' + variantNumber + '</label>' +
+                    '<textarea class="form-control" rows="3" data-field="content" placeholder="Опишите предложение для клиентов">' + (defaults && defaults.content ? defaults.content : '') + '</textarea>' +
                     '</div>' +
                     '</div>' +
                     '</div>';
                 container.appendChild(div);
+                updateVariantSubjectVisibility(document.getElementById('campaign-channel').value);
             }
 
             function resetCampaignForm() {
@@ -1085,6 +1228,8 @@
                 document.getElementById('variant-list').innerHTML = '';
                 document.getElementById('campaign-variants').style.display = 'none';
                 document.getElementById('campaign-is-ab').checked = false;
+                toggleAbTestFields(false);
+                handleChannelChange();
             }
 
             function handleCampaignFormSubmit(event) {
@@ -1104,6 +1249,10 @@
                     is_ab_test: isAb,
                 };
 
+                if (payload.channel !== 'email' || isAb) {
+                    delete payload.subject;
+                }
+
                 var segment = payload.segment;
                 var filters = {};
                 if (segment === 'by_service') {
@@ -1121,6 +1270,25 @@
                     if (tags.length) {
                         filters.tags = tags;
                     }
+                } else if (segment === 'selected') {
+                    var clientSelect = document.getElementById('segment-client-ids');
+                    var clientIds = [];
+                    if (clientSelect) {
+                        clientIds = Array.prototype.filter.call(clientSelect.options, function (option) {
+                            return option.selected;
+                        }).map(function (option) {
+                            return parseInt(option.value, 10);
+                        }).filter(function (value) {
+                            return !Number.isNaN(value);
+                        });
+                    }
+
+                    if (clientIds.length === 0) {
+                        showAlert('warning', 'Выберите хотя бы одного клиента.');
+                        return;
+                    }
+
+                    filters.client_ids = clientIds;
                 }
                 if (Object.keys(filters).length > 0) {
                     payload.segment_filters = filters;
@@ -1151,8 +1319,20 @@
                         showAlert('warning', 'Для A/B-теста добавьте как минимум два варианта.');
                         return;
                     }
+
+                    if (payload.channel === 'email') {
+                        var missingSubject = variants.some(function (variant) {
+                            return !variant.subject;
+                        });
+                        if (missingSubject) {
+                            showAlert('warning', EMAIL_VARIANT_SUBJECT_WARNING);
+                            return;
+                        }
+                    }
+
                     payload.variants = variants;
                     delete payload.content;
+                    delete payload.subject;
                 }
 
                 apiRequest('/api/v1/marketing/campaigns', {
@@ -1438,29 +1618,22 @@
 
             document.getElementById('campaign-create-form').addEventListener('submit', handleCampaignFormSubmit);
             document.getElementById('promotion-form').addEventListener('submit', handlePromotionFormSubmit);
+            document.getElementById('campaign-channel').addEventListener('change', handleChannelChange);
             document.getElementById('campaign-segment').addEventListener('change', function (event) {
                 updateSegmentExtraFields(event.target.value);
             });
             document.getElementById('campaign-template').addEventListener('change', function (event) {
                 var template = state.templatesMap[event.target.value];
                 if (template) {
-                    if (!document.getElementById('campaign-subject').value) {
+                    var channel = document.getElementById('campaign-channel').value;
+                    if (isEmailChannel(channel) && !document.getElementById('campaign-subject').value) {
                         document.getElementById('campaign-subject').value = template.subject || '';
                     }
                     document.getElementById('campaign-content').value = template.content || '';
                 }
             });
             document.getElementById('campaign-is-ab').addEventListener('change', function (event) {
-                var container = document.getElementById('campaign-variants');
-                if (event.target.checked) {
-                    container.style.display = '';
-                    if (document.getElementById('variant-list').children.length === 0) {
-                        addVariantBlock({ label: 'A' });
-                        addVariantBlock({ label: 'B' });
-                    }
-                } else {
-                    container.style.display = 'none';
-                }
+                toggleAbTestFields(event.target.checked);
             });
             document.getElementById('variant-add').addEventListener('click', function () {
                 addVariantBlock();
@@ -1476,6 +1649,9 @@
             document.getElementById('promotion-type').addEventListener('change', function (event) {
                 handlePromotionTypeChange(event.target.value);
             });
+
+            toggleAbTestFields(document.getElementById('campaign-is-ab').checked);
+            handleChannelChange();
 
             document.getElementById('campaigns-table').addEventListener('click', handleCampaignTableClick);
             document.getElementById('promotions-active').addEventListener('click', handlePromotionsClick);
