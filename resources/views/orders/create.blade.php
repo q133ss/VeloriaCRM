@@ -43,6 +43,10 @@
                     />
                     <label for="client_phone">Телефон клиента</label>
                 </div>
+                <div
+                    id="client-suggestions"
+                    class="list-group list-group-flush border rounded-3 shadow-sm mt-2 d-none"
+                ></div>
             </div>
             <div class="col-md-4">
                 <div class="form-floating form-floating-outline">
@@ -167,6 +171,13 @@
         const summaryDuration = document.getElementById('summary-duration');
         const totalPriceInput = document.getElementById('total_price');
         const statusSelect = document.getElementById('status');
+        const scheduledAtInput = document.getElementById('scheduled_at');
+        const clientPhoneInput = document.getElementById('client_phone');
+        const clientNameInput = document.getElementById('client_name');
+        const clientSuggestions = document.getElementById('client-suggestions');
+
+        let lookupController = null;
+        let lookupTimer = null;
 
         let servicesMap = new Map();
 
@@ -344,6 +355,166 @@
             }
         }
 
+        function formatSuggestionPhone(phone) {
+            const digits = (phone || '').replace(/\D/g, '');
+
+            if (!digits.length) {
+                return '';
+            }
+
+            let normalized = digits;
+
+            if (normalized.length === 10) {
+                normalized = '7' + normalized;
+            }
+
+            if (normalized.length !== 11) {
+                return phone || '';
+            }
+
+            const country = normalized[0];
+            const city = normalized.slice(1, 4);
+            const first = normalized.slice(4, 7);
+            const second = normalized.slice(7, 9);
+            const third = normalized.slice(9, 11);
+
+            return `+${country} (${city}) ${first}-${second}-${third}`;
+        }
+
+        function clearClientSuggestions() {
+            if (!clientSuggestions) {
+                return;
+            }
+
+            clientSuggestions.innerHTML = '';
+            clientSuggestions.classList.add('d-none');
+        }
+
+        function renderClientSuggestions(suggestions) {
+            if (!clientSuggestions) {
+                return;
+            }
+
+            clientSuggestions.innerHTML = '';
+
+            if (!Array.isArray(suggestions) || !suggestions.length) {
+                clientSuggestions.classList.add('d-none');
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'list-group-item small text-muted';
+            header.textContent = 'Существующие клиенты';
+            header.tabIndex = -1;
+            clientSuggestions.appendChild(header);
+
+            suggestions.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action d-flex flex-column align-items-start';
+                button.innerHTML = `
+                    <span class="fw-medium">${item.name || 'Без имени'}</span>
+                    <span class="small text-muted">${formatSuggestionPhone(item.phone)}</span>
+                `;
+                button.addEventListener('click', () => {
+                    if (clientPhoneInput) {
+                        clientPhoneInput.value = item.phone || '';
+                        clientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        clientPhoneInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+
+                    if (clientNameInput && !clientNameInput.matches(':focus')) {
+                        clientNameInput.value = item.name || '';
+                    }
+
+                    clearClientSuggestions();
+
+                    if (item.phone) {
+                        lookupClient(item.phone);
+                    }
+                });
+
+                clientSuggestions.appendChild(button);
+            });
+
+            clientSuggestions.classList.remove('d-none');
+        }
+
+        async function lookupClient(phone) {
+            if (!clientPhoneInput) {
+                return;
+            }
+
+            const value = (phone || '').toString().trim();
+            const digits = value.replace(/[^0-9]+/g, '');
+
+            if (!value || !digits.length) {
+                clearClientSuggestions();
+                return;
+            }
+
+            if (digits.length < 3) {
+                clearClientSuggestions();
+                return;
+            }
+
+            if (lookupController) {
+                lookupController.abort();
+            }
+
+            lookupController = new AbortController();
+
+            try {
+                const params = new URLSearchParams({ client_phone: value });
+                const response = await fetch(`/api/v1/orders/options?${params.toString()}`, {
+                    headers: authHeaders(),
+                    credentials: 'include',
+                    signal: lookupController.signal,
+                });
+
+                if (!response.ok) {
+                    clearClientSuggestions();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (Array.isArray(data.suggestions)) {
+                    renderClientSuggestions(data.suggestions);
+                } else {
+                    clearClientSuggestions();
+                }
+
+                if (data.client && clientNameInput && !clientNameInput.matches(':focus')) {
+                    clientNameInput.value = data.client.name || '';
+                }
+            } catch (error) {
+                if (error?.name === 'AbortError') {
+                    return;
+                }
+
+                clearClientSuggestions();
+            }
+        }
+
+        function applyDateFromUrl() {
+            if (!scheduledAtInput) {
+                return;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const dateParam = params.get('date');
+
+            if (!dateParam || !/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+                return;
+            }
+
+            const currentValue = scheduledAtInput.value || '';
+            const timePart = currentValue.includes('T') ? currentValue.split('T')[1] : '00:00';
+
+            scheduledAtInput.value = `${dateParam}T${timePart}`;
+        }
+
         async function loadOptions() {
             servicesContainer.innerHTML = '<p class="text-muted mb-0">Загрузка услуг...</p>';
             recommendationsContainer.innerHTML = '<p class="text-muted mb-0">Загрузка...</p>';
@@ -424,6 +595,58 @@
             }
         });
 
+        if (clientPhoneInput) {
+            clientPhoneInput.addEventListener('input', function () {
+                const value = this.value.trim();
+                const digits = value.replace(/[^0-9]+/g, '');
+
+                if (lookupTimer) {
+                    clearTimeout(lookupTimer);
+                }
+
+                if (!value) {
+                    if (clientNameInput && !clientNameInput.matches(':focus')) {
+                        clientNameInput.value = '';
+                    }
+                    clearClientSuggestions();
+                    return;
+                }
+
+                if (digits.length < 3) {
+                    clearClientSuggestions();
+                    return;
+                }
+
+                lookupTimer = setTimeout(() => lookupClient(value), 400);
+            });
+
+            clientPhoneInput.addEventListener('blur', function () {
+                const value = this.value.trim();
+                if (value) {
+                    lookupClient(value);
+                } else {
+                    clearClientSuggestions();
+                }
+            });
+        }
+
+        document.addEventListener('click', function (event) {
+            if (!clientSuggestions || clientSuggestions.classList.contains('d-none')) {
+                return;
+            }
+
+            if (event.target === clientPhoneInput) {
+                return;
+            }
+
+            if (clientSuggestions.contains(event.target)) {
+                return;
+            }
+
+            clearClientSuggestions();
+        });
+
+        applyDateFromUrl();
         loadOptions();
     </script>
 @endsection
