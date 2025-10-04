@@ -66,8 +66,22 @@
             flex-wrap: wrap;
             gap: 0.35rem;
             max-height: 2.25rem;
+            height: 2.25rem;
             overflow: hidden;
             align-content: flex-start;
+        }
+
+        #crm-calendar .fc .fc-daygrid-day.fc-daygrid-day-selected .fc-daygrid-day-events,
+        #crm-calendar .fc .fc-daygrid-day.is-calendar-selected .fc-daygrid-day-events {
+            max-height: 2.25rem;
+            height: 2.25rem;
+        }
+
+        #crm-calendar .fc .fc-daygrid-event-harness {
+            flex: 0 0 auto;
+            width: 0.75rem;
+            height: 0.75rem;
+            margin: 0 !important;
         }
 
         #crm-calendar .fc .fc-daygrid-event {
@@ -75,8 +89,8 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 0.75rem;
-            height: 0.75rem;
+            width: 100%;
+            height: 100%;
             padding: 0;
             border: none;
             border-radius: 50%;
@@ -94,7 +108,7 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background-color: var(--calendar-event-dot-color, var(--bs-primary, #7367f0));
+            background-color: #ff00fc;
             display: inline-block;
         }
 
@@ -105,6 +119,16 @@
 
         #crm-calendar .fc .fc-daygrid-more-link {
             display: none !important;
+        }
+
+        #crm-calendar .fc .fc-daygrid-day.is-calendar-selected,
+        #crm-calendar .fc .fc-daygrid-day.is-calendar-selected .fc-daygrid-day-frame {
+            background-color: rgba(255, 0, 252, 0.12);
+        }
+
+        #crm-calendar .fc .fc-daygrid-day.is-calendar-selected .fc-daygrid-day-number {
+            color: var(--bs-body-color);
+            font-weight: 600;
         }
 
         #crm-calendar .fc .fc-popover {
@@ -403,6 +427,16 @@
                 return formatted.charAt(0).toUpperCase() + formatted.slice(1);
             }
 
+            function formatDateValue(date) {
+                if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+                    return null;
+                }
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return year + '-' + month + '-' + day;
+            }
+
             function showEventsError(show) {
                 toggle(eventsErrorEl, show);
             }
@@ -577,6 +611,25 @@
                 setDayLoading(false);
             }
 
+            function highlightSelectedDate() {
+                if (!calendarEl) {
+                    return;
+                }
+                const highlighted = calendarEl.querySelectorAll('.is-calendar-selected');
+                highlighted.forEach(function (cell) {
+                    cell.classList.remove('is-calendar-selected');
+                });
+
+                if (!selectedDate) {
+                    return;
+                }
+
+                const matchingCells = calendarEl.querySelectorAll('[data-date="' + selectedDate + '"]');
+                matchingCells.forEach(function (cell) {
+                    cell.classList.add('is-calendar-selected');
+                });
+            }
+
             function loadDayDetails(dateStr, options) {
                 if (!dateStr) return;
                 const force = options && options.force;
@@ -585,6 +638,7 @@
                 }
 
                 selectedDate = dateStr;
+                highlightSelectedDate();
                 updateCreateButton(dateStr);
                 if (dayTitleEl) {
                     dayTitleEl.textContent = formatDateLabel(dateStr);
@@ -620,8 +674,6 @@
                 headerToolbar: false,
                 locale: locale,
                 firstDay: 1,
-                selectable: true,
-                selectMirror: true,
                 expandRows: true,
                 height: '100%',
                 allDayText: allDayText,
@@ -632,10 +684,6 @@
                 eventContent: function (arg) {
                     const dot = document.createElement('span');
                     dot.className = 'calendar-event-dot';
-                    const color = arg.event.backgroundColor || arg.event.borderColor || null;
-                    if (color) {
-                        dot.style.setProperty('--calendar-event-dot-color', color);
-                    }
 
                     if (arg.event.title) {
                         dot.setAttribute('aria-label', arg.event.title);
@@ -670,24 +718,27 @@
                             }
                         });
                 },
-                select: function (selectionInfo) {
-                    const dateStr = selectionInfo.startStr ? selectionInfo.startStr.slice(0, 10) : null;
+                dateClick: function (info) {
+                    const dateStr = info.dateStr ? info.dateStr.slice(0, 10) : null;
                     if (dateStr) {
                         loadDayDetails(dateStr);
                     }
-                },
-                dateClick: function (info) {
-                    calendar.select(info.date);
                 },
                 datesSet: function () {
                     if (rangeLabelEl) {
                         rangeLabelEl.textContent = calendar.view.title;
                     }
                     setActiveViewButton(calendar.view.type);
+                    highlightSelectedDate();
                 },
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
-                    info.jsEvent.stopPropagation();
+                    if (typeof info.jsEvent.stopPropagation === 'function') {
+                        info.jsEvent.stopPropagation();
+                    }
+                    if (typeof info.jsEvent.stopImmediatePropagation === 'function') {
+                        info.jsEvent.stopImmediatePropagation();
+                    }
                     return false;
                 },
                 moreLinkClick: function () {
@@ -711,7 +762,11 @@
             });
 
             calendar.render();
-            calendar.select(new Date());
+
+            const todayStr = formatDateValue(new Date());
+            if (todayStr) {
+                loadDayDetails(todayStr, { force: true });
+            }
 
             navButtons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
@@ -745,7 +800,10 @@
             if (todayBtn) {
                 todayBtn.addEventListener('click', function () {
                     calendar.today();
-                    calendar.select(new Date());
+                    const todayDate = formatDateValue(new Date());
+                    if (todayDate) {
+                        loadDayDetails(todayDate, { force: true });
+                    }
                 });
             }
 
