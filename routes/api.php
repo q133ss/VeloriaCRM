@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\Learning\KnowledgeController as LearningKnowledg
 use App\Http\Controllers\Api\V1\Learning\LearningPlanController;
 use App\Http\Controllers\Api\V1\Learning\LessonController as LearningLessonController;
 use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionController;
+use App\Http\Controllers\Api\V1\MasterMoodController;
 
 Route::prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -111,5 +112,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::post('/notifications', [NotificationController::class, 'store']);
         Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
+        Route::post('/master-moods', [MasterMoodController::class, 'store']);
     });
 });
