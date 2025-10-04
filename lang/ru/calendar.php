@@ -24,6 +24,12 @@ return [
     ],
     'labels' => [
         'all_day' => 'Весь день',
+        'more_link' => [
+            'one' => '+:count ещё',
+            'few' => '+:count ещё',
+            'many' => '+:count ещё',
+            'other' => '+:count ещё',
+        ],
     ],
     'day' => [
         'panel_title' => 'Детали дня',

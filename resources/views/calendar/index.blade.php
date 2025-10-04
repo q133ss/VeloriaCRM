@@ -61,6 +61,44 @@
             border-color: var(--bs-border-color);
         }
 
+        #crm-calendar .fc .fc-daygrid-event {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #crm-calendar .fc .fc-daygrid-more-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 999px;
+            background-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            color: var(--bs-primary-color);
+            font-weight: 500;
+        }
+
+        #crm-calendar .fc .fc-popover {
+            background-color: var(--bs-card-bg);
+            border-color: var(--bs-border-color);
+            color: var(--bs-body-color);
+            box-shadow: 0 1.25rem 2.5rem -1.25rem rgba(15, 15, 15, 0.45);
+        }
+
+        #crm-calendar .fc .fc-popover .fc-popover-header,
+        #crm-calendar .fc .fc-popover .fc-popover-body {
+            background-color: var(--bs-card-bg);
+            color: var(--bs-body-color);
+        }
+
+        #crm-calendar .fc .fc-popover .fc-popover-header {
+            border-bottom-color: var(--bs-border-color);
+        }
+
+        #crm-calendar .fc .fc-popover .fc-popover-body .fc-event {
+            color: inherit;
+        }
+
         #crm-calendar .fc .fc-col-header,
         #crm-calendar .fc .fc-col-header-cell,
         #crm-calendar .fc .fc-timegrid-axis,
@@ -234,7 +272,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const locale = '{{ str_replace('_', '-', app()->getLocale()) }}';
-            document.documentElement.setAttribute('lang', locale);
 
             const translations = {
                 settingsMissing: @json(__('calendar.settings_missing')),
@@ -282,6 +319,7 @@
             const todayBtn = document.getElementById('calendar-today');
             const navButtons = document.querySelectorAll('[data-calendar-nav]');
             const viewButtons = document.querySelectorAll('[data-calendar-view]');
+            const moreLinkMap = translations.labels ? translations.labels.more_link : null;
 
             let selectedDate = null;
 
@@ -559,11 +597,22 @@
                 selectMirror: true,
                 expandRows: true,
                 dayMaxEvents: 4,
+                dayMaxEventRows: 4,
+                eventMaxStack: 4,
                 height: '100%',
                 allDayText: allDayText,
                 buttonText: buttonText,
                 noEventsContent: function () {
                     return { html: translations.noEvents };
+                },
+                moreLinkContent: function (args) {
+                    const count = args.num || 0;
+                    let text = moreLinkMap ? pluralize(moreLinkMap, count) : '';
+                    if (!text || text === String(count)) {
+                        const fallbackLabel = locale.startsWith('ru') ? ' ещё' : ' more';
+                        text = '+' + count + fallbackLabel;
+                    }
+                    return text;
                 },
                 eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
                 events: function (fetchInfo, successCallback, failureCallback) {

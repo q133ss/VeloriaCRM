@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     class="layout-navbar-fixed layout-menu-fixed layout-compact"
     dir="ltr"
     data-skin="default"

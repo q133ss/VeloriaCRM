@@ -24,6 +24,10 @@ return [
     ],
     'labels' => [
         'all_day' => 'All day',
+        'more_link' => [
+            'one' => '+:count more',
+            'other' => '+:count more',
+        ],
     ],
     'day' => [
         'panel_title' => 'Day details',
