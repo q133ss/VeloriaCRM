@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\SendDailyMasterMoodCheckJob;
 use App\Models\MarketingCampaign;
 use App\Models\Setting;
 use App\Services\Marketing\MarketingCampaignService;
@@ -55,3 +56,8 @@ Artisan::command('marketing:dispatch-scheduled', function () {
 })->purpose('Dispatch scheduled marketing campaigns');
 
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
+
+Schedule::job(new SendDailyMasterMoodCheckJob())
+    ->dailyAt('21:00')
+    ->name('send-daily-master-mood-check')
+    ->withoutOverlapping();
