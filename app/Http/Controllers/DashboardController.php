@@ -63,9 +63,20 @@ class DashboardController extends Controller
         $appointmentsTomorrow = $appointments->filter(fn (Appointment $appt) => $this->isWithinDay($appt->starts_at, $tomorrowStart, $tomorrowEnd));
         $pastAppointments = $appointments->filter(fn (Appointment $appt) => $appt->starts_at && $appt->starts_at->lt($todayStart));
 
-        $todaySchedule = $appointmentsToday->map(function (Appointment $appointment) use ($services, $timezone, $pastAppointments) {
+        $appointmentServices = $appointments
+            ->mapWithKeys(function (Appointment $appointment) use ($services) {
+                if (! $appointment->id) {
+                    return [];
+                }
+
+                return [
+                    $appointment->id => $this->resolveServiceData($services, $appointment->service_ids ?? []),
+                ];
+            });
+
+        $todaySchedule = $appointmentsToday->map(function (Appointment $appointment) use ($timezone, $pastAppointments, $appointmentServices) {
             $startsAt = $appointment->starts_at?->copy()->timezone($timezone);
-            $serviceData = $this->resolveServiceData($services, $appointment->service_ids ?? []);
+            $serviceData = $appointmentServices->get($appointment->id, $this->defaultServiceData());
             $history = $pastAppointments->where('client_id', $appointment->client_id);
             $cancellations = $history->whereIn('status', ['cancelled', 'no_show'])->count();
             $indicator = $this->buildIndicator($appointment, $cancellations);
@@ -87,8 +98,8 @@ class DashboardController extends Controller
             ];
         })->values();
 
-        $todayExpectedRevenue = $appointmentsToday->sum(fn (Appointment $appt) => $this->resolveServiceData($services, $appt->service_ids ?? [])['price']);
-        $todayExpectedProfit = $appointmentsToday->sum(fn (Appointment $appt) => $this->resolveServiceData($services, $appt->service_ids ?? [])['margin']);
+        $todayExpectedRevenue = $appointmentsToday->sum(fn (Appointment $appt) => $appointmentServices->get($appt->id, $this->defaultServiceData())['price']);
+        $todayExpectedProfit = $appointmentsToday->sum(fn (Appointment $appt) => $appointmentServices->get($appt->id, $this->defaultServiceData())['margin']);
         $todayPayments = Payment::where('user_id', $user->id)
             ->whereBetween('paid_at', [$todayStart, $todayEnd])
             ->get();
@@ -136,7 +147,7 @@ class DashboardController extends Controller
             'retention_rate_formatted' => number_format($retentionRate, 1, '.', '') . '%',
         ];
 
-        $marginData = $this->buildMarginData($appointments, $services, $todayStart, $timezone);
+        $marginData = $this->buildMarginData($appointments, $appointmentServices, $todayStart, $timezone);
         $revenueTrend = $this->buildRevenueTrend($user->id, $todayStart, $todayEnd, $timezone);
         $revenueDelta = $this->percentChange(array_sum(Arr::pluck($revenueTrend, 'current')), array_sum(Arr::pluck($revenueTrend, 'previous')));
 
@@ -253,6 +264,17 @@ class DashboardController extends Controller
         ];
     }
 
+    protected function defaultServiceData(): array
+    {
+        return [
+            'names' => [],
+            'price' => 0.0,
+            'cost' => 0.0,
+            'duration' => 0,
+            'margin' => 0.0,
+        ];
+    }
+
     protected function buildIndicator(Appointment $appointment, int $cancellations): array
     {
         $risk = (float) ($appointment->risk_no_show ?? 0);
@@ -269,7 +291,7 @@ class DashboardController extends Controller
         return ['type' => 'green', 'label' => __('dashboard.indicators.high_attendance')];
     }
 
-    protected function buildMarginData(Collection $appointments, Collection $services, CarbonInterface $todayStart, string $timezone): Collection
+    protected function buildMarginData(Collection $appointments, Collection $appointmentServices, CarbonInterface $todayStart, string $timezone): Collection
     {
         $start = $todayStart->copy()->subDays(6);
         $days = collect();
@@ -286,17 +308,20 @@ class DashboardController extends Controller
 
         $appointments
             ->filter(fn (Appointment $appt) => $appt->starts_at && $appt->starts_at->between($start, $todayStart->copy()->endOfDay()))
-            ->each(function (Appointment $appointment) use (&$days, $services, $timezone) {
+            ->each(function (Appointment $appointment) use (&$days, $appointmentServices, $timezone) {
                 $date = $appointment->starts_at?->copy()->timezone($timezone)->toDateString();
                 if (! $date || ! $days->has($date)) {
                     return;
                 }
 
-                $serviceData = $this->resolveServiceData($services, $appointment->service_ids ?? []);
+                $serviceData = $appointmentServices->get($appointment->id, $this->defaultServiceData());
                 $hours = max(0.5, $serviceData['duration'] / 60);
 
-                $days[$date]['margin'] += $serviceData['margin'];
-                $days[$date]['hours'] += $hours;
+                $dayData = $days->get($date);
+                $dayData['margin'] += $serviceData['margin'];
+                $dayData['hours'] += $hours;
+
+                $days->put($date, $dayData);
             });
 
         return $days->map(function (array $item) {
