@@ -22,6 +22,9 @@ return [
         'day' => 'День',
         'list' => 'Список',
     ],
+    'labels' => [
+        'all_day' => 'Весь день',
+    ],
     'day' => [
         'panel_title' => 'Детали дня',
         'subtitle' => [
