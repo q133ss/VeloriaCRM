@@ -15,6 +15,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\OpenAIService;
+use App\Services\OrderStartReminderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -31,6 +32,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OpenAIService $openAI,
+        private readonly OrderStartReminderService $orderStartReminder,
     ) {
     }
     public function index(OrderFilterRequest $request): JsonResponse
@@ -123,6 +125,8 @@ class OrderController extends Controller
 
         $order->load(['client', 'master']);
 
+        $this->orderStartReminder->schedule($order);
+
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись успешно создана.',
@@ -151,7 +155,9 @@ class OrderController extends Controller
         $validated = $request->validated();
         $masterId = $this->currentUserId();
 
-        DB::transaction(function () use ($validated, $order, $masterId) {
+        $scheduledChanged = false;
+
+        DB::transaction(function () use ($validated, $order, $masterId, &$scheduledChanged) {
             $client = $this->resolveClient(
                 $validated['client_phone'],
                 Arr::get($validated, 'client_name'),
@@ -177,7 +183,7 @@ class OrderController extends Controller
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
             $newScheduledAt = Carbon::parse($validated['scheduled_at']);
-            $shouldResetStartPrompt = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
+            $scheduledChanged = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
 
             $payload = [
                 'master_id' => $masterId,
@@ -191,7 +197,7 @@ class OrderController extends Controller
                 'recommended_services' => $this->serializeRecommendations($recommended),
             ];
 
-            if ($shouldResetStartPrompt) {
+            if ($scheduledChanged) {
                 $payload['start_confirmation_notified_at'] = null;
             }
 
@@ -199,6 +205,10 @@ class OrderController extends Controller
         });
 
         $order->refresh()->loadMissing(['client', 'master']);
+
+        if ($scheduledChanged) {
+            $this->orderStartReminder->schedule($order);
+        }
 
         return response()->json([
             'data' => $this->decorateOrder($order),
@@ -335,6 +345,8 @@ class OrderController extends Controller
 
         $order->load(['client', 'master']);
 
+        $this->orderStartReminder->schedule($order);
+
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись создана через быстрое создание.',
@@ -463,6 +475,8 @@ class OrderController extends Controller
         ]);
 
         $order->refresh();
+
+        $this->orderStartReminder->schedule($order);
 
         return response()->json([
             'data' => $this->decorateOrder($order),
