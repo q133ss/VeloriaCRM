@@ -11,6 +11,10 @@
             <p class="text-muted mb-0">Ведите базу клиентов, отслеживайте визиты и отправляйте напоминания.</p>
         </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickClientModal">
+                <i class="ri ri-flashlight-line me-1"></i>
+                Быстрое создание
+            </button>
             <a href="{{ route('clients.create') }}" class="btn btn-primary">
                 <i class="ri ri-user-add-line me-1"></i>
                 Добавить клиента
@@ -19,6 +23,53 @@
     </div>
 
     <div id="clients-alerts"></div>
+
+    <div class="modal fade" id="quickClientModal" tabindex="-1" aria-labelledby="quickClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quickClientModalLabel">Быстрое создание клиента</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <form id="quick-client-form" onsubmit="return false;">
+                    <div class="modal-body">
+                        <p class="text-muted">Заполните основные данные — остальное сможете добавить позже в карточке клиента.</p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control" id="quick_client_name" name="name" placeholder="Имя" required />
+                                    <label for="quick_client_name">Имя клиента</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control" id="quick_client_phone" name="phone" placeholder="+7(999)999-99-99" data-phone-mask required />
+                                    <label for="quick_client_phone">Телефон</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="email" class="form-control" id="quick_client_email" name="email" placeholder="email@example.com" />
+                                    <label for="quick_client_email">Email</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating form-floating-outline">
+                                    <textarea class="form-control" id="quick_client_notes" name="notes" rows="3" placeholder="Комментарий" style="height: 120px"></textarea>
+                                    <label for="quick_client_notes">Заметки</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="quick-client-errors" class="mt-3"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary" id="quick-client-submit">Создать клиента</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <div class="card">
         <div class="card-header d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-md-between">
@@ -159,6 +210,7 @@
 @endsection
 
 @section('scripts')
+    @include('components.phone-mask-script')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             function getCookie(name) {
@@ -217,7 +269,74 @@
             const reminderErrors = document.getElementById('reminder-errors');
             const reminderSendBtn = document.getElementById('reminder-send');
 
+            const quickClientModalEl = document.getElementById('quickClientModal');
+            const quickClientForm = document.getElementById('quick-client-form');
+            const quickClientSubmit = document.getElementById('quick-client-submit');
+            const quickClientErrors = document.getElementById('quick-client-errors');
+            const quickClientNameInput = document.getElementById('quick_client_name');
+
+            const quickClientSubmitOriginal = quickClientSubmit ? quickClientSubmit.innerHTML : '';
+
             let reminderClientId = null;
+
+            function setQuickClientLoading(isLoading) {
+                if (!quickClientSubmit) {
+                    return;
+                }
+
+                if (isLoading) {
+                    quickClientSubmit.disabled = true;
+                    quickClientSubmit.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Создание...
+                    `;
+                } else {
+                    quickClientSubmit.disabled = false;
+                    quickClientSubmit.innerHTML = quickClientSubmitOriginal;
+                }
+            }
+
+            function clearQuickClientErrors() {
+                if (quickClientErrors) {
+                    quickClientErrors.innerHTML = '';
+                }
+
+                if (!quickClientForm) {
+                    return;
+                }
+
+                quickClientForm.querySelectorAll('.is-invalid').forEach(function (element) {
+                    element.classList.remove('is-invalid');
+                });
+
+                quickClientForm.querySelectorAll('.invalid-feedback').forEach(function (element) {
+                    element.remove();
+                });
+            }
+
+            function attachQuickClientErrors(fields) {
+                if (!quickClientForm || !fields) {
+                    return;
+                }
+
+                Object.keys(fields).forEach(function (key) {
+                    const input = quickClientForm.querySelector(`[name="${key}"]`);
+                    if (!input) {
+                        return;
+                    }
+
+                    input.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = Array.isArray(fields[key]) ? fields[key][0] : fields[key];
+
+                    if (input.parentElement && input.parentElement.classList.contains('form-floating')) {
+                        input.parentElement.appendChild(feedback);
+                    } else {
+                        input.insertAdjacentElement('afterend', feedback);
+                    }
+                });
+            }
 
             function showAlert(type, message, sticky = false) {
                 const wrapper = document.createElement('div');
@@ -282,6 +401,74 @@
                     badge.textContent = item;
                     container.appendChild(badge);
                 });
+            }
+
+            async function handleQuickClientSubmit(event) {
+                event.preventDefault();
+
+                if (!quickClientForm) {
+                    return;
+                }
+
+                clearQuickClientErrors();
+                setQuickClientLoading(true);
+
+                const formData = new FormData(quickClientForm);
+                const payload = {
+                    name: (formData.get('name') || '').toString().trim(),
+                    phone: (formData.get('phone') || '').toString().trim(),
+                };
+
+                const email = (formData.get('email') || '').toString().trim();
+                if (email) {
+                    payload.email = email;
+                }
+
+                const notes = (formData.get('notes') || '').toString().trim();
+                if (notes) {
+                    payload.notes = notes;
+                }
+
+                try {
+                    const response = await fetch('/api/v1/clients', {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        credentials: 'include',
+                        body: JSON.stringify(payload),
+                    });
+
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const fields = result.error?.fields || result.errors || {};
+                        if (Object.keys(fields).length) {
+                            attachQuickClientErrors(fields);
+                        }
+
+                        if (quickClientErrors) {
+                            const message = result.error?.message || result.message || 'Не удалось создать клиента.';
+                            quickClientErrors.innerHTML = `<div class="text-danger">${message}</div>`;
+                        }
+                        return;
+                    }
+
+                    if (quickClientModalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(quickClientModalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
+                    showAlert('success', result.message || 'Клиент успешно создан.');
+                    await loadClients(1, { preserveAlerts: true });
+                } catch (error) {
+                    console.error(error);
+                    if (quickClientErrors) {
+                        quickClientErrors.innerHTML = '<div class="text-danger">Произошла ошибка. Попробуйте ещё раз.</div>';
+                    }
+                } finally {
+                    setQuickClientLoading(false);
+                }
             }
 
             function formatPreferences(preferences) {
@@ -356,16 +543,49 @@
                         </td>
                         <td class="text-end">
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary js-client-quick-view" data-client-id="${client.id}">
-                                    Быстрый просмотр
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-icon btn-text-secondary js-client-quick-view"
+                                    data-client-id="${client.id}"
+                                    title="Быстрый просмотр"
+                                    aria-label="Быстрый просмотр"
+                                >
+                                    <i class="ri ri-eye-line"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-info js-client-reminder" data-client-id="${client.id}">
-                                    Автонапоминание
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-icon btn-text-secondary js-client-reminder"
+                                    data-client-id="${client.id}"
+                                    title="Автонапоминание"
+                                    aria-label="Автонапоминание"
+                                >
+                                    <i class="ri ri-notification-3-line"></i>
                                 </button>
-                                <a href="/clients/${client.id}" class="btn btn-sm btn-outline-primary">Подробнее</a>
-                                <a href="/clients/${client.id}/edit" class="btn btn-sm btn-outline-secondary">Изменить</a>
-                                <button type="button" class="btn btn-sm btn-outline-danger js-client-delete" data-client-id="${client.id}" data-client-name="${client.name}">
-                                    Удалить
+                                <a
+                                    href="/clients/${client.id}"
+                                    class="btn btn-sm btn-icon btn-text-secondary"
+                                    title="Подробнее"
+                                    aria-label="Подробнее"
+                                >
+                                    <i class="ri ri-user-line"></i>
+                                </a>
+                                <a
+                                    href="/clients/${client.id}/edit"
+                                    class="btn btn-sm btn-icon btn-text-secondary"
+                                    title="Изменить"
+                                    aria-label="Изменить"
+                                >
+                                    <i class="ri ri-edit-line"></i>
+                                </a>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-icon btn-text-secondary text-danger js-client-delete"
+                                    data-client-id="${client.id}"
+                                    data-client-name="${client.name}"
+                                    title="Удалить"
+                                    aria-label="Удалить"
+                                >
+                                    <i class="ri ri-delete-bin-line"></i>
                                 </button>
                             </div>
                         </td>
@@ -463,8 +683,11 @@
                 clientsTotal.textContent = total;
             }
 
-            async function loadClients(page = 1) {
-                clearAlerts();
+            async function loadClients(page = 1, options = {}) {
+                const preserveAlerts = options && options.preserveAlerts === true;
+                if (!preserveAlerts) {
+                    clearAlerts();
+                }
                 clientsBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Загрузка данных...</td></tr>';
 
                 state.page = page;
@@ -602,11 +825,33 @@
                     }
 
                     showAlert('success', 'Клиент удалён.');
-                    await loadClients(state.page);
+                    await loadClients(state.page, { preserveAlerts: true });
                 } catch (error) {
                     console.error(error);
                     showAlert('danger', 'Произошла ошибка при удалении клиента.', true);
                 }
+            }
+
+            if (quickClientForm) {
+                quickClientForm.addEventListener('submit', handleQuickClientSubmit);
+            }
+
+            if (quickClientModalEl) {
+                quickClientModalEl.addEventListener('shown.bs.modal', function () {
+                    clearQuickClientErrors();
+                    setQuickClientLoading(false);
+                    if (quickClientNameInput) {
+                        quickClientNameInput.focus();
+                    }
+                });
+
+                quickClientModalEl.addEventListener('hidden.bs.modal', function () {
+                    if (quickClientForm) {
+                        quickClientForm.reset();
+                    }
+                    clearQuickClientErrors();
+                    setQuickClientLoading(false);
+                });
             }
 
             reminderSendBtn.addEventListener('click', async function () {
