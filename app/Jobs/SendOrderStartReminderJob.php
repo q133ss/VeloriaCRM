@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class SendOrderStartReminderJob implements ShouldQueue
 {
@@ -74,8 +75,10 @@ class SendOrderStartReminderJob implements ShouldQueue
             $actionUrl,
         );
 
-        $order->forceFill([
-            'start_confirmation_notified_at' => $now,
-        ])->save();
+        if (Schema::hasColumn($order->getTable(), 'start_confirmation_notified_at')) {
+            $order->forceFill([
+                'start_confirmation_notified_at' => $now,
+            ])->save();
+        }
     }
 }

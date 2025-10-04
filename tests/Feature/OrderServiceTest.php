@@ -78,6 +78,7 @@ class OrderServiceTest extends TestCase
             'user_id' => $master->id,
             'title' => 'Подтвердите начало процедуры',
             'message' => 'Пожалуйста, подтвердите, что процедура началась!',
+            'action_url' => '/orders/1/start-confirmation',
         ]);
 
         $this->assertNotNull($order->fresh()->start_confirmation_notified_at);
