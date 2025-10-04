@@ -69,10 +69,10 @@
 
         <aside id="layout-menu" class="layout-menu menu-vertical menu">
             <div class="app-brand demo">
-                <a href="index.html" class="app-brand-link">
+                <a href="{{route('dashboard')}}" class="app-brand-link">
               <span class="app-brand-logo demo">
                 <span class="text-primary">
-                  <svg width="32" height="18" viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- <svg width="32" height="18" viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
                         d="M30.0944 2.22569C29.0511 0.444187 26.7508 -0.172113 24.9566 0.849138C23.1623 1.87039 22.5536 4.14247 23.5969 5.92397L30.5368 17.7743C31.5801 19.5558 33.8804 20.1721 35.6746 19.1509C37.4689 18.1296 38.0776 15.8575 37.0343 14.076L30.0944 2.22569Z"
                         fill="currentColor" />
@@ -115,10 +115,11 @@
                         <stop offset="1" stop-opacity="0" />
                       </linearGradient>
                     </defs>
-                  </svg>
+                  </svg> -->
+                  <img src="/logo.svg" alt="Veloria">
                 </span>
               </span>
-                    <span class="app-brand-text demo menu-text fw-semibold ms-2">Materialize</span>
+                    <span class="app-brand-text demo menu-text fw-semibold ms-2">Veloria</span>
                 </a>
 
                 <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -299,18 +300,17 @@
                                 <script>
                                     document.write(new Date().getFullYear());
                                 </script>
-                                , made with ❤️ by
-                                <a href="https://pixinvent.com" target="_blank" class="footer-link fw-medium">Pixinvent</a>
+                                
                             </div>
                             <div class="d-none d-lg-inline-block">
-                                <a href="https://themeforest.net/user/pixinvent/portfolio" target="_blank" class="footer-link me-4"
-                                >More Themes</a
+                                <a href="/terms" target="_blank" class="footer-link me-4"
+                                >Пользовательское соглашение</a
                                 >
                                 <a
-                                    href="https://demos.pixinvent.com/materialize-html-admin-template/documentation/"
+                                    href="/policy"
                                     target="_blank"
                                     class="footer-link me-4"
-                                >Documentation</a
+                                >Политика конфиденциальности</a
                                 >
                             </div>
                         </div>
