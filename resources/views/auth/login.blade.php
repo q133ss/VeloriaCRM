@@ -87,6 +87,11 @@
                 <!-- /Logo -->
 
                 <div class="card-body mt-1">
+                    @if (session('auth_error'))
+                        <div class="alert alert-danger" role="alert">
+                            {{ session('auth_error') }}
+                        </div>
+                    @endif
                     <h4 class="mb-1">{{ __('auth.login_heading') }}</h4>
                     <p class="mb-5">{{ __('auth.login_subtitle') }}</p>
 
@@ -149,21 +154,32 @@
                         <div class="divider-text">{{ __('auth.or') }}</div>
                     </div>
 
-                    <div class="d-flex justify-content-center gap-2">
-                        <a href="javascript:;" class="btn btn-icon rounded-circle btn-text-facebook">
-                            <i class="icon-base ri ri-facebook-fill icon-18px"></i>
+                    <div class="d-grid gap-3">
+                        <a
+                            href="{{ route('social.redirect', ['provider' => 'vkontakte']) }}"
+                            class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2"
+                            aria-label="{{ __('auth.continue_with_vkontakte') }}"
+                        >
+                            <i class="icon-base ri ri-vk-fill icon-18px"></i>
+                            <span>{{ __('auth.continue_with_vkontakte') }}</span>
                         </a>
 
-                        <a href="javascript:;" class="btn btn-icon rounded-circle btn-text-twitter">
-                            <i class="icon-base ri ri-twitter-fill icon-18px"></i>
+                        <a
+                            href="{{ route('social.redirect', ['provider' => 'yandex']) }}"
+                            class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2"
+                            aria-label="{{ __('auth.continue_with_yandex') }}"
+                        >
+                            <i class="icon-base ri ri-mail-fill icon-18px"></i>
+                            <span>{{ __('auth.continue_with_yandex') }}</span>
                         </a>
 
-                        <a href="javascript:;" class="btn btn-icon rounded-circle btn-text-github">
-                            <i class="icon-base ri ri-github-fill icon-18px"></i>
-                        </a>
-
-                        <a href="javascript:;" class="btn btn-icon btn-lg rounded-pill btn-text-google-plus">
+                        <a
+                            href="{{ route('social.redirect', ['provider' => 'google']) }}"
+                            class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2"
+                            aria-label="{{ __('auth.continue_with_google') }}"
+                        >
                             <i class="icon-base ri ri-google-fill icon-18px"></i>
+                            <span>{{ __('auth.continue_with_google') }}</span>
                         </a>
                     </div>
                 </div>

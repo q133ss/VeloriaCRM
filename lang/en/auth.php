@@ -47,4 +47,15 @@ return [
     'forgot_heading' => 'Forgot Password? 🔒',
     'forgot_subtitle' => "Enter your email and we'll send you instructions to reset your password",
     'or' => 'or',
+    'continue_with_vkontakte' => 'Continue with VKontakte',
+    'continue_with_yandex' => 'Continue with Yandex',
+    'continue_with_google' => 'Continue with Gmail',
+    'social_login_failed' => 'We could not sign you in with :provider. Please try again.',
+    'social_login_email_missing' => 'We were unable to receive an email address from :provider. Please finish sign up manually.',
+    'social_login_not_configured' => 'Sign in with :provider is temporarily unavailable. Please choose another option.',
+    'providers' => [
+        'vkontakte' => 'VKontakte',
+        'yandex' => 'Yandex',
+        'google' => 'Gmail',
+    ],
 ];

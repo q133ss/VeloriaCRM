@@ -10,6 +10,10 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "laravel/socialite": "^5.13",
+        "socialiteproviders/manager": "^4.5",
+        "socialiteproviders/vkontakte": "^5.1",
+        "socialiteproviders/yandex": "^4.1",
         "yoomoney/yookassa-sdk-php": "^3.10"
     },
     "require-dev": {

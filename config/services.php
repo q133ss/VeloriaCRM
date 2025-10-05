@@ -42,4 +42,26 @@ return [
         'currency' => env('YOOKASSA_CURRENCY', 'RUB'),
     ],
 
+    'vkontakte' => [
+        'client_id' => env('VKONTAKTE_CLIENT_ID'),
+        'client_secret' => env('VKONTAKTE_CLIENT_SECRET'),
+        'redirect' => env('VKONTAKTE_REDIRECT_URI'),
+        'scopes' => ['email'],
+        'version' => env('VKONTAKTE_API_VERSION', '5.131'),
+    ],
+
+    'yandex' => [
+        'client_id' => env('YANDEX_CLIENT_ID'),
+        'client_secret' => env('YANDEX_CLIENT_SECRET'),
+        'redirect' => env('YANDEX_REDIRECT_URI'),
+        'scopes' => ['login:email'],
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+        'scopes' => ['openid', 'profile', 'email'],
+    ],
+
 ];
