@@ -138,6 +138,46 @@
         $priorityLabels = trans('dashboard.sections.focus.ai.priority');
     @endphp
 
+    @if ($showOnboarding ?? false)
+        <div class="dashboard-section">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="mb-2">{{ __('dashboard.onboarding.title') }}</h5>
+                    <p class="text-muted mb-4">{{ __('dashboard.onboarding.subtitle') }}</p>
+
+                    <ol class="list-unstyled d-flex flex-column gap-3 mb-4">
+                        @foreach ($onboardingSteps as $index => $step)
+                            <li class="d-flex align-items-start gap-3">
+                                <span class="badge rounded-pill {{ $step['completed'] ? 'bg-success' : 'bg-primary' }} fs-6 px-3 py-2">
+                                    {{ $index + 1 }}
+                                </span>
+
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                        <h6 class="mb-0">{{ $step['title'] }}</h6>
+                                        <span class="badge {{ $step['completed'] ? 'bg-label-success text-success' : 'bg-label-primary text-primary' }}">
+                                            {{ $step['completed'] ? $onboardingStatusLabels['done'] : $onboardingStatusLabels['next'] }}
+                                        </span>
+                                    </div>
+                                    <p class="text-muted mb-2">{{ $step['description'] }}</p>
+                                    <a class="btn btn-sm btn-primary" href="{{ $step['action'] }}">
+                                        {{ $step['action_label'] }}
+                                    </a>
+                                </div>
+
+                                <div class="fs-4" aria-hidden="true">{{ $step['completed'] ? '✅' : '✨' }}</div>
+                            </li>
+                        @endforeach
+                    </ol>
+
+                    <div class="alert alert-info mb-0" role="note">
+                        {{ $onboardingHint }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="dashboard-section">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
             <div>

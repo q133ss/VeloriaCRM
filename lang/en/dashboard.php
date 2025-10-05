@@ -18,6 +18,37 @@ return [
         'not_enough_data' => 'Not enough data',
         'no_comparison' => 'No comparison data yet',
     ],
+    'onboarding' => [
+        'title' => 'Getting started with Veloria',
+        'subtitle' => 'Let’s get everything ready step by step so your workspace starts helping right away.',
+        'status' => [
+            'done' => 'Done',
+            'next' => 'Next',
+        ],
+        'steps' => [
+            'catalog' => [
+                'title' => 'Add categories and services',
+                'description' => 'Group your services so the catalog and AI assistant can suggest them correctly.',
+                'action' => 'Open catalog',
+            ],
+            'clients' => [
+                'title' => 'Import your first clients',
+                'description' => 'Client cards store history and preferences — that is the context AI relies on.',
+                'action' => 'Add client',
+            ],
+            'appointments' => [
+                'title' => 'Create the first booking',
+                'description' => 'A scheduled booking ties services, time and reminders together — analytics start right there.',
+                'action' => 'Create booking',
+            ],
+            'settings' => [
+                'title' => 'Configure notification channels',
+                'description' => 'Fill in SMTP, WhatsApp, Telegram and SMS so the system can auto-send campaigns and reminders.',
+                'action' => 'Open settings',
+            ],
+        ],
+        'settings_hint' => 'These settings let the system send campaigns, auto-reminders and other client notifications.',
+    ],
     'indicators' => [
         'high_attendance' => '🟢 Likely to show',
         'no_show_risk' => '🟡 No-show risk',

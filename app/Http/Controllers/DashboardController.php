@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Payment;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\Setting;
 use App\Services\DashboardAiService;
 use Carbon\Carbon;
@@ -46,6 +47,11 @@ class DashboardController extends Controller
             ->whereBetween('starts_at', [$rangeStart, $rangeEnd])
             ->orderBy('starts_at')
             ->get();
+
+        $catalogCategoriesCount = ServiceCategory::where('user_id', $user->id)->count();
+        $catalogServicesCount = Service::where('user_id', $user->id)->count();
+        $clientsCount = Client::where('user_id', $user->id)->count();
+        $hasAnyAppointments = Appointment::where('user_id', $user->id)->exists();
 
         $serviceIds = $appointments
             ->flatMap(fn (Appointment $appointment) => $appointment->service_ids ?? [])
@@ -193,6 +199,48 @@ class DashboardController extends Controller
             'revenue_trend' => $revenueTrend,
         ]);
 
+        $hasSmtpSettings = $setting && filled($setting->smtp_host) && filled($setting->smtp_username) && filled($setting->smtp_from_address ?? null);
+        $hasWhatsappSettings = $setting && filled($setting->whatsapp_api_key) && filled($setting->whatsapp_sender ?? null);
+        $hasTelegramSettings = $setting && filled($setting->telegram_bot_token) && filled($setting->telegram_sender ?? null);
+        $hasSmsSettings = $setting && filled($setting->smsaero_email) && filled($setting->smsaero_api_key);
+
+        $onboardingSteps = [
+            [
+                'key' => 'catalog',
+                'title' => __('dashboard.onboarding.steps.catalog.title'),
+                'description' => __('dashboard.onboarding.steps.catalog.description'),
+                'action' => route('services.index'),
+                'action_label' => __('dashboard.onboarding.steps.catalog.action'),
+                'completed' => $catalogCategoriesCount > 0 && $catalogServicesCount > 0,
+            ],
+            [
+                'key' => 'clients',
+                'title' => __('dashboard.onboarding.steps.clients.title'),
+                'description' => __('dashboard.onboarding.steps.clients.description'),
+                'action' => route('clients.create'),
+                'action_label' => __('dashboard.onboarding.steps.clients.action'),
+                'completed' => $clientsCount > 0,
+            ],
+            [
+                'key' => 'appointments',
+                'title' => __('dashboard.onboarding.steps.appointments.title'),
+                'description' => __('dashboard.onboarding.steps.appointments.description'),
+                'action' => route('orders.create'),
+                'action_label' => __('dashboard.onboarding.steps.appointments.action'),
+                'completed' => $hasAnyAppointments,
+            ],
+            [
+                'key' => 'settings',
+                'title' => __('dashboard.onboarding.steps.settings.title'),
+                'description' => __('dashboard.onboarding.steps.settings.description'),
+                'action' => route('settings'),
+                'action_label' => __('dashboard.onboarding.steps.settings.action'),
+                'completed' => $hasSmtpSettings && $hasWhatsappSettings && $hasTelegramSettings && $hasSmsSettings,
+            ],
+        ];
+
+        $showOnboarding = collect($onboardingSteps)->contains(fn (array $step) => ! $step['completed']);
+
         return view('dashboard', [
             'updated_at' => $now,
             'timezone' => $timezone,
@@ -207,6 +255,13 @@ class DashboardController extends Controller
             'servicesInsight' => $servicesInsight,
             'topClients' => $topClients,
             'dailyTip' => $dailyTip,
+            'showOnboarding' => $showOnboarding,
+            'onboardingSteps' => $onboardingSteps,
+            'onboardingHint' => __('dashboard.onboarding.settings_hint'),
+            'onboardingStatusLabels' => [
+                'done' => __('dashboard.onboarding.status.done'),
+                'next' => __('dashboard.onboarding.status.next'),
+            ],
         ]);
     }
 
