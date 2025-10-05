@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Auth\SocialAuthController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,6 +17,16 @@ Route::get('/l/{slug}', LandingPageController::class)->name('landings.public');
 Route::view('/login', 'auth.login')->name('login');
 Route::view('/register', 'auth.register')->name('register.form');
 Route::view('/forgot-password', 'auth.forgot')->name('password.request');
+
+Route::prefix('auth')->group(function () {
+    Route::get('{provider}/redirect', [SocialAuthController::class, 'redirect'])
+        ->whereIn('provider', SocialAuthController::SUPPORTED_PROVIDERS)
+        ->name('social.redirect');
+
+    Route::get('{provider}/callback', [SocialAuthController::class, 'callback'])
+        ->whereIn('provider', SocialAuthController::SUPPORTED_PROVIDERS)
+        ->name('social.callback');
+});
 
 # TODO Мидлвар: редирект на login если не авторизован
 Route::middleware('token.cookie')->group(function () {
