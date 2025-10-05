@@ -42,7 +42,7 @@ return [
     'terms' => 'I agree to privacy policy & terms',
     'register_heading' => 'Adventure starts here 🚀',
     'register_subtitle' => 'Make your app management easy and fun!',
-    'login_heading' => 'Welcome to Materialize! 👋',
+    'login_heading' => 'Welcome to Veloria! 👋',
     'login_subtitle' => 'Please sign-in to your account and start the adventure',
     'forgot_heading' => 'Forgot Password? 🔒',
     'forgot_subtitle' => "Enter your email and we'll send you instructions to reset your password",
