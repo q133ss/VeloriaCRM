@@ -372,6 +372,112 @@
 </div>
 <!-- / Layout wrapper -->
 
+@if (($layoutOnboarding['show'] ?? false) && ! empty($layoutOnboarding['steps'] ?? []))
+    <div
+        class="modal fade modal-onboarding"
+        id="onboardingModal"
+        tabindex="-1"
+        aria-labelledby="onboardingModalLabel"
+        aria-hidden="true"
+        data-completion-hash="{{ $layoutOnboarding['hash'] ?? '' }}"
+        data-user-id="{{ $layoutOnboarding['user_id'] ?? '' }}"
+    >
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <div>
+                        <span class="badge bg-label-primary text-primary mb-2">{{ __('dashboard.onboarding.modal.badge') }}</span>
+                        <h4 class="mb-1" id="onboardingModalLabel">{{ __('dashboard.onboarding.title') }}</h4>
+                        <p class="text-muted mb-0">{{ __('dashboard.onboarding.subtitle') }}</p>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        aria-label="{{ __('dashboard.onboarding.modal.close_label') }}"
+                        data-onboarding-dismiss
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+
+                <div class="modal-body pt-3">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 mb-4">
+                        <div class="flex-grow-1">
+                            <div class="progress bg-label-primary bg-opacity-10" style="height: 0.75rem;">
+                                <div
+                                    class="progress-bar"
+                                    role="progressbar"
+                                    style="width: 0;"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-valuenow="0"
+                                    data-progress-bar
+                                ></div>
+                            </div>
+                        </div>
+                        <div class="text-md-end">
+                            <span class="d-block small text-muted">{{ __('dashboard.onboarding.modal.progress.label') }}</span>
+                            <span class="fw-semibold" data-progress-value>0%</span>
+                        </div>
+                    </div>
+
+                    <div class="list-group list-group-flush">
+                        @foreach ($layoutOnboarding['steps'] as $index => $step)
+                            <div
+                                class="list-group-item px-0 border-0"
+                                data-progress-step
+                                data-completed="{{ $step['completed'] ? '1' : '0' }}"
+                            >
+                                <div class="d-flex flex-column flex-sm-row gap-3 align-items-sm-start">
+                                    <div class="d-flex align-items-center justify-content-center rounded-3 bg-label-primary text-primary fw-semibold flex-shrink-0" style="width: 3rem; height: 3rem;">
+                                        {{ $index + 1 }}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2">
+                                            <h6 class="mb-0">{{ $step['title'] }}</h6>
+                                            <span class="badge {{ $step['completed'] ? 'bg-label-success text-success' : 'bg-label-primary text-primary' }}">
+                                                {{ $step['completed'] ? ($layoutOnboarding['status_labels']['done'] ?? '') : ($layoutOnboarding['status_labels']['next'] ?? '') }}
+                                            </span>
+                                        </div>
+                                        <p class="text-muted mb-3 mt-2">{{ $step['description'] }}</p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a class="btn btn-sm {{ $step['completed'] ? 'btn-outline-secondary' : 'btn-primary' }}" href="{{ $step['action'] }}">
+                                                {{ $step['action_label'] }}
+                                            </a>
+                                            @if($step['completed'])
+                                                <span class="badge bg-success align-self-center">✅</span>
+                                            @else
+                                                <span class="badge bg-label-secondary text-body align-self-center">✨</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="alert alert-info d-flex align-items-start gap-2 mt-4 mb-0" role="note">
+                        <i class="ri ri-information-line fs-4 text-info"></i>
+                        <span>{{ $layoutOnboarding['hint'] }}</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-link text-muted px-0" data-onboarding-dismiss data-bs-dismiss="modal">
+                        {{ __('dashboard.onboarding.modal.skip') }}
+                    </button>
+                    @php($nextStep = $layoutOnboarding['next_step'] ?? null)
+                    <a
+                        href="{{ $nextStep['action'] ?? ($layoutOnboarding['steps'][0]['action'] ?? '#') }}"
+                        class="btn btn-primary"
+                    >
+                        {{ __('dashboard.onboarding.modal.resume') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+
 <!-- Core JS -->
 
 <!-- build:js assets/vendor/js/theme.js  -->
@@ -802,6 +908,88 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+@if (($layoutOnboarding['show'] ?? false) && ! empty($layoutOnboarding['steps'] ?? []))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modalElement = document.getElementById('onboardingModal');
+            if (!modalElement || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+                return;
+            }
+
+            var completionHash = modalElement.getAttribute('data-completion-hash') || '';
+            var userId = modalElement.getAttribute('data-user-id') || '';
+            if (!userId || !completionHash) {
+                return;
+            }
+
+            var storageKey = 'veloria:onboarding:' + userId;
+            var storedState = null;
+
+            try {
+                storedState = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            } catch (error) {
+                storedState = null;
+            }
+
+            if (storedState && storedState.hash === completionHash && storedState.dismissed === true) {
+                return;
+            }
+
+            var steps = modalElement.querySelectorAll('[data-progress-step]');
+            var completedCount = 0;
+            steps.forEach(function (step) {
+                var completed = step.getAttribute('data-completed') === '1';
+                if (completed) {
+                    completedCount += 1;
+                    step.classList.add('bg-body-tertiary');
+                } else {
+                    step.classList.add('bg-body');
+                }
+                step.classList.add('rounded-3', 'py-3');
+            });
+
+            var nextStepElement = modalElement.querySelector('[data-progress-step][data-completed="0"]');
+            if (nextStepElement) {
+                nextStepElement.classList.add('border', 'border-primary', 'shadow-sm');
+            }
+
+            var percent = steps.length ? Math.round((completedCount / steps.length) * 100) : 0;
+            var progressBar = modalElement.querySelector('[data-progress-bar]');
+            var progressValue = modalElement.querySelector('[data-progress-value]');
+
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
+                progressBar.setAttribute('aria-valuenow', String(percent));
+            }
+
+            if (progressValue) {
+                progressValue.textContent = percent + '%';
+            }
+
+            var modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement, {
+                backdrop: 'static',
+                keyboard: false,
+            });
+            modalInstance.show();
+
+            var dismissButtons = modalElement.querySelectorAll('[data-onboarding-dismiss]');
+            dismissButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    try {
+                        localStorage.setItem(storageKey, JSON.stringify({
+                            hash: completionHash,
+                            dismissed: true,
+                        }));
+                    } catch (error) {
+                        // Ignore storage errors (e.g. browser privacy mode).
+                    }
+                });
+            });
+        });
+    </script>
+@endif
+
 @yield('scripts')
 @stack('scripts')
 <!-- Page JS -->

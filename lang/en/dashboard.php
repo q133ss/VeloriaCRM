@@ -48,6 +48,15 @@ return [
             ],
         ],
         'settings_hint' => 'These settings let the system send campaigns, auto-reminders and other client notifications.',
+        'modal' => [
+            'badge' => 'New to Veloria?',
+            'progress' => [
+                'label' => 'Setup progress',
+            ],
+            'resume' => 'Start guided setup',
+            'skip' => 'Remind me later',
+            'close_label' => 'Close onboarding helper',
+        ],
     ],
     'indicators' => [
         'high_attendance' => '🟢 Likely to show',
