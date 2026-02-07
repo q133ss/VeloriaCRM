@@ -1,61 +1,91 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# VeloriaCRM — Smart CRM for Beauty Professionals (Laravel, REST API)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+VeloriaCRM — CRM для соло-мастеров и небольших салонов с модулем **Velory Agents**: набор ИИ-ассистентов, которые помогают вести клиентов и расписание, находить точки роста и снижать потери выручки. Всё работает через **REST API** (готово под мобильное приложение).
 
-## About Laravel
+## Преимущества
+- Снижает no-shows через напоминания и риск-оценку визитов
+- Подсвечивает “пустые слоты” и предлагает сценарии заполнения
+- Даёт аналитику маржа/час и динамику выручки
+- Выявляет “сложных” клиентов и визиты (риск/задержки/возвраты)
+- Рекомендует апсейлы и персональные предложения
+- Встроенное микро-обучение и краткие саммари по трендам общения
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Что делает (value)
+- Напоминания клиентам и снижение неявок
+- Заполнение расписания и рекомендации по слотам
+- Маржа/час и аналитика по визитам
+- Риски по визитам и клиентам
+- Апсейлы и персональные предложения
+- Микро-обучение и саммари по сценариям общения
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Velory Agents (AI-модуль)
+Набор ИИ-ассистентов, которые:
+- дают рекомендации по клиентам и заказам прямо на дашборде
+- формируют аналитические инсайты и короткие обучающие саммари
+- работают через **OpenAI Chat Completions**
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Доступность:
+- **Pro/Elite**: AI-агенты включены
+- **Free/Basic**: используются фоллбеки (правила/шаблоны/дефолтные подсказки)
 
-## Learning Laravel
+## Архитектура
+- Laravel backend (API-first)
+- REST API как единственный интерфейс (web/mobile ready)
+- AI-интеграция: OpenAI Chat Completions
+- Paywall по тарифам (feature flags / access checks)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## API-first подход
+- Авторизация и управление пользователями
+- Клиенты, заказы/визиты, расписание
+- Дашборд и аналитика
+- AI endpoints (Pro/Elite only)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Примечания
+- Проект рассчитан на масштабирование под мобильное приложение
+- AI-функции изолированы и корректно деградируют в фоллбеки при недоступности провайдера
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# VeloriaCRM — Smart CRM for Beauty Professionals (Laravel, REST API)
 
-## Laravel Sponsors
+VeloriaCRM is a CRM for solo pros and small beauty studios with **Velory Agents** — AI assistants that help manage clients and schedules, uncover growth opportunities, and reduce revenue leakage. Everything runs through a **REST API** (mobile-ready).
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Benefits
+- Reduces no-shows via reminders and risk scoring
+- Highlights “empty slots” and suggests fill strategies
+- Profit-per-hour analytics and revenue trends
+- Flags “difficult” clients and high-risk appointments
+- Upsell and personalized offer recommendations
+- Built-in micro-learning with short, actionable summaries
 
-### Premium Partners
+## What it does (value)
+- Client reminders and fewer no-shows
+- Schedule filling and slot recommendations
+- Profit-per-hour and visit analytics
+- Risk signals for clients and appointments
+- Upsell and personalized offer suggestions
+- Micro-learning and communication summaries
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Velory Agents (AI module)
+Velory Agents:
+- generate client/order recommendations on the dashboard
+- produce analytics insights and concise learning summaries
+- powered by **OpenAI Chat Completions**
 
-## Contributing
+Availability:
+- **Pro/Elite**: AI agents enabled
+- **Free/Basic**: fallbacks only (rules/templates/default hints)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Architecture
+- Laravel backend (API-first)
+- REST API as the only interface (web/mobile ready)
+- AI integration: OpenAI Chat Completions
+- Paywall by plan tiers (feature flags / access checks)
 
-## Code of Conduct
+## API-first approach
+- Auth and user management
+- Clients, orders/appointments, scheduling
+- Dashboard and analytics
+- AI endpoints (Pro/Elite only)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Notes
+- Designed for scale with a mobile client in mind
+- AI features are isolated and gracefully degrade to fallbacks
