@@ -89,3 +89,40 @@ Availability:
 ## Notes
 - Designed for scale with a mobile client in mind
 - AI features are isolated and gracefully degrade to fallbacks
+
+## Docker setup
+
+Project includes Docker for local development with:
+- `app` (PHP 8.3 FPM + Composer)
+- `nginx` (HTTP server on `http://localhost:8080`)
+- `db` (PostgreSQL 16)
+- `redis` (Redis 7)
+- `vite` (frontend dev server on `http://localhost:5173`)
+
+### Quick start
+
+1. Create env file:
+```bash
+cp .env.example .env
+```
+2. Start containers:
+```bash
+docker compose up -d --build
+```
+3. Run migrations:
+```bash
+docker compose exec app php artisan migrate
+```
+4. Generate app key (if needed):
+```bash
+docker compose exec app php artisan key:generate
+```
+
+### Useful commands
+
+```bash
+docker compose logs -f app
+docker compose exec app php artisan test
+docker compose exec app php artisan queue:work
+docker compose down
+```
