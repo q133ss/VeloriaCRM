@@ -76,7 +76,7 @@ if (typeof TemplateCustomizer !== 'undefined') {
     defaultPrimaryColor: '#FF00FC',
     // defaultPrimaryColor: '#D11BB4',
     // defaultSkin: 1,
-    // defaultTheme: 'system',
+    defaultTheme: 'system',
     // defaultSemiDark: true,
     // defaultContentLayout: 'wide',
     // defaultHeaderType: 'static',

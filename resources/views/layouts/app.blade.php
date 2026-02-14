@@ -5,7 +5,7 @@
     class="layout-navbar-fixed layout-menu-fixed layout-compact"
     dir="ltr"
     data-skin="default"
-    data-bs-theme="light"
+    data-bs-theme="system"
     data-assets-path="/assets/"
     data-template="vertical-menu-template-starter"
     data-pusher-key="{{ config('broadcasting.connections.pusher.key') }}"
@@ -205,7 +205,7 @@
                                 href="javascript:void(0);"
                                 data-bs-toggle="dropdown">
                                 <i class="icon-base ri ri-sun-line icon-22px theme-icon-active"></i>
-                                <span class="d-none ms-2" id="nav-theme-text">Toggle theme</span>
+                                <span class="d-none ms-2" id="nav-theme-text">{{ __('navigation.theme') }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="nav-theme-text">
                                 <li>
@@ -214,7 +214,7 @@
                                         class="dropdown-item align-items-center active"
                                         data-bs-theme-value="light"
                                         aria-pressed="false">
-                                        <span><i class="icon-base ri ri-sun-line icon-22px me-3" data-icon="sun-line"></i>Light</span>
+                                        <span><i class="icon-base ri ri-sun-line icon-22px me-3" data-icon="sun-line"></i>{{ __('navigation.themes.light') }}</span>
                                     </button>
                                 </li>
                                 <li>
@@ -225,7 +225,7 @@
                                         aria-pressed="true">
                         <span
                         ><i class="icon-base ri ri-moon-clear-line icon-22px me-3" data-icon="moon-clear-line"></i
-                            >Dark</span
+                            >{{ __('navigation.themes.dark') }}</span
                         >
                                     </button>
                                 </li>
@@ -237,7 +237,7 @@
                                         aria-pressed="false">
                         <span
                         ><i class="icon-base ri ri-computer-line icon-22px me-3" data-icon="computer-line"></i
-                            >System</span
+                            >{{ __('navigation.themes.system') }}</span
                         >
                                     </button>
                                 </li>
