@@ -3,6 +3,7 @@
 use App\Models\MarketingCampaign;
 use App\Models\Setting;
 use App\Services\Marketing\MarketingCampaignService;
+use App\Services\Telegram\TelegramBookingBotService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -55,4 +56,25 @@ Artisan::command('marketing:dispatch-scheduled', function () {
     $this->info("Dispatched {$processed} scheduled campaigns.");
 })->purpose('Dispatch scheduled marketing campaigns');
 
+Artisan::command('telegram:poll-booking {--once} {--timeout=10} {--sleep=1}', function () {
+    /** @var TelegramBookingBotService $service */
+    $service = app(TelegramBookingBotService::class);
+    $once = (bool) $this->option('once');
+    $timeout = max(0, (int) $this->option('timeout'));
+    $sleepSeconds = max(0, (int) $this->option('sleep'));
+
+    do {
+        $service->pollOnce($timeout);
+
+        if ($once) {
+            break;
+        }
+
+        if ($sleepSeconds > 0) {
+            sleep($sleepSeconds);
+        }
+    } while (true);
+})->purpose('Poll Telegram bots and create booking requests from chat');
+
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
+Schedule::command('telegram:poll-booking --once --timeout=1')->everyMinute();

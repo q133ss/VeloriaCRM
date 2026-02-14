@@ -17,6 +17,35 @@ services:
     networks:
       - veloria
 
+  telegram_polling:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: veloria_telegram_polling
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - vendor:/var/www/html/vendor
+    command: >
+      sh -lc "
+      until [ -f vendor/autoload.php ]; do
+        echo 'Waiting for vendor/autoload.php...';
+        sleep 2;
+      done;
+      php artisan optimize:clear;
+      php artisan telegram:poll-booking --timeout=10 --sleep=1
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - veloria
+
   nginx:
     image: nginx:1.27-alpine
     container_name: veloria_nginx

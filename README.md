@@ -90,6 +90,22 @@ Availability:
 - Designed for scale with a mobile client in mind
 - AI features are isolated and gracefully degrade to fallbacks
 
+## Telegram booking bot (polling)
+
+The bot uses polling and starts working after you set `Settings -> Integrations -> Telegram -> Bot token`.
+
+With Docker, polling is started automatically on `docker compose up` by the `telegram_polling` service.
+
+Run polling locally (requires `php` in PATH):
+```bash
+php artisan telegram:poll-booking --timeout=10 --sleep=1
+```
+
+Run polling in Docker:
+```bash
+docker compose exec app php artisan telegram:poll-booking --timeout=10 --sleep=1
+```
+
 ## Docker setup
 
 Project includes Docker for local development with:

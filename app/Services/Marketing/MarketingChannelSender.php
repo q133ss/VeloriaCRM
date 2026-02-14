@@ -29,6 +29,9 @@ class MarketingChannelSender
             case 'sms':
                 $this->sendSms($settings, $recipient, $content);
                 break;
+            case 'telegram':
+                $this->sendTelegram($settings, $recipient, $content);
+                break;
             case 'whatsapp':
                 $this->sendWhatsapp($settings, $recipient, $content);
                 break;
@@ -110,6 +113,29 @@ class MarketingChannelSender
 
         if (! Arr::get($response->json(), 'messages')) {
             throw new RuntimeException('WhatsApp API did not confirm message delivery.');
+        }
+    }
+
+    protected function sendTelegram(Setting $settings, string $recipient, string $content): void
+    {
+        if (empty($settings->telegram_bot_token)) {
+            throw new RuntimeException('Telegram bot token is missing.');
+        }
+
+        $response = Http::asJson()->post(
+            sprintf('https://api.telegram.org/bot%s/sendMessage', $settings->telegram_bot_token),
+            [
+                'chat_id' => (string) $recipient,
+                'text' => $content,
+            ]
+        );
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Telegram request failed: ' . $response->body());
+        }
+
+        if (! Arr::get($response->json(), 'ok')) {
+            throw new RuntimeException('Telegram API did not confirm message delivery.');
         }
     }
 }
