@@ -313,7 +313,10 @@ document.getElementById('formAuthentication').addEventListener('submit', async f
         });
         return;
     }
-    window.location.href = '/login';
+    if (result.token) {
+        document.cookie = 'token=' + result.token + '; path=/';
+    }
+    window.location.href = '/dashboard';
 });
 </script>
 </body>

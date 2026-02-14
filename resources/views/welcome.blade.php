@@ -88,6 +88,16 @@
                 border-color: var(--brand);
                 color: var(--brand);
             }
+            .btn-danger {
+                border: 1px solid #f2c8cf;
+                background: #fff5f7;
+                color: #bb2d3b;
+            }
+
+            .btn-danger:hover {
+                border-color: #bb2d3b;
+                color: #bb2d3b;
+            }
 
             main {
                 flex: 1;
@@ -169,8 +179,13 @@
         <header>
             <div class="logo">VeloriaCRM</div>
             <div class="actions">
-                <a href="{{ url('/login') }}" class="btn btn-secondary">Войти</a>
-                <a href="{{ url('/register') }}" class="btn btn-primary">Создать аккаунт</a>
+                @if(!empty($isAuthenticated))
+                    <a href="{{ url('/dashboard') }}" class="btn btn-primary">{{ __('menu.dashboard') }}</a>
+                    <button type="button" class="btn btn-danger" data-welcome-logout>{{ __('navigation.logout') }}</button>
+                @else
+                    <a href="{{ url('/login') }}" class="btn btn-secondary">{{ __('auth.login') }}</a>
+                    <a href="{{ url('/register') }}" class="btn btn-primary">{{ __('auth.create_account') }}</a>
+                @endif
             </div>
         </header>
         <main>
@@ -183,8 +198,13 @@
                         предлагает апсейлы и микро-обучение по трендам.
                     </p>
                     <div class="actions">
-                        <a href="{{ url('/register') }}" class="btn btn-primary">Начать бесплатно</a>
-                        <a href="{{ url('/login') }}" class="btn btn-secondary">У меня уже есть аккаунт</a>
+                        @if(!empty($isAuthenticated))
+                            <a href="{{ url('/dashboard') }}" class="btn btn-primary">{{ __('menu.dashboard') }}</a>
+                            <button type="button" class="btn btn-danger" data-welcome-logout>{{ __('navigation.logout') }}</button>
+                        @else
+                            <a href="{{ url('/register') }}" class="btn btn-primary">{{ __('auth.create_account') }}</a>
+                            <a href="{{ url('/login') }}" class="btn btn-secondary">{{ __('auth.login') }}</a>
+                        @endif
                     </div>
                 </div>
                 <div class="features">
@@ -206,5 +226,55 @@
         <footer>
             © {{ date('Y') }} VeloriaCRM. Подходит для мастеров маникюра, визажистов, парикмахеров и всех, кто ценит время.
         </footer>
+        <script>
+            (function () {
+                var logoutButtons = document.querySelectorAll('[data-welcome-logout]');
+                if (!logoutButtons.length) {
+                    return;
+                }
+
+                function getCookie(name) {
+                    var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+                    return match ? match[1] : null;
+                }
+
+                function deleteCookie(name) {
+                    document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+                    document.cookie = name + '=; path=/; Max-Age=0;';
+                }
+
+                function logout() {
+                    var headers = {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept-Language': document.documentElement.lang || 'en'
+                    };
+
+                    var token = getCookie('token');
+                    if (token) {
+                        headers['Authorization'] = 'Bearer ' + token;
+                    }
+
+                    fetch('/api/v1/logout', {
+                        method: 'POST',
+                        headers: headers
+                    }).finally(function () {
+                        deleteCookie('token');
+                        window.location.href = '/';
+                    });
+                }
+
+                logoutButtons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        if (button.disabled) {
+                            return;
+                        }
+                        button.disabled = true;
+                        logout();
+                    });
+                });
+            })();
+        </script>
     </body>
 </html>
+

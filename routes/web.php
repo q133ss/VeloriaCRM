@@ -4,11 +4,14 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LocaleController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('set.locale')->group(function () {
     Route::get('/', function () {
-        return view('welcome');
+        return view('welcome', [
+            'isAuthenticated' => Auth::guard('sanctum')->check(),
+        ]);
     });
 
     Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');

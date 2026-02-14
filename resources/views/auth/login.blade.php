@@ -270,7 +270,7 @@ document.getElementById('formAuthentication').addEventListener('submit', async f
     if (result.token) {
         document.cookie = 'token=' + result.token + '; path=/';
     }
-    window.location.href = '/';
+    window.location.href = '/dashboard';
 });
 </script>
 </body>

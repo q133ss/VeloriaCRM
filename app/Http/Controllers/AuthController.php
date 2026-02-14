@@ -16,7 +16,12 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $user = $this->authService->registerUser($request->validated());
-        return response()->json(['user' => $user], 201);
+        $token = $user->createToken('api')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ], 201);
     }
 
     public function login(LoginRequest $request)
