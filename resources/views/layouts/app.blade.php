@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html
-    lang="en"
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     class="layout-navbar-fixed layout-menu-fixed layout-compact"
     dir="ltr"
     data-skin="default"
@@ -173,6 +173,31 @@
 
                 <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
                     <div class="navbar-nav align-items-center">
+                        <div class="nav-item dropdown me-2 me-xl-0">
+                            <a
+                                class="nav-link dropdown-toggle hide-arrow"
+                                id="nav-language"
+                                href="javascript:void(0);"
+                                data-bs-toggle="dropdown"
+                                aria-label="{{ __('navigation.language') }}">
+                                <i class="icon-base ri ri-global-line icon-22px"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="nav-language">
+                                @foreach (['ru', 'en'] as $locale)
+                                    <li>
+                                        <form method="POST" action="{{ route('locale.update') }}">
+                                            @csrf
+                                            <input type="hidden" name="locale" value="{{ $locale }}">
+                                            <button
+                                                type="submit"
+                                                class="dropdown-item d-flex align-items-center {{ app()->getLocale() === $locale ? 'active' : '' }}">
+                                                {{ __('navigation.languages.' . $locale) }}
+                                            </button>
+                                        </form>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                         <div class="nav-item dropdown me-2 me-xl-0">
                             <a
                                 class="nav-link dropdown-toggle hide-arrow"

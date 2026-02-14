@@ -22,7 +22,7 @@ use App\Http\Controllers\Api\V1\Learning\LearningPlanController;
 use App\Http\Controllers\Api\V1\Learning\LessonController as LearningLessonController;
 use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionController;
 
-Route::prefix('v1')->group(function () {
+Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('api.logout');

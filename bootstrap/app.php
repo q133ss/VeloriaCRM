@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'token.cookie' => \App\Http\Middleware\TokenFromCookie::class,
+            'set.locale' => \App\Http\Middleware\SetLocale::class,
         ]);
 
         $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);
