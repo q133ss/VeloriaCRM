@@ -2,42 +2,90 @@
 
 @section('title', 'Запись')
 
+@section('meta')
+    <style>
+        /* Order header actions: keep title full-width and move actions below it. */
+        #order-action-buttons .btn {
+            white-space: nowrap;
+        }
+
+        /* Order history timeline: prevent overly tall items and align content neatly. */
+        #order-history.timeline {
+            margin-bottom: 0;
+        }
+
+        #order-history .timeline-item {
+            align-items: flex-start;
+        }
+
+        #order-history .timeline-event {
+            min-height: auto !important;
+            padding-top: 0 !important;
+        }
+
+        #order-history .timeline-header {
+            align-items: flex-start !important;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+        }
+
+        #order-history .timeline-header small {
+            white-space: nowrap;
+        }
+
+        .timeline-indicator{
+            box-shadow: 0 0 0 1px var(--bs-body-bg)!important;
+            top: 5px!important;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div id="order-view" data-order-id="{{ $orderId ?? '' }}">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-            <div>
-                <h4 class="mb-1" id="order-title">Запись</h4>
-                <p class="text-muted mb-0" id="order-subtitle">Загрузка данных...</p>
-            </div>
-            <div class="d-flex flex-wrap gap-2" id="order-action-buttons" hidden>
-                <a href="#" class="btn btn-outline-primary" id="action-edit">
-                    <i class="ri ri-edit-line me-1"></i>
-                    Редактировать
-                </a>
-                <button type="button" class="btn btn-success" id="action-start">
-                    <i class="ri ri-play-line me-1"></i>
-                    Начать работу
-                </button>
-                <button type="button" class="btn btn-success" id="action-complete">
-                    <i class="ri ri-check-line me-1"></i>
-                    Завершить
-                </button>
-                <button type="button" class="btn btn-outline-secondary" id="action-reschedule" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
-                    <i class="ri ri-calendar-line me-1"></i>
-                    Перенести
-                </button>
-                <button type="button" class="btn btn-outline-info" id="action-remind">
-                    <i class="ri ri-mail-line me-1"></i>
-                    Напомнить
-                </button>
-                <button type="button" class="btn btn-outline-danger" id="action-cancel">
-                    <i class="ri ri-close-line me-1"></i>
-                    Отменить
-                </button>
-                <button type="button" class="btn btn-outline-secondary" id="action-analytics" data-bs-toggle="modal" data-bs-target="#analyticsModal">
-                    <i class="ri ri-bar-chart-line me-1"></i>
-                    Аналитика клиента
-                </button>
+        <div class="mb-4">
+            <div class="d-flex flex-column gap-2">
+                <div>
+                    <h4 class="mb-1" id="order-title">Запись</h4>
+                    <p class="text-muted mb-0" id="order-subtitle">Загрузка данных...</p>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-2" id="order-action-buttons" hidden>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="#" class="btn btn-outline-primary" id="action-edit">
+                            <i class="ri ri-edit-line me-1"></i>
+                            Редактировать
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" id="action-analytics" data-bs-toggle="modal" data-bs-target="#analyticsModal">
+                            <i class="ri ri-bar-chart-line me-1"></i>
+                            Аналитика клиента
+                        </button>
+                    </div>
+
+                    <div class="w-100"></div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-success" id="action-start">
+                            <i class="ri ri-play-line me-1"></i>
+                            Начать работу
+                        </button>
+                        <button type="button" class="btn btn-success" id="action-complete">
+                            <i class="ri ri-check-line me-1"></i>
+                            Завершить
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="action-reschedule" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
+                            <i class="ri ri-calendar-line me-1"></i>
+                            Перенести
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="action-remind">
+                            <i class="ri ri-mail-line me-1"></i>
+                            Напомнить
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="action-cancel">
+                            <i class="ri ri-close-line me-1"></i>
+                            Отменить
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -293,7 +341,7 @@
                 item.innerHTML = `
                     <span class="timeline-indicator"><i class="ri ri-checkbox-circle-line"></i></span>
                     <div class="timeline-event">
-                        <div class="timeline-header d-flex justify-content-between align-items-center">
+                        <div class="timeline-header d-flex justify-content-between align-items-start flex-wrap gap-2">
                             <h6 class="mb-0">${event.label}</h6>
                             <small class="text-muted">${event.time || '—'}</small>
                         </div>
@@ -523,12 +571,31 @@
             actionEdit.href = `/orders/${order.id}/edit`;
             actionButtons.hidden = false;
 
-            actionStart.disabled = !order.actions?.can_start_now;
+            const canStartNow = !!order.actions?.can_start_now;
+            actionStart.hidden = !canStartNow;
+            actionStart.disabled = !canStartNow;
             actionStart.dataset.warning = order.actions?.start_warning ? '1' : '0';
-            actionComplete.disabled = !order.actions?.can_complete;
-            actionReschedule.disabled = !order.actions?.can_reschedule;
-            actionCancel.disabled = !order.actions?.can_cancel;
-            actionRemind.disabled = !meta.reminder_message;
+
+            const canComplete = !!order.actions?.can_complete;
+            actionComplete.hidden = !canComplete;
+            actionComplete.disabled = !canComplete;
+
+            const canReschedule = !!order.actions?.can_reschedule;
+            actionReschedule.hidden = !canReschedule;
+            actionReschedule.disabled = !canReschedule;
+
+            const canCancel = !!order.actions?.can_cancel;
+            actionCancel.hidden = !canCancel;
+            actionCancel.disabled = !canCancel;
+
+            const isFinished = ['completed', 'cancelled'].includes(order.status);
+            const canRemind = !!meta.reminder_message && !isFinished && !order.is_reminder_sent;
+            actionRemind.hidden = !canRemind;
+            actionRemind.disabled = !canRemind;
+
+            const canSeeAnalytics = !!meta.has_pro_access && !!order.client?.id;
+            actionAnalytics.hidden = !canSeeAnalytics;
+            actionAnalytics.disabled = !canSeeAnalytics;
         }
 
         async function loadOrder() {
