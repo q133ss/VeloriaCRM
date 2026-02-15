@@ -44,6 +44,22 @@
 
     <link rel="stylesheet" href="/assets/vendor/css/core.css" />
     <link rel="stylesheet" href="/assets/css/demo.css" />
+    <style>
+        /* Ensure notification counter badge sits neatly on the bell icon across themes and screen sizes. */
+        .navbar .navbar-notifications-badge {
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            line-height: 1;
+            transform: translate(35%, -35%);
+            box-shadow: 0 0 0 2px rgba(var(--bs-body-bg-rgb, 255, 255, 255), 1);
+            pointer-events: none;
+        }
+    </style>
 
     <!-- Vendors CSS -->
 
@@ -255,7 +271,7 @@
                             >
                                 <i class="icon-base ri ri-notification-3-line icon-22px"></i>
                                 <span
-                                    class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle d-none"
+                                    class="badge rounded-pill bg-danger position-absolute top-0 end-0 d-none navbar-notifications-badge"
                                     data-notifications-count
                                 >0</span>
                             </a>

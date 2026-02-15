@@ -163,12 +163,38 @@
                     },
                     body: JSON.stringify({ ids: [] }),
                 })
+                    .then(() => syncNavbarUnreadBadge(0))
                     .then(() => loadData())
                     .finally(() => {
                         if (markAllBtn) {
                             markAllBtn.disabled = false;
                         }
                     });
+            };
+
+            const syncNavbarUnreadBadge = (count) => {
+                const badge = document.querySelector('[data-notifications-count]');
+                if (!badge) return;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : String(count);
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            };
+
+            // When user opens the notifications page, consider them "read" and reset the navbar counter.
+            const markAllOnVisit = () => {
+                return fetch('/api/v1/notifications/mark-as-read', {
+                    method: 'POST',
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ids: [] }),
+                })
+                    .then(() => syncNavbarUnreadBadge(0))
+                    .catch(() => {});
             };
 
             if (searchInput) {
@@ -188,7 +214,7 @@
 
             paginationWrapper?.classList.toggle('d-none', false);
 
-            loadData();
+            markAllOnVisit().finally(() => loadData());
         });
     </script>
 @endpush
