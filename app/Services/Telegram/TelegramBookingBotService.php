@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Booking\AvailabilityService;
 use App\Services\Marketing\MarketingChannelSender;
 use App\Services\NotificationService;
 use App\Services\OrderService;
@@ -30,6 +31,7 @@ class TelegramBookingBotService
         private readonly NotificationService $notifications,
         private readonly MarketingChannelSender $channelSender,
         private readonly OrderService $orderService,
+        private readonly AvailabilityService $availability,
     ) {
     }
 
@@ -1012,63 +1014,14 @@ class TelegramBookingBotService
     protected function availableSlotsForDate(User $master, Setting $setting, Service $service, string $date): array
     {
         $timezone = $master->timezone ?? config('app.timezone');
-        $day = Carbon::parse($date, $timezone)->startOfDay();
-        $dayKey = strtolower($day->format('D'));
-        $serviceDuration = (int) ($service->duration_min ?? 60);
 
-        $workHours = $setting->work_hours ?? [];
-        $slots = collect(is_array($workHours) ? Arr::get($workHours, $dayKey, []) : [])
-            ->filter(fn ($slot) => is_string($slot) && preg_match('/^\d{2}:\d{2}$/', $slot))
-            ->values();
-
-        if ($slots->isEmpty()) {
-            return [];
-        }
-
-        $startDb = $day->copy()->timezone(config('app.timezone'));
-        $endDb = $day->copy()->endOfDay()->timezone(config('app.timezone'));
-
-        $orders = Order::query()
-            ->where('master_id', $master->id)
-            ->whereBetween('scheduled_at', [$startDb, $endDb])
-            ->whereNotIn('status', ['cancelled', 'no_show'])
-            ->get(['scheduled_at', 'services']);
-
-        $busy = $orders->map(function (Order $order) use ($timezone) {
-            $start = $order->scheduled_at?->copy()->timezone($timezone);
-            if (! $start) {
-                return null;
-            }
-
-            $duration = collect($order->services ?? [])
-                ->sum(fn ($item) => (int) Arr::get($item, 'duration', 0));
-            $duration = $duration > 0 ? $duration : 60;
-
-            return [
-                'start' => $start,
-                'end' => $start->copy()->addMinutes($duration),
-            ];
-        })->filter()->values();
-
-        $now = Carbon::now($timezone);
-
-        return $slots->filter(function (string $slot) use ($day, $serviceDuration, $busy, $now) {
-            $candidateStart = Carbon::createFromFormat('Y-m-d H:i', $day->format('Y-m-d') . ' ' . $slot, $day->getTimezone());
-
-            if ($candidateStart->lessThanOrEqualTo($now->copy()->addMinutes(5))) {
-                return false;
-            }
-
-            $candidateEnd = $candidateStart->copy()->addMinutes($serviceDuration);
-
-            foreach ($busy as $interval) {
-                if ($candidateStart->lt($interval['end']) && $candidateEnd->gt($interval['start'])) {
-                    return false;
-                }
-            }
-
-            return true;
-        })->values()->all();
+        return $this->availability->availableSlotsForDate(
+            $master->id,
+            $service,
+            $date,
+            $setting,
+            $timezone,
+        );
     }
 
     protected function extractTelegramUser(mixed $payload): array
@@ -1140,4 +1093,3 @@ class TelegramBookingBotService
         return 'telegram:booking:session:' . hash('sha256', $token) . ':' . $chatId;
     }
 }
-

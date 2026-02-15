@@ -40,6 +40,7 @@ return [
     'social_login_failed' => 'Не удалось авторизоваться через :provider. Попробуйте еще раз.',
     'social_login_email_missing' => 'Не удалось получить email от :provider. Пожалуйста, завершите регистрацию вручную.',
     'social_login_not_configured' => 'Вход через :provider временно недоступен. Выберите другой способ авторизации.',
+    'unauthorized' => 'Не авторизовано.',
     'providers' => [
         'vkontakte' => 'ВКонтакте',
         'yandex' => 'Яндекс',

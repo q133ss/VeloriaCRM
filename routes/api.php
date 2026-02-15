@@ -25,12 +25,27 @@ use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionControl
 Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('api.logout');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth:sanctum', 'token.user'])->name('api.logout');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('api.forgot');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('api.reset');
-    Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me'])->name('api.me');
+    Route::middleware(['auth:sanctum', 'token.user'])->get('/auth/me', [AuthController::class, 'me'])->name('api.me');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('client')->group(function () {
+        Route::post('/register', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'register']);
+        Route::post('/register/verify', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'verifyRegister']);
+        Route::post('/login', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'login']);
+        Route::post('/login/verify', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'verifyLogin']);
+
+        Route::middleware(['auth:sanctum', 'token.client'])->group(function () {
+            Route::get('/me', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'me']);
+            Route::get('/service-categories', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'categories']);
+            Route::get('/services', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'services']);
+            Route::get('/services/{service}/slots', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'slots']);
+            Route::post('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'book']);
+        });
+    });
+
+    Route::middleware(['auth:sanctum', 'token.user'])->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::post('/user/avatar', [UserController::class, 'updateAvatar']);

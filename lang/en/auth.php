@@ -53,6 +53,7 @@ return [
     'social_login_failed' => 'We could not sign you in with :provider. Please try again.',
     'social_login_email_missing' => 'We were unable to receive an email address from :provider. Please finish sign up manually.',
     'social_login_not_configured' => 'Sign in with :provider is temporarily unavailable. Please choose another option.',
+    'unauthorized' => 'Unauthorized.',
     'providers' => [
         'vkontakte' => 'VKontakte',
         'yandex' => 'Yandex',
