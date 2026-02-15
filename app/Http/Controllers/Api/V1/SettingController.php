@@ -24,6 +24,8 @@ class SettingController extends Controller
                 'timezone' => $user->timezone,
                 'time_format' => $user->time_format,
                 'telegram_id' => $user->telegram_id,
+                'avatar_url' => $user->avatar_url,
+                'initials' => $user->initials,
             ],
             'settings' => [
                 'notifications' => $settings->notification_prefs ?? [],

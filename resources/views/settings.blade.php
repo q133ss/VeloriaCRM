@@ -24,7 +24,10 @@
             <div class="card mb-6">
                 <div class="card-body">
                     <div class="d-flex align-items-start align-items-sm-center gap-6">
-                        <img src="../../assets/img/avatars/1.png" alt="user-avatar" class="d-block w-px-100 h-px-100 rounded-4" id="uploadedAvatar" />
+                        <div class="avatar w-px-100 h-px-100 rounded-4 overflow-hidden" id="uploadedAvatar">
+                            <img alt="user-avatar" class="w-100 h-100 d-none" id="uploadedAvatarImg" />
+                            <span class="avatar-initial w-100 h-100 rounded-4 bg-primary text-white fw-semibold d-flex align-items-center justify-content-center fs-2" id="uploadedAvatarInitials">?</span>
+                        </div>
                         <div class="button-wrapper">
                             <label for="upload" class="btn btn-primary me-3 mb-4" tabindex="0">
                                 <span class="d-none d-sm-block">{{ __('settings.upload_photo') }}</span>
@@ -400,6 +403,8 @@
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
         form['map_point[lng]'].value = data.settings.map_point?.lng || '';
         form.reminder_message.value = (data.settings && data.settings.reminder_message) || '';
+
+        setSettingsAvatar(data.user.avatar_url || null, data.user.initials || computeInitials(form.name.value));
     }
     loadSettings();
     document.getElementById('add-holiday').addEventListener('click', () => addHolidayRow());
@@ -407,6 +412,32 @@
     function showMessage(type, text){
         const container = document.getElementById('form-messages');
         container.innerHTML = `<div class="alert alert-${type}" role="alert">${text}</div>`;
+    }
+
+    function computeInitials(fullName) {
+        const s = (fullName || '').trim();
+        if (!s) return '?';
+        const parts = s.split(/\s+/).filter(Boolean);
+        const first = parts[0] || '';
+        const last = parts.length > 1 ? parts[parts.length - 1] : '';
+        const a = first ? first[0].toUpperCase() : '';
+        const b = last ? last[0].toUpperCase() : '';
+        return (a + b) || '?';
+    }
+
+    function setSettingsAvatar(avatarUrl, initials) {
+        const img = document.getElementById('uploadedAvatarImg');
+        const init = document.getElementById('uploadedAvatarInitials');
+        if (avatarUrl) {
+            img.src = avatarUrl;
+            img.classList.remove('d-none');
+            init.classList.add('d-none');
+        } else {
+            img.removeAttribute('src');
+            img.classList.add('d-none');
+            init.textContent = initials || '?';
+            init.classList.remove('d-none');
+        }
     }
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -519,6 +550,68 @@
         form.current_password.value='';
         form.new_password.value='';
         form.new_password_confirmation.value='';
+
+        // If user changed name, update initials in settings avatar (when no image).
+        const initials = computeInitials(form.name.value);
+        const img = document.getElementById('uploadedAvatarImg');
+        if (!img || img.classList.contains('d-none')) {
+            setSettingsAvatar(null, initials);
+        }
+    });
+
+    document.getElementById('upload').addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+        if (!file) return;
+
+        const fd = new FormData();
+        fd.append('avatar', file);
+
+        const res = await fetch('/api/v1/user/avatar', {
+            method: 'POST',
+            headers: authHeaders(),
+            credentials: 'include',
+            body: fd
+        });
+
+        const result = await res.json().catch(()=>({}));
+        if (!res.ok) {
+            const msg = result.message || result.error?.message || 'Error';
+            showMessage('danger', msg);
+            return;
+        }
+
+        setSettingsAvatar(result.avatar_url, result.initials);
+        document.querySelectorAll('[data-user-avatar-img]').forEach(img => {
+            img.src = result.avatar_url;
+            img.classList.remove('d-none');
+        });
+        document.querySelectorAll('[data-user-initial]').forEach(el => el.classList.add('d-none'));
+        showMessage('success', '{{ __('settings.saved') }}');
+    });
+
+    const resetBtn = document.querySelector('.account-image-reset');
+    if (resetBtn) resetBtn.addEventListener('click', async () => {
+        const res = await fetch('/api/v1/user/avatar', {
+            method: 'DELETE',
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+
+        const result = await res.json().catch(()=>({}));
+        if (!res.ok) {
+            const msg = result.message || result.error?.message || 'Error';
+            showMessage('danger', msg);
+            return;
+        }
+
+        const form = document.getElementById('settings-form');
+        const currentName = form && form.name ? form.name.value : '';
+        setSettingsAvatar(null, result.initials || computeInitials(currentName));
+        document.querySelectorAll('[data-user-avatar-img]').forEach(img => {
+            img.removeAttribute('src');
+            img.classList.add('d-none');
+        });
+        document.querySelectorAll('[data-user-initial]').forEach(el => el.classList.remove('d-none'));
     });
 
     document.getElementById('delete-form').addEventListener('submit', async (e) => {

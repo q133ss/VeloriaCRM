@@ -33,6 +33,8 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
+        Route::post('/user/avatar', [UserController::class, 'updateAvatar']);
+        Route::delete('/user/avatar', [UserController::class, 'deleteAvatar']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
         Route::delete('/user', [UserController::class, 'destroy']);
         Route::get('/clients/options', [ApiClientController::class, 'options']);

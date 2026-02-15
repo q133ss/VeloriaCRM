@@ -287,9 +287,8 @@
                                 href="javascript:void(0);"
                                 data-bs-toggle="dropdown">
                                 <div class="avatar avatar-online">
-                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>
-                                        ?
-                                    </span>
+                                    <img class="w-100 h-100 rounded-circle d-none" alt="user-avatar" data-user-avatar-img />
+                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>?</span>
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -298,9 +297,8 @@
                                         <div class="d-flex">
                                             <div class="flex-shrink-0 me-3">
                                                 <div class="avatar avatar-online">
-                                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>
-                                                        ?
-                                                    </span>
+                                                    <img class="w-100 h-100 rounded-circle d-none" alt="user-avatar" data-user-avatar-img />
+                                                    <span class="avatar-initial rounded-circle bg-primary text-white fw-semibold" data-user-initial>?</span>
                                                 </div>
                                             </div>
                                             <div class="flex-grow-1">
@@ -727,7 +725,18 @@ document.addEventListener('DOMContentLoaded', function () {
             var user = data.user || {};
             var userName = typeof user.name === 'string' ? user.name : '';
             var trimmedName = userName.trim();
-            var userInitial = trimmedName ? trimmedName.charAt(0).toUpperCase() : '?';
+            function computeInitials(fullName) {
+                var s = (typeof fullName === 'string' ? fullName : '').trim();
+                if (!s) return '?';
+                var parts = s.split(/\s+/).filter(Boolean);
+                var first = parts[0] || '';
+                var last = parts.length > 1 ? parts[parts.length - 1] : '';
+                var a = first ? first.charAt(0).toUpperCase() : '';
+                var b = last ? last.charAt(0).toUpperCase() : '';
+                return (a + b) || '?';
+            }
+
+            var userInitial = computeInitials(trimmedName);
 
             var nameTarget = document.querySelector('[data-user-name]');
             if (nameTarget) {
@@ -736,6 +745,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.querySelectorAll('[data-user-initial]').forEach(function (el) {
                 el.textContent = userInitial;
+            });
+
+            var avatarUrl = user.avatar_url || null;
+            document.querySelectorAll('[data-user-avatar-img]').forEach(function (img) {
+                if (!img) return;
+                if (avatarUrl) {
+                    img.src = avatarUrl;
+                    img.classList.remove('d-none');
+                } else {
+                    img.removeAttribute('src');
+                    img.classList.add('d-none');
+                }
+            });
+            document.querySelectorAll('[data-user-initial]').forEach(function (el) {
+                if (avatarUrl) {
+                    el.classList.add('d-none');
+                } else {
+                    el.classList.remove('d-none');
+                }
             });
 
             var slug = user.plan && user.plan.slug ? String(user.plan.slug).toLowerCase() : 'lite';
