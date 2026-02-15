@@ -142,3 +142,14 @@ docker compose exec app php artisan test
 docker compose exec app php artisan queue:work
 docker compose down
 ```
+
+## API documentation (Scramble)
+
+Install Scramble in Docker:
+```bash
+docker compose exec app composer require --dev dedoc/scramble
+docker compose exec app php artisan scramble:install
+```
+
+Open Swagger UI:
+`http://localhost:8080/docs/api`
