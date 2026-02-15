@@ -5,19 +5,13 @@
             <div class="nav-align-top">
                 <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" href="javascript:void(0);"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}</a>
+                        <a class="nav-link active" href="#settings-account"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages-account-settings-security.html"><i class="icon-base ri ri-lock-line icon-sm me-2"></i>{{ __('settings.nav_security') }}</a>
+                        <a class="nav-link" href="#settings-notifications"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages-account-settings-billing.html"><i class="icon-base ri ri-bookmark-line icon-sm me-2"></i>{{ __('settings.nav_billing') }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="pages-account-settings-notifications.html"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="pages-account-settings-connections.html"><i class="icon-base ri ri-link-m icon-sm me-2"></i>{{ __('settings.nav_connections') }}</a>
+                        <a class="nav-link" href="#settings-integrations"><i class="icon-base ri ri-link-m icon-sm me-2"></i>{{ __('settings.nav_connections') }}</a>
                     </li>
                 </ul>
             </div>
@@ -46,6 +40,10 @@
                     <form id="settings-form" onsubmit="return false">
                         <div id="form-messages"></div>
                         <div class="row mt-1 g-5">
+                            <div class="col-12" id="settings-account">
+                                <h5 class="mb-1">Основные настройки</h5>
+                                <p class="text-muted mb-0">Основные настройки вашего аккаунта: контакты, часовой пояс и пароль.</p>
+                            </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" class="form-control" id="name" name="name" />
@@ -83,6 +81,10 @@
                                     <label for="time_format">{{ __('settings.time_format') }}</label>
                                 </div>
                             </div>
+                            <div class="col-12">
+                                <h6 class="mb-1">Пароль</h6>
+                                <p class="text-muted mb-0">Заполните поля ниже, только если хотите изменить пароль.</p>
+                            </div>
                             <div class="col-md-4">
                                 <div class="form-floating form-floating-outline">
                                     <input type="password" class="form-control" id="current_password" name="current_password" />
@@ -101,23 +103,31 @@
                                     <label for="new_password_confirmation">{{ __('settings.password_confirmation') }}</label>
                                 </div>
                             </div>
+                            <div class="col-12" id="settings-notifications">
+                                <hr class="my-2">
+                                <h5 class="mt-2 mb-1">Уведомления</h5>
+                                <p class="text-muted mb-0">Укажите, через какие каналы вам присылать уведомления о новых записях, сообщениях и других событиях.</p>
+                            </div>
                             <div class="col-md-4">
                                 <div class="form-check form-switch mt-4">
                                     <input class="form-check-input" type="checkbox" id="notif-email" />
                                     <label class="form-check-label" for="notif-email">{{ __('settings.email_notifications') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Письма будут приходить на email из основного блока.</small>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check form-switch mt-4">
                                     <input class="form-check-input" type="checkbox" id="notif-telegram" />
                                     <label class="form-check-label" for="notif-telegram">{{ __('settings.telegram_notifications') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Канал доступен после подключения Telegram в интеграциях.</small>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check form-switch mt-4">
                                     <input class="form-check-input" type="checkbox" id="notif-sms" />
                                     <label class="form-check-label" for="notif-sms">{{ __('settings.sms_notifications') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Нужен телефон и подключенный SMS-провайдер (SmsAero).</small>
                             </div>
                             <div class="col-12">
                                 <div class="form-floating form-floating-outline">
@@ -132,34 +142,48 @@
                                 <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
                             </div>
                             <div class="col-12">
-                                <h5 class="mt-4">{{ __('settings.integrations') }}</h5>
+                                <hr class="my-2">
+                                <div id="settings-integrations">
+                                    <h5 class="mt-4 mb-1">Интеграции</h5>
+                                    <p class="text-muted mb-0">Подключите сервисы, чтобы автоматически отправлять клиентам напоминания, письма, сообщения и принимать предоплату.</p>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <h6 class="mt-2 mb-1">SmsAero (SMS)</h6>
+                                <p class="text-muted mb-0">Укажите API-ключ от SmsAero, чтобы отправлять клиентам SMS-сообщения и напоминания. Получить ключ можно в кабинете: <a href="https://smsaero.ru/" target="_blank" rel="noopener">smsaero.ru</a>.</p>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="email" class="form-control" id="smsaero_email" name="integrations[smsaero][email]" />
                                     <label for="smsaero_email">{{ __('settings.smsaero_email') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Email аккаунта SmsAero (если используете).</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="smsaero_api_key" name="integrations[smsaero][api_key]" />
                                     <label for="smsaero_api_key">{{ __('settings.smsaero_api_key') }}</label>
                                 </div>
+                                <small class="text-muted d-block">API-ключ из личного кабинета SmsAero.</small>
                             </div>
                             <div class="col-12">
+                                <hr class="my-2">
                                 <h6 class="mt-2">{{ __('settings.smtp') }}</h6>
+                                <p class="text-muted mb-0">Нужен, чтобы отправлять вашим клиентам email-уведомления и письма.</p>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="smtp_host" name="integrations[smtp][host]" />
                                     <label for="smtp_host">{{ __('settings.smtp_host') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Адрес SMTP-сервера (например, smtp.gmail.com).</small>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="number" class="form-control" id="smtp_port" name="integrations[smtp][port]" min="1" max="65535" />
                                     <label for="smtp_port">{{ __('settings.smtp_port') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Обычно 465 (SSL) или 587 (TLS).</small>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-floating form-floating-outline mb-4">
@@ -172,72 +196,92 @@
                                     </select>
                                     <label for="smtp_encryption">{{ __('settings.smtp_encryption') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Тип шифрования зависит от провайдера почты.</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="smtp_username" name="integrations[smtp][username]" />
                                     <label for="smtp_username">{{ __('settings.smtp_username') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Логин (часто это email).</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="password" class="form-control" id="smtp_password" name="integrations[smtp][password]" />
                                     <label for="smtp_password">{{ __('settings.smtp_password') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Пароль или app-password (если включена 2FA).</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="email" class="form-control" id="smtp_from_address" name="integrations[smtp][from_address]" />
                                     <label for="smtp_from_address">{{ __('settings.smtp_from_address') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Адрес отправителя, который увидят клиенты.</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="smtp_from_name" name="integrations[smtp][from_name]" />
                                     <label for="smtp_from_name">{{ __('settings.smtp_from_name') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Имя отправителя (например, название вашего кабинета/студии).</small>
                             </div>
                             <div class="col-12">
+                                <hr class="my-2">
                                 <h6 class="mt-2">{{ __('settings.whatsapp') }}</h6>
+                                <p class="text-muted mb-0">Чтобы отправлять уведомления клиентам в WhatsApp. Важно: Meta Platforms Inc признана экстремистской организацией.</p>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="whatsapp_api_key" name="integrations[whatsapp][api_key]" />
                                     <label for="whatsapp_api_key">{{ __('settings.whatsapp_api_key') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Ключ доступа провайдера WhatsApp/WhatsApp Business API.</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="whatsapp_sender" name="integrations[whatsapp][sender]" />
                                     <label for="whatsapp_sender">{{ __('settings.whatsapp_sender') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Идентификатор отправителя (номер/канал) от провайдера.</small>
                             </div>
                             <div class="col-12">
+                                <hr class="my-2">
                                 <h6 class="mt-2">{{ __('settings.telegram_notifications') }}</h6>
+                                <p class="text-muted mb-0"><strong>Записывайте клиентов автоматически через Бота TG</strong>, а также уведомляйте их сразу в Telegram. Для подключения создайте бота в <a href="https://t.me/botfather" target="_blank" rel="noopener">t.me/botfather</a>, получите токен и укажите его ниже.</p>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="telegram_bot_token" name="integrations[telegram][bot_token]" />
                                     <label for="telegram_bot_token">{{ __('settings.telegram_bot_token') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Токен бота из BotFather (храните в секрете).</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="telegram_sender" name="integrations[telegram][sender]" />
                                     <label for="telegram_sender">{{ __('settings.telegram_sender') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Имя/идентификатор отправителя (например, username бота).</small>
+                            </div>
+                            <div class="col-12">
+                                <hr class="my-2">
+                                <h6 class="mt-2 mb-1">YooKassa</h6>
+                                <p class="text-muted mb-0">Вы можете получать предоплату, если необходимо. Это удобно, когда запись не должна создаваться без оплаты: для отдельных клиентов или для всех.</p>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="yookassa_shop_id" name="integrations[yookassa][shop_id]" />
                                     <label for="yookassa_shop_id">{{ __('settings.yookassa_shop_id') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Shop ID из личного кабинета YooKassa.</small>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline mb-4">
                                     <input type="text" class="form-control" id="yookassa_secret_key" name="integrations[yookassa][secret_key]" />
                                     <label for="yookassa_secret_key">{{ __('settings.yookassa_secret_key') }}</label>
                                 </div>
+                                <small class="text-muted d-block">Секретный ключ (не публикуйте его).</small>
                             </div>
                             <div class="col-12">
                                 <h5 class="mt-4">{{ __('settings.work_settings') }}</h5>
