@@ -13,6 +13,7 @@ class ClientPortalRegisterRequest extends BaseRequest
     {
         return [
             'master_id' => ['required', 'integer', 'exists:users,id'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['required', 'string', 'regex:/^\\d{10,15}$/'],
         ];

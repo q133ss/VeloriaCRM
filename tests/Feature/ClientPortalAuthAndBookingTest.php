@@ -49,6 +49,7 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
         $registerResponse = $this->postJson('/api/v1/client/register', [
             'master_id' => $master->id,
+            'name' => 'Client',
             'email' => 'client@example.com',
             'phone' => '79518677099',
         ]);
@@ -110,6 +111,16 @@ class ClientPortalAuthAndBookingTest extends TestCase
             'status' => 'scheduled',
         ]);
 
+        $this->assertDatabaseHas('orders', [
+            'master_id' => $master->id,
+            'source' => 'client_portal',
+            'status' => 'new',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $master->id,
+        ]);
+
         // Client token must not access master endpoints.
         $this->withHeader('Authorization', 'Bearer ' . $token)->getJson('/api/v1/services')->assertStatus(401);
     }
@@ -151,5 +162,28 @@ class ClientPortalAuthAndBookingTest extends TestCase
         $verify->assertOk()
             ->assertJsonPath('data.client.email', 'client@example.com');
     }
-}
 
+    public function test_register_returns_conflict_when_client_already_exists_for_master_and_email(): void
+    {
+        $master = User::factory()->create();
+
+        Client::create([
+            'user_id' => $master->id,
+            'name' => 'Existing',
+            'email' => 'client@example.com',
+            'phone' => '79518677099',
+        ]);
+
+        Mail::fake();
+
+        $register = $this->postJson('/api/v1/client/register', [
+            'master_id' => $master->id,
+            'name' => 'Client',
+            'email' => 'client@example.com',
+            'phone' => '79518677099',
+        ]);
+
+        $register->assertStatus(409)
+            ->assertJsonPath('error.code', 'already_registered');
+    }
+}

@@ -23,6 +23,7 @@ class AuthController extends Controller
 
         $result = $this->auth->startRegister(
             (int) $validated['master_id'],
+            (string) $validated['name'],
             (string) $validated['email'],
             (string) $validated['phone'],
         );
@@ -88,4 +89,3 @@ class AuthController extends Controller
         ]);
     }
 }
-

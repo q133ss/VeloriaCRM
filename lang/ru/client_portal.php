@@ -6,6 +6,7 @@ return [
         'code_sent' => 'Код подтверждения отправлен.',
         'invalid_or_expired' => 'Неверный или истекший код подтверждения.',
         'client_not_found' => 'Клиент не найден.',
+        'already_registered' => 'Аккаунт с этим email уже существует. Пожалуйста, войдите.',
         'phone_mismatch' => 'Номер телефона не совпадает.',
         'too_many_requests' => 'Слишком много запросов. Попробуйте позже.',
     ],
@@ -16,6 +17,7 @@ return [
     ],
     'booking' => [
         'slot_unavailable' => 'Это время уже занято.',
+        'master_notification_title' => 'Новая запись (Client Portal)',
+        'master_notification_message' => 'Клиент :client записался(лась) на ":service" на :datetime.',
     ],
 ];
-

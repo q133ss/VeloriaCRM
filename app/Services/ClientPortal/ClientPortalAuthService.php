@@ -15,12 +15,23 @@ class ClientPortalAuthService extends BaseService
     private const THROTTLE_SECONDS = 60;
     private const MAX_ATTEMPTS = 5;
 
-    public function startRegister(int $masterId, string $email, string $phone): array
+    public function startRegister(int $masterId, string $name, string $email, string $phone): array
     {
         $email = $this->normalizeEmail($email);
         $phone = $this->normalizePhone($phone);
+        $name = trim($name);
 
-        return $this->startOtpFlow('register', $masterId, $email, $phone);
+        $clientExists = Client::query()
+            ->where('user_id', $masterId)
+            ->where('email', $email)
+            ->exists();
+
+        if ($clientExists) {
+            // Prevent "double registration" for the same master + email. Client must use login flow.
+            $this->throwError('already_registered', __('client_portal.auth.already_registered'), [], 409);
+        }
+
+        return $this->startOtpFlow('register', $masterId, $email, $phone, $name);
     }
 
     public function verifyRegister(string $verificationId, string $code): array
@@ -30,21 +41,23 @@ class ClientPortalAuthService extends BaseService
         $masterId = (int) $payload['master_id'];
         $email = (string) $payload['email'];
         $phone = (string) $payload['phone'];
+        $name = trim((string) ($payload['name'] ?? ''));
 
         $client = Client::query()
             ->where('user_id', $masterId)
             ->where('email', $email)
             ->first();
 
-        if ($client && $this->normalizePhone((string) $client->phone) !== $phone) {
-            $this->throwError('phone_mismatch', __('client_portal.auth.phone_mismatch'), [], 422);
+        if ($client) {
+            // If client exists, registration flow should not proceed. Ask to login.
+            $this->throwError('already_registered', __('client_portal.auth.already_registered'), [], 409);
         }
 
         $client = Client::query()->updateOrCreate(
             ['user_id' => $masterId, 'email' => $email],
             [
                 'phone' => $phone,
-                'name' => $this->deriveName($email, $phone),
+                'name' => $name !== '' ? $name : $this->deriveName($email, $phone),
             ]
         );
 
@@ -90,7 +103,7 @@ class ClientPortalAuthService extends BaseService
         return ['client' => $client, 'token' => $token];
     }
 
-    private function startOtpFlow(string $type, int $masterId, string $email, ?string $phone): array
+    private function startOtpFlow(string $type, int $masterId, string $email, ?string $phone, ?string $name = null): array
     {
         $throttleKey = 'client_portal:otp_throttle:' . sha1($type . '|' . $masterId . '|' . $email);
         if (Cache::has($throttleKey)) {
@@ -107,6 +120,7 @@ class ClientPortalAuthService extends BaseService
             'master_id' => $masterId,
             'email' => $email,
             'phone' => $phone,
+            'name' => $name,
             'code_hash' => $this->hashCode($code),
             'attempts' => 0,
         ], now()->addMinutes(self::CODE_TTL_MINUTES));
