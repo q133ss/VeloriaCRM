@@ -51,12 +51,19 @@
             margin-bottom: 0.5rem;
             font-size: clamp(1.75rem, 2vw, 2.35rem);
             line-height: 1.05;
+            color: #fff;
         }
 
         .dashboard-hero-text {
             max-width: 42rem;
             margin-bottom: 1.25rem;
             color: rgba(255, 255, 255, 0.76);
+        }
+
+        .dashboard-hero .small,
+        .dashboard-hero .dashboard-meta-pill span,
+        .dashboard-hero .dashboard-meta-pill strong {
+            color: inherit;
         }
 
         .dashboard-hero-meta {
@@ -85,6 +92,21 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.75rem;
+        }
+
+        .dashboard-secondary-button {
+            border-color: rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.82);
+            box-shadow: none;
+        }
+
+        .dashboard-secondary-button:hover,
+        .dashboard-secondary-button:focus,
+        .dashboard-secondary-button:active {
+            border-color: rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.09);
+            color: #fff;
         }
 
         .dashboard-panel,
@@ -317,6 +339,69 @@
                 var(--bs-card-bg);
         }
 
+        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button,
+        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button {
+            border-color: rgba(168, 139, 250, 0.24);
+            background: rgba(168, 139, 250, 0.08);
+            color: #d8ccff;
+        }
+
+        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button:hover,
+        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button:hover,
+        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button:focus,
+        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button:focus,
+        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button:active,
+        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button:active {
+            border-color: rgba(244, 114, 182, 0.36);
+            background: rgba(244, 114, 182, 0.12);
+            color: #fff;
+        }
+
+        [data-bs-theme="light"] .dashboard-hero {
+            background:
+                radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 28%),
+                linear-gradient(135deg, #1e2a63, #4d238a 55%, #7f2dbd);
+            box-shadow: 0 1.5rem 3rem -2rem rgba(49, 46, 129, 0.45);
+        }
+
+        [data-bs-theme="light"] .dashboard-hero::after {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        [data-bs-theme="light"] .dashboard-hero .dashboard-meta-pill {
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        [data-bs-theme="light"] .dashboard-hero .btn-outline-light {
+            border-color: rgba(255, 255, 255, 0.36);
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+
+        [data-bs-theme="light"] .dashboard-hero .btn-outline-light:hover {
+            border-color: rgba(255, 255, 255, 0.56);
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+        }
+
+        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button,
+        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button {
+            border-color: rgba(99, 102, 241, 0.22);
+            background: rgba(99, 102, 241, 0.04);
+            color: #5b5fc7;
+        }
+
+        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button:hover,
+        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button:hover,
+        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button:focus,
+        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button:focus,
+        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button:active,
+        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button:active {
+            border-color: rgba(236, 72, 153, 0.28);
+            background: rgba(236, 72, 153, 0.06);
+            color: #8b2c6d;
+        }
+
         @media (max-width: 991.98px) {
             .dashboard-hero .card-body,
             .dashboard-panel .card-body,
@@ -388,7 +473,7 @@
                                 <a href="{{ route('orders.create') }}" class="btn btn-primary">
                                     {{ __('dashboard.sections.focus.schedule.quick_book') }}
                                 </a>
-                                <a href="{{ route('calendar') }}" class="btn btn-outline-light">
+                                <a href="{{ route('calendar') }}" class="btn dashboard-secondary-button">
                                     {{ __('dashboard.sections.focus.schedule.title') }}
                                 </a>
                             </div>
@@ -425,7 +510,7 @@
                             <a href="{{ route('clients.index') }}" class="btn btn-primary">
                                 {{ __('dashboard.sections.focus.ai.fallback_action') }}
                             </a>
-                            <a href="{{ route('analytics') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('analytics') }}" class="btn dashboard-secondary-button">
                                 {{ __('dashboard.sections.finance.cta') }}
                             </a>
                         </div>
@@ -457,7 +542,7 @@
                                 <p class="dashboard-section-label">{{ __('dashboard.sections.focus.schedule.subtitle') }}</p>
                                 <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.schedule.title') }}</h2>
                             </div>
-                            <a href="{{ route('calendar') }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="{{ route('calendar') }}" class="btn dashboard-secondary-button btn-sm">
                                 {{ __('dashboard.sections.focus.schedule.title') }}
                             </a>
                         </div>
@@ -547,7 +632,7 @@
                                     <p class="dashboard-section-label">{{ __('dashboard.sections.finance.label') }}</p>
                                     <h2 class="dashboard-section-title">{{ __('dashboard.sections.finance.title') }}</h2>
                                 </div>
-                                <a href="{{ route('analytics') }}" class="btn btn-outline-secondary btn-sm">
+                                <a href="{{ route('analytics') }}" class="btn dashboard-secondary-button btn-sm">
                                     {{ __('dashboard.sections.finance.cta') }}
                                 </a>
                             </div>

@@ -115,3 +115,9 @@ SPA-запрос `/api/v1/learning/plan` (через fetch в отдельном
 - **Хранение AI-результатов.** Сейчас рекомендации кэшируются в памяти и теряются после ttl. Можно складывать в отдельную таблицу/JSON-поле с audit (`recommended_services` уже есть у orders) и учитывать дату генерации.
 - **Тесты.** Нет юнит-/фиче-тестов для AI-слоя: добавить моки HTTP и проверить фоллбеки/валидацию схем.
 
+
+## UI Verification Workflow
+- For Blade UI changes, validate the result in Docker at http://localhost:8080.
+- Before closing dashboard or layout work, verify both light and dark themes.
+- If local php is unavailable, run checks inside Docker, for example: docker compose exec app php artisan view:cache.
+
