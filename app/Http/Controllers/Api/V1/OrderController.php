@@ -86,11 +86,7 @@ class OrderController extends Controller
         $masterId = $this->currentUserId();
 
         $order = DB::transaction(function () use ($validated, $masterId) {
-            $client = $this->resolveClient(
-                $validated['client_phone'],
-                Arr::get($validated, 'client_name'),
-                Arr::get($validated, 'client_email')
-            );
+            $client = $this->resolveOrderClient($validated);
 
             $services = $this->collectServices(Arr::get($validated, 'services', []));
 
@@ -159,11 +155,7 @@ class OrderController extends Controller
         $scheduledChanged = false;
 
         DB::transaction(function () use ($validated, $order, $masterId, &$scheduledChanged) {
-            $client = $this->resolveClient(
-                $validated['client_phone'],
-                Arr::get($validated, 'client_name'),
-                Arr::get($validated, 'client_email')
-            );
+            $client = $this->resolveOrderClient($validated);
 
             $services = $this->collectServices(Arr::get($validated, 'services', []));
 
@@ -602,6 +594,11 @@ class OrderController extends Controller
     }
 
     protected function resolveQuickOrderClient(array $validated): User
+    {
+        return $this->resolveOrderClient($validated);
+    }
+
+    protected function resolveOrderClient(array $validated): User
     {
         $selectedClientId = Arr::get($validated, 'client_id');
 

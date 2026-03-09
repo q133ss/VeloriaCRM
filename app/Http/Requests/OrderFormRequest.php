@@ -19,7 +19,8 @@ class OrderFormRequest extends BaseRequest
         $userId = $this->user('sanctum')?->id ?? 0;
 
         return [
-            'client_phone' => ['required', 'string', 'max:20', new PhoneNumberRule()],
+            'client_id' => ['nullable', 'integer', 'exists:users,id'],
+            'client_phone' => ['nullable', 'required_without:client_id', 'string', 'max:20', new PhoneNumberRule()],
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
             'scheduled_at' => ['required', 'date'],
@@ -40,7 +41,10 @@ class OrderFormRequest extends BaseRequest
     public function messages(): array
     {
         return [
+            'client_id.integer' => 'Некорректный идентификатор клиента.',
+            'client_id.exists' => 'Выбранный клиент не найден.',
             'client_phone.required' => __('orders.validation.client_phone.required'),
+            'client_phone.required_without' => 'Выберите клиентку из списка или укажите телефон новой клиентки.',
             'client_phone.string' => __('orders.validation.client_phone.string'),
             'client_phone.max' => __('orders.validation.client_phone.max'),
             'client_name.string' => __('orders.validation.client_name.string'),
