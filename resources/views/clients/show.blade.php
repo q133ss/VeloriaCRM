@@ -3,98 +3,328 @@
 @section('title', 'Клиент')
 
 @section('content')
-    <div id="client-view" data-client-id="{{ $clientId ?? '' }}">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-            <div>
-                <h4 class="mb-1" id="client-name">Клиент</h4>
-                <p class="text-muted mb-0" id="client-subtitle">Загрузка информации...</p>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-secondary" id="client-analytics-btn">
-                    <i class="ri ri-bar-chart-line me-1"></i>
-                    Аналитика клиента
-                </button>
-                <button type="button" class="btn btn-outline-info" id="client-reminder-btn" disabled>
-                    <i class="ri ri-mail-line me-1"></i>
-                    Автонапоминание
-                </button>
-                <a href="#" class="btn btn-outline-secondary" id="client-edit-link" hidden>
-                    <i class="ri ri-edit-line me-1"></i>
-                    Редактировать
-                </a>
-                <a href="{{ route('clients.index') }}" class="btn btn-outline-secondary">
-                    <i class="ri ri-arrow-go-back-line me-1"></i>
-                    К списку
-                </a>
-            </div>
-        </div>
+    <style>
+        .client-show-page {
+            --client-show-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.1);
+            --client-show-border: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            --client-show-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
 
-        <div id="client-view-alerts"></div>
+        .client-show-page .client-hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--client-show-border);
+            border-radius: 1.6rem;
+            padding: 1.5rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14), transparent 34%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+            box-shadow: var(--client-show-shadow);
+        }
 
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card mb-4">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="mb-0">Основная информация</h5>
-                        <span class="badge bg-label-info" id="client-loyalty-badge">—</span>
+        .client-show-page .client-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            filter: blur(12px);
+        }
+
+        .client-show-page .client-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .client-show-page .client-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .client-show-page .client-eyebrow i {
+            color: var(--bs-primary);
+        }
+
+        .client-show-page .hero-actions .btn {
+            white-space: nowrap;
+        }
+
+        .client-show-page .surface-card {
+            border: none;
+            border-radius: 1.35rem;
+            box-shadow: var(--client-show-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 96%, transparent);
+        }
+
+        .client-show-page .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .client-show-page .meta-item {
+            padding: 0.95rem 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .client-show-page .meta-item span {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .client-show-page .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .client-show-page .info-panel {
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .client-show-page .info-panel h6 {
+            margin-bottom: 0.8rem;
+        }
+
+        .client-show-page .info-line {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .client-show-page .badge-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .client-show-page .badge-cloud .badge {
+            border-radius: 999px;
+            padding: 0.38rem 0.68rem;
+        }
+
+        .client-show-page .stack-card + .stack-card {
+            margin-top: 1rem;
+        }
+
+        .client-show-page .risk-summary {
+            padding: 0.95rem 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .client-show-page .recommendations-shell details summary {
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .client-show-page .recommendations-shell details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .client-show-page .highlights-list li + li,
+        .client-show-page #client-risk-signals li + li,
+        .client-show-page #client-risk-suggestions li + li {
+            margin-top: 0.45rem;
+        }
+
+        .client-show-page .analytics-note {
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .client-show-page details.surface-collapse {
+            border-radius: 1.1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.02);
+        }
+
+        .client-show-page details.surface-collapse > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.25rem 0;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .client-show-page details.surface-collapse > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .client-show-page details.surface-collapse > summary::after {
+            content: 'Развернуть';
+            color: var(--bs-secondary-color);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .client-show-page details.surface-collapse[open] > summary::after {
+            content: 'Свернуть';
+        }
+
+        .client-show-page .surface-collapse-body {
+            padding-top: 1rem;
+        }
+
+        .client-show-page .soft-hidden {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .client-show-page .meta-grid,
+            .client-show-page .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <div id="client-view" class="client-show-page" data-client-id="{{ $clientId ?? '' }}">
+        <div class="d-flex flex-column gap-4">
+            <section class="client-hero">
+                <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-4">
+                    <div class="d-flex flex-column gap-3">
+                        <span class="client-eyebrow">
+                            <i class="ri ri-user-heart-line"></i>
+                            Карточка клиента
+                        </span>
+                        <div>
+                            <h1 class="mb-2" id="client-name">Клиент</h1>
+                            <p class="text-muted mb-0" id="client-subtitle">Загрузка информации...</p>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase mb-2">Контакты</h6>
-                                <p class="mb-1">
-                                    <i class="ri ri-phone-line me-1"></i>
-                                    <span id="client-phone">—</span>
-                                </p>
-                                <p class="mb-1">
-                                    <i class="ri ri-mail-line me-1"></i>
-                                    <span id="client-email">—</span>
-                                </p>
+                    <div class="hero-actions d-flex flex-column flex-sm-row gap-2 align-self-start">
+                        <button type="button" class="btn btn-outline-info" id="client-reminder-btn" disabled>
+                            <i class="ri ri-mail-line me-1"></i>
+                            Автонапоминание
+                        </button>
+                        <a href="#" class="btn btn-primary" id="client-edit-link" hidden>
+                            <i class="ri ri-edit-line me-1"></i>
+                            Редактировать
+                        </a>
+                        <a href="{{ route('clients.index') }}" class="btn btn-outline-secondary">
+                            <i class="ri ri-arrow-go-back-line me-1"></i>
+                            К списку
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <div id="client-view-alerts"></div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="surface-card p-4 stack-card">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <h2 class="h5 mb-0">Контакты и профиль</h2>
+                            <span class="badge bg-label-info" id="client-loyalty-badge">—</span>
+                        </div>
+
+                        <div class="meta-grid mb-3">
+                            <div class="meta-item">
+                                <span>Телефон</span>
+                                <strong id="client-phone">—</strong>
                             </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase mb-2">Профиль</h6>
-                                <p class="mb-1">День рождения: <span id="client-birthday">—</span></p>
-                                <p class="mb-1">Последний визит: <span id="client-last-visit">—</span></p>
-                                <p class="mb-0">Карточка обновлена: <span id="client-updated-at">—</span></p>
+                            <div class="meta-item">
+                                <span>Email</span>
+                                <strong id="client-email">—</strong>
                             </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase mb-2">Теги</h6>
-                                <div id="client-tags" class="d-flex flex-wrap gap-2"></div>
+                            <div class="meta-item">
+                                <span>Последний визит</span>
+                                <strong id="client-last-visit">—</strong>
                             </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted text-uppercase mb-2">Аллергии</h6>
-                                <div id="client-allergies" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-panel">
+                                <h6 class="text-muted text-uppercase small">Профиль</h6>
+                                <div class="info-line">
+                                    <i class="ri ri-cake-2-line text-muted"></i>
+                                    <span>День рождения: <strong id="client-birthday">—</strong></span>
+                                </div>
+                                <span id="client-updated-at" class="soft-hidden">—</span>
                             </div>
-                            <div class="col-12">
-                                <h6 class="text-muted text-uppercase mb-2">Предпочтения</h6>
-                                <div id="client-preferences" class="small"></div>
+                            <div class="info-panel">
+                                <h6 class="text-muted text-uppercase small">Заметки для общения</h6>
+                                <ul class="list-unstyled mb-0 highlights-list" id="client-highlights"></ul>
                             </div>
-                            <div class="col-12">
-                                <h6 class="text-muted text-uppercase mb-2">Заметки</h6>
-                                <p class="mb-0" id="client-notes">—</p>
+                        </div>
+                    </div>
+
+                    <div class="surface-card p-4 stack-card">
+                        <details class="surface-collapse" id="client-personalization-details">
+                            <summary>
+                                <div>
+                                    <h2 class="h5 mb-1">Персонализация</h2>
+                                    <span class="analytics-note" id="client-personalization-hint">Показываем только дополнительные детали о клиенте.</span>
+                                </div>
+                            </summary>
+                            <div class="surface-collapse-body">
+                                <div class="info-grid">
+                                    <div class="info-panel">
+                                        <h6 class="text-muted text-uppercase small">Теги</h6>
+                                        <div id="client-tags" class="badge-cloud"></div>
+                                    </div>
+                                    <div class="info-panel">
+                                        <h6 class="text-muted text-uppercase small">Аллергии</h6>
+                                        <div id="client-allergies" class="badge-cloud"></div>
+                                    </div>
+                                    <div class="info-panel">
+                                        <h6 class="text-muted text-uppercase small">Предпочтения</h6>
+                                        <div id="client-preferences" class="small"></div>
+                                    </div>
+                                    <div class="info-panel">
+                                        <h6 class="text-muted text-uppercase small">Заметки</h6>
+                                        <p class="mb-0" id="client-notes">—</p>
+                                    </div>
+                                </div>
                             </div>
+                        </details>
+                    </div>
+
+                    <div class="surface-card p-4 stack-card">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <div>
+                                <h2 class="h5 mb-0">Статистика по визитам</h2>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="client-analytics-btn">
+                                    <i class="ri ri-bar-chart-line me-1"></i>
+                                    Аналитика
+                                </button>
+                                <span class="badge bg-label-secondary">CRM</span>
+                            </div>
+                        </div>
+                        <div id="client-statistics">
+                            <p class="text-muted mb-0">Загрузка статистики...</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="mb-0">Статистика по визитам</h5>
-                        <span class="badge bg-label-secondary">CRM</span>
-                    </div>
-                    <div class="card-body" id="client-statistics">
-                        <p class="text-muted mb-0">Загрузка статистики...</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card mb-4">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="mb-0">Риски неявки</h5>
-                        <span class="badge bg-label-secondary" id="client-risk-badge">—</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted small mb-3" id="client-risk-score">Анализируем предыдущие записи клиента, чтобы подсказать, как снизить вероятность неявки.</p>
+                <div class="col-lg-4">
+                    <div class="surface-card p-4 stack-card">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <h2 class="h5 mb-0">Риск неявки</h2>
+                            <span class="badge bg-label-secondary" id="client-risk-badge">—</span>
+                        </div>
+                        <div class="risk-summary mb-3" id="client-risk-score">Анализируем предыдущие записи клиента, чтобы подсказать, как снизить вероятность неявки.</div>
                         <div class="mb-3">
                             <h6 class="fw-semibold mb-2">Сигналы</h6>
                             <ul class="list-unstyled small mb-0" id="client-risk-signals"></ul>
@@ -104,25 +334,20 @@
                             <ul class="list-unstyled small mb-0" id="client-risk-suggestions"></ul>
                         </div>
                     </div>
-                </div>
 
-                <div class="card mb-4">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="mb-0">Рекомендации ИИ</h5>
-                        <span class="badge bg-label-secondary" id="client-ai-badge">ИИ</span>
-                    </div>
-                    <div class="card-body" id="client-ai-recommendations">
-                        <p class="text-muted mb-0">Загрузка...</p>
-                    </div>
-                </div>
-
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">Заметки для коммуникации</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Используйте карточку для персонализации сообщений и рекомендаций.</p>
-                        <ul class="list-unstyled mb-0" id="client-highlights"></ul>
+                    <div class="surface-card p-4 stack-card recommendations-shell">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                            <h2 class="h5 mb-0">Рекомендации ИИ</h2>
+                            <span class="badge bg-label-secondary" id="client-ai-badge">ИИ</span>
+                        </div>
+                        <details class="surface-collapse" id="client-ai-details">
+                            <summary class="text-muted small">Показываем только то, что может помочь с удержанием и апсейлом.</summary>
+                            <div class="surface-collapse-body">
+                                <div id="client-ai-recommendations">
+                                    <p class="text-muted mb-0">Загрузка...</p>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
             </div>
@@ -211,6 +436,9 @@
             const notesEl = document.getElementById('client-notes');
             const highlightsList = document.getElementById('client-highlights');
             const statisticsContainer = document.getElementById('client-statistics');
+            const personalizationDetails = document.getElementById('client-personalization-details');
+            const personalizationHint = document.getElementById('client-personalization-hint');
+            const aiDetails = document.getElementById('client-ai-details');
             const editLink = document.getElementById('client-edit-link');
             const reminderButton = document.getElementById('client-reminder-btn');
             const analyticsButton = document.getElementById('client-analytics-btn');
@@ -379,66 +607,71 @@
                 const averageDuration = stats.average_duration ? `${stats.average_duration} мин` : '—';
                 const retention = typeof stats.retention_score === 'number' ? `${Math.round(stats.retention_score)}%` : '—';
 
-                let favoritesHtml = '<p class="text-muted small mb-0">Добавьте завершённые визиты, чтобы увидеть любимые услуги.</p>';
-                if (Array.isArray(stats.favorite_services) && stats.favorite_services.length) {
-                    favoritesHtml = '<ul class="list-unstyled small mb-0">' + stats.favorite_services.map(service => {
-                        const count = service.count ?? 0;
-                        const price = formatCurrency(service.average_price ?? 0);
-                        return `<li><strong>${service.name || 'Услуга'}</strong> — ${count} виз., ср. чек ${price}</li>`;
-                    }).join('') + '</ul>';
-                }
+                const favoriteServices = Array.isArray(stats.favorite_services) ? stats.favorite_services : [];
+                const recentServices = Array.isArray(stats.recent_services) ? stats.recent_services : [];
 
-                let recentHtml = '<p class="text-muted small mb-0">История процедур появится после визитов.</p>';
-                if (Array.isArray(stats.recent_services) && stats.recent_services.length) {
-                    recentHtml = '<ul class="list-unstyled small mb-0">' + stats.recent_services.map(item => {
-                        const price = item.price !== null && item.price !== undefined ? formatCurrency(item.price) : '—';
-                        const performedAt = item.performed_at || '—';
-                        return `<li><strong>${item.name || 'Услуга'}</strong> — ${price}, ${performedAt}</li>`;
-                    }).join('') + '</ul>';
+                const optionalPanels = [];
+                if (favoriteServices.length) {
+                    optionalPanels.push(`
+                        <div class="info-panel">
+                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Любимые услуги</h6>
+                            <ul class="list-unstyled small mb-0">${favoriteServices.map(service => {
+                                const count = service.count ?? 0;
+                                const price = formatCurrency(service.average_price ?? 0);
+                                return `<li><strong>${service.name || 'Услуга'}</strong> — ${count} виз., ср. чек ${price}</li>`;
+                            }).join('')}</ul>
+                        </div>
+                    `);
+                }
+                if (recentServices.length) {
+                    optionalPanels.push(`
+                        <div class="info-panel">
+                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Последние процедуры</h6>
+                            <ul class="list-unstyled small mb-0">${recentServices.map(item => {
+                                const price = item.price !== null && item.price !== undefined ? formatCurrency(item.price) : '—';
+                                const performedAt = item.performed_at || '—';
+                                return `<li><strong>${item.name || 'Услуга'}</strong> — ${price}, ${performedAt}</li>`;
+                            }).join('')}</ul>
+                        </div>
+                    `);
                 }
 
                 statisticsContainer.innerHTML = `
-                    <div class="d-flex flex-column gap-3">
-                        <div>
-                            <dl class="row mb-0 small">
-                                <dt class="col-6">Всего визитов</dt>
-                                <dd class="col-6 text-end">${totalOrders}</dd>
-                                <dt class="col-6">Завершено</dt>
-                                <dd class="col-6 text-end">${completed}</dd>
-                                <dt class="col-6">Отменено</dt>
-                                <dd class="col-6 text-end">${cancelled}</dd>
-                                <dt class="col-6">Не явился</dt>
-                                <dd class="col-6 text-end">${noShow}</dd>
-                                <dt class="col-6">Ближайший визит</dt>
-                                <dd class="col-6 text-end">${upcoming}</dd>
-                                <dt class="col-6">Последний визит</dt>
-                                <dd class="col-6 text-end">${lastFromOrders}</dd>
-                            </dl>
+                    <div class="meta-grid mb-3">
+                        <div class="meta-item">
+                            <span>Всего визитов</span>
+                            <strong>${totalOrders}</strong>
                         </div>
-                        <div>
-                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Финансы</h6>
+                        <div class="meta-item">
+                            <span>Средний чек</span>
+                            <strong>${averageCheck}</strong>
+                        </div>
+                        <div class="meta-item">
+                            <span>Удержание</span>
+                            <strong>${retention}</strong>
+                        </div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-panel">
+                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Визиты</h6>
+                            <ul class="list-unstyled small mb-0">
+                                <li>Завершено: <strong>${completed}</strong></li>
+                                <li>Отменено: <strong>${cancelled}</strong></li>
+                                <li>Не пришёл: <strong>${noShow}</strong></li>
+                                <li>Ближайший визит: <strong>${upcoming}</strong></li>
+                                <li>Последний визит: <strong>${lastFromOrders}</strong></li>
+                            </ul>
+                        </div>
+                        <div class="info-panel">
+                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Финансы и ритм</h6>
                             <ul class="list-unstyled small mb-0">
                                 <li>Lifetime Value: <strong>${lifetime}</strong></li>
-                                <li>Средний чек: <strong>${averageCheck}</strong></li>
                                 <li>Выручка за 90 дней: <strong>${spend90}</strong></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Поведение</h6>
-                            <ul class="list-unstyled small mb-0">
                                 <li>Средний интервал: <strong>${averageInterval}</strong></li>
                                 <li>Средняя длительность: <strong>${averageDuration}</strong></li>
-                                <li>Индекс удержания: <strong>${retention}</strong></li>
                             </ul>
                         </div>
-                        <div>
-                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Любимые услуги</h6>
-                            ${favoritesHtml}
-                        </div>
-                        <div>
-                            <h6 class="fw-semibold small text-uppercase text-muted mb-2">Последние процедуры</h6>
-                            ${recentHtml}
-                        </div>
+                        ${optionalPanels.join('')}
                     </div>
                 `;
             }
@@ -531,7 +764,7 @@
                 recommendationsContainer.innerHTML = '';
                 recommendations.forEach(function (item) {
                     const block = document.createElement('div');
-                    block.className = 'mb-3';
+                    block.className = 'info-panel mb-3';
 
                     const service = item.service || {};
                     const title = item.title || service.name || 'Рекомендация';
@@ -767,6 +1000,28 @@
                 renderBadges(allergiesContainer, client.allergies || [], 'Нет данных.');
                 preferencesContainer.innerHTML = renderPreferences(client.preferences);
                 renderHighlights(client, clientMeta.statistics || null, clientMeta.risk || null);
+
+                const hasTags = Array.isArray(client.tags) && client.tags.length;
+                const hasAllergies = Array.isArray(client.allergies) && client.allergies.length;
+                const hasPreferences = Array.isArray(client.preferences)
+                    ? client.preferences.length > 0
+                    : (client.preferences && typeof client.preferences === 'object')
+                        ? Object.keys(client.preferences).length > 0
+                        : Boolean(client.preferences);
+                const hasNotes = Boolean(client.notes);
+                const hasPersonalization = hasTags || hasAllergies || hasPreferences || hasNotes;
+
+                if (personalizationDetails) {
+                    personalizationDetails.open = hasPersonalization;
+                }
+                if (personalizationHint) {
+                    personalizationHint.textContent = hasPersonalization
+                        ? 'Раскрыли блок, потому что у клиента уже есть дополнительные детали.'
+                        : 'Блок можно не открывать, если карточка нужна только для контакта и визитов.';
+                }
+                if (aiDetails) {
+                    aiDetails.open = false;
+                }
                 renderStatistics(clientMeta.statistics || null);
                 renderRisk(clientMeta.risk || null);
 
