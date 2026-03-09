@@ -111,6 +111,217 @@
             margin: 0;
         }
 
+        .analytics-page .analytics-focus-card {
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top left, rgba(var(--bs-warning-rgb, 255, 171, 0), 0.12), transparent 30%),
+                linear-gradient(160deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.04), rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+        }
+
+        .analytics-page .analytics-section-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+        }
+
+        .analytics-page .analytics-peak-summary {
+            position: relative;
+            padding: 1.35rem;
+            border-radius: 1.35rem;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+        }
+
+        .analytics-page .analytics-peak-meta {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .analytics-page .analytics-peak-stat {
+            padding: 0.85rem 0.95rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.04);
+        }
+
+        .analytics-page .analytics-driver-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .analytics-page .analytics-driver-item,
+        .analytics-page .analytics-action-card {
+            padding: 1rem 1.05rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+        }
+
+        .analytics-page .analytics-heatmap-shell {
+            padding: 1rem;
+            border-radius: 1.35rem;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+        }
+
+        .analytics-page .analytics-heatmap-grid {
+            display: grid;
+            grid-template-columns: minmax(76px, auto) repeat(7, minmax(0, 1fr));
+            gap: 0.55rem;
+            align-items: stretch;
+        }
+
+        .analytics-page .analytics-heatmap-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.8rem;
+            padding: 0.55rem;
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--bs-secondary-color);
+        }
+
+        .analytics-page .analytics-heatmap-slot {
+            justify-content: flex-start;
+            text-align: left;
+            padding-inline: 0.2rem 0.7rem;
+        }
+
+        .analytics-page .analytics-heatmap-cell {
+            position: relative;
+            min-height: 4.6rem;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.05);
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .analytics-page .analytics-heatmap-cell:hover {
+            transform: translateY(-1px);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.28);
+            box-shadow: 0 14px 26px -22px rgba(37, 26, 84, 0.45);
+        }
+
+        .analytics-page .analytics-heatmap-cell.is-active {
+            border-color: rgba(var(--bs-warning-rgb, 255, 171, 0), 0.45);
+            box-shadow: 0 16px 30px -24px rgba(255, 171, 0, 0.45);
+        }
+
+        .analytics-page .analytics-heatmap-amount {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .analytics-page .analytics-heatmap-note {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 0.74rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .analytics-page .analytics-empty-card {
+            display: grid;
+            place-items: center;
+            min-height: 11rem;
+            padding: 1.25rem;
+            text-align: center;
+            border-radius: 1.35rem;
+            border: 1px dashed rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.12);
+            background:
+                radial-gradient(circle at top center, rgba(var(--bs-warning-rgb, 255, 171, 0), 0.1), transparent 42%),
+                rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.025);
+        }
+
+        .analytics-page .analytics-empty-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.75rem;
+            height: 2.75rem;
+            margin-bottom: 0.85rem;
+            border-radius: 999px;
+            color: #b7791f;
+            background: rgba(var(--bs-warning-rgb, 255, 171, 0), 0.16);
+        }
+
+        .analytics-page .analytics-lock-card {
+            display: grid;
+            gap: 1rem;
+            align-items: center;
+            padding: 1.35rem;
+            border-radius: 1.35rem;
+            border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), transparent 34%),
+                rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.6);
+        }
+
+        .analytics-page .analytics-lock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            color: var(--bs-primary);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .analytics-page .analytics-lock-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(240px, 0.7fr);
+            gap: 1rem;
+        }
+
+        .analytics-page .analytics-lock-preview {
+            display: grid;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .analytics-page .analytics-lock-preview-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+        }
+
+        .analytics-page .analytics-lock-preview-pill {
+            min-height: 3rem;
+            border-radius: 0.9rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.05);
+        }
+
+        html[data-bs-theme="dark"] .analytics-page .analytics-focus-card,
+        html[data-bs-theme="dark"] .analytics-page .analytics-peak-summary,
+        html[data-bs-theme="dark"] .analytics-page .analytics-driver-item,
+        html[data-bs-theme="dark"] .analytics-page .analytics-action-card,
+        html[data-bs-theme="dark"] .analytics-page .analytics-heatmap-shell,
+        html[data-bs-theme="dark"] .analytics-page .analytics-lock-card {
+            background: rgba(20, 23, 34, 0.84);
+        }
+
+        html[data-bs-theme="dark"] .analytics-page .analytics-peak-stat,
+        html[data-bs-theme="dark"] .analytics-page .analytics-heatmap-cell,
+        html[data-bs-theme="dark"] .analytics-page .analytics-lock-preview,
+        html[data-bs-theme="dark"] .analytics-page .analytics-lock-preview-pill {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
         .analytics-page details.analytics-collapse {
             border-radius: 1.25rem;
             border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
@@ -160,6 +371,39 @@
         @media (max-width: 991.98px) {
             .analytics-page .analytics-summary-grid > div {
                 width: 100%;
+            }
+
+            .analytics-page .analytics-peak-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .analytics-page .analytics-heatmap-grid {
+                grid-template-columns: minmax(64px, auto) repeat(7, minmax(52px, 1fr));
+                gap: 0.45rem;
+            }
+
+            .analytics-page .analytics-heatmap-cell {
+                min-height: 4rem;
+                padding: 0.65rem;
+            }
+
+            .analytics-page .analytics-heatmap-amount {
+                font-size: 0.82rem;
+            }
+
+            .analytics-page .analytics-lock-grid,
+            .analytics-page .analytics-lock-preview-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .analytics-page .analytics-heatmap-shell {
+                overflow-x: auto;
+            }
+
+            .analytics-page .analytics-heatmap-grid {
+                min-width: 34rem;
             }
         }
     </style>
@@ -318,7 +562,96 @@
             </div>
         </section>
 
-        <section class="row g-4">
+        <section class="analytics-card analytics-focus-card" id="analytics-peak-hours-section">
+            <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-3 mb-4">
+                <div>
+                    <span class="analytics-section-kicker">
+                        <i class="ri ri-sparkling-2-line"></i>
+                        @lang('analytics.cards.peak_hours')
+                    </span>
+                    <h5 class="mt-3 mb-1">@lang('analytics.peak_hours.title')</h5>
+                    <p class="text-muted mb-0">@lang('analytics.peak_hours.description')</p>
+                </div>
+            </div>
+
+            <div class="row g-4 align-items-stretch" id="analytics-peak-hours-ready">
+                <div class="col-xl-5">
+                    <div class="analytics-peak-summary h-100">
+                        <div class="text-muted small mb-2">@lang('analytics.labels.best_period')</div>
+                        <h3 class="mb-2" id="analytics-peak-headline">—</h3>
+                        <p class="text-muted mb-4" id="analytics-peak-summary-text">—</p>
+
+                        <div class="analytics-peak-meta">
+                            <div class="analytics-peak-stat">
+                                <div class="text-muted small mb-1">@lang('analytics.labels.best_revenue')</div>
+                                <div class="fw-semibold" id="analytics-peak-revenue">—</div>
+                            </div>
+                            <div class="analytics-peak-stat">
+                                <div class="text-muted small mb-1">@lang('analytics.labels.average_ticket_short')</div>
+                                <div class="fw-semibold" id="analytics-peak-ticket">—</div>
+                            </div>
+                            <div class="analytics-peak-stat">
+                                <div class="text-muted small mb-1">@lang('analytics.labels.appointments')</div>
+                                <div class="fw-semibold" id="analytics-peak-transactions">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-driver-list mt-3" id="analytics-peak-drivers"></div>
+
+                    <div class="analytics-action-card mt-3">
+                        <div class="text-muted small mb-1" id="analytics-peak-action-title">@lang('analytics.peak_hours.action_title')</div>
+                        <div class="fw-semibold" id="analytics-peak-action-body">—</div>
+                    </div>
+                </div>
+
+                <div class="col-xl-7">
+                    <div class="analytics-heatmap-shell">
+                        <div class="analytics-heatmap-grid" id="analytics-peak-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analytics-empty-card" id="analytics-peak-hours-empty" hidden>
+                <div>
+                    <span class="analytics-empty-icon">
+                        <i class="ri ri-time-line"></i>
+                    </span>
+                    <h6 class="mb-2" id="analytics-peak-empty-title">—</h6>
+                    <p class="text-muted mb-0" id="analytics-peak-empty-description">—</p>
+                </div>
+            </div>
+
+            <div class="analytics-lock-card" id="analytics-peak-hours-locked" hidden>
+                <div class="analytics-lock-grid">
+                    <div>
+                        <span class="analytics-lock-badge" id="analytics-smart-lock-badge-top">
+                            <i class="ri ri-vip-crown-line"></i>
+                            —
+                        </span>
+                        <h5 class="mt-3 mb-2" id="analytics-smart-lock-title-top">—</h5>
+                        <p class="text-muted mb-3" id="analytics-smart-lock-description-top">—</p>
+                        <a href="/subscription" class="btn btn-primary" id="analytics-smart-lock-link-top">
+                            —
+                        </a>
+                    </div>
+                    <div class="analytics-lock-preview" aria-hidden="true">
+                        <div class="analytics-lock-preview-row">
+                            <div class="analytics-lock-preview-pill"></div>
+                            <div class="analytics-lock-preview-pill"></div>
+                            <div class="analytics-lock-preview-pill"></div>
+                        </div>
+                        <div class="analytics-lock-preview-row">
+                            <div class="analytics-lock-preview-pill"></div>
+                            <div class="analytics-lock-preview-pill"></div>
+                            <div class="analytics-lock-preview-pill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="row g-4" id="analytics-smart-panels">
             <div class="col-xl-6">
                 <div class="analytics-card h-100">
                     <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
@@ -363,6 +696,29 @@
                         <h6 class="text-muted text-uppercase small mb-2">Клиентские сигналы</h6>
                         <div class="small mb-3 text-muted" id="analytics-persona"></div>
                         <div class="small" id="analytics-client-insights"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="analytics-card" id="analytics-smart-panels-locked" hidden>
+            <div class="analytics-lock-card">
+                <div class="analytics-lock-grid">
+                    <div>
+                        <span class="analytics-lock-badge" id="analytics-smart-lock-badge-bottom">
+                            <i class="ri ri-vip-crown-line"></i>
+                            —
+                        </span>
+                        <h5 class="mt-3 mb-2" id="analytics-smart-lock-title-bottom">—</h5>
+                        <p class="text-muted mb-3" id="analytics-smart-lock-description-bottom">—</p>
+                        <a href="/subscription" class="btn btn-primary" id="analytics-smart-lock-link-bottom">
+                            —
+                        </a>
+                    </div>
+                    <div class="analytics-lock-preview" aria-hidden="true">
+                        <div class="analytics-soft-card">AI</div>
+                        <div class="analytics-soft-card">Insights</div>
+                        <div class="analytics-soft-card">Upsell</div>
                     </div>
                 </div>
             </div>
@@ -522,6 +878,8 @@
             const funnelLabels = @json(trans('analytics.funnel'));
             const segmentLabels = @json(trans('analytics.segments'));
             const aiTexts = @json(trans('analytics.ai'));
+            const peakHoursTexts = @json(trans('analytics.peak_hours'));
+            const smartLockTexts = @json(trans('analytics.smart_lock'));
 
             const state = {
                 filters: {
@@ -566,6 +924,37 @@
             const clientInsightsEl = document.getElementById('analytics-client-insights');
             const riskDetails = document.getElementById('analytics-risk-details');
             const topDetails = document.getElementById('analytics-top-details');
+            const peakHoursReady = document.getElementById('analytics-peak-hours-ready');
+            const peakHoursEmpty = document.getElementById('analytics-peak-hours-empty');
+            const peakHeadlineEl = document.getElementById('analytics-peak-headline');
+            const peakSummaryEl = document.getElementById('analytics-peak-summary-text');
+            const peakRevenueEl = document.getElementById('analytics-peak-revenue');
+            const peakTicketEl = document.getElementById('analytics-peak-ticket');
+            const peakTransactionsEl = document.getElementById('analytics-peak-transactions');
+            const peakDriversEl = document.getElementById('analytics-peak-drivers');
+            const peakActionTitleEl = document.getElementById('analytics-peak-action-title');
+            const peakActionBodyEl = document.getElementById('analytics-peak-action-body');
+            const peakGridEl = document.getElementById('analytics-peak-grid');
+            const peakEmptyTitleEl = document.getElementById('analytics-peak-empty-title');
+            const peakEmptyDescriptionEl = document.getElementById('analytics-peak-empty-description');
+            const peakLockedEl = document.getElementById('analytics-peak-hours-locked');
+            const smartPanelsEl = document.getElementById('analytics-smart-panels');
+            const smartPanelsLockedEl = document.getElementById('analytics-smart-panels-locked');
+
+            const smartLockTargets = [
+                {
+                    badge: document.getElementById('analytics-smart-lock-badge-top'),
+                    title: document.getElementById('analytics-smart-lock-title-top'),
+                    description: document.getElementById('analytics-smart-lock-description-top'),
+                    link: document.getElementById('analytics-smart-lock-link-top')
+                },
+                {
+                    badge: document.getElementById('analytics-smart-lock-badge-bottom'),
+                    title: document.getElementById('analytics-smart-lock-title-bottom'),
+                    description: document.getElementById('analytics-smart-lock-description-bottom'),
+                    link: document.getElementById('analytics-smart-lock-link-bottom')
+                }
+            ];
 
             if (typeof window.Chart === 'undefined') {
                 console.error('Chart.js library is required for analytics charts.');
@@ -837,6 +1226,145 @@
                 });
             }
 
+            function renderPeakHours(data) {
+                if (!peakHoursReady || !peakHoursEmpty || !peakLockedEl) return;
+
+                if (data && data.status === 'locked') {
+                    peakHoursReady.hidden = true;
+                    peakHoursEmpty.hidden = true;
+                    peakLockedEl.hidden = false;
+                    return;
+                }
+
+                peakLockedEl.hidden = true;
+
+                if (!data || data.status === 'empty') {
+                    peakHoursReady.hidden = true;
+                    peakHoursEmpty.hidden = false;
+                    peakEmptyTitleEl.textContent = data && data.title ? data.title : (peakHoursTexts.empty_title || texts.no_data);
+                    peakEmptyDescriptionEl.textContent = data && data.description ? data.description : (peakHoursTexts.empty_description || '');
+                    return;
+                }
+
+                peakHoursReady.hidden = false;
+                peakHoursEmpty.hidden = true;
+
+                peakHeadlineEl.textContent = data.headline || '—';
+                peakSummaryEl.textContent = data.summary || '—';
+                peakRevenueEl.textContent = formatCurrency(data.highlight ? data.highlight.revenue : null);
+                peakTicketEl.textContent = formatCurrency(data.highlight ? data.highlight.average_ticket : null);
+                peakTransactionsEl.textContent = formatNumber(data.highlight ? data.highlight.transactions : 0);
+                peakActionTitleEl.textContent = data.action && data.action.title ? data.action.title : (peakHoursTexts.action_title || '');
+                peakActionBodyEl.textContent = data.action && data.action.body ? data.action.body : '—';
+
+                peakDriversEl.innerHTML = '';
+                (data.drivers || []).forEach(function (item) {
+                    const card = document.createElement('div');
+                    card.className = 'analytics-driver-item';
+                    const title = document.createElement('div');
+                    title.className = 'fw-semibold mb-1';
+                    title.textContent = item.title || '';
+                    const body = document.createElement('div');
+                    body.className = 'text-muted small';
+                    body.textContent = item.body || '';
+                    card.appendChild(title);
+                    card.appendChild(body);
+                    peakDriversEl.appendChild(card);
+                });
+
+                peakGridEl.innerHTML = '';
+                const highlightDay = (data.days || []).find(function (entry) {
+                    return entry.full_label === (data.highlight ? data.highlight.day_label : null);
+                });
+                const highlightSlot = (data.slots || []).find(function (entry) {
+                    return entry.label === (data.highlight ? data.highlight.slot_label : null);
+                });
+
+                const corner = document.createElement('div');
+                corner.className = 'analytics-heatmap-label';
+                peakGridEl.appendChild(corner);
+
+                (data.days || []).forEach(function (day) {
+                    const label = document.createElement('div');
+                    label.className = 'analytics-heatmap-label';
+                    label.textContent = day.label || '';
+                    label.title = day.full_label || day.label || '';
+                    peakGridEl.appendChild(label);
+                });
+
+                (data.slots || []).forEach(function (slot) {
+                    const slotLabel = document.createElement('div');
+                    slotLabel.className = 'analytics-heatmap-label analytics-heatmap-slot';
+                    slotLabel.textContent = slot.label || '';
+                    peakGridEl.appendChild(slotLabel);
+
+                    (data.days || []).forEach(function (day) {
+                        const cellData = (data.cells || []).find(function (cell) {
+                            return Number(cell.day_index) === Number(day.index) && cell.slot_key === slot.key;
+                        }) || {};
+
+                        const cell = document.createElement('div');
+                        cell.className = 'analytics-heatmap-cell';
+
+                        if (data.highlight &&
+                            highlightDay &&
+                            highlightSlot &&
+                            Number(cellData.day_index) === Number(highlightDay.index) &&
+                            cellData.slot_key === highlightSlot.key) {
+                            cell.classList.add('is-active');
+                        }
+
+                        const intensity = Math.max(0, Math.min(1, Number(cellData.intensity || 0)));
+                        cell.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02)), rgba(255, 171, 0, ' + (0.08 + intensity * 0.42).toFixed(3) + ')';
+
+                        const amount = document.createElement('span');
+                        amount.className = 'analytics-heatmap-amount';
+                        amount.textContent = cellData.transactions ? formatCurrency(cellData.revenue) : '—';
+                        cell.appendChild(amount);
+
+                        const note = document.createElement('span');
+                        note.className = 'analytics-heatmap-note';
+                        note.textContent = cellData.transactions
+                            ? formatNumber(cellData.transactions) + ' ' + (texts.appointments || '')
+                            : texts.no_data;
+                        cell.appendChild(note);
+
+                        const tooltipParts = [];
+                        if (day.full_label) tooltipParts.push(day.full_label);
+                        if (slot.label) tooltipParts.push(slot.label);
+                        if (cellData.transactions) {
+                            tooltipParts.push((texts.best_revenue || '') + ': ' + formatCurrency(cellData.revenue));
+                            tooltipParts.push((texts.average_ticket_short || '') + ': ' + formatCurrency(cellData.average_ticket));
+                        }
+                        cell.title = tooltipParts.filter(Boolean).join(' • ');
+                        peakGridEl.appendChild(cell);
+                    });
+                });
+            }
+
+            function renderSmartAccess(access) {
+                const smartAccess = access && access.smart_insights ? access.smart_insights : null;
+                const available = !smartAccess || smartAccess.available !== false;
+
+                smartLockTargets.forEach(function (target) {
+                    if (!target.badge || !target.title || !target.description || !target.link) return;
+                    target.badge.innerHTML = '<i class="ri ri-vip-crown-line"></i>' + (smartAccess && smartAccess.badge ? smartAccess.badge : smartLockTexts.badge);
+                    target.title.textContent = smartAccess && smartAccess.title ? smartAccess.title : smartLockTexts.title;
+                    target.description.textContent = smartAccess && smartAccess.description ? smartAccess.description : smartLockTexts.description;
+                    target.link.textContent = smartAccess && smartAccess.cta ? smartAccess.cta : smartLockTexts.cta;
+                    target.link.href = smartAccess && smartAccess.upgrade_url ? smartAccess.upgrade_url : '/subscription';
+                });
+
+                if (smartPanelsEl && smartPanelsLockedEl) {
+                    smartPanelsEl.hidden = !available;
+                    smartPanelsLockedEl.hidden = available;
+                }
+
+                if (available && peakLockedEl) {
+                    peakLockedEl.hidden = true;
+                }
+            }
+
             function renderCharts(data) {
                 if (!data || !data.revenue_trend || !data.service_share) {
                     return;
@@ -990,6 +1518,8 @@
                         const data = payload.data || {};
                         const meta = payload.meta || {};
 
+                        renderSmartAccess(meta.access || null);
+
                         if (meta.filters && meta.filters.groupings) {
                             populateGroupings(meta.filters.groupings);
                         }
@@ -1019,6 +1549,7 @@
                             const totalCurrent = formatCurrency(data.financial.revenue_trend ? data.financial.revenue_trend.current_total : 0);
                             const totalPrevious = formatCurrency(data.financial.revenue_trend ? data.financial.revenue_trend.previous_total : 0);
                             revenueTrendSummary.textContent = aiTexts.revenue_trend.replace(':current', totalCurrent).replace(':previous', totalPrevious);
+                            renderPeakHours(data.financial.peak_hours || null);
                             renderInsights(financialInsightsEl, data.financial.insights || []);
                         }
 

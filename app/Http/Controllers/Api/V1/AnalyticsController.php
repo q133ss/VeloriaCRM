@@ -36,6 +36,8 @@ class AnalyticsController extends Controller
     public function overview(AnalyticsRequest $request): JsonResponse
     {
         $userId = $this->currentUserId();
+        $hasEliteAccess = $this->userHasEliteAccess();
+        $activePlanSlug = $this->activePlanSlug();
         $validated = $request->validated();
         $grouping = $validated['grouping'] ?? 'day';
         $requestedSections = collect((array) $request->query('sections', []))
@@ -121,6 +123,9 @@ class AnalyticsController extends Controller
         $topClients = $this->resolveTopClients($currentRevenueTransactions);
 
         $serviceShare = $this->buildServiceShare($currentRevenueTransactions, $currentAppointments, $services);
+        $peakHours = $hasEliteAccess
+            ? $this->buildPeakHoursInsight($currentRevenueTransactions, $locale, $timezone)
+            : $this->lockedSmartInsightsPayload();
         $revenueTrend = $this->buildRevenueTrend(
             $currentRevenueTransactions,
             $previousRevenueTransactions,
@@ -132,38 +137,45 @@ class AnalyticsController extends Controller
             $locale
         );
 
-        $financialInsights = $this->buildFinancialInsights($serviceShare, $currentRevenue, $servicesRevenue, $avgTicketDelta);
-        $clientInsights = $this->buildClientInsights($segments, $retentionRate, $riskClients, $ltv);
-        $persona = $this->buildClientPersona($clients, $services, $revenueTransactions);
+        $financialInsights = $hasEliteAccess
+            ? $this->buildFinancialInsights($serviceShare, $currentRevenue, $servicesRevenue, $avgTicketDelta)
+            : [];
+        $clientInsights = $hasEliteAccess
+            ? $this->buildClientInsights($segments, $retentionRate, $riskClients, $ltv)
+            : [];
+        $persona = $hasEliteAccess
+            ? $this->buildClientPersona($clients, $services, $revenueTransactions)
+            : [];
 
-        $cacheKey = $this->insightsCacheKey($userId, $from, $to, $compareFrom, $compareTo);
-        $aiInsights = Cache::remember($cacheKey, now()->addHours(6), function () use (
-            $currentRevenue,
-            $revenueDelta,
-            $retentionRate,
-            $avgTicketCurrent,
-            $segments,
-            $riskClients,
-            $serviceShare,
-            $ltv,
-            $transactionsCurrent,
-            $funnel,
-            $persona
-        ) {
-            return $this->generateAiInsights([
-                'revenue' => $currentRevenue,
-                'revenue_delta' => $revenueDelta,
-                'retention_rate' => $retentionRate,
-                'average_ticket' => $avgTicketCurrent,
-                'segments' => $segments,
-                'risk_clients' => $riskClients->take(20)->values()->toArray(),
-                'service_share' => $serviceShare,
-                'ltv' => $ltv,
-                'transactions' => $transactionsCurrent,
-                'funnel' => $funnel,
-                'persona' => $persona,
-            ]);
-        });
+        $aiInsights = $hasEliteAccess
+            ? Cache::remember($this->insightsCacheKey($userId, $from, $to, $compareFrom, $compareTo), now()->addHours(6), function () use (
+                $currentRevenue,
+                $revenueDelta,
+                $retentionRate,
+                $avgTicketCurrent,
+                $segments,
+                $riskClients,
+                $serviceShare,
+                $ltv,
+                $transactionsCurrent,
+                $funnel,
+                $persona
+            ) {
+                return $this->generateAiInsights([
+                    'revenue' => $currentRevenue,
+                    'revenue_delta' => $revenueDelta,
+                    'retention_rate' => $retentionRate,
+                    'average_ticket' => $avgTicketCurrent,
+                    'segments' => $segments,
+                    'risk_clients' => $riskClients->take(20)->values()->toArray(),
+                    'service_share' => $serviceShare,
+                    'ltv' => $ltv,
+                    'transactions' => $transactionsCurrent,
+                    'funnel' => $funnel,
+                    'persona' => $persona,
+                ]);
+            })
+            : $this->lockedSmartInsightsPayload();
 
         $clientsPayload = [
             'funnel' => $funnel,
@@ -201,6 +213,7 @@ class AnalyticsController extends Controller
             'financial' => [
                 'revenue_trend' => $revenueTrend,
                 'service_share' => $serviceShare,
+                'peak_hours' => $peakHours,
                 'insights' => $financialInsights,
             ],
             'clients' => $clientsPayload,
@@ -234,6 +247,18 @@ class AnalyticsController extends Controller
                     'excel' => null,
                 ],
                 'included_sections' => $requestedSections->all(),
+                'access' => [
+                    'smart_insights' => [
+                        'available' => $hasEliteAccess,
+                        'current_plan' => $activePlanSlug,
+                        'required_plan' => 'elite',
+                        'upgrade_url' => url('/subscription'),
+                        'title' => trans('analytics.smart_lock.title'),
+                        'description' => trans('analytics.smart_lock.description'),
+                        'cta' => trans('analytics.smart_lock.cta'),
+                        'badge' => trans('analytics.smart_lock.badge'),
+                    ],
+                ],
             ],
         ]);
     }
@@ -311,6 +336,51 @@ class AnalyticsController extends Controller
         }
 
         return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    protected function userHasEliteAccess(): bool
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->plans()
+            ->whereIn('plans.name', ['elite', 'Elite', 'ELITE'])
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->exists();
+    }
+
+    protected function activePlanSlug(): string
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if (! $user) {
+            return 'lite';
+        }
+
+        $plan = $user->plans()
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->orderByDesc('plan_user.created_at')
+            ->first();
+
+        return strtolower((string) ($plan?->slug ?: 'lite'));
+    }
+
+    protected function lockedSmartInsightsPayload(): array
+    {
+        return [
+            'status' => 'locked',
+        ];
     }
 
     protected function buildRevenueTransactions(Collection $orders, Collection $payments): Collection
@@ -652,6 +722,219 @@ class AnalyticsController extends Controller
         }
 
         return $segments;
+    }
+
+    protected function buildPeakHoursInsight(Collection $transactions, string $locale, string $timezone): array
+    {
+        $slots = collect([
+            ['key' => 'morning', 'label' => trans('analytics.peak_hours.slots.morning'), 'start' => 8, 'end' => 12],
+            ['key' => 'midday', 'label' => trans('analytics.peak_hours.slots.midday'), 'start' => 12, 'end' => 15],
+            ['key' => 'afternoon', 'label' => trans('analytics.peak_hours.slots.afternoon'), 'start' => 15, 'end' => 18],
+            ['key' => 'evening', 'label' => trans('analytics.peak_hours.slots.evening'), 'start' => 18, 'end' => 23],
+        ])->values();
+
+        $days = collect(range(0, 6))->map(function (int $index) use ($locale, $timezone) {
+            $date = CarbonImmutable::now($timezone)->startOfWeek()->addDays($index)->locale($locale);
+
+            return [
+                'index' => $index,
+                'label' => $date->translatedFormat('dd'),
+                'full_label' => $date->translatedFormat('dddd'),
+            ];
+        })->values();
+
+        $cells = collect();
+
+        foreach ($days as $day) {
+            foreach ($slots as $slot) {
+                $cells->push([
+                    'day_index' => $day['index'],
+                    'day_label' => $day['full_label'],
+                    'slot_key' => $slot['key'],
+                    'slot_label' => $slot['label'],
+                    'revenue' => 0.0,
+                    'transactions' => 0,
+                    'services' => [],
+                    'pairs' => [],
+                ]);
+            }
+        }
+
+        $transactions->each(function (array $transaction) use (&$cells, $slots, $timezone) {
+            $date = $transaction['date'] ?? null;
+
+            if (! $date) {
+                return;
+            }
+
+            try {
+                $date = $date instanceof Carbon
+                    ? $date->copy()->setTimezone($timezone)
+                    : Carbon::parse($date, $timezone);
+            } catch (Throwable) {
+                return;
+            }
+
+            $slot = $slots->first(function (array $candidate) use ($date) {
+                $hour = (int) $date->format('G');
+
+                return $hour >= $candidate['start'] && $hour < $candidate['end'];
+            });
+
+            if (! $slot) {
+                return;
+            }
+
+            $cellIndex = $cells->search(
+                fn (array $cell) => $cell['day_index'] === ($date->dayOfWeekIso - 1) && $cell['slot_key'] === $slot['key']
+            );
+
+            if ($cellIndex === false) {
+                return;
+            }
+
+            $cell = $cells->get($cellIndex);
+            $cell['revenue'] += (float) ($transaction['amount'] ?? 0);
+            $cell['transactions']++;
+
+            $serviceNames = collect($transaction['services'] ?? [])
+                ->pluck('name')
+                ->filter(fn (mixed $name) => is_string($name) && $name !== '')
+                ->values();
+
+            foreach ($serviceNames as $serviceName) {
+                $cell['services'][$serviceName] = ($cell['services'][$serviceName] ?? 0) + 1;
+            }
+
+            $uniqueServices = $serviceNames->unique()->values();
+            if ($uniqueServices->count() > 1) {
+                for ($left = 0; $left < $uniqueServices->count() - 1; $left++) {
+                    for ($right = $left + 1; $right < $uniqueServices->count(); $right++) {
+                        $pair = [$uniqueServices[$left], $uniqueServices[$right]];
+                        sort($pair);
+                        $pairKey = implode(' + ', $pair);
+                        $cell['pairs'][$pairKey] = ($cell['pairs'][$pairKey] ?? 0) + 1;
+                    }
+                }
+            }
+
+            $cells->put($cellIndex, $cell);
+        });
+
+        $activeCells = $cells
+            ->filter(fn (array $cell) => $cell['transactions'] > 0)
+            ->values();
+
+        if ($activeCells->count() < 3) {
+            return [
+                'status' => 'empty',
+                'title' => trans('analytics.peak_hours.empty_title'),
+                'description' => trans('analytics.peak_hours.empty_description'),
+            ];
+        }
+
+        $maxRevenue = max(1, (float) $activeCells->max('revenue'));
+        $topCell = $activeCells
+            ->sortByDesc(fn (array $cell) => ($cell['revenue'] * 1000) + $cell['transactions'])
+            ->first();
+
+        $overallAverageTicket = $activeCells->sum('revenue') / max(1, $activeCells->sum('transactions'));
+        $highlightAverageTicket = $topCell['revenue'] / max(1, $topCell['transactions']);
+        $topServices = collect($topCell['services'])->sortDesc()->take(3);
+        $topPair = collect($topCell['pairs'])->sortDesc()->keys()->first();
+
+        $drivers = [];
+
+        if ($topServices->isNotEmpty()) {
+            $leadService = (string) $topServices->keys()->first();
+            $drivers[] = [
+                'title' => trans('analytics.peak_hours.drivers.top_service_title'),
+                'body' => trans('analytics.peak_hours.drivers.top_service_body', [
+                    'service' => $leadService,
+                ]),
+            ];
+        }
+
+        if ($highlightAverageTicket >= $overallAverageTicket * 1.1) {
+            $drivers[] = [
+                'title' => trans('analytics.peak_hours.drivers.average_ticket_title'),
+                'body' => trans('analytics.peak_hours.drivers.average_ticket_body'),
+            ];
+        }
+
+        if ($topPair) {
+            $drivers[] = [
+                'title' => trans('analytics.peak_hours.drivers.bundle_title'),
+                'body' => trans('analytics.peak_hours.drivers.bundle_body', [
+                    'pair' => $topPair,
+                ]),
+            ];
+        } elseif ($topServices->count() > 1) {
+            $secondaryService = (string) $topServices->keys()->skip(1)->first();
+            $drivers[] = [
+                'title' => trans('analytics.peak_hours.drivers.follow_up_title'),
+                'body' => trans('analytics.peak_hours.drivers.follow_up_body', [
+                    'service' => $secondaryService,
+                ]),
+            ];
+        }
+
+        $actionBody = $topPair
+            ? trans('analytics.peak_hours.action_body_pair', [
+                'pair' => $topPair,
+                'day' => mb_strtolower((string) $topCell['day_label']),
+                'slot' => $topCell['slot_label'],
+            ])
+            : trans('analytics.peak_hours.action_body_service', [
+                'service' => (string) ($topServices->keys()->first() ?? trans('analytics.peak_hours.fallback_service')),
+                'day' => mb_strtolower((string) $topCell['day_label']),
+                'slot' => $topCell['slot_label'],
+            ]);
+
+        return [
+            'status' => 'ready',
+            'title' => trans('analytics.peak_hours.title'),
+            'description' => trans('analytics.peak_hours.description'),
+            'headline' => trans('analytics.peak_hours.headline', [
+                'day' => mb_strtolower((string) $topCell['day_label']),
+                'slot' => $topCell['slot_label'],
+            ]),
+            'summary' => trans('analytics.peak_hours.summary', [
+                'count' => $topCell['transactions'],
+            ]),
+            'highlight' => [
+                'day_label' => $topCell['day_label'],
+                'slot_label' => $topCell['slot_label'],
+                'revenue' => round((float) $topCell['revenue'], 2),
+                'transactions' => (int) $topCell['transactions'],
+                'average_ticket' => round($highlightAverageTicket, 2),
+            ],
+            'days' => $days->all(),
+            'slots' => $slots->map(fn (array $slot) => Arr::only($slot, ['key', 'label']))->all(),
+            'cells' => $cells->map(function (array $cell) use ($maxRevenue) {
+                return [
+                    'day_index' => $cell['day_index'],
+                    'slot_key' => $cell['slot_key'],
+                    'revenue' => round((float) $cell['revenue'], 2),
+                    'transactions' => (int) $cell['transactions'],
+                    'average_ticket' => $cell['transactions'] > 0
+                        ? round($cell['revenue'] / $cell['transactions'], 2)
+                        : 0.0,
+                    'intensity' => $cell['transactions'] > 0
+                        ? round(min(1, $cell['revenue'] / $maxRevenue), 3)
+                        : 0.0,
+                ];
+            })->values()->all(),
+            'top_services' => $topServices->map(fn (int $count, string $name) => [
+                'name' => $name,
+                'count' => $count,
+            ])->values()->all(),
+            'drivers' => $drivers,
+            'action' => [
+                'title' => trans('analytics.peak_hours.action_title'),
+                'body' => $actionBody,
+            ],
+        ];
     }
 
     protected function buildFinancialInsights(array $serviceShare, float $revenue, float $serviceRevenue, ?float $avgTicketDelta): array
