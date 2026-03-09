@@ -77,4 +77,3 @@ Artisan::command('telegram:poll-booking {--once} {--timeout=10} {--sleep=1}', fu
 })->purpose('Poll Telegram bots and create booking requests from chat');
 
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
-Schedule::command('telegram:poll-booking --once --timeout=1')->everyMinute();

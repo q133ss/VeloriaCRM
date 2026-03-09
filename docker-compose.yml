@@ -23,6 +23,73 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    restart: unless-stopped
+    networks:
+      - veloria
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: veloria_queue
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - vendor:/var/www/html/vendor
+    command: >
+      sh -lc "
+      until [ -f vendor/autoload.php ]; do
+        echo 'Waiting for vendor/autoload.php...';
+        sleep 2;
+      done;
+      mkdir -p storage/logs bootstrap/cache &&
+      touch storage/logs/laravel.log &&
+      chown -R www-data:www-data storage bootstrap/cache &&
+      chmod -R ug+rwX,o+rwX storage bootstrap/cache &&
+      php artisan optimize:clear;
+      php artisan queue:work database --queue=default --sleep=1 --tries=3 --timeout=120 --verbose
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - veloria
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: veloria_scheduler
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - vendor:/var/www/html/vendor
+    command: >
+      sh -lc "
+      until [ -f vendor/autoload.php ]; do
+        echo 'Waiting for vendor/autoload.php...';
+        sleep 2;
+      done;
+      mkdir -p storage/logs bootstrap/cache &&
+      touch storage/logs/laravel.log &&
+      chown -R www-data:www-data storage bootstrap/cache &&
+      chmod -R ug+rwX,o+rwX storage bootstrap/cache &&
+      php artisan optimize:clear;
+      php artisan schedule:work
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    restart: unless-stopped
     networks:
       - veloria
 
