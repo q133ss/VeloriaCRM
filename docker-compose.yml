@@ -8,7 +8,16 @@ services:
     volumes:
       - ./:/var/www/html
       - vendor:/var/www/html/vendor
-    command: sh -lc "composer install && php artisan optimize:clear && php-fpm"
+    command: >
+      sh -lc "
+      composer install &&
+      mkdir -p storage/logs bootstrap/cache &&
+      touch storage/logs/laravel.log &&
+      chown -R www-data:www-data storage bootstrap/cache &&
+      chmod -R ug+rwX,o+rwX storage bootstrap/cache &&
+      php artisan optimize:clear &&
+      php-fpm
+      "
     depends_on:
       db:
         condition: service_healthy
@@ -32,6 +41,10 @@ services:
         echo 'Waiting for vendor/autoload.php...';
         sleep 2;
       done;
+      mkdir -p storage/logs bootstrap/cache &&
+      touch storage/logs/laravel.log &&
+      chown -R www-data:www-data storage bootstrap/cache &&
+      chmod -R ug+rwX,o+rwX storage bootstrap/cache &&
       php artisan optimize:clear;
       php artisan telegram:poll-booking --timeout=10 --sleep=1
       "

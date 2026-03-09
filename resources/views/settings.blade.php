@@ -10,9 +10,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#settings-notifications"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#settings-integrations"><i class="icon-base ri ri-link-m icon-sm me-2"></i>{{ __('settings.nav_connections') }}</a>
-                    </li>
                 </ul>
             </div>
             <div class="card mb-6">
@@ -141,6 +138,7 @@
                                 </div>
                                 <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
                             </div>
+                            @if(false)
                             <div class="col-12">
                                 <hr class="my-2">
                                 <div id="settings-integrations">
@@ -283,6 +281,13 @@
                                 </div>
                                 <small class="text-muted d-block">Секретный ключ (не публикуйте его).</small>
                             </div>
+                            @endif
+                            <div class="col-12">
+                                <div class="alert alert-primary mt-4 mb-0">
+                                    {{ __('integrations.moved_notice') }}
+                                    <a href="{{ route('integrations') }}" class="alert-link">{{ __('menu.integrations') }}</a>.
+                                </div>
+                            </div>
                             <div class="col-12">
                                 <h5 class="mt-4">{{ __('settings.work_settings') }}</h5>
                                 <table class="table">
@@ -409,21 +414,6 @@
         document.getElementById('notif-sms').checked = data.settings.notifications?.sms ?? false;
         document.getElementById('notif-telegram').disabled = !data.user.telegram_id;
         document.getElementById('notif-sms').disabled = !data.user.phone;
-        form['integrations[smsaero][email]'].value = data.settings.integrations.smsaero.email || '';
-        form['integrations[smsaero][api_key]'].value = data.settings.integrations.smsaero.api_key || '';
-        form['integrations[smtp][host]'].value = data.settings.integrations.smtp.host || '';
-        form['integrations[smtp][port]'].value = data.settings.integrations.smtp.port || '';
-        form['integrations[smtp][username]'].value = data.settings.integrations.smtp.username || '';
-        form['integrations[smtp][password]'].value = data.settings.integrations.smtp.password || '';
-        form['integrations[smtp][encryption]'].value = data.settings.integrations.smtp.encryption || '';
-        form['integrations[smtp][from_address]'].value = data.settings.integrations.smtp.from_address || '';
-        form['integrations[smtp][from_name]'].value = data.settings.integrations.smtp.from_name || '';
-        form['integrations[whatsapp][api_key]'].value = data.settings.integrations.whatsapp.api_key || '';
-        form['integrations[whatsapp][sender]'].value = data.settings.integrations.whatsapp.sender || '';
-        form['integrations[telegram][bot_token]'].value = data.settings.integrations.telegram.bot_token || '';
-        form['integrations[telegram][sender]'].value = data.settings.integrations.telegram.sender || '';
-        form['integrations[yookassa][shop_id]'].value = data.settings.integrations.yookassa.shop_id || '';
-        form['integrations[yookassa][secret_key]'].value = data.settings.integrations.yookassa.secret_key || '';
         const days = ['mon','tue','wed','thu','fri','sat','sun'];
         days.forEach(day=>{
             const check = document.getElementById('workday-'+day);
@@ -499,33 +489,6 @@
                 email: document.getElementById('notif-email').checked,
                 telegram: document.getElementById('notif-telegram').checked,
                 sms: document.getElementById('notif-sms').checked,
-            },
-            integrations: {
-                smsaero: {
-                    email: form['integrations[smsaero][email]'].value,
-                    api_key: form['integrations[smsaero][api_key]'].value,
-                },
-                smtp: {
-                    host: form['integrations[smtp][host]'].value,
-                    port: form['integrations[smtp][port]'].value,
-                    username: form['integrations[smtp][username]'].value,
-                    password: form['integrations[smtp][password]'].value,
-                    encryption: form['integrations[smtp][encryption]'].value,
-                    from_address: form['integrations[smtp][from_address]'].value,
-                    from_name: form['integrations[smtp][from_name]'].value,
-                },
-                whatsapp: {
-                    api_key: form['integrations[whatsapp][api_key]'].value,
-                    sender: form['integrations[whatsapp][sender]'].value,
-                },
-                telegram: {
-                    bot_token: form['integrations[telegram][bot_token]'].value,
-                    sender: form['integrations[telegram][sender]'].value,
-                },
-                yookassa: {
-                    shop_id: form['integrations[yookassa][shop_id]'].value,
-                    secret_key: form['integrations[yookassa][secret_key]'].value,
-                }
             },
             holidays: Array.from(document.querySelectorAll('.holiday-date')).map(i=>i.value).filter(Boolean),
             address: form.address.value,

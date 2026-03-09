@@ -36,6 +36,7 @@ Route::middleware('set.locale')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
         Route::view('/profile', 'profile')->name('profile');
         Route::view('/settings', 'settings')->name('settings');
+        Route::view('/integrations', 'integrations')->name('integrations');
         Route::view('/calendar', 'calendar.index')->name('calendar');
         Route::view('/analytics', 'analytics.index')->name('analytics');
         Route::view('/learning', 'learning.index')->name('learning');
