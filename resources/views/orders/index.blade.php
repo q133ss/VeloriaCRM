@@ -3,26 +3,270 @@
 @section('title', 'Записи')
 
 @section('content')
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-        <div>
-            <h4 class="mb-1">Записи</h4>
-            <p class="text-muted mb-0">Управляйте расписанием, подтверждайте визиты и напоминания клиентам.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
-                <i class="ri ri-flashlight-line me-1"></i>
-                Быстрое создание
-            </button>
-            <a href="{{ route('orders.create') }}" class="btn btn-primary">
-                <i class="ri ri-add-line me-1"></i>
-                Новая запись
-            </a>
-        </div>
-    </div>
+    <div class="orders-page">
+        <div class="d-flex flex-column gap-4">
+            <section class="orders-hero">
+                <div class="d-flex flex-column flex-xl-row gap-4 justify-content-between align-items-xl-start">
+                    <div class="orders-hero__content d-flex flex-column gap-3">
+                        <span class="orders-eyebrow">
+                            <i class="ri ri-calendar-check-line"></i>
+                            Записи под контролем
+                        </span>
+                        <div>
+                            <h1 class="orders-hero__title mb-2">Записи</h1>
+                            <p class="text-muted mb-0 fs-6">
+                                Один экран для расписания, статусов и быстрых действий без лишнего визуального шума.
+                            </p>
+                        </div>
+                        <div class="orders-overview">
+                            <div class="orders-overview-card">
+                                <span>Всего записей</span>
+                                <strong id="orders-hero-total">0</strong>
+                            </div>
+                            <div class="orders-overview-card">
+                                <span>Период</span>
+                                <strong id="orders-hero-period">Все записи</strong>
+                            </div>
+                            <div class="orders-overview-card">
+                                <span>Выбрано</span>
+                                <strong><span id="orders-selected-count">0</span> для действий</strong>
+                            </div>
+                        </div>
+                    </div>
 
-    <div id="orders-alerts"></div>
+                    <div class="orders-hero__actions d-flex flex-column flex-sm-row gap-2 align-self-stretch align-self-xl-start">
+                        <button class="btn orders-soft-btn" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
+                            <i class="ri ri-flashlight-line me-1"></i>
+                            Быстрое создание
+                        </button>
+                        <a href="{{ route('orders.create') }}" class="btn btn-primary">
+                            <i class="ri ri-add-line me-1"></i>
+                            Новая запись
+                        </a>
+                    </div>
+                </div>
+            </section>
 
-    <style>
+            <div id="orders-alerts"></div>
+
+            <style>
+        .orders-page {
+            --orders-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            --orders-card-shadow: 0 20px 48px -34px rgba(37, 26, 84, 0.45);
+        }
+
+        .orders-hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.15), transparent 34%),
+                linear-gradient(135deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.02) 52%, rgba(var(--bs-info-rgb, 0, 207, 232), 0.05));
+            box-shadow: var(--orders-card-shadow);
+        }
+
+        .orders-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            filter: blur(8px);
+        }
+
+        .orders-hero__content,
+        .orders-hero__actions {
+            position: relative;
+            z-index: 1;
+        }
+
+        .orders-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
+            color: var(--bs-body-color);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .orders-eyebrow i {
+            color: var(--bs-primary);
+        }
+
+        .orders-hero__title {
+            font-size: clamp(1.85rem, 2.6vw, 2.6rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        .orders-overview {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.9rem;
+        }
+
+        .orders-overview-card {
+            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            border-radius: 1.05rem;
+            padding: 1rem 1.05rem;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.76);
+            backdrop-filter: blur(6px);
+        }
+
+        .orders-overview-card span {
+            display: block;
+            color: var(--bs-secondary-color);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.45rem;
+        }
+
+        .orders-overview-card strong {
+            display: block;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .orders-soft-btn {
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.18);
+        }
+
+        .orders-soft-btn:hover,
+        .orders-soft-btn:focus {
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+            color: var(--bs-primary);
+        }
+
+        .orders-surface {
+            border: none;
+            border-radius: 1.35rem;
+            box-shadow: var(--orders-card-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 94%, transparent);
+        }
+
+        .orders-filters-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1.4fr auto;
+            gap: 0.85rem;
+        }
+
+        .orders-bulk-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.25rem 0;
+        }
+
+        .orders-bulk-bar.is-visible {
+            display: flex;
+        }
+
+        .orders-bulk-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .orders-table-wrap {
+            padding: 0 1rem 1rem;
+        }
+
+        .orders-table {
+            margin-bottom: 0;
+        }
+
+        .orders-table thead th {
+            color: var(--bs-secondary-color);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom-width: 1px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
+        }
+
+        .orders-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .orders-table tbody tr:hover {
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.03);
+        }
+
+        .orders-date-cell strong,
+        .orders-client-cell strong {
+            display: block;
+            font-size: 0.96rem;
+        }
+
+        .orders-client-cell small,
+        .orders-date-cell small {
+            display: block;
+            margin-top: 0.18rem;
+        }
+
+        .orders-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .orders-service-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.28rem 0.6rem;
+            border-radius: 999px;
+            background: var(--orders-accent-soft);
+            color: var(--bs-primary);
+            font-size: 0.76rem;
+            font-weight: 600;
+        }
+
+        .orders-empty {
+            padding: 3.5rem 1rem !important;
+        }
+
+        .orders-pagination {
+            padding: 0 1.25rem 1.1rem;
+            border-top: none;
+            background: transparent;
+        }
+
+        .orders-reminder-note {
+            display: none;
+            border-radius: 1rem;
+            padding: 0.85rem 1rem;
+            background: rgba(var(--bs-warning-rgb, 255, 159, 67), 0.14);
+            color: var(--bs-warning-text-emphasis, var(--bs-warning));
+        }
+
+        .orders-reminder-note.is-visible {
+            display: block;
+        }
+
+        @media (max-width: 991.98px) {
+            .orders-overview,
+            .orders-filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .orders-bulk-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
         #quickCreateModal .quick-client-layer {
             position: relative;
         }
@@ -46,92 +290,107 @@
         }
     </style>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <form id="filters-form" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label for="filter-period" class="form-label">Период</label>
-                    <select class="form-select" id="filter-period" name="period"></select>
-                </div>
-                <div class="col-md-3">
-                    <label for="filter-status" class="form-label">Статус</label>
-                    <select class="form-select" id="filter-status" name="status"></select>
-                </div>
-                <div class="col-md-4">
-                    <label for="filter-search" class="form-label">Быстрый поиск</label>
-                    <input
-                        type="text"
-                        class="form-control"
-                        id="filter-search"
-                        name="search"
-                        placeholder="Имя или телефон клиента"
-                    />
-                </div>
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">Применить</button>
-                    <button type="button" id="filters-reset" class="btn btn-outline-secondary flex-fill">Сбросить</button>
-                </div>
-            </form>
-        </div>
-    </div>
+            <section class="card orders-surface">
+                <div class="card-body p-4 d-flex flex-column gap-3">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
+                        <div>
+                            <h2 class="h5 mb-1">Фильтры и поиск</h2>
+                            <p class="text-muted mb-0">Оставили только те параметры, которые помогают быстро найти нужную запись.</p>
+                        </div>
+                        <div class="orders-reminder-note" id="orders-reminder-note"></div>
+                    </div>
 
-    <div class="card" id="orders-card">
-        <div class="card-header d-flex flex-column flex-md-row gap-2 gap-md-3 align-items-md-center justify-content-md-between">
-            <div class="d-flex align-items-center gap-2">
-                <h5 class="mb-0">Список записей</h5>
-                <span class="badge bg-label-secondary" id="orders-total">0</span>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-success btn-sm bulk-action-btn" data-action="confirm">
-                    <i class="ri ri-check-double-line me-1"></i>
-                    Подтвердить выбранные
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-info btn-sm text-white bulk-action-btn"
-                    data-action="remind"
-                    id="bulk-remind-btn"
-                >
-                    <i class="ri ri-mail-line me-1"></i>
-                    Напомнить о записи
-                </button>
-                <button type="button" class="btn btn-outline-danger btn-sm bulk-action-btn" data-action="cancel">
-                    <i class="ri ri-close-circle-line me-1"></i>
-                    Отменить
-                </button>
-            </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">
-                            <input type="checkbox" class="form-check-input" id="select-all" />
-                        </th>
-                        <th>Дата / Время</th>
-                        <th>Клиент 📞</th>
-                        <th>Услуги</th>
-                        <th>Статус</th>
-                        <th class="text-end">Сумма</th>
-                        <th class="text-end">Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-body">
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">Загрузка данных...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer d-flex justify-content-between align-items-center" id="orders-pagination">
-            <div class="text-muted small" id="orders-summary">Показано 0 из 0</div>
-            <nav>
-                <ul class="pagination pagination-sm mb-0" id="pagination-list"></ul>
-            </nav>
-        </div>
-    </div>
+                    <form id="filters-form" class="orders-filters-grid align-items-end">
+                        <div>
+                            <label for="filter-period" class="form-label">Период</label>
+                            <select class="form-select" id="filter-period" name="period"></select>
+                        </div>
+                        <div>
+                            <label for="filter-status" class="form-label">Статус</label>
+                            <select class="form-select" id="filter-status" name="status"></select>
+                        </div>
+                        <div>
+                            <label for="filter-search" class="form-label">Поиск клиента</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="filter-search"
+                                name="search"
+                                placeholder="Имя или телефон клиента"
+                            />
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">Применить</button>
+                            <button type="button" id="filters-reset" class="btn btn-outline-secondary flex-fill">Сбросить</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
 
-    <div class="modal fade" id="quickCreateModal" tabindex="-1" aria-labelledby="quickCreateModalLabel" aria-hidden="true">
+            <section class="card orders-surface" id="orders-card">
+                <div class="card-body p-0">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 px-4 pt-4">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h2 class="h5 mb-0">Список записей</h2>
+                                <span class="badge bg-label-secondary" id="orders-total">0</span>
+                            </div>
+                            <p class="text-muted mb-0">Клиент, время и статус читаются первыми. Остальные действия доступны без перегрузки экрана.</p>
+                        </div>
+                    </div>
+
+                    <div class="orders-bulk-bar" id="orders-bulk-bar">
+                        <div class="text-muted">
+                            Выбрано <strong id="orders-bulk-selected">0</strong> записей
+                        </div>
+                        <div class="orders-bulk-actions">
+                            <button type="button" class="btn btn-success btn-sm bulk-action-btn" data-action="confirm" disabled>
+                                <i class="ri ri-check-double-line me-1"></i>
+                                Подтвердить
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm text-white bulk-action-btn" data-action="remind" id="bulk-remind-btn" disabled>
+                                <i class="ri ri-mail-line me-1"></i>
+                                Напомнить
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm bulk-action-btn" data-action="cancel" disabled>
+                                <i class="ri ri-close-circle-line me-1"></i>
+                                Отменить
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive orders-table-wrap">
+                        <table class="table table-hover mb-0 align-middle orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" class="form-check-input" id="select-all" />
+                                    </th>
+                                    <th>Дата и мастер</th>
+                                    <th>Клиент</th>
+                                    <th>Услуги</th>
+                                    <th>Статус</th>
+                                    <th class="text-end">Сумма</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-body">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted orders-empty">Загрузка данных...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 orders-pagination" id="orders-pagination">
+                    <div class="text-muted small" id="orders-summary">Загрузка...</div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="pagination-list"></ul>
+                    </nav>
+                </div>
+            </section>
+
+            <div class="modal fade" id="quickCreateModal" tabindex="-1" aria-labelledby="quickCreateModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -216,6 +475,8 @@
                 </form>
             </div>
         </div>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -259,6 +520,12 @@
         const selectAllCheckbox = document.getElementById('select-all');
         const bulkButtons = document.querySelectorAll('.bulk-action-btn');
         const bulkRemindBtn = document.getElementById('bulk-remind-btn');
+        const ordersHeroTotal = document.getElementById('orders-hero-total');
+        const ordersHeroPeriod = document.getElementById('orders-hero-period');
+        const ordersSelectedCount = document.getElementById('orders-selected-count');
+        const ordersBulkBar = document.getElementById('orders-bulk-bar');
+        const ordersBulkSelected = document.getElementById('orders-bulk-selected');
+        const ordersReminderNote = document.getElementById('orders-reminder-note');
         const quickForm = document.getElementById('quick-create-form');
         const quickServicesContainer = document.getElementById('quick-services-container');
         const quickServicesSummary = document.getElementById('quick-services-summary');
@@ -315,7 +582,7 @@
 
             if (!orders.length) {
                 const emptyRow = document.createElement('tr');
-                emptyRow.innerHTML = '<td colspan="7" class="text-center py-5 text-muted">Записей пока нет.</td>';
+                emptyRow.innerHTML = '<td colspan="7" class="text-center text-muted orders-empty">Записей пока нет.</td>';
                 ordersBody.appendChild(emptyRow);
                 return;
             }
@@ -323,10 +590,19 @@
             orders.forEach(function (order) {
                 const tr = document.createElement('tr');
                 const serviceNames = (order.services || []).map(service => service.name).filter(Boolean);
-                const servicesPreview = serviceNames.slice(0, 2).map(name => `<span>${name}</span>`).join('');
-                const extraServices = serviceNames.length > 2 ? `<span class="text-muted small">+ ещё ${serviceNames.length - 2}</span>` : '';
+                const servicesPreview = serviceNames
+                    .slice(0, 2)
+                    .map(name => `<span class="orders-service-pill">${name}</span>`)
+                    .join('');
+                const extraServices = serviceNames.length > 2
+                    ? `<span class="text-muted small">+ еще ${serviceNames.length - 2}</span>`
+                    : '';
                 const totalPrice = order.total_price !== null && order.total_price !== undefined
-                    ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(order.total_price)
+                    ? new Intl.NumberFormat('ru-RU', {
+                        style: 'currency',
+                        currency: 'RUB',
+                        maximumFractionDigits: 0
+                    }).format(order.total_price)
                     : '—';
 
                 tr.innerHTML = `
@@ -334,29 +610,35 @@
                         <input type="checkbox" class="form-check-input order-checkbox" data-id="${order.id}" />
                     </td>
                     <td>
-                        <div class="fw-medium">${order.scheduled_at_formatted || '—'}</div>
-                        <small class="text-muted">${order.master?.name || ''}</small>
+                        <div class="orders-date-cell">
+                            <strong>${order.scheduled_at_formatted || '—'}</strong>
+                            <small class="text-muted">${order.master?.name || 'Без мастера'}</small>
+                        </div>
                     </td>
                     <td>
-                        <div class="fw-medium">${order.client?.name || 'Без имени'}</div>
-                        <small class="text-muted">${order.client?.phone || '—'}</small>
+                        <div class="orders-client-cell">
+                            <strong>${order.client?.name || 'Без имени'}</strong>
+                            <small class="text-muted">${order.client?.phone || 'Без телефона'}</small>
+                        </div>
                     </td>
                     <td>
-                        ${serviceNames.length ? `<div class="d-flex flex-column">${servicesPreview}${extraServices}</div>` : '<span class="text-muted">Не выбраны</span>'}
+                        ${serviceNames.length
+                            ? `<div class="orders-services">${servicesPreview}</div>${extraServices ? `<div class="mt-1">${extraServices}</div>` : ''}`
+                            : '<span class="text-muted">Услуги не выбраны</span>'}
                     </td>
                     <td>
                         <span class="badge ${order.status_class}">${order.status_label}</span>
                     </td>
-                    <td class="text-end">${totalPrice}</td>
+                    <td class="text-end fw-semibold">${totalPrice}</td>
                     <td class="text-end">
                         <div class="btn-group" role="group">
-                            <a href="/orders/${order.id}" class="btn btn-sm btn-icon btn-text-secondary" title="Просмотр">
+                            <a href="/orders/${order.id}" class="btn btn-sm btn-icon btn-text-secondary" title="Открыть запись">
                                 <i class="ri ri-eye-line"></i>
                             </a>
                             <a href="/orders/${order.id}/edit" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать">
                                 <i class="ri ri-edit-line"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-icon btn-text-secondary text-danger js-cancel-single" data-order-id="${order.id}" title="Отменить">
+                            <button type="button" class="btn btn-sm btn-icon btn-text-secondary text-danger js-cancel-single" data-order-id="${order.id}" title="Отменить запись">
                                 <i class="ri ri-close-circle-line"></i>
                             </button>
                         </div>
@@ -774,6 +1056,18 @@
             bulkButtons.forEach(btn => {
                 btn.disabled = !hasSelection;
             });
+
+            if (ordersBulkBar) {
+                ordersBulkBar.classList.toggle('is-visible', hasSelection);
+            }
+
+            if (ordersBulkSelected) {
+                ordersBulkSelected.textContent = String(selectedOrders.size);
+            }
+
+            if (ordersSelectedCount) {
+                ordersSelectedCount.textContent = String(selectedOrders.size);
+            }
         }
 
         function renderPagination(meta) {
@@ -844,7 +1138,7 @@
                 per_page: state.perPage,
             });
 
-            ordersBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Загрузка данных...</td></tr>';
+            ordersBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted orders-empty">Загрузка данных...</td></tr>';
 
             const response = await fetch(`/api/v1/orders?${params.toString()}`, {
                 headers: authHeaders(),
@@ -868,10 +1162,26 @@
 
             ordersTotal.textContent = state.total;
 
+            if (ordersHeroTotal) {
+                ordersHeroTotal.textContent = String(state.total);
+            }
+
+            if (ordersHeroPeriod) {
+                const currentPeriodLabel = periodSelect.options[periodSelect.selectedIndex]?.textContent || 'Текущий период';
+                ordersHeroPeriod.textContent = currentPeriodLabel;
+            }
+
             if (!state.reminderMessage) {
-                showAlert('warning', 'Добавьте текст автонапоминания в настройках, чтобы отправлять напоминания. <a href="/settings" class="alert-link">Перейти в настройки</a>.', true);
+                if (ordersReminderNote) {
+                    ordersReminderNote.innerHTML = 'Добавьте текст автонапоминания в настройках, чтобы отправлять сообщения. <a href="/settings" class="alert-link">Перейти в настройки</a>.';
+                    ordersReminderNote.classList.add('is-visible');
+                }
                 bulkRemindBtn.disabled = true;
             } else {
+                if (ordersReminderNote) {
+                    ordersReminderNote.innerHTML = '';
+                    ordersReminderNote.classList.remove('is-visible');
+                }
                 bulkRemindBtn.disabled = false;
             }
 
@@ -1154,6 +1464,7 @@
             });
         }
 
+        updateBulkButtons();
         loadOrders();
     </script>
 @endsection
