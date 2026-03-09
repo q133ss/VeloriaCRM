@@ -714,16 +714,16 @@
         <div class="card dashboard-learning">
             <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
                 <div>
-                    <p class="dashboard-section-label">{{ __('dashboard.sections.learning.label') }}</p>
-                    <h2 class="dashboard-section-title mb-2">{{ __('dashboard.sections.learning.title') }}</h2>
-                    <p class="mb-0">{{ $dailyTip['text'] ?? __('dashboard.sections.learning.fallback') }}</p>
+                    <p class="dashboard-section-label">Сейчас в тренде</p>
+                    <h2 class="dashboard-section-title mb-2">Тренды и идеи для мастера</h2>
+                    <p class="mb-0">{{ $dailyTip['text'] ?? 'Следите за актуальными техниками, запросами клиенток и новыми форматами услуг.' }}</p>
                 </div>
                 <div class="text-lg-end">
-                    <a href="{{ route('learning') }}" class="btn btn-primary">
-                        {{ __('dashboard.sections.learning.button') }}
+                    <a href="{{ route('trends') }}" class="btn btn-primary">
+                        Открыть тренды
                     </a>
                     <div class="small text-muted mt-2">
-                        {{ __('dashboard.sections.learning.source', ['value' => $dailyTip['source'] ?? __('dashboard.sections.learning.default_source')]) }}
+                        Источник: {{ $dailyTip['source'] ?? 'Подборка Veloria' }}
                     </div>
                 </div>
             </div>

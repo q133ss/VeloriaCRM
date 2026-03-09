@@ -39,7 +39,8 @@ Route::middleware('set.locale')->group(function () {
         Route::view('/integrations', 'integrations')->name('integrations');
         Route::view('/calendar', 'calendar.index')->name('calendar');
         Route::view('/analytics', 'analytics.index')->name('analytics');
-        Route::view('/learning', 'learning.index')->name('learning');
+        Route::redirect('/learning', '/trends')->name('learning');
+        Route::view('/trends', 'trends.index')->name('trends');
 
         Route::get('/clients', function () {
             return view('clients.index');

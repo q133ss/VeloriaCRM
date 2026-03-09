@@ -17,9 +17,7 @@ use App\Http\Controllers\Api\V1\Marketing\WarmupController;
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
-use App\Http\Controllers\Api\V1\Learning\KnowledgeController as LearningKnowledgeController;
-use App\Http\Controllers\Api\V1\Learning\LearningPlanController;
-use App\Http\Controllers\Api\V1\Learning\LessonController as LearningLessonController;
+use App\Http\Controllers\Api\V1\TrendsController;
 use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionController;
 
 Route::middleware('set.locale')->prefix('v1')->group(function () {
@@ -116,12 +114,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/service-categories/{category}', [ServiceCategoryController::class, 'update']);
         Route::delete('/service-categories/{category}', [ServiceCategoryController::class, 'destroy']);
 
-        Route::prefix('learning')->group(function () {
-            Route::get('/plan', [LearningPlanController::class, 'show']);
-            Route::patch('/tasks/{task}', [LearningPlanController::class, 'updateTask']);
-            Route::get('/lessons', [LearningLessonController::class, 'index']);
-            Route::get('/knowledge', [LearningKnowledgeController::class, 'index']);
-        });
+        Route::get('/trends/overview', [TrendsController::class, 'overview']);
 
         Route::get('/subscription', [ApiSubscriptionController::class, 'show']);
         Route::post('/subscription/upgrade', [ApiSubscriptionController::class, 'upgrade']);

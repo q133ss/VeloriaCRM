@@ -80,6 +80,9 @@ class SubscriptionController extends Controller
             })
             ->values();
 
+        $hasTransactions = $transactions->isNotEmpty();
+        $hasPaidActivePlan = (bool) ($activePlan && (float) $activePlan->price > 0);
+
         $currentPlanData = null;
         if ($currentPlan) {
             $planDetailsEntry = $planDetails->get($currentPlan->slug, []);
@@ -88,6 +91,7 @@ class SubscriptionController extends Controller
                 'slug' => $currentPlan->slug,
                 'name' => Arr::get($planDetailsEntry, 'name', ucfirst($currentPlan->slug)),
                 'tagline' => Arr::get($planDetailsEntry, 'tagline'),
+                'description' => Arr::get($planDetailsEntry, 'description'),
                 'badge' => Arr::get($planDetailsEntry, 'badge'),
                 'price' => (float) $currentPlan->price,
                 'price_display' => $currentPlan->price > 0
@@ -101,10 +105,18 @@ class SubscriptionController extends Controller
                     : null,
                 'is_active' => (bool) $activePlan,
                 'is_free' => $currentPlan->price <= 0,
+                'can_cancel' => $hasPaidActivePlan,
             ];
         }
 
-        $planResponse = $plans->map(function (Plan $plan) use ($currentPlan, $planDetails, $currencySymbol) {
+        $recommendedPlanSlug = null;
+        if (! $activePlan || $activePlan->slug === 'lite') {
+            $recommendedPlanSlug = 'pro';
+        } elseif ($activePlan->slug === 'pro') {
+            $recommendedPlanSlug = 'elite';
+        }
+
+        $planResponse = $plans->map(function (Plan $plan) use ($currentPlan, $planDetails, $currencySymbol, $recommendedPlanSlug) {
             $details = $planDetails->get($plan->slug, []);
             $isCurrent = $currentPlan && $plan->getKey() === $currentPlan->getKey();
             $currentPrice = $currentPlan?->price ?? null;
@@ -114,6 +126,7 @@ class SubscriptionController extends Controller
                 'slug' => $plan->slug,
                 'name' => Arr::get($details, 'name', ucfirst($plan->slug)),
                 'tagline' => Arr::get($details, 'tagline'),
+                'description' => Arr::get($details, 'description'),
                 'badge' => Arr::get($details, 'badge'),
                 'features' => Arr::get($details, 'features', []),
                 'price' => (float) $plan->price,
@@ -123,6 +136,7 @@ class SubscriptionController extends Controller
                 'is_current' => $isCurrent,
                 'is_free' => $plan->price <= 0,
                 'is_upgrade' => $currentPrice === null ? true : $plan->price > $currentPrice,
+                'is_recommended' => $recommendedPlanSlug === $plan->slug,
             ];
         })->values();
 
@@ -139,6 +153,21 @@ class SubscriptionController extends Controller
             'plans' => $planResponse,
             'comparison' => $comparisonResponse,
             'transactions' => $transactions,
+            'ui' => [
+                'can_cancel' => $hasPaidActivePlan,
+                'has_transactions' => $hasTransactions,
+                'has_active_plan' => (bool) $activePlan,
+                'recommended_plan_slug' => $recommendedPlanSlug,
+                'recommended_plan_name' => $recommendedPlanSlug
+                    ? Arr::get($planDetails->get($recommendedPlanSlug, []), 'name', ucfirst($recommendedPlanSlug))
+                    : null,
+                'status_title' => $activePlan
+                    ? Arr::get($planDetails->get($activePlan->slug, []), 'name', ucfirst($activePlan->slug))
+                    : trans('subscription.current_plan.no_plan'),
+                'status_caption' => $currentPlanData['active_until_label'] ?? trans('subscription.current_plan.free_plan'),
+                'plans_count' => $planResponse->count(),
+                'transactions_count' => $transactions->count(),
+            ],
             'meta' => [
                 'currency' => $currencySymbol,
                 'billing_period' => $billingPeriod,
