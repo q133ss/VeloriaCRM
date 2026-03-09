@@ -3,6 +3,7 @@
 use App\Models\MarketingCampaign;
 use App\Models\Setting;
 use App\Services\Marketing\MarketingCampaignService;
+use App\Services\SubscriptionPaymentSyncService;
 use App\Services\Telegram\TelegramBookingBotService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
@@ -76,4 +77,13 @@ Artisan::command('telegram:poll-booking {--once} {--timeout=10} {--sleep=1}', fu
     } while (true);
 })->purpose('Poll Telegram bots and create booking requests from chat');
 
+Artisan::command('subscription:sync-pending', function () {
+    /** @var SubscriptionPaymentSyncService $service */
+    $service = app(SubscriptionPaymentSyncService::class);
+    $updated = $service->syncAllPending();
+
+    $this->info("Synced {$updated} subscription payment(s).");
+})->purpose('Sync pending subscription payments with YooKassa');
+
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
+Schedule::command('subscription:sync-pending')->everyMinute();

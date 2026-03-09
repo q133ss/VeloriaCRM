@@ -5,25 +5,30 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\SubscriptionTransaction;
+use App\Services\SubscriptionPaymentSyncService;
 use App\Services\YooKassaService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class SubscriptionController extends Controller
 {
-    public function __construct(private readonly YooKassaService $yooKassa)
+    public function __construct(
+        private readonly YooKassaService $yooKassa,
+        private readonly SubscriptionPaymentSyncService $subscriptionPaymentSync
+    )
     {
     }
 
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        $this->subscriptionPaymentSync->syncForUser($user);
 
         $currentPlan = $user->plans()->orderByDesc('plan_user.created_at')->first();
         $currentPlanEndsAt = $currentPlan?->pivot?->ends_at;

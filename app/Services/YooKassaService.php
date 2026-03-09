@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Plan;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -76,6 +77,25 @@ class YooKassaService
             'currency' => $currency,
             'confirmation_url' => $confirmation ? $confirmation->getConfirmationUrl() : null,
             'raw' => $response,
+        ];
+    }
+
+    public function getPaymentInfo(string $paymentId): array
+    {
+        if (! $this->enabled()) {
+            throw new RuntimeException('YooKassa credentials are not configured.');
+        }
+
+        $response = $this->client->getPaymentInfo($paymentId);
+        $capturedAt = $response->getCapturedAt();
+        $createdAt = $response->getCreatedAt();
+
+        return [
+            'id' => $response->getId(),
+            'status' => $response->getStatus(),
+            'paid' => $response->getPaid(),
+            'captured_at' => $capturedAt ? Carbon::instance($capturedAt)->toIso8601String() : null,
+            'created_at' => $createdAt ? Carbon::instance($createdAt)->toIso8601String() : null,
         ];
     }
 }
