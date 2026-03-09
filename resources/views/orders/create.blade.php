@@ -4,6 +4,92 @@
 
 @section('content')
     <style>
+        .order-create-page {
+            --order-create-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.1);
+            --order-create-border: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            --order-create-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
+
+        .order-create-page .create-hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--order-create-border);
+            border-radius: 1.6rem;
+            padding: 1.6rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14), transparent 34%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+            box-shadow: var(--order-create-shadow);
+        }
+
+        .order-create-page .create-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            filter: blur(12px);
+        }
+
+        .order-create-page .create-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .order-create-page .create-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .order-create-page .create-eyebrow i {
+            color: var(--bs-primary);
+        }
+
+        .order-create-page .step-card,
+        .order-create-page .summary-card {
+            border: none;
+            border-radius: 1.35rem;
+            box-shadow: var(--order-create-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 96%, transparent);
+        }
+
+        .order-create-page .step-card {
+            padding: 1.4rem;
+        }
+
+        .order-create-page .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: var(--order-create-accent-soft);
+            color: var(--bs-primary);
+            font-weight: 700;
+        }
+
+        .order-create-page .step-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            color: var(--bs-primary);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
         .order-create-page .client-picker-layer {
             position: relative;
         }
@@ -22,66 +108,203 @@
             box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.28);
         }
 
-        .order-create-page .summary-card {
-            position: sticky;
-            top: 1.5rem;
+        .order-create-page .inline-hint {
+            padding: 0.9rem 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .order-create-page .selected-client-card {
+            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.16);
+            border-radius: 1rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+        }
+
+        .order-create-page .manual-client-card {
+            border-radius: 1.1rem;
+            border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.02);
+        }
+
+        .order-create-page .manual-client-card.d-none {
+            display: none !important;
+        }
+
+        .order-create-page .visit-meta-card {
+            border-radius: 1rem;
+            padding: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .order-create-page .services-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.85rem;
+            align-items: end;
+        }
+
+        .order-create-page .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem;
         }
 
         .order-create-page .service-card {
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: block;
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
             border-radius: 1rem;
-            padding: 1rem;
-            transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+            padding: 0.95rem 1rem;
+            transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease, background-color .2s ease;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            cursor: pointer;
         }
 
         .order-create-page .service-card:hover {
             transform: translateY(-1px);
-            border-color: rgba(var(--bs-primary-rgb), 0.45);
-            box-shadow: 0 0.75rem 1.5rem rgba(15, 23, 42, 0.16);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
+            box-shadow: 0 0.8rem 1.6rem rgba(15, 23, 42, 0.12);
+        }
+
+        .order-create-page .service-card input {
+            margin-top: 0.15rem;
         }
 
         .order-create-page .service-card input:checked + .service-card-body {
-            border-color: rgba(var(--bs-primary-rgb), 0.7);
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.38);
         }
 
         .order-create-page .service-card-body {
             display: block;
             border: 1px solid transparent;
-            border-radius: .8rem;
-            padding: .15rem;
+            border-radius: 0.8rem;
+            padding: 0.35rem;
+        }
+
+        .order-create-page .service-meta-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.65rem;
+            border-radius: 999px;
+            background: var(--order-create-accent-soft);
+            color: var(--bs-primary);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .order-create-page .service-duration {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .order-create-page .summary-card {
+            position: sticky;
+            top: 1.5rem;
+            padding: 1.35rem;
+        }
+
+        .order-create-page .summary-kpis {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .order-create-page .summary-kpi {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.85rem 0.95rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .order-create-page .summary-kpi span {
+            color: var(--bs-secondary-color);
+        }
+
+        .order-create-page .recommendations-shell {
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.02);
+            padding: 1rem;
+        }
+
+        .order-create-page .recommendation-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+            border-radius: 1rem;
+            padding: 1rem;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.76);
+        }
+
+        .order-create-page .recommendation-card + .recommendation-card {
+            margin-top: 0.85rem;
+        }
+
+        @media (max-width: 1199.98px) {
+            .order-create-page .summary-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .order-create-page .services-grid,
+            .order-create-page .services-toolbar {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
     <div class="order-create-page">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-            <div>
-                <h4 class="mb-1">Новая запись</h4>
-                <p class="text-muted mb-0">Сначала выберите клиентку, потом время и услуги. Всё лишнее спрятано ниже.</p>
-            </div>
-            <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary">
-                <i class="ri ri-arrow-go-back-line me-1"></i>
-                К списку записей
-            </a>
-        </div>
+        <div class="d-flex flex-column gap-4">
+            <section class="create-hero">
+                <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-start">
+                    <div class="d-flex flex-column gap-3">
+                        <span class="create-eyebrow">
+                            <i class="ri ri-sparkling-line"></i>
+                            Создание записи по шагам
+                        </span>
+                        <div>
+                            <h1 class="mb-2">Новая запись</h1>
+                            <p class="text-muted mb-0 fs-6">Сначала выберите клиентку, потом дату и услуги. Всё второстепенное убрали в отдельные блоки ниже.</p>
+                        </div>
+                        <div class="small text-muted">Основной сценарий: выбрать клиентку, поставить время, отметить услуги и создать запись.</div>
+                    </div>
+                    <div class="d-flex flex-column flex-sm-row gap-2 align-self-stretch align-self-xl-start">
+                        <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary">
+                            <i class="ri ri-arrow-go-back-line me-1"></i>
+                            К списку записей
+                        </a>
+                    </div>
+                </div>
+            </section>
 
-        <div id="order-form-alerts"></div>
+            <div id="order-form-alerts"></div>
 
-        <form id="order-form" onsubmit="return false;">
-            <input type="hidden" id="client_id" name="client_id" />
+            <form id="order-form" onsubmit="return false;">
+                <input type="hidden" id="client_id" name="client_id" />
 
-            <div class="row g-4">
-                <div class="col-xl-8">
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-                                <div>
-                                    <h5 class="mb-1">1. Клиентка</h5>
-                                    <p class="text-muted mb-0">Найдите из недавних или добавьте новую.</p>
+                <div class="row g-4">
+                    <div class="col-xl-8">
+                        <div class="step-card mb-4">
+                            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-4">
+                                <div class="d-flex gap-3">
+                                    <span class="step-badge">1</span>
+                                    <div>
+                                        <h2 class="h5 mb-1">Клиентка</h2>
+                                        <p class="text-muted mb-0">Сначала ищем существующую, только потом при необходимости добавляем новую вручную.</p>
+                                    </div>
                                 </div>
-                                <span class="badge bg-label-primary">Быстро</span>
+                                <span class="step-meta">Быстрый старт</span>
                             </div>
 
-                            <div class="client-picker-layer">
+                            <div class="d-flex justify-content-start mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="toggle-manual-client">
+                                    <i class="ri ri-user-add-line me-1"></i>
+                                    Добавить новую клиентку
+                                </button>
+                            </div>
+
+                            <div class="client-picker-layer mb-3">
                                 <div class="form-floating form-floating-outline">
                                     <input
                                         type="text"
@@ -95,54 +318,63 @@
                                 <div id="client-results" class="list-group list-group-flush border rounded-3 d-none"></div>
                             </div>
 
-                            <div class="form-text mt-2">Поиск по имени и телефону. Сначала показываются недавние клиентки.</div>
-                            <div id="selected-client" class="alert alert-primary d-none mt-3 mb-0"></div>
+                            <div class="inline-hint small text-muted mb-3">Поиск работает по имени и телефону. Сначала показываются недавние клиентки, чтобы не вводить всё заново.</div>
+                            <div id="selected-client" class="selected-client-card d-none p-3 mb-3"></div>
 
-                            <div class="row g-3 mt-1">
-                                <div class="col-md-6">
-                                    <div class="client-picker-layer">
+                            <div class="manual-client-card p-3 d-none" id="manual-client-card">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                                    <div>
+                                        <h3 class="h6 mb-1">Новая клиентка</h3>
+                                        <p class="text-muted small mb-0">Поля открываются только если клиентки нет в поиске.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-text-secondary" id="hide-manual-client">Скрыть</button>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="client-picker-layer">
+                                            <div class="form-floating form-floating-outline">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    id="client_phone"
+                                                    name="client_phone"
+                                                    placeholder="+7(999)999-99-99"
+                                                    data-phone-mask
+                                                    required
+                                                />
+                                                <label for="client_phone">Телефон новой клиентки</label>
+                                            </div>
+                                            <div id="client-suggestions" class="list-group list-group-flush border rounded-3 d-none"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
                                         <div class="form-floating form-floating-outline">
                                             <input
                                                 type="text"
                                                 class="form-control"
-                                                id="client_phone"
-                                                name="client_phone"
-                                                placeholder="+7(999)999-99-99"
-                                                data-phone-mask
-                                                required
+                                                id="client_name"
+                                                name="client_name"
+                                                placeholder="Имя клиентки"
                                             />
-                                            <label for="client_phone">Телефон новой клиентки</label>
+                                            <label for="client_name">Имя клиентки</label>
                                         </div>
-                                        <div id="client-suggestions" class="list-group list-group-flush border rounded-3 d-none"></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            id="client_name"
-                                            name="client_name"
-                                            placeholder="Имя клиентки"
-                                        />
-                                        <label for="client_name">Имя клиентки</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                        <div class="step-card mb-4">
+                            <div class="d-flex gap-3 mb-4">
+                                <span class="step-badge">2</span>
                                 <div>
-                                    <h5 class="mb-1">2. Визит</h5>
-                                    <p class="text-muted mb-0">Только дата и набор услуг.</p>
+                                    <h2 class="h5 mb-1">Визит</h2>
+                                    <p class="text-muted mb-0">Выберите дату, а затем отметьте только те услуги, которые действительно входят в запись.</p>
                                 </div>
                             </div>
 
                             <div class="row g-3 mb-4">
-                                <div class="col-md-6">
+                                <div class="col-md-7">
                                     <div class="form-floating form-floating-outline">
                                         <input
                                             type="datetime-local"
@@ -154,19 +386,19 @@
                                         <label for="scheduled_at">Дата и время записи</label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="rounded-4 border p-3 h-100">
-                                        <div class="small text-muted mb-1">Мастер</div>
-                                        <div class="fw-semibold">{{ auth()->user()?->name ?? 'Вы' }}</div>
-                                        <div class="small text-muted mt-2">Статус новой записи будет выставлен автоматически.</div>
-                                    </div>
+                                <div class="col-md-5 d-flex align-items-center">
+                                    <div class="small text-muted">Мастер: <span class="fw-semibold text-body">{{ auth()->user()?->name ?? 'Вы' }}</span>. Статус новой записи можно поменять в блоке `Дополнительно`.</div>
                                 </div>
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="services-toolbar mb-3">
                                 <div>
-                                    <h6 class="mb-1">Услуги</h6>
-                                    <p class="text-muted small mb-0">Отметьте всё, что входит в визит.</p>
+                                    <h3 class="h6 mb-1">Услуги</h3>
+                                    <p class="text-muted small mb-0">Можно быстро отфильтровать список по названию и оставить только нужное.</p>
+                                </div>
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control" id="service-search" placeholder="Поиск услуги" />
+                                    <label for="service-search">Поиск услуги</label>
                                 </div>
                             </div>
 
@@ -174,13 +406,11 @@
                                 <p class="text-muted mb-0">Загрузка услуг...</p>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
+                        <div class="step-card mb-4">
                             <details>
-                                <summary class="fw-semibold mb-3" style="cursor: pointer;">Дополнительно</summary>
-                                <div class="row g-3 pt-2">
+                                <summary class="fw-semibold" style="cursor: pointer;">3. Дополнительно</summary>
+                                <div class="row g-3 pt-3">
                                     <div class="col-md-6">
                                         <div class="form-floating form-floating-outline">
                                             <input
@@ -209,58 +439,66 @@
                             </details>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-xl-4">
-                    <div class="summary-card d-flex flex-column gap-4">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body p-4">
-                                <h5 class="mb-3">Итог</h5>
+                    <div class="col-xl-4">
+                        <div class="summary-card d-flex flex-column gap-4">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                    <h2 class="h5 mb-0">Итог записи</h2>
+                                    <span class="badge bg-label-primary">Готово к отправке</span>
+                                </div>
+                                <p class="text-muted small mb-0">Главные цифры и финальное действие остаются под рукой, но не мешают заполнению формы.</p>
+                            </div>
 
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="text-muted">Предварительная сумма</span>
+                            <div class="summary-kpis">
+                                <div class="summary-kpi">
+                                    <span>Предварительная сумма</span>
                                     <strong id="summary-price">0 ₽</strong>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted">Прогноз времени</span>
+                                <div class="summary-kpi">
+                                    <span>Прогноз времени</span>
                                     <strong id="summary-duration">0 мин</strong>
                                 </div>
-
-                                <div class="form-floating form-floating-outline mb-3">
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        class="form-control"
-                                        id="total_price"
-                                        name="total_price"
-                                    />
-                                    <label for="total_price">Своя сумма, если нужно</label>
-                                </div>
-
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg">Создать запись</button>
-                                    <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary">Отмена</a>
-                                </div>
                             </div>
-                        </div>
 
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                                <div>
-                                    <h5 class="mb-1">Подсказки по услугам</h5>
-                                    <p class="text-muted small mb-0">Можно быстро добавить в запись.</p>
+                            <div class="small text-muted" id="summary-selection-note">
+                                Выберите клиентку, дату и хотя бы одну услугу, чтобы запись была полностью готова.
+                            </div>
+
+                            <div class="form-floating form-floating-outline d-none" id="custom-price-wrap">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    class="form-control"
+                                    id="total_price"
+                                    name="total_price"
+                                />
+                                <label for="total_price">Своя сумма, если нужно</label>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">Создать запись</button>
+                                <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary">Отмена</a>
+                            </div>
+
+                            <details class="recommendations-shell">
+                                <summary class="d-flex align-items-start justify-content-between gap-3" style="cursor: pointer;">
+                                    <span>
+                                        <span class="h6 d-block mb-1">Подсказки по услугам</span>
+                                        <span class="text-muted small">Дополнительные идеи для среднего чека. Не обязательны для заполнения.</span>
+                                    </span>
+                                    <span class="badge bg-label-primary">AI</span>
+                                </summary>
+                                <div id="recommendations-container" class="pt-3">
+                                    <p class="text-muted mb-0">Загрузка...</p>
                                 </div>
-                                <span class="badge bg-label-primary">AI</span>
-                            </div>
-                            <div class="card-body p-4" id="recommendations-container">
-                                <p class="text-muted mb-0">Загрузка...</p>
-                            </div>
+                            </details>
                         </div>
                     </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 @endsection
 
@@ -285,8 +523,10 @@
         const summaryPrice = document.getElementById('summary-price');
         const summaryDuration = document.getElementById('summary-duration');
         const totalPriceInput = document.getElementById('total_price');
+        const customPriceWrap = document.getElementById('custom-price-wrap');
         const statusSelect = document.getElementById('status');
         const scheduledAtInput = document.getElementById('scheduled_at');
+        const serviceSearchInput = document.getElementById('service-search');
         const clientIdInput = document.getElementById('client_id');
         const clientSearchInput = document.getElementById('client_search');
         const clientPhoneInput = document.getElementById('client_phone');
@@ -294,10 +534,15 @@
         const selectedClient = document.getElementById('selected-client');
         const clientResults = document.getElementById('client-results');
         const clientSuggestions = document.getElementById('client-suggestions');
+        const summarySelectionNote = document.getElementById('summary-selection-note');
+        const manualClientCard = document.getElementById('manual-client-card');
+        const toggleManualClientButton = document.getElementById('toggle-manual-client');
+        const hideManualClientButton = document.getElementById('hide-manual-client');
 
         let lookupController = null;
         let lookupTimer = null;
         let recentClients = [];
+        let availableServices = [];
 
         function showFormAlert(type, message) {
             const alert = document.createElement('div');
@@ -320,12 +565,16 @@
                 return;
             }
 
+            const selected = new Set(
+                Array.from(document.querySelectorAll('.service-checkbox:checked')).map(checkbox => String(checkbox.value))
+            );
+
             const row = document.createElement('div');
-            row.className = 'row g-3';
+            row.className = 'services-grid';
 
             services.forEach(service => {
                 const col = document.createElement('div');
-                col.className = 'col-md-6';
+                const isChecked = selected.has(String(service.id));
                 col.innerHTML = `
                     <label class="service-card w-100">
                         <input
@@ -335,14 +584,15 @@
                             value="${service.id}"
                             data-price="${service.price || 0}"
                             data-duration="${service.duration || 0}"
+                            ${isChecked ? 'checked' : ''}
                         />
                         <span class="service-card-body d-block">
                             <span class="d-flex align-items-start justify-content-between gap-3">
                                 <span>
                                     <span class="fw-semibold d-block">${service.name}</span>
-                                    <small class="text-muted">~ ${service.duration || 0} мин</small>
+                                    <small class="service-duration">~ ${service.duration || 0} мин</small>
                                 </span>
-                                <span class="badge bg-label-primary">${Number(service.price || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
+                                <span class="service-meta-pill">${Number(service.price || 0).toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₽</span>
                             </span>
                         </span>
                     </label>
@@ -356,6 +606,8 @@
             document.querySelectorAll('.service-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', updateSummary);
             });
+
+            updateSummary();
         }
 
         function formatCurrency(value) {
@@ -390,7 +642,7 @@
 
             recommendations.forEach(item => {
                 const wrapper = document.createElement('div');
-                wrapper.className = 'border rounded-4 p-3 mb-3';
+                wrapper.className = 'recommendation-card';
 
                 const service = item.service || {};
                 const title = service.name || item.title || 'Рекомендация';
@@ -437,6 +689,48 @@
             });
         }
 
+        function formatDateState(value) {
+            if (!value) {
+                return 'Не выбрана';
+            }
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return value;
+            }
+
+            return new Intl.DateTimeFormat('ru-RU', {
+                day: '2-digit',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+            }).format(date);
+        }
+
+        function updateProgressState() {
+            const hasExistingClient = Boolean(clientIdInput?.value);
+            const manualName = clientNameInput?.value?.trim() || '';
+            const manualPhone = clientPhoneInput?.value?.trim() || '';
+            const clientLabel = hasExistingClient
+                ? (clientNameInput?.value?.trim() || clientSearchInput?.value?.trim() || 'Клиентка выбрана')
+                : (manualName || manualPhone || 'Не выбрана');
+            const selectedCount = document.querySelectorAll('.service-checkbox:checked').length;
+
+            const dateLabel = formatDateState(scheduledAtInput?.value || '');
+
+            if (summarySelectionNote) {
+                if (clientLabel === 'Не выбрана' || !scheduledAtInput?.value || selectedCount === 0) {
+                    summarySelectionNote.textContent = 'Выберите клиентку, дату и хотя бы одну услугу, чтобы запись была полностью готова.';
+                } else {
+                    summarySelectionNote.textContent = `${clientLabel} • ${dateLabel} • ${selectedCount} усл.`;
+                }
+            }
+
+            if (customPriceWrap) {
+                customPriceWrap.classList.toggle('d-none', selectedCount === 0);
+            }
+        }
+
         function updateSummary() {
             let totalPrice = 0;
             let totalDuration = 0;
@@ -452,6 +746,8 @@
             if (!totalPriceInput.value) {
                 totalPriceInput.value = totalPrice ? totalPrice.toFixed(2) : '';
             }
+
+            updateProgressState();
         }
 
         function formatSuggestionPhone(phone) {
@@ -541,6 +837,8 @@
             } else {
                 clearClientResults();
             }
+
+            updateProgressState();
         }
 
         function renderClientResults(items, title = 'Клиентки') {
@@ -593,6 +891,9 @@
                 clearClientResults();
                 if (clientSearchInput) {
                     clientSearchInput.value = '';
+                }
+                if (manualClientCard) {
+                    manualClientCard.classList.remove('d-none');
                 }
                 if (clientPhoneInput) {
                     clientPhoneInput.focus();
@@ -761,7 +1062,8 @@
 
             const data = await response.json();
             recentClients = Array.isArray(data.recent_clients) ? data.recent_clients : [];
-            renderServices(data.services || []);
+            availableServices = Array.isArray(data.services) ? data.services : [];
+            renderServices(availableServices);
             renderRecommendations(data.recommended_services || []);
             renderStatuses(data.status_options || {});
             renderClientResults(recentClients, 'Недавние клиентки');
@@ -854,6 +1156,24 @@
                 }
 
                 lookupTimer = setTimeout(() => lookupClient(value, 'phone'), 400);
+                updateProgressState();
+            });
+        }
+
+        if (clientNameInput) {
+            clientNameInput.addEventListener('input', updateProgressState);
+        }
+
+        if (toggleManualClientButton) {
+            toggleManualClientButton.addEventListener('click', function () {
+                manualClientCard?.classList.remove('d-none');
+                clientPhoneInput?.focus();
+            });
+        }
+
+        if (hideManualClientButton) {
+            hideManualClientButton.addEventListener('click', function () {
+                manualClientCard?.classList.add('d-none');
             });
         }
 
@@ -878,12 +1198,29 @@
                 }
 
                 lookupTimer = setTimeout(() => lookupClient(value, 'search'), 250);
+                updateProgressState();
             });
 
             clientSearchInput.addEventListener('focus', function () {
                 if (!this.value.trim()) {
                     renderClientResults(recentClients, 'Недавние клиентки');
                 }
+            });
+        }
+
+        if (scheduledAtInput) {
+            scheduledAtInput.addEventListener('input', updateProgressState);
+            scheduledAtInput.addEventListener('change', updateProgressState);
+        }
+
+        if (serviceSearchInput) {
+            serviceSearchInput.addEventListener('input', function () {
+                const query = this.value.trim().toLowerCase();
+                const filteredServices = !query
+                    ? availableServices
+                    : availableServices.filter(service => (service.name || '').toLowerCase().includes(query));
+
+                renderServices(filteredServices);
             });
         }
 
@@ -908,6 +1245,7 @@
         });
 
         applyDateFromUrl();
+        updateProgressState();
         loadOptions();
     </script>
 @endsection
