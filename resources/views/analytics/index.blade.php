@@ -16,25 +16,181 @@
 @endsection
 
 @section('content')
-    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-        <div>
-            <h4 class="mb-1">@lang('analytics.heading')</h4>
-            <p class="text-muted mb-0">@lang('analytics.subtitle')</p>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-outline-secondary" id="analytics-refresh">
-                <i class="ri ri-refresh-line me-1"></i>
-                @lang('analytics.actions.refresh')
-            </button>
-            <a href="#" class="btn btn-primary disabled" id="analytics-export" target="_blank" rel="noopener">
-                <i class="ri ri-file-excel-2-line me-1"></i>
-                @lang('analytics.actions.export')
-            </a>
-        </div>
-    </div>
+    <style>
+        .analytics-page {
+            --analytics-border: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            --analytics-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
 
-    <div class="card mb-4">
-        <div class="card-body">
+        .analytics-page .analytics-hero,
+        .analytics-page .analytics-surface,
+        .analytics-page .analytics-card {
+            border: 1px solid var(--analytics-border);
+            border-radius: 1.5rem;
+            box-shadow: var(--analytics-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 96%, transparent);
+        }
+
+        .analytics-page .analytics-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 1.5rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14), transparent 34%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+        }
+
+        .analytics-page .analytics-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            filter: blur(12px);
+        }
+
+        .analytics-page .analytics-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .analytics-page .analytics-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .analytics-page .analytics-hero .btn {
+            white-space: nowrap;
+        }
+
+        .analytics-page .analytics-surface,
+        .analytics-page .analytics-card {
+            padding: 1.25rem;
+        }
+
+        .analytics-page .analytics-kpi {
+            padding: 1.15rem;
+            border-radius: 1.2rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+            height: 100%;
+        }
+
+        .analytics-page .analytics-kpi-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .analytics-page .analytics-kpi-note {
+            min-height: 1.25rem;
+        }
+
+        .analytics-page .analytics-soft-card {
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .analytics-page .analytics-pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .analytics-page .analytics-pill-list > * {
+            margin: 0;
+        }
+
+        .analytics-page details.analytics-collapse {
+            border-radius: 1.25rem;
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+            background: color-mix(in srgb, var(--bs-card-bg) 98%, transparent);
+            box-shadow: var(--analytics-shadow);
+        }
+
+        .analytics-page details.analytics-collapse > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .analytics-page details.analytics-collapse > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .analytics-page details.analytics-collapse > summary::after {
+            content: 'Развернуть';
+            color: var(--bs-secondary-color);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .analytics-page details.analytics-collapse[open] > summary::after {
+            content: 'Свернуть';
+        }
+
+        .analytics-page .analytics-collapse-body {
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .analytics-page [data-report] {
+            display: none !important;
+        }
+
+        .analytics-page .table-sm td,
+        .analytics-page .table-sm th {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .analytics-page .analytics-summary-grid > div {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <div class="analytics-page d-flex flex-column gap-4">
+        <section class="analytics-hero">
+            <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-4">
+                <div class="d-flex flex-column gap-3">
+                    <span class="analytics-eyebrow">
+                        <i class="ri ri-line-chart-line text-primary"></i>
+                        Обзор бизнеса
+                    </span>
+                    <div>
+                        <h4 class="mb-1">@lang('analytics.heading')</h4>
+                        <p class="text-muted mb-0">@lang('analytics.subtitle')</p>
+                    </div>
+                </div>
+                <div class="d-flex flex-column flex-sm-row gap-2 align-self-start">
+                    <button type="button" class="btn btn-outline-secondary" id="analytics-refresh">
+                        <i class="ri ri-refresh-line me-1"></i>
+                        @lang('analytics.actions.refresh')
+                    </button>
+                    <a href="#" class="btn btn-primary disabled" id="analytics-export" target="_blank" rel="noopener">
+                        <i class="ri ri-file-excel-2-line me-1"></i>
+                        @lang('analytics.actions.export')
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="analytics-surface">
             <form id="analytics-filters" class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label for="filter-from" class="form-label">@lang('analytics.filters.from')</label>
@@ -48,24 +204,19 @@
                     <label for="filter-grouping" class="form-label">@lang('analytics.filters.grouping')</label>
                     <select class="form-select" id="filter-grouping" name="grouping"></select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">&nbsp;</label>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-fill">@lang('analytics.filters.apply')</button>
-                        <button type="button" class="btn btn-outline-secondary flex-fill" id="analytics-reset">@lang('analytics.filters.reset')</button>
-                    </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">@lang('analytics.filters.apply')</button>
+                    <button type="button" class="btn btn-outline-secondary flex-fill" id="analytics-reset">@lang('analytics.filters.reset')</button>
                 </div>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <div id="analytics-alerts"></div>
+        <div id="analytics-alerts"></div>
 
-    <div class="row g-4 mb-4" id="analytics-summary">
-        <div class="col-xxl-3 col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-start justify-content-between">
+        <section class="row g-4 analytics-summary-grid" id="analytics-summary">
+            <div class="col-xl-3 col-md-6">
+                <div class="analytics-kpi">
+                    <div class="analytics-kpi-header">
                         <div>
                             <p class="text-muted mb-2">@lang('analytics.summary.revenue')</p>
                             <h4 class="mb-1" data-metric-value="revenue">—</h4>
@@ -78,23 +229,15 @@
                             <i class="ri ri-bar-chart-2-line"></i>
                         </span>
                     </div>
-                    <div class="mt-3">
-                        <div class="d-flex align-items-center justify-content-between small text-muted">
-                            <span>@lang('analytics.summary.services_revenue')</span>
-                            <span data-metric-value="services_revenue">—</span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between small text-muted">
-                            <span>@lang('analytics.summary.retail_revenue')</span>
-                            <span data-metric-value="retail_revenue">—</span>
-                        </div>
+                    <div class="analytics-pill-list mt-3 small text-muted">
+                        <span class="analytics-soft-card py-2 px-3">@lang('analytics.summary.services_revenue'): <span data-metric-value="services_revenue">—</span></span>
+                        <span class="analytics-soft-card py-2 px-3">@lang('analytics.summary.retail_revenue'): <span data-metric-value="retail_revenue">—</span></span>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xxl-3 col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-start justify-content-between">
+            <div class="col-xl-3 col-md-6">
+                <div class="analytics-kpi">
+                    <div class="analytics-kpi-header">
                         <div>
                             <p class="text-muted mb-2">@lang('analytics.summary.average_ticket')</p>
                             <h4 class="mb-1" data-metric-value="average_ticket">—</h4>
@@ -107,14 +250,12 @@
                             <i class="ri ri-bank-card-line"></i>
                         </span>
                     </div>
-                    <p class="text-muted small mt-3 mb-0" data-metric-note="average_ticket"></p>
+                    <p class="text-muted small mt-3 mb-0 analytics-kpi-note" data-metric-note="average_ticket"></p>
                 </div>
             </div>
-        </div>
-        <div class="col-xxl-3 col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-start justify-content-between">
+            <div class="col-xl-3 col-md-6">
+                <div class="analytics-kpi">
+                    <div class="analytics-kpi-header">
                         <div>
                             <p class="text-muted mb-2">@lang('analytics.summary.transactions')</p>
                             <h4 class="mb-1" data-metric-value="transactions">—</h4>
@@ -130,11 +271,9 @@
                     <p class="text-muted small mt-3 mb-0">@lang('analytics.summary.transactions_hint')</p>
                 </div>
             </div>
-        </div>
-        <div class="col-xxl-3 col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-start justify-content-between">
+            <div class="col-xl-3 col-md-6">
+                <div class="analytics-kpi">
+                    <div class="analytics-kpi-header">
                         <div>
                             <p class="text-muted mb-2">@lang('analytics.summary.retention')</p>
                             <h4 class="mb-1" data-metric-value="retention_rate">—</h4>
@@ -150,236 +289,230 @@
                     </ul>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="row g-4 mb-4">
-        <div class="col-xl-8">
-            <div class="card h-100">
-                <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
-                    <div>
-                        <h5 class="mb-1">@lang('analytics.cards.revenue_trend')</h5>
-                        <p class="text-muted mb-0 small" id="analytics-revenue-trend-summary"></p>
+        <section class="row g-4">
+            <div class="col-xl-8">
+                <div class="analytics-card h-100">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div>
+                            <h5 class="mb-1">@lang('analytics.cards.revenue_trend')</h5>
+                            <p class="text-muted mb-0 small" id="analytics-revenue-trend-summary"></p>
+                        </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-report="revenue">
-                        @lang('analytics.actions.details')
-                    </button>
-                </div>
-                <div class="card-body">
                     <div class="analytics-chart">
                         <canvas id="analytics-revenue-chart"></canvas>
                     </div>
-                    <div class="mt-3 small" id="analytics-financial-insights"></div>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-4">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">@lang('analytics.cards.revenue_share')</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-report="services">
-                        @lang('analytics.actions.details')
-                    </button>
-                </div>
-                <div class="card-body">
+            <div class="col-xl-4">
+                <div class="analytics-card h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="mb-0">@lang('analytics.cards.revenue_share')</h5>
+                    </div>
                     <div class="mb-3 analytics-chart analytics-chart--share">
                         <canvas id="analytics-share-chart"></canvas>
                     </div>
                     <div class="small" id="analytics-share-legend"></div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="row g-4 mb-4">
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">@lang('analytics.cards.funnel')</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-report="funnel">
-                        @lang('analytics.actions.details')
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>@lang('analytics.tables.funnel_stage')</th>
-                                    <th class="text-end">@lang('analytics.tables.funnel_clients')</th>
-                                    <th class="text-end">@lang('analytics.tables.funnel_conversion')</th>
-                                </tr>
-                            </thead>
-                            <tbody id="analytics-funnel-body">
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
-                                </tr>
-                            </tbody>
-                        </table>
+        <section class="row g-4">
+            <div class="col-xl-6">
+                <div class="analytics-card h-100">
+                    <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                        <div>
+                            <h5 class="mb-1">@lang('analytics.cards.ai')</h5>
+                            <p class="text-muted mb-0 small">@lang('analytics.ai.subtitle')</p>
+                        </div>
+                    </div>
+                    <div class="analytics-soft-card mb-3">
+                        <h6 class="text-muted text-uppercase small mb-2">@lang('analytics.ai.summary_title')</h6>
+                        <p class="mb-0" id="analytics-ai-summary">—</p>
+                    </div>
+                    <div class="analytics-soft-card mb-3">
+                        <div class="d-flex align-items-center justify-content-between gap-3">
+                            <div>
+                                <div class="text-muted small">@lang('analytics.labels.revenue_forecast')</div>
+                                <h5 class="mb-0" id="analytics-ai-forecast-value">—</h5>
+                            </div>
+                            <div class="text-muted small" id="analytics-ai-forecast-meta">—</div>
+                        </div>
+                        <p class="text-muted small mb-0 mt-2" id="analytics-ai-forecast-comment"></p>
+                    </div>
+                    <div>
+                        <h6 class="text-muted text-uppercase small mb-2">@lang('analytics.ai.recommendations_title')</h6>
+                        <ul class="list-unstyled mb-0" id="analytics-ai-recommendations"></ul>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">@lang('analytics.cards.segments')</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-report="segments">
-                        @lang('analytics.actions.details')
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive mb-3">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>@lang('analytics.tables.segment')</th>
-                                    <th class="text-end">@lang('analytics.tables.count')</th>
-                                    <th class="text-end">@lang('analytics.tables.share')</th>
-                                </tr>
-                            </thead>
-                            <tbody id="analytics-segments-body">
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <div class="col-xl-6">
+                <div class="analytics-card h-100">
+                    <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                        <div>
+                            <h5 class="mb-1">Что важно сейчас</h5>
+                            <p class="text-muted mb-0 small">Короткие сигналы по выручке, клиентам и удержанию.</p>
+                        </div>
                     </div>
-                    <div class="small text-muted" id="analytics-persona"></div>
-                    <div class="small mt-3" id="analytics-client-insights"></div>
+                    <div class="analytics-soft-card mb-3">
+                        <h6 class="text-muted text-uppercase small mb-2">Финансовые сигналы</h6>
+                        <div class="small" id="analytics-financial-insights"></div>
+                    </div>
+                    <div class="analytics-soft-card">
+                        <h6 class="text-muted text-uppercase small mb-2">Клиентские сигналы</h6>
+                        <div class="small mb-3 text-muted" id="analytics-persona"></div>
+                        <div class="small" id="analytics-client-insights"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="row g-4 mb-4">
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">@lang('analytics.cards.churn')</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-report="churn">
-                        @lang('analytics.actions.details')
-                    </button>
+        <details class="analytics-collapse" open id="analytics-sales-details">
+            <summary>
+                <div>
+                    <h5 class="mb-1">Продажи и сегменты</h5>
+                    <p class="text-muted mb-0 small">Воронка, статусы клиентов и структура базы.</p>
                 </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="avatar avatar-lg flex-shrink-0 bg-label-danger d-flex align-items-center justify-content-center">
-                            <i class="ri ri-alert-line"></i>
-                        </div>
-                        <div>
-                            <p class="mb-1 text-muted">@lang('analytics.churn.rate')</p>
-                            <h4 class="mb-0" id="analytics-churn-rate">—</h4>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>@lang('analytics.tables.client')</th>
-                                    <th>@lang('analytics.tables.last_visit')</th>
-                                    <th class="text-end">@lang('analytics.tables.segment')</th>
-                                </tr>
-                            </thead>
-                            <tbody id="analytics-risk-body">
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.risk_clients_empty')</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">@lang('analytics.cards.ltv')</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-report="ltv">
-                        @lang('analytics.actions.details')
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="avatar avatar-lg flex-shrink-0 bg-label-primary d-flex align-items-center justify-content-center">
-                            <i class="ri ri-vip-crown-line"></i>
-                        </div>
-                        <div>
-                            <p class="mb-1 text-muted">@lang('analytics.ltv.value')</p>
-                            <h4 class="mb-0" id="analytics-ltv-value">—</h4>
-                            <div class="d-flex align-items-center gap-2 small text-muted mt-1">
-                                <span id="analytics-ltv-delta">—</span>
+            </summary>
+            <div class="analytics-collapse-body">
+                <div class="row g-4">
+                    <div class="col-xl-6">
+                        <div class="analytics-card h-100">
+                            <h5 class="mb-3">@lang('analytics.cards.funnel')</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>@lang('analytics.tables.funnel_stage')</th>
+                                            <th class="text-end">@lang('analytics.tables.funnel_clients')</th>
+                                            <th class="text-end">@lang('analytics.tables.funnel_conversion')</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="analytics-funnel-body">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                    <p class="text-muted small mb-0" id="analytics-ltv-insight"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header d-flex align-items-center justify-content-between">
-            <div>
-                <h5 class="mb-1">@lang('analytics.cards.ai')</h5>
-                <p class="text-muted mb-0 small">@lang('analytics.ai.subtitle')</p>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-report="ai">
-                @lang('analytics.actions.details')
-            </button>
-        </div>
-        <div class="card-body">
-            <div class="row g-4">
-                <div class="col-xl-4">
-                    <h6 class="text-muted text-uppercase small mb-2">@lang('analytics.ai.summary_title')</h6>
-                    <p class="mb-0" id="analytics-ai-summary">—</p>
-                </div>
-                <div class="col-xl-4">
-                    <h6 class="text-muted text-uppercase small mb-2">@lang('analytics.ai.forecast_title')</h6>
-                    <div class="d-flex align-items-center gap-3">
-                        <div>
-                            <div class="text-muted small">@lang('analytics.labels.revenue_forecast')</div>
-                            <h5 class="mb-0" id="analytics-ai-forecast-value">—</h5>
+                    <div class="col-xl-6">
+                        <div class="analytics-card h-100">
+                            <h5 class="mb-3">@lang('analytics.cards.segments')</h5>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>@lang('analytics.tables.segment')</th>
+                                            <th class="text-end">@lang('analytics.tables.count')</th>
+                                            <th class="text-end">@lang('analytics.tables.share')</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="analytics-segments-body">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="small text-muted" id="analytics-persona-duplicate-placeholder" hidden></div>
                         </div>
-                        <div class="text-muted small" id="analytics-ai-forecast-meta">—</div>
                     </div>
-                    <p class="text-muted small mb-0 mt-2" id="analytics-ai-forecast-comment"></p>
-                </div>
-                <div class="col-xl-4">
-                    <h6 class="text-muted text-uppercase small mb-2">@lang('analytics.ai.recommendations_title')</h6>
-                    <ul class="list-unstyled mb-0" id="analytics-ai-recommendations"></ul>
                 </div>
             </div>
-        </div>
-    </div>
+        </details>
 
-    <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="mb-0">@lang('analytics.top_clients.title')</h5>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-report="top-clients">
-                @lang('analytics.actions.details')
-            </button>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>@lang('analytics.tables.client')</th>
-                            <th>@lang('analytics.tables.revenue')</th>
-                            <th>@lang('analytics.tables.transactions')</th>
-                            <th>@lang('analytics.tables.last_visit')</th>
-                        </tr>
-                    </thead>
-                    <tbody id="analytics-top-clients">
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <details class="analytics-collapse" id="analytics-risk-details">
+            <summary>
+                <div>
+                    <h5 class="mb-1">Риск и ценность клиентов</h5>
+                    <p class="text-muted mb-0 small">Отток, LTV и список клиентов, которым нужен возврат.</p>
+                </div>
+            </summary>
+            <div class="analytics-collapse-body">
+                <div class="row g-4">
+                    <div class="col-xl-6">
+                        <div class="analytics-card h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="avatar avatar-lg flex-shrink-0 bg-label-danger d-flex align-items-center justify-content-center">
+                                    <i class="ri ri-alert-line"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-1 text-muted">@lang('analytics.churn.rate')</p>
+                                    <h4 class="mb-0" id="analytics-churn-rate">—</h4>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>@lang('analytics.tables.client')</th>
+                                            <th>@lang('analytics.tables.last_visit')</th>
+                                            <th class="text-end">@lang('analytics.tables.segment')</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="analytics-risk-body">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.risk_clients_empty')</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6">
+                        <div class="analytics-card h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="avatar avatar-lg flex-shrink-0 bg-label-primary d-flex align-items-center justify-content-center">
+                                    <i class="ri ri-vip-crown-line"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-1 text-muted">@lang('analytics.ltv.value')</p>
+                                    <h4 class="mb-0" id="analytics-ltv-value">—</h4>
+                                    <div class="d-flex align-items-center gap-2 small text-muted mt-1">
+                                        <span id="analytics-ltv-delta">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-muted small mb-0" id="analytics-ltv-insight"></p>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-@endsection
+        </details>
+
+        <details class="analytics-collapse" id="analytics-top-details">
+            <summary>
+                <div>
+                    <h5 class="mb-1">@lang('analytics.top_clients.title')</h5>
+                    <p class="text-muted mb-0 small">Открывайте тех, кто приносит максимум выручки.</p>
+                </div>
+            </summary>
+            <div class="analytics-collapse-body">
+                <div class="analytics-card">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>@lang('analytics.tables.client')</th>
+                                    <th>@lang('analytics.tables.revenue')</th>
+                                    <th>@lang('analytics.tables.transactions')</th>
+                                    <th>@lang('analytics.tables.last_visit')</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analytics-top-clients">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </details>
+    </div>@endsection
 
 @section('scripts')
     <script src="{{ asset('assets/vendor/libs/chartjs/chartjs.js') }}"></script>
@@ -431,6 +564,8 @@
             const shareLegend = document.getElementById('analytics-share-legend');
             const financialInsightsEl = document.getElementById('analytics-financial-insights');
             const clientInsightsEl = document.getElementById('analytics-client-insights');
+            const riskDetails = document.getElementById('analytics-risk-details');
+            const topDetails = document.getElementById('analytics-top-details');
 
             if (typeof window.Chart === 'undefined') {
                 console.error('Chart.js library is required for analytics charts.');
@@ -813,11 +948,27 @@
                 state.filters.grouping = groupingSelect.value || 'day';
             }
 
-            function buildQuery() {
+            function updateDeferredPlaceholders() {
+                if (churnRateEl) churnRateEl.textContent = '—';
+                if (ltvValueEl) ltvValueEl.textContent = '—';
+                if (ltvDeltaEl) ltvDeltaEl.textContent = '—';
+                if (ltvInsightEl) ltvInsightEl.textContent = '';
+                if (riskBody) {
+                    riskBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">Раскройте секцию, чтобы загрузить клиентов в зоне риска.</td></tr>';
+                }
+                if (topClientsBody) {
+                    topClientsBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Раскройте секцию, чтобы загрузить топ-клиентов.</td></tr>';
+                }
+            }
+
+            function buildQuery(extraSections = []) {
                 const params = new URLSearchParams();
                 if (state.filters.from) params.append('from', state.filters.from);
                 if (state.filters.to) params.append('to', state.filters.to);
                 if (state.filters.grouping) params.append('grouping', state.filters.grouping);
+                extraSections.forEach(function (section) {
+                    params.append('sections[]', section);
+                });
                 return params.toString();
             }
 
@@ -825,6 +976,7 @@
                 clearAlerts();
                 setLoading(true);
                 syncFiltersFromInputs();
+                updateDeferredPlaceholders();
 
                 const query = buildQuery();
                 fetch('/api/v1/analytics/overview' + (query ? '?' + query : ''), { headers: authHeaders() })
@@ -872,17 +1024,18 @@
 
                         renderFunnel(data.clients ? data.clients.funnel : null);
                         renderSegments(data.clients ? data.clients.segments : null);
-                        renderRiskClients(data.clients && data.clients.churn ? data.clients.churn.risk_clients : null);
                         renderInsights(clientInsightsEl, data.clients ? data.clients.insights : []);
-
-                        churnRateEl.textContent = formatPercent(data.clients && data.clients.churn ? data.clients.churn.rate : 0);
-                        ltvValueEl.textContent = formatCurrency(data.clients && data.clients.ltv ? data.clients.ltv.value : 0);
-                        ltvDeltaEl.textContent = data.clients && data.clients.ltv && data.clients.ltv.delta !== null ? formatPercent(data.clients.ltv.delta) : '—';
-                        ltvInsightEl.textContent = data.clients && data.clients.ltv ? data.clients.ltv.insight : '';
 
                         renderPersona(data.clients ? data.clients.persona : null);
                         renderAi(data.ai || null);
-                        renderTopClients(data.top_clients || []);
+
+                        if (riskDetails && riskDetails.open) {
+                            fetchDeferredSections(['churn', 'ltv']);
+                        }
+
+                        if (topDetails && topDetails.open) {
+                            fetchDeferredSections(['top_clients']);
+                        }
                     })
                     .catch(function (error) {
                         console.error(error);
@@ -890,6 +1043,39 @@
                     })
                     .finally(function () {
                         setLoading(false);
+                    });
+            }
+
+            function fetchDeferredSections(sections) {
+                const query = buildQuery(sections);
+
+                fetch('/api/v1/analytics/overview' + (query ? '?' + query : ''), { headers: authHeaders() })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error(texts.request_failed || 'Request failed');
+                        }
+                        return response.json();
+                    })
+                    .then(function (payload) {
+                        const data = payload.data || {};
+
+                        if (sections.includes('churn')) {
+                            renderRiskClients(data.clients && data.clients.churn ? data.clients.churn.risk_clients : null);
+                            churnRateEl.textContent = formatPercent(data.clients && data.clients.churn ? data.clients.churn.rate : 0);
+                        }
+
+                        if (sections.includes('ltv')) {
+                            ltvValueEl.textContent = formatCurrency(data.clients && data.clients.ltv ? data.clients.ltv.value : 0);
+                            ltvDeltaEl.textContent = data.clients && data.clients.ltv && data.clients.ltv.delta !== null ? formatPercent(data.clients.ltv.delta) : '—';
+                            ltvInsightEl.textContent = data.clients && data.clients.ltv ? data.clients.ltv.insight : '';
+                        }
+
+                        if (sections.includes('top_clients')) {
+                            renderTopClients(data.top_clients || []);
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error(error);
                     });
             }
 
@@ -910,6 +1096,22 @@
                 }
                 fetchAnalytics();
             });
+
+            if (riskDetails) {
+                riskDetails.addEventListener('toggle', function () {
+                    if (riskDetails.open) {
+                        fetchDeferredSections(['churn', 'ltv']);
+                    }
+                });
+            }
+
+            if (topDetails) {
+                topDetails.addEventListener('toggle', function () {
+                    if (topDetails.open) {
+                        fetchDeferredSections(['top_clients']);
+                    }
+                });
+            }
 
             document.querySelectorAll('[data-report]').forEach(function (button) {
                 button.addEventListener('click', function () {

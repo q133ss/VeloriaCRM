@@ -38,6 +38,12 @@ class AnalyticsController extends Controller
         $userId = $this->currentUserId();
         $validated = $request->validated();
         $grouping = $validated['grouping'] ?? 'day';
+        $requestedSections = collect((array) $request->query('sections', []))
+            ->filter(fn (mixed $section) => is_string($section) && $section !== '')
+            ->values();
+        $includeChurn = $requestedSections->contains('churn');
+        $includeLtv = $requestedSections->contains('ltv');
+        $includeTopClients = $requestedSections->contains('top_clients');
 
         $locale = app()->getLocale();
         $timezone = $request->user()?->timezone ?? config('app.timezone');
@@ -159,40 +165,55 @@ class AnalyticsController extends Controller
             ]);
         });
 
+        $clientsPayload = [
+            'funnel' => $funnel,
+            'segments' => $segments,
+            'insights' => $clientInsights,
+            'persona' => $persona,
+        ];
+
+        if ($includeChurn) {
+            $clientsPayload['churn'] = [
+                'rate' => $churnRate,
+                'risk_clients' => $riskClients->values()->all(),
+            ];
+        }
+
+        if ($includeLtv) {
+            $clientsPayload['ltv'] = $ltv;
+        }
+
+        $dataPayload = [
+            'summary' => [
+                'revenue' => $this->formatMetric($currentRevenue, $previousRevenue, $revenueDelta),
+                'services_revenue' => $this->formatMetric($servicesRevenue, null, null),
+                'retail_revenue' => $this->formatMetric($retailRevenue, null, null),
+                'average_ticket' => $this->formatMetric($avgTicketCurrent, $avgTicketPrevious, $avgTicketDelta),
+                'clients' => [
+                    'new' => $currentClients->count(),
+                    'active' => $currentClientVisits->count(),
+                    'loyal' => $loyalClients,
+                ],
+                'transactions' => $this->formatMetric($transactionsCurrent, $transactionsPrevious, $transactionsDelta),
+                'retention_rate' => $this->formatMetric($retentionRate, null, null),
+                'top_client' => $topClients[0] ?? null,
+            ],
+            'financial' => [
+                'revenue_trend' => $revenueTrend,
+                'service_share' => $serviceShare,
+                'insights' => $financialInsights,
+            ],
+            'clients' => $clientsPayload,
+            'ai' => $aiInsights,
+        ];
+
+        if ($includeTopClients) {
+            $dataPayload['top_clients'] = $topClients;
+        }
+
         return response()->json([
             'data' => [
-                'summary' => [
-                    'revenue' => $this->formatMetric($currentRevenue, $previousRevenue, $revenueDelta),
-                    'services_revenue' => $this->formatMetric($servicesRevenue, null, null),
-                    'retail_revenue' => $this->formatMetric($retailRevenue, null, null),
-                    'average_ticket' => $this->formatMetric($avgTicketCurrent, $avgTicketPrevious, $avgTicketDelta),
-                    'clients' => [
-                        'new' => $currentClients->count(),
-                        'active' => $currentClientVisits->count(),
-                        'loyal' => $loyalClients,
-                    ],
-                    'transactions' => $this->formatMetric($transactionsCurrent, $transactionsPrevious, $transactionsDelta),
-                    'retention_rate' => $this->formatMetric($retentionRate, null, null),
-                    'top_client' => $topClients[0] ?? null,
-                ],
-                'financial' => [
-                    'revenue_trend' => $revenueTrend,
-                    'service_share' => $serviceShare,
-                    'insights' => $financialInsights,
-                ],
-                'clients' => [
-                    'funnel' => $funnel,
-                    'segments' => $segments,
-                    'churn' => [
-                        'rate' => $churnRate,
-                        'risk_clients' => $riskClients->values()->all(),
-                    ],
-                    'ltv' => $ltv,
-                    'insights' => $clientInsights,
-                    'persona' => $persona,
-                ],
-                'ai' => $aiInsights,
-                'top_clients' => $topClients,
+                ...$dataPayload,
             ],
             'meta' => [
                 'period' => [
@@ -212,6 +233,7 @@ class AnalyticsController extends Controller
                 'exports' => [
                     'excel' => null,
                 ],
+                'included_sections' => $requestedSections->all(),
             ],
         ]);
     }
