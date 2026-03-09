@@ -22,6 +22,11 @@
             border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
         }
 
+        .landings-hero .btn {
+            white-space: nowrap;
+            align-self: flex-start;
+        }
+
         .landing-row {
             border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
             border-radius: 1rem;
@@ -52,7 +57,7 @@
                             <h3 class="mb-2">{{ __('landings.index.title') }}</h3>
                             <p class="text-muted mb-0">{{ __('landings.index.subtitle') }} Создавайте страницы под акции, услуги и быстрый захват заявок без лишней технической рутины.</p>
                         </div>
-                        <a href="{{ route('landings.create') }}" class="btn btn-primary">
+                        <a href="{{ route('landings.create') }}" class="btn btn-primary px-4">
                             <i class="ri ri-add-line me-1"></i>
                             {{ __('landings.actions.create') }}
                         </a>

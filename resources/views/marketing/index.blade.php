@@ -3,264 +3,395 @@
 @section('title', 'Маркетинг')
 
 @section('content')
-    <div class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3 mb-4">
-        <div>
-            <h4 class="mb-1">Маркетинг</h4>
-            <p class="text-muted mb-0">Создавайте рассылки, управляйте акциями и возвращайте клиентов за счёт точных подсказок.</p>
+    <style>
+        .marketing-hero {
+            border: 1px solid rgba(var(--bs-primary-rgb), 0.16);
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 30%),
+                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
+        }
+
+        .marketing-stat {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-bg-rgb), 0.18);
+            padding: 1rem 1.1rem;
+        }
+
+        .marketing-tab-nav .nav-link {
+            border-radius: 999px;
+            padding-inline: 1rem;
+        }
+
+        .marketing-soft-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            box-shadow: none;
+        }
+
+        .marketing-inline-summary {
+            border: 1px dashed rgba(var(--bs-primary-rgb), 0.28);
+            border-radius: 1rem;
+            padding: 0.9rem 1rem;
+            background: rgba(var(--bs-primary-rgb), 0.04);
+        }
+
+        .marketing-secondary-card {
+            background: rgba(var(--bs-body-bg-rgb), 0.18);
+        }
+
+        .marketing-advanced summary {
+            list-style: none;
+            cursor: pointer;
+        }
+
+        .marketing-advanced summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .marketing-advanced-label i {
+            transition: transform 0.2s ease;
+        }
+
+        .marketing-advanced[open] .marketing-advanced-label i {
+            transform: rotate(180deg);
+        }
+    </style>
+
+    <div class="card border-0 shadow-sm marketing-hero mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-4">
+                <div class="mw-lg-50">
+                    <span class="badge bg-label-primary mb-3">Veloria Growth</span>
+                    <h3 class="mb-2">Маркетинг</h3>
+                    <p class="text-muted mb-0">Запускайте рассылки и акции без перегруза: сначала цель, потом понятная форма и только после этого детальные настройки.</p>
+                </div>
+                <div class="d-flex flex-column align-items-lg-end gap-2">
+                    <div class="text-end small text-muted" id="marketing-plan-badge"></div>
+                    <div class="small text-muted">Продвинутые настройки спрятаны, чтобы первый экран был проще.</div>
+                </div>
+            </div>
         </div>
-        <div class="text-end small text-muted" id="marketing-plan-badge"></div>
     </div>
 
     <div id="marketing-alerts"></div>
 
-    <div class="row g-4">
-        <div class="col-12 col-xxl-8">
-            <div class="card h-100">
-                <div class="card-header d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-md-between">
-                    <div>
-                        <h5 class="mb-1">Создать рассылку</h5>
-                        <p class="text-muted mb-0">Выберите канал, сегмент и текст — система подскажет, кого и как лучше вовлечь.</p>
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="marketing-stat">
+                <div class="small text-muted text-uppercase mb-1">Рассылки</div>
+                <div class="fs-4 fw-semibold" data-metric="total">Кампаний: 0</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="marketing-stat">
+                <div class="small text-muted text-uppercase mb-1">Доставка</div>
+                <div class="fs-4 fw-semibold" data-metric="delivered">Доставлено: 0</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="marketing-stat">
+                <div class="small text-muted text-uppercase mb-1">Акции</div>
+                <div class="fs-4 fw-semibold" data-total="active">Активных: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills marketing-tab-nav gap-2 mb-4" id="marketingTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="campaigns-tab" data-bs-toggle="pill" data-bs-target="#campaigns-pane" type="button" role="tab" aria-controls="campaigns-pane" aria-selected="true">Рассылки</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="promotions-tab" data-bs-toggle="pill" data-bs-target="#promotions-pane" type="button" role="tab" aria-controls="promotions-pane" aria-selected="false">Акции</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="campaigns-pane" role="tabpanel" aria-labelledby="campaigns-tab">
+            <div class="row g-4">
+                <div class="col-12 col-xl-8">
+                    <div class="card marketing-soft-card h-100">
+                        <div class="card-body p-4 p-lg-5">
+                            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-4">
+                                <div>
+                                    <h4 class="mb-1">Создать рассылку</h4>
+                                    <p class="text-muted mb-0">Сначала выберите канал, аудиторию и текст. Всё вторичное скрыто ниже.</p>
+                                </div>
+                                <div class="marketing-inline-summary small text-muted" id="campaign-ab-tip"></div>
+                            </div>
+
+                            <form id="campaign-create-form" class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="campaign-name" class="form-label">Название кампании</label>
+                                    <input type="text" class="form-control" id="campaign-name" name="name" placeholder="Например, «Мы скучаем»" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="campaign-channel" class="form-label">Канал</label>
+                                    <select id="campaign-channel" name="channel" class="form-select" required></select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="campaign-segment" class="form-label">Сегмент аудитории</label>
+                                    <select id="campaign-segment" name="segment" class="form-select" required></select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="campaign-template" class="form-label">Шаблон сообщения</label>
+                                    <select id="campaign-template" name="template_id" class="form-select">
+                                        <option value="">— Выберите шаблон —</option>
+                                    </select>
+                                    <div class="form-text">Заготовки для приветствий, прогрева и поздравлений.</div>
+                                </div>
+                                <div class="col-md-6" id="campaign-subject-wrapper">
+                                    <label for="campaign-subject" class="form-label">Тема письма / превью</label>
+                                    <input type="text" class="form-control" id="campaign-subject" name="subject" placeholder="Например, «Дарим -20% на любимую услугу»" />
+                                </div>
+                                <div class="col-12" id="campaign-content-wrapper">
+                                    <label for="campaign-content" class="form-label">Текст сообщения</label>
+                                    <textarea class="form-control" id="campaign-content" name="content" rows="4" placeholder="Расскажите о предложении и добавьте CTA"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <details class="marketing-advanced">
+                                        <summary class="d-flex align-items-center justify-content-between marketing-advanced-label text-primary fw-medium py-2">
+                                            <span>Дополнительно</span>
+                                            <i class="ri ri-arrow-down-s-line"></i>
+                                        </summary>
+                                        <div class="pt-2">
+                                            <div class="row g-3">
+                                                <div class="col-12" id="campaign-segment-extra" style="display: none;">
+                                                    <div class="card border border-dashed rounded-2 marketing-secondary-card">
+                                                        <div class="card-body">
+                                                            <h6 class="fw-semibold mb-2">Уточните условия сегмента</h6>
+                                                            <div class="row g-3">
+                                                                <div class="col-md-4" data-segment-field="service_ids" style="display: none;">
+                                                                    <label for="segment-service-ids" class="form-label">ID услуг (через запятую)</label>
+                                                                    <input type="text" class="form-control" id="segment-service-ids" placeholder="12, 18, 24" />
+                                                                    <div class="form-text">Укажите идентификаторы услуг для точного таргета.</div>
+                                                                </div>
+                                                                <div class="col-md-4" data-segment-field="master_ids" style="display: none;">
+                                                                    <label for="segment-master-ids" class="form-label">ID мастеров (через запятую)</label>
+                                                                    <input type="text" class="form-control" id="segment-master-ids" placeholder="3, 7" />
+                                                                    <div class="form-text">Сегментируйте клиентов по мастерам.</div>
+                                                                </div>
+                                                                <div class="col-md-4" data-segment-field="tags" style="display: none;">
+                                                                    <label for="segment-tags" class="form-label">Теги клиентов</label>
+                                                                    <input type="text" class="form-control" id="segment-tags" placeholder="VIP, Маникюр" />
+                                                                    <div class="form-text">Перечислите теги клиентов через запятую.</div>
+                                                                </div>
+                                                                <div class="col-12" data-segment-field="client_ids" style="display: none;">
+                                                                    <label for="segment-client-ids" class="form-label">Выбранные клиенты</label>
+                                                                    <select id="segment-client-ids" class="form-select" multiple size="6"></select>
+                                                                    <div class="form-text">Отправьте сообщение только отмеченным клиентам.</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 d-flex align-items-center">
+                                                    <div class="form-check form-switch mt-2">
+                                                        <input class="form-check-input" type="checkbox" role="switch" id="campaign-is-ab" />
+                                                        <label class="form-check-label" for="campaign-is-ab">Запустить A/B-тест</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="campaign-status" class="form-label">Статус</label>
+                                                    <select id="campaign-status" name="status" class="form-select">
+                                                        <option value="draft">Черновик</option>
+                                                        <option value="scheduled">Запланирована</option>
+                                                        <option value="sending">В процессе</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="campaign-scheduled" class="form-label">Запланировать на</label>
+                                                    <input type="datetime-local" class="form-control" id="campaign-scheduled" name="scheduled_at" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="campaign-test-size" class="form-label">Размер тестовой группы</label>
+                                                    <input type="number" min="0" class="form-control" id="campaign-test-size" name="test_group_size" placeholder="Например, 50" />
+                                                </div>
+                                                <div class="col-12" id="campaign-variants" style="display: none;">
+                                                    <div class="border border-dashed rounded-2 p-3 marketing-secondary-card">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0">Варианты для теста</h6>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary" id="variant-add">Добавить вариант</button>
+                                                        </div>
+                                                        <div class="row g-3" id="variant-list"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="ri ri-send-plane-2-line me-1"></i>
+                                        Сохранить кампанию
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="text-muted small" id="campaign-ab-tip"></div>
                 </div>
-                <div class="card-body">
-                    <form id="campaign-create-form" class="row g-3">
-                        <div class="col-md-6">
-                            <label for="campaign-name" class="form-label">Название кампании</label>
-                            <input type="text" class="form-control" id="campaign-name" name="name" placeholder="Например, «Мы скучаем»" required />
+
+                <div class="col-12 col-xl-4">
+                    <div class="card marketing-soft-card h-100">
+                        <div class="card-body p-4">
+                            <h5 class="mb-1">Подсказки по рассылке</h5>
+                            <p class="text-muted mb-3">Смотрите идеи после выбора аудитории и текста, а не раньше.</p>
+                            <div id="campaign-suggestions" class="d-flex flex-column gap-3"></div>
                         </div>
-                        <div class="col-md-3">
-                            <label for="campaign-channel" class="form-label">Канал</label>
-                            <select id="campaign-channel" name="channel" class="form-select" required></select>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card marketing-soft-card">
+                        <div class="card-body p-4 p-lg-5">
+                            <div class="d-flex flex-column flex-lg-row gap-3 align-items-lg-center justify-content-between mb-3">
+                                <div>
+                                    <h4 class="mb-1">Активные кампании</h4>
+                                    <p class="text-muted mb-0">Статусы и метрики остались на странице, но теперь это уже вторичный слой.</p>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 align-items-center" id="campaign-metrics">
+                                    <span class="badge bg-label-primary" data-metric="total">Кампаний: 0</span>
+                                    <span class="badge bg-label-success" data-metric="delivered">Доставлено: 0</span>
+                                    <span class="badge bg-label-info" data-metric="read">Прочитано: 0</span>
+                                    <span class="badge bg-label-warning" data-metric="clicks">Переходы: 0</span>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Кампания</th>
+                                            <th>Статус</th>
+                                            <th>Метрики</th>
+                                            <th class="text-end">Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="campaigns-table">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">Загрузка...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label for="campaign-segment" class="form-label">Сегмент аудитории</label>
-                            <select id="campaign-segment" name="segment" class="form-select" required></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="promotions-pane" role="tabpanel" aria-labelledby="promotions-tab">
+            <div class="row g-4">
+                <div class="col-12 col-xl-8">
+                    <div class="card marketing-soft-card h-100">
+                        <div class="card-body p-4 p-lg-5">
+                            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-4">
+                                <div>
+                                    <h4 class="mb-1">Создать акцию</h4>
+                                    <p class="text-muted mb-0">Оставили только ядро формы. Точные параметры предложения идут ниже, без лишнего давления на первый экран.</p>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2" id="promotion-totals">
+                                    <span class="badge bg-label-success" data-total="active">Активных: 0</span>
+                                    <span class="badge bg-label-secondary" data-total="archived">В архиве: 0</span>
+                                </div>
+                            </div>
+                            <form id="promotion-form" class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="promotion-name" class="form-label">Название</label>
+                                    <input type="text" class="form-control" id="promotion-name" placeholder="Весенний кэшбэк" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="promotion-type" class="form-label">Тип акции</label>
+                                    <select id="promotion-type" class="form-select" required></select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="promotion-code" class="form-label">Промокод</label>
+                                    <input type="text" class="form-control" id="promotion-code" placeholder="SPRING24" />
+                                </div>
+                                <div class="col-12">
+                                    <details class="marketing-advanced" open>
+                                        <summary class="d-flex align-items-center justify-content-between marketing-advanced-label text-primary fw-medium py-2">
+                                            <span>Параметры акции</span>
+                                            <i class="ri ri-arrow-down-s-line"></i>
+                                        </summary>
+                                        <div class="pt-2">
+                                            <div class="row g-3">
+                                                <div class="col-md-3" data-promotion-field="percent" style="display: none;">
+                                                    <label for="promotion-percent" class="form-label">Процент кэшбэка</label>
+                                                    <input type="number" class="form-control" id="promotion-percent" placeholder="15" min="1" max="100" />
+                                                </div>
+                                                <div class="col-md-3" data-promotion-field="service" style="display: none;">
+                                                    <label for="promotion-service" class="form-label">Услуга</label>
+                                                    <select id="promotion-service" class="form-select"></select>
+                                                </div>
+                                                <div class="col-md-3" data-promotion-field="category" style="display: none;">
+                                                    <label for="promotion-category" class="form-label">Категория услуг</label>
+                                                    <select id="promotion-category" class="form-select"></select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="promotion-usage-limit" class="form-label">Лимит использований</label>
+                                                    <input type="number" class="form-control" id="promotion-usage-limit" min="0" placeholder="100" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="promotion-start" class="form-label">Дата старта</label>
+                                                    <input type="date" class="form-control" id="promotion-start" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="promotion-end" class="form-label">Дата завершения</label>
+                                                    <input type="date" class="form-control" id="promotion-end" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label for="promotion-note" class="form-label">Комментарий для команды</label>
+                                                    <textarea class="form-control" id="promotion-note" rows="3" placeholder="Например: предложить кэшбэк к годовщине посещения"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-outline-primary px-4">
+                                        <i class="ri ri-sparkling-2-line me-1"></i>
+                                        Сохранить акцию
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="col-12" id="campaign-segment-extra" style="display: none;">
-                            <div class="card border border-dashed rounded-2">
-                                <div class="card-body">
-                                    <h6 class="fw-semibold mb-2">Уточните условия сегмента</h6>
-                                    <div class="row g-3">
-                                        <div class="col-md-4" data-segment-field="service_ids" style="display: none;">
-                                            <label for="segment-service-ids" class="form-label">ID услуг (через запятую)</label>
-                                            <input type="text" class="form-control" id="segment-service-ids" placeholder="12, 18, 24" />
-                                            <div class="form-text">Укажите идентификаторы услуг для точного таргета.</div>
-                                        </div>
-                                        <div class="col-md-4" data-segment-field="master_ids" style="display: none;">
-                                            <label for="segment-master-ids" class="form-label">ID мастеров (через запятую)</label>
-                                            <input type="text" class="form-control" id="segment-master-ids" placeholder="3, 7" />
-                                            <div class="form-text">Сегментируйте клиентов по мастерам.</div>
-                                        </div>
-                                        <div class="col-md-4" data-segment-field="tags" style="display: none;">
-                                            <label for="segment-tags" class="form-label">Теги клиентов</label>
-                                            <input type="text" class="form-control" id="segment-tags" placeholder="VIP, Маникюр" />
-                                            <div class="form-text">Перечислите теги клиентов через запятую.</div>
-                                        </div>
-                                        <div class="col-12" data-segment-field="client_ids" style="display: none;">
-                                            <label for="segment-client-ids" class="form-label">Выбранные клиенты</label>
-                                            <select id="segment-client-ids" class="form-select" multiple size="6"></select>
-                                            <div class="form-text">Отправьте сообщение только отмеченным клиентам.</div>
-                                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-xl-4">
+                    <div class="card marketing-soft-card h-100">
+                        <div class="card-body p-4">
+                            <h5 class="mb-1">Подсказки по акциям</h5>
+                            <p class="text-muted mb-3">Идеи и замечания остаются рядом, но уже не перегружают первый выбор.</p>
+                            <div id="promotion-suggestions" class="d-flex flex-column gap-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card marketing-soft-card">
+                        <div class="card-body p-4 p-lg-5">
+                            <div class="d-flex flex-column flex-lg-row gap-3 align-items-lg-center justify-content-between mb-3">
+                                <div>
+                                    <h4 class="mb-1">Акции и скидки</h4>
+                                    <p class="text-muted mb-0">Активные предложения и архив разделены ниже, чтобы фокус оставался на создании.</p>
+                                </div>
+                            </div>
+                            <div class="row g-0">
+                                <div class="col-12 col-lg-6 border-end">
+                                    <div class="p-3">
+                                        <h6 class="text-muted text-uppercase mb-3">Активные</h6>
+                                        <div id="promotions-active" class="d-flex flex-column gap-3"></div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-lg-6">
+                                    <div class="p-3">
+                                        <h6 class="text-muted text-uppercase mb-3">Архив</h6>
+                                        <div id="promotions-archived" class="d-flex flex-column gap-3"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="campaign-template" class="form-label">Шаблон сообщения</label>
-                            <select id="campaign-template" name="template_id" class="form-select">
-                                <option value="">— Выберите шаблон —</option>
-                            </select>
-                            <div class="form-text">Заготовки для приветствий, прогрева и поздравлений.</div>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-center">
-                            <div class="form-check form-switch mt-4">
-                                <input class="form-check-input" type="checkbox" role="switch" id="campaign-is-ab" />
-                                <label class="form-check-label" for="campaign-is-ab">Запустить A/B-тест</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6" id="campaign-subject-wrapper">
-                            <label for="campaign-subject" class="form-label">Тема письма / превью</label>
-                            <input type="text" class="form-control" id="campaign-subject" name="subject" placeholder="Например, «Дарим -20% на любимую услугу»" />
-                        </div>
-                        <div class="col-12" id="campaign-content-wrapper">
-                            <label for="campaign-content" class="form-label">Текст сообщения</label>
-                            <textarea class="form-control" id="campaign-content" name="content" rows="4" placeholder="Расскажите о предложении и добавьте CTA"></textarea>
-                        </div>
-                        <div class="col-12" id="campaign-variants" style="display: none;">
-                            <div class="border border-dashed rounded-2 p-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0">Варианты для теста</h6>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" id="variant-add">Добавить вариант</button>
-                                </div>
-                                <div class="row g-3" id="variant-list"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="campaign-status" class="form-label">Статус</label>
-                            <select id="campaign-status" name="status" class="form-select">
-                                <option value="draft">Черновик</option>
-                                <option value="scheduled">Запланирована</option>
-                                <option value="sending">В процессе</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="campaign-scheduled" class="form-label">Запланировать на</label>
-                            <input type="datetime-local" class="form-control" id="campaign-scheduled" name="scheduled_at" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="campaign-test-size" class="form-label">Размер тестовой группы</label>
-                            <input type="number" min="0" class="form-control" id="campaign-test-size" name="test_group_size" placeholder="Например, 50" />
-                        </div>
-                        <div class="col-12 text-end">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="ri ri-send-plane-2-line me-1"></i>
-                                Сохранить кампанию
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-xxl-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-1">Подсказки</h5>
-                    <p class="text-muted mb-0">ИИ анализирует ваши кампании и подсказывает, что стоит сделать дальше.</p>
-                </div>
-                <div class="card-body">
-                    <div id="campaign-suggestions" class="d-flex flex-column gap-3"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card mt-4">
-        <div class="card-header d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-md-between">
-            <div>
-                <h5 class="mb-1">Активные кампании</h5>
-                <p class="text-muted mb-0">Контролируйте статус, доставку и эффективность A/B-тестов.</p>
-            </div>
-            <div class="d-flex flex-wrap gap-2 align-items-center" id="campaign-metrics">
-                <span class="badge bg-label-primary" data-metric="total">Кампаний: 0</span>
-                <span class="badge bg-label-success" data-metric="delivered">Доставлено: 0</span>
-                <span class="badge bg-label-info" data-metric="read">Прочитано: 0</span>
-                <span class="badge bg-label-warning" data-metric="clicks">Переходы: 0</span>
-            </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead>
-                    <tr>
-                        <th>Кампания</th>
-                        <th>Статус</th>
-                        <th>Метрики</th>
-                        <th class="text-end">Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="campaigns-table">
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-4">Загрузка...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="row g-4 mt-1">
-        <div class="col-12 col-xxl-7">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-1">Управление акциями</h5>
-                    <p class="text-muted mb-0">Создавайте скидки, подарки и промокоды с анализом эффективности.</p>
-                </div>
-                <div class="card-body">
-                    <form id="promotion-form" class="row g-3">
-                        <div class="col-md-6">
-                            <label for="promotion-name" class="form-label">Название</label>
-                            <input type="text" class="form-control" id="promotion-name" placeholder="Весенний кэшбэк" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label for="promotion-type" class="form-label">Тип акции</label>
-                            <select id="promotion-type" class="form-select" required></select>
-                        </div>
-                        <div class="col-md-3" data-promotion-field="percent" style="display: none;">
-                            <label for="promotion-percent" class="form-label">Процент кэшбэка</label>
-                            <input type="number" class="form-control" id="promotion-percent" placeholder="15" min="1" max="100" />
-                        </div>
-                        <div class="col-md-3" data-promotion-field="service" style="display: none;">
-                            <label for="promotion-service" class="form-label">Услуга</label>
-                            <select id="promotion-service" class="form-select"></select>
-                        </div>
-                        <div class="col-md-3" data-promotion-field="category" style="display: none;">
-                            <label for="promotion-category" class="form-label">Категория услуг</label>
-                            <select id="promotion-category" class="form-select"></select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="promotion-code" class="form-label">Промокод</label>
-                            <input type="text" class="form-control" id="promotion-code" placeholder="SPRING24" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="promotion-usage-limit" class="form-label">Лимит использований</label>
-                            <input type="number" class="form-control" id="promotion-usage-limit" min="0" placeholder="100" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="promotion-start" class="form-label">Дата старта</label>
-                            <input type="date" class="form-control" id="promotion-start" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="promotion-end" class="form-label">Дата завершения</label>
-                            <input type="date" class="form-control" id="promotion-end" />
-                        </div>
-                        <div class="col-12">
-                            <label for="promotion-note" class="form-label">Комментарий для команды</label>
-                            <textarea class="form-control" id="promotion-note" rows="3" placeholder="Например: предложить кэшбэк к годовщине посещения"></textarea>
-                        </div>
-                        <div class="col-12 text-end">
-                            <button type="submit" class="btn btn-outline-primary">
-                                <i class="ri ri-sparkling-2-line me-1"></i>
-                                Сохранить акцию
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-xxl-5">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-1">Подсказки по акциям</h5>
-                    <p class="text-muted mb-0">Следите за черновиками, актуальными предложениями и их результатами.</p>
-                </div>
-                <div class="card-body">
-                    <div id="promotion-suggestions" class="d-flex flex-column gap-3"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card mt-4">
-        <div class="card-header d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-md-between">
-            <div>
-                <h5 class="mb-1">Акции и скидки</h5>
-                <p class="text-muted mb-0">Аналитика показывает, сколько клиентов воспользовались предложением и какую выручку оно принесло.</p>
-            </div>
-            <div class="d-flex flex-wrap gap-2" id="promotion-totals">
-                <span class="badge bg-label-success" data-total="active">Активных: 0</span>
-                <span class="badge bg-label-secondary" data-total="archived">В архиве: 0</span>
-            </div>
-        </div>
-        <div class="row g-0">
-            <div class="col-12 col-lg-6 border-end">
-                <div class="p-3">
-                    <h6 class="text-muted text-uppercase mb-3">Активные</h6>
-                    <div id="promotions-active" class="d-flex flex-column gap-3"></div>
-                </div>
-            </div>
-            <div class="col-12 col-lg-6">
-                <div class="p-3">
-                    <h6 class="text-muted text-uppercase mb-3">Архив</h6>
-                    <div id="promotions-archived" class="d-flex flex-column gap-3"></div>
+                    </div>
                 </div>
             </div>
         </div>
