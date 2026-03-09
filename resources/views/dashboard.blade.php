@@ -4,123 +4,338 @@
 
 @section('meta')
     <style>
-        .dashboard-section + .dashboard-section {
-            margin-top: 2.5rem;
+        .dashboard-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        .dashboard-card-action {
-            border-left: 3px solid transparent;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .dashboard-card-action:hover {
-            border-color: var(--bs-primary);
-            box-shadow: 0 0.75rem 1rem -0.75rem rgba(58, 53, 65, 0.5);
-        }
-
-        .dashboard-timeline {
+        .dashboard-hero {
             position: relative;
-            padding-left: 1.5rem;
+            overflow: hidden;
+            border: 0;
+            border-radius: 1.75rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.32), transparent 35%),
+                linear-gradient(135deg, rgba(18, 24, 57, 0.96), rgba(41, 47, 94, 0.92));
+            color: #fff;
+            box-shadow: 0 1.25rem 3rem -2rem rgba(17, 24, 39, 0.7);
         }
 
-        .dashboard-timeline::before {
+        .dashboard-hero::after {
             content: '';
             position: absolute;
-            left: 0.6rem;
-            top: 0.5rem;
-            bottom: 0.5rem;
-            width: 2px;
+            inset: auto -10% -45% auto;
+            width: 18rem;
+            height: 18rem;
             border-radius: 999px;
-            background: var(--bs-border-color, #e9ecef);
+            background: rgba(255, 255, 255, 0.08);
+            filter: blur(8px);
         }
 
-        .dashboard-timeline-item {
+        .dashboard-hero .card-body {
             position: relative;
-            padding-bottom: 1.5rem;
+            z-index: 1;
+            padding: 1.75rem;
         }
 
-        .dashboard-timeline-item:last-child {
-            padding-bottom: 0;
+        .dashboard-kicker {
+            margin-bottom: 0.5rem;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.72);
         }
 
-        .dashboard-timeline-dot {
-            position: absolute;
-            left: -1.5rem;
-            top: 0.1rem;
-            width: 1.4rem;
-            height: 1.4rem;
-            border-radius: 50%;
+        .dashboard-hero-title {
+            margin-bottom: 0.5rem;
+            font-size: clamp(1.75rem, 2vw, 2.35rem);
+            line-height: 1.05;
+        }
+
+        .dashboard-hero-text {
+            max-width: 42rem;
+            margin-bottom: 1.25rem;
+            color: rgba(255, 255, 255, 0.76);
+        }
+
+        .dashboard-hero-meta {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 0.75rem;
-            box-shadow: 0 0 0 3px var(--bs-body-bg, #fff);
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
 
-        .dashboard-bar {
-            position: relative;
-            background: var(--bs-light, #f5f5f9);
+        .dashboard-meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 0.9rem;
             border-radius: 999px;
-            overflow: hidden;
-            height: 0.75rem;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 0.92rem;
         }
 
-        .dashboard-bar-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            border-radius: inherit;
-            background: var(--bs-primary);
+        .dashboard-meta-pill strong {
+            font-size: 1rem;
         }
 
-        .dashboard-bar-wrapper {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
+        .dashboard-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
             gap: 0.75rem;
         }
 
-        .dashboard-metric-pill {
+        .dashboard-panel,
+        .dashboard-soft-card {
+            border: 0;
+            border-radius: 1.5rem;
+            box-shadow: 0 1.25rem 2.5rem -2rem rgba(17, 24, 39, 0.35);
+        }
+
+        .dashboard-panel .card-body,
+        .dashboard-soft-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .dashboard-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .dashboard-panel-header p {
+            margin-bottom: 0.2rem;
+        }
+
+        .dashboard-section-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--bs-secondary-color);
+        }
+
+        .dashboard-section-title {
+            margin-bottom: 0;
+            font-size: 1.2rem;
+        }
+
+        .dashboard-priority-card {
+            height: 100%;
+            background:
+                linear-gradient(180deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.03)),
+                var(--bs-card-bg);
+        }
+
+        .dashboard-priority-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .dashboard-priority-badge[data-priority="urgent"] {
+            background: rgba(220, 53, 69, 0.16);
+            color: #dc3545;
+        }
+
+        .dashboard-priority-badge[data-priority="high"] {
+            background: rgba(var(--bs-primary-rgb), 0.16);
+            color: var(--bs-primary);
+        }
+
+        .dashboard-priority-badge[data-priority="normal"] {
+            background: rgba(var(--bs-secondary-rgb), 0.12);
+            color: var(--bs-secondary-color);
+        }
+
+        .dashboard-secondary-list {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .dashboard-secondary-item {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(var(--bs-border-color-rgb), 0.7);
+        }
+
+        .dashboard-secondary-dot {
+            flex: 0 0 auto;
+            width: 0.55rem;
+            height: 0.55rem;
+            margin-top: 0.45rem;
+            border-radius: 999px;
+            background: var(--bs-primary);
+        }
+
+        .dashboard-agenda {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .dashboard-agenda-item {
+            display: grid;
+            grid-template-columns: 4.75rem minmax(0, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 1.25rem;
+            background: rgba(var(--bs-body-color-rgb), 0.025);
+        }
+
+        .dashboard-agenda-time {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 4.5rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--bs-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .dashboard-agenda-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .dashboard-chip {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            font-size: 0.875rem;
+            padding: 0.35rem 0.65rem;
             border-radius: 999px;
-            padding: 0.35rem 0.75rem;
-            background: var(--bs-light, #f5f5f9);
+            background: rgba(var(--bs-secondary-rgb), 0.08);
+            color: var(--bs-body-color);
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
-        .dashboard-indicator {
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.8125rem;
+        .dashboard-chip[data-type="green"] {
+            color: #146c43;
+            background: rgba(25, 135, 84, 0.14);
         }
 
-        .dashboard-indicator[data-type="green"] {
-            color: #0f5132;
-            background: rgba(25, 135, 84, 0.12);
-        }
-
-        .dashboard-indicator[data-type="yellow"] {
-            color: #664d03;
+        .dashboard-chip[data-type="yellow"] {
+            color: #997404;
             background: rgba(255, 193, 7, 0.18);
         }
 
-        .dashboard-indicator[data-type="red"] {
-            color: #842029;
-            background: rgba(220, 53, 69, 0.14);
+        .dashboard-chip[data-type="red"] {
+            color: #b02a37;
+            background: rgba(220, 53, 69, 0.16);
         }
 
-        @media (min-width: 1200px) {
-            .dashboard-sticky-notes {
-                position: sticky;
-                top: 5.5rem;
+        .dashboard-agenda-note {
+            margin-top: 0.4rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .dashboard-agenda-empty {
+            padding: 2rem 1.25rem;
+            border-radius: 1.25rem;
+            text-align: center;
+            background: rgba(var(--bs-body-color-rgb), 0.025);
+            color: var(--bs-secondary-color);
+        }
+
+        .dashboard-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem;
+        }
+
+        .dashboard-stat-card {
+            padding: 1rem;
+            border-radius: 1.2rem;
+            background: rgba(var(--bs-body-color-rgb), 0.025);
+        }
+
+        .dashboard-stat-card p {
+            margin-bottom: 0.35rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.84rem;
+        }
+
+        .dashboard-stat-card h3 {
+            margin-bottom: 0;
+            font-size: 1.35rem;
+        }
+
+        .dashboard-insight-stack {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .dashboard-revenue-list,
+        .dashboard-top-list {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .dashboard-revenue-row,
+        .dashboard-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb), 0.025);
+        }
+
+        .dashboard-trend {
+            font-size: 0.82rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .dashboard-mini-note {
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-primary-rgb), 0.08);
+        }
+
+        .dashboard-learning {
+            border: 0;
+            border-radius: 1.5rem;
+            background:
+                linear-gradient(135deg, rgba(255, 0, 153, 0.12), rgba(255, 255, 255, 0)),
+                var(--bs-card-bg);
+        }
+
+        @media (max-width: 991.98px) {
+            .dashboard-hero .card-body,
+            .dashboard-panel .card-body,
+            .dashboard-soft-card .card-body {
+                padding: 1.25rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .dashboard-agenda-item {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-panel-header {
+                flex-direction: column;
             }
         }
     </style>
@@ -129,312 +344,302 @@
 @section('content')
     @php
         $formatServices = static fn (array $services): string => collect($services)->filter()->implode(', ');
-        $maxMarginValue = $marginData->max('value') ?? 0;
-        $priorityStyles = [
-            'urgent' => ['badge' => 'bg-label-danger', 'button' => 'btn-danger'],
-            'high' => ['badge' => 'bg-label-primary', 'button' => 'btn-primary'],
-            'normal' => ['badge' => 'bg-label-secondary', 'button' => 'btn-outline-primary'],
-        ];
         $priorityLabels = trans('dashboard.sections.focus.ai.priority');
+        $primarySuggestion = collect($aiSuggestions)->first();
+        $secondarySuggestions = collect($aiSuggestions)->slice(1, 2);
+        $todayCount = count($schedule);
+        $topService = $topServices->first();
+        $trendPreview = collect($revenueTrend)->take(3);
+        $greetingText = $todayCount > 0
+            ? __('dashboard.sections.focus.schedule.subtitle')
+            : __('dashboard.sections.focus.schedule.empty');
     @endphp
 
-    <div class="dashboard-section">
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
-            <div>
-                <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('dashboard.sections.focus.label') }}</p>
-                <h4 class="mb-0">{{ __('dashboard.sections.focus.title') }}</h4>
+    <div class="dashboard-shell">
+        <div class="row g-4">
+            <div class="col-12 col-xl-8">
+                <div class="card dashboard-hero h-100">
+                    <div class="card-body d-flex flex-column justify-content-between h-100">
+                        <div>
+                            <p class="dashboard-kicker">{{ __('dashboard.sections.focus.label') }}</p>
+                            <h1 class="dashboard-hero-title">{{ __('dashboard.sections.focus.title') }}</h1>
+                            <p class="dashboard-hero-text">{{ $greetingText }}</p>
+                        </div>
+
+                        <div class="dashboard-hero-meta">
+                            <span class="dashboard-meta-pill">
+                                <span>{{ __('dashboard.sections.focus.metrics.clients.label') }}</span>
+                                <strong>{{ $metrics['clients_summary'] }}</strong>
+                            </span>
+                            <span class="dashboard-meta-pill">
+                                <span>{{ __('dashboard.sections.focus.metrics.revenue.label') }}</span>
+                                <strong>{{ $metrics['revenue_formatted'] }}</strong>
+                            </span>
+                            <span class="dashboard-meta-pill">
+                                <span>{{ __('dashboard.sections.focus.metrics.forecast_pill', ['amount' => $metrics['forecast_profit_formatted']]) }}</span>
+                            </span>
+                        </div>
+
+                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
+                            <div class="small text-white-50">
+                                {{ __('dashboard.sections.focus.updated', ['time' => $updated_at->copy()->locale(app()->getLocale())->diffForHumans()]) }}
+                            </div>
+                            <div class="dashboard-hero-actions">
+                                <a href="{{ route('orders.create') }}" class="btn btn-primary">
+                                    {{ __('dashboard.sections.focus.schedule.quick_book') }}
+                                </a>
+                                <a href="{{ route('calendar') }}" class="btn btn-outline-light">
+                                    {{ __('dashboard.sections.focus.schedule.title') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="text-lg-end small text-muted">
-                {{ __('dashboard.sections.focus.updated', ['time' => $updated_at->copy()->locale(app()->getLocale())->diffForHumans()]) }}
+
+            <div class="col-12 col-xl-4">
+                <div class="card dashboard-panel dashboard-priority-card h-100">
+                    <div class="card-body">
+                        <div class="dashboard-panel-header">
+                            <div>
+                                <p class="dashboard-section-label">{{ __('dashboard.sections.focus.ai.badge') }}</p>
+                                <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.ai.title') }}</h2>
+                            </div>
+                            @if ($primarySuggestion)
+                                @php $priority = $primarySuggestion['priority'] ?? 'normal'; @endphp
+                                <span class="dashboard-priority-badge" data-priority="{{ $priority }}">
+                                    {{ $priorityLabels[$priority] ?? \Illuminate\Support\Str::title($priority) }}
+                                </span>
+                            @endif
+                        </div>
+
+                        @if ($primarySuggestion)
+                            <h3 class="h5 mb-2">{{ $primarySuggestion['title'] }}</h3>
+                            <p class="text-muted mb-0">{{ $primarySuggestion['description'] }}</p>
+                        @else
+                            <h3 class="h5 mb-2">{{ __('dashboard.sections.focus.ai.title') }}</h3>
+                            <p class="text-muted mb-0">{{ __('dashboard.sections.focus.ai.empty') }}</p>
+                        @endif
+
+                        <div class="dashboard-hero-actions mt-4">
+                            <a href="{{ route('clients.index') }}" class="btn btn-primary">
+                                {{ __('dashboard.sections.focus.ai.fallback_action') }}
+                            </a>
+                            <a href="{{ route('analytics') }}" class="btn btn-outline-secondary">
+                                {{ __('dashboard.sections.finance.cta') }}
+                            </a>
+                        </div>
+
+                        @if ($secondarySuggestions->isNotEmpty())
+                            <div class="dashboard-secondary-list">
+                                @foreach ($secondarySuggestions as $suggestion)
+                                    <div class="dashboard-secondary-item">
+                                        <span class="dashboard-secondary-dot"></span>
+                                        <div>
+                                            <div class="fw-semibold">{{ $suggestion['title'] }}</div>
+                                            <div class="small text-muted">{{ $suggestion['description'] }}</div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="row g-4">
-            <div class="col-12 col-xl-7 d-flex flex-column gap-4">
-                <div class="card h-100">
+            <div class="col-12 col-xl-7">
+                <div class="card dashboard-panel h-100">
                     <div class="card-body">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                        <div class="dashboard-panel-header">
                             <div>
-                                <h5 class="mb-1">{{ __('dashboard.sections.focus.schedule.title') }}</h5>
-                                <p class="text-muted mb-0">{{ __('dashboard.sections.focus.schedule.subtitle') }}</p>
+                                <p class="dashboard-section-label">{{ __('dashboard.sections.focus.schedule.subtitle') }}</p>
+                                <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.schedule.title') }}</h2>
                             </div>
-                            <button type="button" class="btn btn-primary" data-action="quick-book">{{ __('dashboard.sections.focus.schedule.quick_book') }}</button>
+                            <a href="{{ route('calendar') }}" class="btn btn-outline-secondary btn-sm">
+                                {{ __('dashboard.sections.focus.schedule.title') }}
+                            </a>
                         </div>
 
-                        <div class="dashboard-timeline">
+                        <div class="dashboard-agenda">
                             @forelse ($schedule as $appointment)
-                                <div class="dashboard-timeline-item">
-                                    <div class="dashboard-timeline-dot bg-primary-subtle text-primary fw-semibold">
-                                        {{ $loop->iteration }}
-                                    </div>
-                                    <div class="d-flex flex-column flex-sm-row flex-wrap gap-2 gap-sm-3">
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex flex-column flex-sm-row flex-sm-wrap gap-2 align-items-sm-center">
-                                                <span class="fw-semibold fs-6">{{ $appointment['time'] }}</span>
-                                                <span class="fw-semibold">{{ $appointment['client'] }}</span>
-                                                <span class="text-muted">{{ $formatServices($appointment['services']) }}</span>
+                                <div class="dashboard-agenda-item">
+                                    <div class="dashboard-agenda-time">{{ $appointment['time'] }}</div>
+                                    <div>
+                                        <div class="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-start">
+                                            <div>
+                                                <div class="h5 mb-1">{{ $appointment['client'] }}</div>
+                                                <div class="text-muted">{{ $formatServices($appointment['services']) ?: '-' }}</div>
                                             </div>
-                                            @if (! empty($appointment['note']))
-                                                <p class="mb-1 small text-muted mt-1">{{ $appointment['note'] }}</p>
-                                            @endif
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <span class="dashboard-indicator" data-type="{{ $appointment['indicator']['type'] }}">
-                                                    {{ $appointment['indicator']['label'] }}
+                                            <span class="dashboard-chip" data-type="{{ $appointment['indicator']['type'] }}">
+                                                {{ $appointment['indicator']['label'] }}
+                                            </span>
+                                        </div>
+
+                                        @if (! empty($appointment['note']))
+                                            <div class="dashboard-agenda-note small">
+                                                {{ \Illuminate\Support\Str::limit($appointment['note'], 110) }}
+                                            </div>
+                                        @endif
+
+                                        <div class="dashboard-agenda-meta">
+                                            <span class="dashboard-chip">
+                                                {{ __('dashboard.sections.focus.metrics.clients.description') }}: {{ $appointment['history']['total_visits'] }}
+                                            </span>
+                                            @if (($appointment['history']['cancellations'] ?? 0) > 0)
+                                                <span class="dashboard-chip">
+                                                    Cancelled: {{ $appointment['history']['cancellations'] }}
                                                 </span>
-                                                <button class="btn btn-sm btn-outline-secondary" type="button">{{ __('dashboard.sections.focus.schedule.remind') }}</button>
-                                                <button class="btn btn-sm btn-outline-primary" type="button">{{ __('dashboard.sections.focus.schedule.open_card') }}</button>
-                                            </div>
+                                            @endif
+                                            <a href="{{ route('clients.index') }}" class="dashboard-chip text-decoration-none">
+                                                {{ __('dashboard.sections.focus.ai.fallback_action') }}
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                             @empty
-                                <div class="text-muted text-center py-4">
+                                <div class="dashboard-agenda-empty">
                                     {{ __('dashboard.sections.focus.schedule.empty') }}
                                 </div>
                             @endforelse
                         </div>
                     </div>
                 </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                            <h5 class="mb-0">{{ __('dashboard.sections.focus.metrics.title') }}</h5>
-                            <span class="dashboard-metric-pill">
-                                {{ __('dashboard.sections.focus.metrics.forecast_pill', ['amount' => $metrics['forecast_profit_formatted']]) }}
-                            </span>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-12 col-sm-6">
-                                <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.revenue.label') }}</p>
-                                    <h4 class="mb-1">{{ $metrics['revenue_formatted'] }}</h4>
-                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.revenue.description') }}</p>
-                                    <div class="progress mt-2" style="height: 0.5rem;">
-                                        <div class="progress-bar" role="progressbar" style="width: {{ $metrics['revenue_progress'] }}%;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.clients.label') }}</p>
-                                    <h4 class="mb-1">{{ $metrics['clients_summary'] }}</h4>
-                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.clients.description') }}</p>
-                                </div>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.avg_ticket.label') }}</p>
-                                    <h4 class="mb-1">{{ $metrics['average_ticket_formatted'] }}</h4>
-                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.avg_ticket.description') }}</p>
-                                </div>
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <div class="border rounded-2 p-3 h-100">
-                                    <p class="text-muted mb-1 small">{{ __('dashboard.sections.focus.metrics.retention.label') }}</p>
-                                    <h4 class="mb-1">{{ $metrics['retention_rate_formatted'] }}</h4>
-                                    <p class="mb-0 small text-muted">{{ __('dashboard.sections.focus.metrics.retention.description') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="col-12 col-xl-5">
-                <div class="card dashboard-sticky-notes">
-                    <div class="card-body">
-                        <div class="d-flex align-items-start justify-content-between mb-3">
-                            <div>
-                                <h5 class="mb-1">{{ __('dashboard.sections.focus.ai.title') }}</h5>
-                                <p class="text-muted mb-0">{{ __('dashboard.sections.focus.ai.subtitle') }}</p>
+                <div class="d-flex flex-column gap-4 h-100">
+                    <div class="card dashboard-soft-card">
+                        <div class="card-body">
+                            <div class="dashboard-panel-header">
+                                <div>
+                                    <p class="dashboard-section-label">{{ __('dashboard.sections.focus.metrics.title') }}</p>
+                                    <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.metrics.title') }}</h2>
+                                </div>
                             </div>
-                            <span class="badge bg-label-primary text-uppercase">{{ __('dashboard.sections.focus.ai.badge') }}</span>
+
+                            <div class="dashboard-stat-grid">
+                                <div class="dashboard-stat-card">
+                                    <p>{{ __('dashboard.sections.focus.metrics.revenue.label') }}</p>
+                                    <h3>{{ $metrics['revenue_formatted'] }}</h3>
+                                </div>
+                                <div class="dashboard-stat-card">
+                                    <p>{{ __('dashboard.sections.focus.metrics.clients.label') }}</p>
+                                    <h3>{{ $metrics['clients_summary'] }}</h3>
+                                </div>
+                                <div class="dashboard-stat-card">
+                                    <p>{{ __('dashboard.sections.focus.metrics.avg_ticket.label') }}</p>
+                                    <h3>{{ $metrics['average_ticket_formatted'] }}</h3>
+                                </div>
+                                <div class="dashboard-stat-card">
+                                    <p>{{ __('dashboard.sections.focus.metrics.retention.label') }}</p>
+                                    <h3>{{ $metrics['retention_rate_formatted'] }}</h3>
+                                </div>
+                            </div>
                         </div>
-                        <div class="d-flex flex-column gap-3">
-                            @forelse ($aiSuggestions as $suggestion)
-                                @php
-                                    $priority = $suggestion['priority'] ?? 'normal';
-                                    $styles = $priorityStyles[$priority] ?? $priorityStyles['normal'];
-                                    $actions = collect($suggestion['actions'] ?? []);
-                                @endphp
-                                <div class="border rounded-2 p-3 dashboard-card-action">
-                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                        <p class="fw-semibold mb-0">{{ $suggestion['title'] }}</p>
-                                        <span class="badge {{ $styles['badge'] }} text-uppercase">{{ $priorityLabels[$priority] ?? \Illuminate\Support\Str::title($priority) }}</span>
-                                    </div>
-                                    <p class="text-muted mb-3">{{ $suggestion['description'] }}</p>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @if ($actions->isNotEmpty())
-                                            @foreach ($actions as $index => $action)
-                                                <button class="btn btn-sm {{ $index === 0 ? $styles['button'] : 'btn-outline-secondary' }}" type="button">
-                                                    {{ $action }}
-                                                </button>
-                                            @endforeach
+                    </div>
+
+                    <div class="card dashboard-soft-card flex-grow-1">
+                        <div class="card-body">
+                            <div class="dashboard-panel-header">
+                                <div>
+                                    <p class="dashboard-section-label">{{ __('dashboard.sections.finance.label') }}</p>
+                                    <h2 class="dashboard-section-title">{{ __('dashboard.sections.finance.title') }}</h2>
+                                </div>
+                                <a href="{{ route('analytics') }}" class="btn btn-outline-secondary btn-sm">
+                                    {{ __('dashboard.sections.finance.cta') }}
+                                </a>
+                            </div>
+
+                            <div class="dashboard-insight-stack">
+                                <div class="dashboard-mini-note">
+                                    <div class="small text-muted mb-1">{{ __('dashboard.sections.finance.margin.title') }}</div>
+                                    <div class="fw-semibold">
+                                        @if ($marginInsight)
+                                            {{ __('dashboard.sections.finance.margin.best_day', ['day' => $marginInsight['label'], 'value' => $marginInsight['display']]) }}
                                         @else
-                                            <button class="btn btn-sm {{ $styles['button'] }}" type="button">{{ __('dashboard.sections.focus.ai.fallback_action') }}</button>
+                                            {{ __('dashboard.messages.not_enough_data') }}
                                         @endif
                                     </div>
                                 </div>
-                            @empty
-                                <div class="text-muted text-center py-4">
-                                    {{ __('dashboard.sections.focus.ai.empty') }}
-                                </div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="dashboard-section">
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
-            <div>
-                <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('dashboard.sections.finance.label') }}</p>
-                <h4 class="mb-0">{{ __('dashboard.sections.finance.title') }}</h4>
-            </div>
-            <a class="btn btn-outline-secondary btn-sm" href="{{ route('analytics') }}">{{ __('dashboard.sections.finance.cta') }}</a>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-12 col-xl-7 d-flex flex-column gap-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                            <div>
-                                <h5 class="mb-1">{{ __('dashboard.sections.finance.margin.title') }}</h5>
-                                <p class="text-muted mb-0">{{ __('dashboard.sections.finance.margin.subtitle') }}</p>
-                            </div>
-                            @if ($marginInsight)
-                                <span class="badge bg-label-success">{{ __('dashboard.sections.finance.margin.best_day', ['day' => $marginInsight['label'], 'value' => $marginInsight['display']]) }}</span>
-                            @else
-                                <span class="badge bg-label-secondary">{{ __('dashboard.messages.not_enough_data') }}</span>
-                            @endif
-                        </div>
-                        <div class="d-flex flex-column gap-3">
-                            @forelse ($marginData as $item)
-                                @php
-                                    $ratio = $maxMarginValue > 0 ? ($item['value'] / $maxMarginValue) * 100 : 0;
-                                @endphp
-                                <div class="border rounded-2 p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-semibold">{{ $item['label'] }}</span>
-                                        <span class="small text-muted">{{ $item['hours_display'] }}</span>
-                                    </div>
-                                    <div class="dashboard-bar-wrapper">
-                                        <div class="dashboard-bar">
-                                            <div class="dashboard-bar-fill" style="width: {{ number_format($ratio, 1, '.', '') }}%;"></div>
-                                        </div>
-                                        <span class="fw-semibold">{{ $item['display'] }}</span>
+                                <div>
+                                    <div class="small text-muted mb-2">{{ __('dashboard.sections.finance.services.title') }}</div>
+                                    <div class="dashboard-top-list">
+                                        @forelse ($topServices->take(3) as $service)
+                                            <div class="dashboard-top-row">
+                                                <div>
+                                                    <div class="fw-semibold">{{ $service['name'] }}</div>
+                                                    <div class="small text-muted">
+                                                        {{ __('dashboard.sections.finance.services.avg_duration', ['value' => $service['avg_duration']]) }}
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="fw-semibold">{{ $service['margin_per_hour_formatted'] }}</div>
+                                                    <div class="small text-muted">{{ __('dashboard.sections.finance.services.per_hour') }}</div>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <div class="text-muted">{{ __('dashboard.sections.finance.services.empty') }}</div>
+                                        @endforelse
                                     </div>
                                 </div>
-                            @empty
-                                <div class="d-flex justify-content-center text-muted">{{ __('dashboard.messages.not_enough_data') }}</div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                            <div>
-                                <h5 class="mb-1">{{ __('dashboard.sections.finance.revenue.title') }}</h5>
-                                <p class="text-muted mb-0">{{ __('dashboard.sections.finance.revenue.subtitle') }}</p>
-                            </div>
-                            <span class="dashboard-metric-pill">
-                                @if ($revenueDelta === null)
-                                    {{ __('dashboard.messages.no_comparison') }}
-                                @else
-                                    {{ __('dashboard.sections.finance.revenue.delta', ['value' => ($revenueDelta > 0 ? '+' : '') . number_format($revenueDelta, 1, '.', '')]) }}
+
+                                <div>
+                                    <div class="small text-muted mb-2">{{ __('dashboard.sections.finance.revenue.title') }}</div>
+                                    <div class="dashboard-revenue-list">
+                                        @forelse ($trendPreview as $item)
+                                            @php
+                                                $delta = $item['previous'] > 0 ? (($item['current'] - $item['previous']) / max($item['previous'], 1)) * 100 : null;
+                                            @endphp
+                                            <div class="dashboard-revenue-row">
+                                                <div>
+                                                    <div class="fw-semibold">{{ $item['label'] }}</div>
+                                                    <div class="dashboard-trend">
+                                                        @if ($delta === null)
+                                                            {{ __('dashboard.messages.no_comparison') }}
+                                                        @elseif ($delta >= 0)
+                                                            {{ __('dashboard.sections.finance.revenue.growth', ['value' => number_format(abs($delta), 1, '.', '')]) }}
+                                                        @else
+                                                            {{ __('dashboard.sections.finance.revenue.decline', ['value' => number_format(abs($delta), 1, '.', '')]) }}
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="fw-semibold">{{ number_format($item['current'], 0, '.', ' ') }} ₽</div>
+                                            </div>
+                                        @empty
+                                            <div class="text-muted">{{ __('dashboard.messages.not_enough_data') }}</div>
+                                        @endforelse
+                                    </div>
+                                </div>
+
+                                @if ($topService || $servicesInsight)
+                                    <div class="small text-muted">
+                                        {{ $servicesInsight ?? __('dashboard.sections.finance.services.empty_insight') }}
+                                    </div>
                                 @endif
-                            </span>
+                            </div>
                         </div>
-                        <div class="d-flex flex-column gap-3">
-                            @forelse ($revenueTrend as $item)
-                                @php
-                                    $delta = $item['previous'] > 0 ? (($item['current'] - $item['previous']) / max($item['previous'], 1)) * 100 : null;
-                                @endphp
-                                <div class="border rounded-2 p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-semibold">{{ $item['label'] }}</span>
-                                        <span class="small text-muted">{{ number_format($item['current'], 0, '.', ' ') }} ₽</span>
-                                    </div>
-                                    <p class="small mb-0 text-muted">
-                                        @if ($delta === null)
-                                            {{ __('dashboard.messages.no_comparison') }}
-                                        @else
-                                            {{ $delta >= 0
-                                                ? __('dashboard.sections.finance.revenue.growth', ['value' => number_format(abs($delta), 1, '.', '')])
-                                                : __('dashboard.sections.finance.revenue.decline', ['value' => number_format(abs($delta), 1, '.', '')]) }}
-                                        @endif
-                                    </p>
-                                </div>
-                            @empty
-                                <div class="d-flex justify-content-center text-muted">{{ __('dashboard.messages.not_enough_data') }}</div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-xl-5 d-flex flex-column gap-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="mb-3">{{ __('dashboard.sections.finance.services.title') }}</h5>
-                        <ul class="list-unstyled mb-0">
-                            @forelse ($topServices as $service)
-                                <li class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <div class="fw-semibold">{{ $service['name'] }}</div>
-                                        <div class="small text-muted">{{ __('dashboard.sections.finance.services.avg_duration', ['value' => $service['avg_duration']]) }}</div>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="fw-semibold">{{ $service['margin_per_hour_formatted'] }}</span>
-                                        <div class="small text-muted">{{ __('dashboard.sections.finance.services.per_hour') }}</div>
-                                    </div>
-                                </li>
-                            @empty
-                                <li class="text-muted">{{ __('dashboard.sections.finance.services.empty') }}</li>
-                            @endforelse
-                        </ul>
-                        <p class="small text-muted mt-3">
-                            {{ $servicesInsight ?? __('dashboard.sections.finance.services.empty_insight') }}
-                        </p>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="mb-3">{{ __('dashboard.sections.finance.clients.title') }}</h5>
-                        <ul class="list-unstyled mb-0">
-                            @forelse ($topClients as $client)
-                                <li class="border rounded-2 p-3 mb-2">
-                                    <div class="fw-semibold mb-1">{{ $client['name'] }}</div>
-                                    <p class="small text-muted mb-1">{{ __('dashboard.sections.finance.clients.ltv', ['value' => $client['total_spent_formatted']]) }}</p>
-                                    <p class="small text-muted mb-0">{{ __('dashboard.sections.finance.clients.last_visit', ['date' => $client['last_visit']]) }}</p>
-                                </li>
-                            @empty
-                                <li class="text-muted">{{ __('dashboard.sections.finance.clients.empty') }}</li>
-                            @endforelse
-                        </ul>
-                        <p class="small text-muted mt-3">{{ __('dashboard.sections.finance.clients.note') }}</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="dashboard-section">
-        <div class="card">
-            <div class="card-body d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
+        <div class="card dashboard-learning">
+            <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
                 <div>
-                    <p class="text-uppercase text-muted fw-medium mb-1 small">{{ __('dashboard.sections.learning.label') }}</p>
-                    <h4 class="mb-2">{{ __('dashboard.sections.learning.title') }}</h4>
+                    <p class="dashboard-section-label">{{ __('dashboard.sections.learning.label') }}</p>
+                    <h2 class="dashboard-section-title mb-2">{{ __('dashboard.sections.learning.title') }}</h2>
                     <p class="mb-0">{{ $dailyTip['text'] ?? __('dashboard.sections.learning.fallback') }}</p>
                 </div>
                 <div class="text-lg-end">
-                    <button class="btn btn-primary" type="button">{{ __('dashboard.sections.learning.button') }}</button>
-                    <p class="small text-muted mb-0 mt-2">{{ __('dashboard.sections.learning.source', ['value' => $dailyTip['source'] ?? __('dashboard.sections.learning.default_source')]) }}</p>
+                    <a href="{{ route('learning') }}" class="btn btn-primary">
+                        {{ __('dashboard.sections.learning.button') }}
+                    </a>
+                    <div class="small text-muted mt-2">
+                        {{ __('dashboard.sections.learning.source', ['value' => $dailyTip['source'] ?? __('dashboard.sections.learning.default_source')]) }}
+                    </div>
                 </div>
             </div>
         </div>
