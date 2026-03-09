@@ -3,25 +3,92 @@
 @section('title', __('help.title'))
 
 @section('content')
+    <style>
+        .help-hero {
+            border: 1px solid rgba(var(--bs-primary-rgb), 0.16);
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 28%),
+                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
+        }
+
+        .help-section-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+        }
+
+        .help-knowledge-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-bg-rgb), 0.16);
+            height: 100%;
+        }
+
+        .help-meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb), 0.08);
+            color: var(--bs-body-color);
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+
+        .help-side-card {
+            position: sticky;
+            top: 1.5rem;
+        }
+
+        .help-ticket-list .list-group-item {
+            border-radius: 0.9rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+        }
+    </style>
+
     <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm help-hero">
+                <div class="card-body p-5 p-lg-6">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-4">
+                        <div class="mw-lg-50">
+                            <span class="badge bg-label-primary mb-3">Veloria Help</span>
+                            <h3 class="mb-2">{{ __('help.title') }}</h3>
+                            <p class="text-muted mb-0">Сначала попробуйте найти готовый ответ. Если не помогло, ниже можно быстро написать в поддержку и отследить свои обращения.</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="help-meta-chip"><i class="ri ri-book-open-line"></i> База знаний</span>
+                            <span class="help-meta-chip"><i class="ri ri-question-line"></i> FAQ</span>
+                            <span class="help-meta-chip" id="help-support-response-time"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-12 col-xl-8">
             <div class="d-flex flex-column gap-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
+                <div class="card help-section-card">
+                    <div class="card-body p-5">
+                        <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3 mb-4">
                             <div>
                                 <h4 class="mb-1">{{ __('help.knowledge_base.title') }}</h4>
-                                <p class="text-muted mb-0">{{ __('help.knowledge_base.subtitle') }}</p>
+                                <p class="text-muted mb-0">Начните с поиска по материалам и частым вопросам.</p>
                             </div>
-                            <span class="badge bg-label-info rounded-pill px-3 py-2" id="help-support-response-time"></span>
+                            <div class="w-100 w-lg-auto" style="min-width: min(100%, 320px);">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control" id="help-search" placeholder="Поиск по помощи" />
+                                    <label for="help-search">Поиск по помощи</label>
+                                </div>
+                            </div>
                         </div>
                         <div id="help-knowledge-alert" class="alert alert-danger d-none" role="alert"></div>
                         <div id="knowledge-base-list" class="row g-3"></div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-body">
+                <div class="card help-section-card">
+                    <div class="card-body p-5">
                         <h4 class="mb-1">{{ __('help.faq.title') }}</h4>
                         <p class="text-muted mb-3">{{ __('help.faq.subtitle') }}</p>
                         <div id="help-faq" class="accordion"></div>
@@ -29,50 +96,59 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-xl-4">
-            <div class="d-flex flex-column gap-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="mb-1">{{ __('help.support.title') }}</h4>
-                        <p class="text-muted mb-4">{{ __('help.support.subtitle') }}</p>
-                        <div id="help-support-alert" class="alert alert-success d-none" role="alert"></div>
-                        <form id="help-support-form" class="d-flex flex-column gap-3" enctype="multipart/form-data">
-                            <div>
-                                <label for="help-subject" class="form-label">{{ __('help.support.form.subject_label') }}</label>
-                                <input type="text" class="form-control" id="help-subject" name="subject" placeholder="{{ __('help.support.form.subject_placeholder') }}" required />
-                            </div>
-                            <div>
-                                <label for="help-message" class="form-label">{{ __('help.support.form.message_label') }}</label>
-                                <textarea class="form-control" id="help-message" name="message" rows="5" placeholder="{{ __('help.support.form.message_placeholder') }}" required></textarea>
-                            </div>
-                            <div>
-                                <label for="help-attachment" class="form-label">{{ __('help.support.form.attachment_label') }}</label>
-                                <input type="file" class="form-control" id="help-attachment" name="attachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.csv" />
-                                <div class="form-text" id="help-support-working-hours"></div>
-                            </div>
-                            <ul id="help-support-tips" class="list-unstyled small text-muted mb-0"></ul>
-                            <button type="submit" class="btn btn-primary" id="help-support-submit">
-                                <span class="spinner-border spinner-border-sm align-middle me-2 d-none" role="status" id="help-support-spinner"></span>
-                                {{ __('help.support.form.submit') }}
-                            </button>
-                        </form>
-                    </div>
-                </div>
 
-                <div class="card">
-                    <div class="card-body">
+        <div class="col-12 col-xl-4">
+            <div class="d-flex flex-column gap-4 help-side-card">
+                <div class="card help-section-card">
+                    <div class="card-body p-5">
+                        <h4 class="mb-1">{{ __('help.tickets.title') }}</h4>
+                        <p class="text-muted mb-3" id="help-tickets-subtitle"></p>
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <div>
-                                <h4 class="mb-1">{{ __('help.tickets.title') }}</h4>
-                                <p class="text-muted mb-0" id="help-tickets-subtitle"></p>
-                            </div>
+                            <span class="small text-muted">История ответов и текущий статус</span>
                             <button class="btn btn-icon btn-outline-secondary" type="button" id="help-refresh-tickets" title="Refresh">
                                 <i class="ri ri-refresh-line"></i>
                             </button>
                         </div>
                         <div id="help-tickets-alert" class="alert alert-danger d-none" role="alert"></div>
                         <div id="help-tickets-empty" class="text-muted small d-none">{{ __('help.tickets.empty') }}</div>
-                        <div id="help-tickets-list" class="list-group list-group-flush"></div>
+                        <div id="help-tickets-list" class="list-group list-group-flush help-ticket-list"></div>
+                    </div>
+                </div>
+
+                <div class="card help-section-card">
+                    <div class="card-body p-5">
+                        <details open>
+                            <summary class="d-flex align-items-center justify-content-between cursor-pointer list-unstyled">
+                                <div>
+                                    <h4 class="mb-1">{{ __('help.support.title') }}</h4>
+                                    <p class="text-muted mb-0">{{ __('help.support.subtitle') }}</p>
+                                </div>
+                                <i class="ri ri-add-line"></i>
+                            </summary>
+                            <div class="pt-4">
+                                <div id="help-support-alert" class="alert alert-success d-none" role="alert"></div>
+                                <form id="help-support-form" class="d-flex flex-column gap-3" enctype="multipart/form-data">
+                                    <div>
+                                        <label for="help-subject" class="form-label">{{ __('help.support.form.subject_label') }}</label>
+                                        <input type="text" class="form-control" id="help-subject" name="subject" placeholder="{{ __('help.support.form.subject_placeholder') }}" required />
+                                    </div>
+                                    <div>
+                                        <label for="help-message" class="form-label">{{ __('help.support.form.message_label') }}</label>
+                                        <textarea class="form-control" id="help-message" name="message" rows="5" placeholder="{{ __('help.support.form.message_placeholder') }}" required></textarea>
+                                    </div>
+                                    <div>
+                                        <label for="help-attachment" class="form-label">{{ __('help.support.form.attachment_label') }}</label>
+                                        <input type="file" class="form-control" id="help-attachment" name="attachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.csv" />
+                                        <div class="form-text" id="help-support-working-hours"></div>
+                                    </div>
+                                    <ul id="help-support-tips" class="list-unstyled small text-muted mb-0"></ul>
+                                    <button type="submit" class="btn btn-primary" id="help-support-submit">
+                                        <span class="spinner-border spinner-border-sm align-middle me-2 d-none" role="status" id="help-support-spinner"></span>
+                                        {{ __('help.support.form.submit') }}
+                                    </button>
+                                </form>
+                            </div>
+                        </details>
                     </div>
                 </div>
             </div>
@@ -124,6 +200,7 @@
             const knowledgeContainer = document.getElementById('knowledge-base-list');
             const knowledgeAlert = document.getElementById('help-knowledge-alert');
             const faqContainer = document.getElementById('help-faq');
+            const helpSearch = document.getElementById('help-search');
             const responseTimeBadge = document.getElementById('help-support-response-time');
             const workingHoursHint = document.getElementById('help-support-working-hours');
             const supportTipsList = document.getElementById('help-support-tips');
@@ -147,6 +224,8 @@
             const ticketReplySubmit = document.getElementById('help-reply-submit');
             const ticketReplyAttachment = document.getElementById('help-reply-attachment');
             const ticketReplyMessage = document.getElementById('help-reply-message');
+            let knowledgeItems = [];
+            let faqItems = [];
 
             const translations = {
                 alerts: {
@@ -227,7 +306,9 @@
                 knowledgeContainer.innerHTML = '';
                 if (!items.length) {
                     knowledgeAlert.classList.remove('d-none');
-                    knowledgeAlert.textContent = translations.alerts.loadError;
+                    knowledgeAlert.textContent = helpSearch && helpSearch.value.trim() !== ''
+                        ? 'Ничего не найдено. Попробуйте другой запрос или откройте поддержку.'
+                        : translations.alerts.loadError;
                     return;
                 }
                 knowledgeAlert.classList.add('d-none');
@@ -235,7 +316,7 @@
                     const col = document.createElement('div');
                     col.className = 'col-12 col-md-6';
                     col.innerHTML = `
-                        <div class="border rounded p-3 h-100">
+                        <div class="help-knowledge-card p-3">
                             <div class="d-flex align-items-start gap-3">
                                 <div class="avatar flex-shrink-0 bg-label-primary rounded"><i class="ri ${escapeHtml(item.icon)} icon-base p-2"></i></div>
                                 <div>
@@ -252,7 +333,7 @@
             function renderFaq(items) {
                 faqContainer.innerHTML = '';
                 if (!items.length) {
-                    faqContainer.innerHTML = `<div class="text-muted small">${escapeHtml(translations.alerts.loadError)}</div>`;
+                    faqContainer.innerHTML = `<div class="text-muted small">${escapeHtml(helpSearch && helpSearch.value.trim() !== '' ? 'По этому запросу вопросы не найдены.' : translations.alerts.loadError)}</div>`;
                     return;
                 }
                 items.forEach(function (item, index) {
@@ -270,6 +351,30 @@
                         </div>`;
                     faqContainer.appendChild(element);
                 });
+            }
+
+            function applyHelpSearch() {
+                const query = (helpSearch && helpSearch.value || '').trim().toLowerCase();
+                if (!query) {
+                    renderKnowledgeBase(knowledgeItems);
+                    renderFaq(faqItems);
+                    return;
+                }
+
+                const filteredKnowledge = knowledgeItems.filter(function (item) {
+                    return [item.title, item.description].some(function (value) {
+                        return String(value || '').toLowerCase().includes(query);
+                    });
+                });
+
+                const filteredFaq = faqItems.filter(function (item) {
+                    return [item.question, item.answer].some(function (value) {
+                        return String(value || '').toLowerCase().includes(query);
+                    });
+                });
+
+                renderKnowledgeBase(filteredKnowledge);
+                renderFaq(filteredFaq);
             }
 
             function setSupportInfo(data) {
@@ -365,8 +470,9 @@
                     })
                     .then(function (data) {
                         const payload = data.data || {};
-                        renderKnowledgeBase(payload.knowledge_base || []);
-                        renderFaq(payload.faqs || []);
+                        knowledgeItems = payload.knowledge_base || [];
+                        faqItems = payload.faqs || [];
+                        applyHelpSearch();
                         setSupportInfo(payload.support || {});
                     })
                     .catch(function () {
@@ -526,6 +632,10 @@
             refreshTicketsButton.addEventListener('click', function () {
                 loadTickets();
             });
+
+            if (helpSearch) {
+                helpSearch.addEventListener('input', applyHelpSearch);
+            }
 
             loadOverview();
             loadTickets();
