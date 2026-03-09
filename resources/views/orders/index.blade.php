@@ -34,7 +34,7 @@
                         </div>
                     </div>
 
-                    <div class="orders-hero__actions d-flex flex-column flex-sm-row gap-2 align-self-stretch align-self-xl-start">
+                    <div class="orders-hero__actions d-flex flex-column flex-sm-row gap-2 align-self-start">
                         <button class="btn orders-soft-btn" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
                             <i class="ri ri-flashlight-line me-1"></i>
                             Быстрое создание
@@ -146,6 +146,10 @@
             border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
             background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
             color: var(--bs-primary);
+        }
+
+        .orders-hero__actions .btn {
+            white-space: nowrap;
         }
 
         .orders-surface {

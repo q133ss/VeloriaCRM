@@ -5,24 +5,221 @@
 @section('title', 'Клиенты')
 
 @section('content')
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-        <div>
-            <h4 class="mb-1">Клиенты</h4>
-            <p class="text-muted mb-0">Ведите базу клиентов, отслеживайте визиты и отправляйте напоминания.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickClientModal">
-                <i class="ri ri-flashlight-line me-1"></i>
-                Быстрое создание
-            </button>
-            <a href="{{ route('clients.create') }}" class="btn btn-primary">
-                <i class="ri ri-user-add-line me-1"></i>
-                Добавить клиента
-            </a>
-        </div>
-    </div>
+    <style>
+        .clients-page {
+            --clients-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.1);
+            --clients-border-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            --clients-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
 
-    <div id="clients-alerts"></div>
+        .clients-page .clients-hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--clients-border-soft);
+            border-radius: 1.6rem;
+            padding: 1.6rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14), transparent 34%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+            box-shadow: var(--clients-shadow);
+        }
+
+        .clients-page .clients-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            filter: blur(12px);
+        }
+
+        .clients-page .clients-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .clients-page .clients-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .clients-page .clients-eyebrow i {
+            color: var(--bs-primary);
+        }
+
+        .clients-page .clients-soft-btn {
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.18);
+        }
+
+        .clients-page .clients-soft-btn:hover,
+        .clients-page .clients-soft-btn:focus {
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+            color: var(--bs-primary);
+        }
+
+        .clients-page .clients-hero-actions .btn {
+            white-space: nowrap;
+        }
+
+        .clients-page .clients-surface {
+            border: none;
+            border-radius: 1.35rem;
+            box-shadow: var(--clients-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 96%, transparent);
+        }
+
+        .clients-page .clients-filters-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.7fr) auto;
+            gap: 0.85rem;
+            align-items: end;
+        }
+
+        .clients-page .clients-table-wrap {
+            padding: 0 1rem 1rem;
+        }
+
+        .clients-page .clients-table {
+            margin-bottom: 0;
+        }
+
+        .clients-page .clients-table thead th {
+            color: var(--bs-secondary-color);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom-width: 1px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
+        }
+
+        .clients-page .clients-table tbody tr:hover {
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.03);
+        }
+
+        .clients-page .client-name {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .clients-page .client-name strong {
+            font-size: 0.98rem;
+        }
+
+        .clients-page .client-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .clients-page .client-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.55rem;
+            border-radius: 999px;
+            background: var(--clients-accent-soft);
+            color: var(--bs-primary);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .clients-page .client-contacts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .clients-page .client-contact-line {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: var(--bs-body-color);
+            font-size: 0.92rem;
+        }
+
+        .clients-page .client-muted {
+            color: var(--bs-secondary-color);
+            font-size: 0.85rem;
+        }
+
+        .clients-page .client-loyalty {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.38rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-info-rgb, 0, 207, 232), 0.12);
+            color: var(--bs-info-text-emphasis, var(--bs-info));
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+
+        .clients-page .client-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .clients-page .clients-empty {
+            padding: 3.5rem 1rem !important;
+        }
+
+        .clients-page .clients-pagination {
+            padding: 0 1.25rem 1.1rem;
+            border-top: none;
+            background: transparent;
+        }
+
+        @media (max-width: 991.98px) {
+            .clients-page .clients-filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .clients-page .client-actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+
+    <div class="clients-page">
+        <div class="d-flex flex-column gap-4">
+            <section class="clients-hero">
+                <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-start">
+                    <div class="d-flex flex-column gap-3">
+                        <span class="clients-eyebrow">
+                            <i class="ri ri-team-line"></i>
+                            База клиентов без перегруза
+                        </span>
+                        <div>
+                            <h1 class="mb-2">Клиенты</h1>
+                            <p class="text-muted mb-0 fs-6">Главное на одном экране: быстро найти человека, открыть карточку, написать напоминание или добавить нового клиента.</p>
+                        </div>
+                    </div>
+                    <div class="clients-hero-actions d-flex flex-column flex-sm-row gap-2 align-self-start">
+                        <button class="btn clients-soft-btn" data-bs-toggle="modal" data-bs-target="#quickClientModal">
+                            <i class="ri ri-flashlight-line me-1"></i>
+                            Быстрое создание
+                        </button>
+                        <a href="{{ route('clients.create') }}" class="btn btn-primary">
+                            <i class="ri ri-user-add-line me-1"></i>
+                            Добавить клиента
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <div id="clients-alerts"></div>
 
     <div class="modal fade" id="quickClientModal" tabindex="-1" aria-labelledby="quickClientModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -71,14 +268,20 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-md-between">
-            <div class="d-flex align-items-center gap-2">
-                <h5 class="mb-0">Мои клиенты</h5>
-                <span class="badge bg-label-secondary" id="clients-total">0</span>
+        <div class="card clients-surface">
+        <div class="card-body p-4 d-flex flex-column gap-3">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h2 class="h5 mb-0">Мои клиенты</h2>
+                        <span class="badge bg-label-secondary" id="clients-total">0</span>
+                    </div>
+                    <p class="text-muted mb-0">Список читается как база людей, а не как техническая таблица. Поиск и фильтр вынесены в отдельную лёгкую панель.</p>
+                </div>
             </div>
-            <form id="filters-form" class="row g-2 align-items-end">
-                <div class="col-md-6 col-lg-4">
+
+            <form id="filters-form" class="clients-filters-grid">
+                <div>
                     <label for="filter-search" class="form-label">Поиск</label>
                     <div class="position-relative">
                         <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted">
@@ -93,18 +296,19 @@
                         />
                     </div>
                 </div>
-                <div class="col-md-4 col-lg-3">
+                <div>
                     <label for="filter-loyalty" class="form-label">Лояльность</label>
                     <select class="form-select" id="filter-loyalty" name="loyalty"></select>
                 </div>
-                <div class="col-md-2 d-flex gap-2">
+                <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill">Применить</button>
                     <button type="button" class="btn btn-outline-secondary flex-fill" id="filters-reset">Сбросить</button>
                 </div>
             </form>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
+
+        <div class="table-responsive clients-table-wrap">
+            <table class="table align-middle clients-table">
                 <thead>
                     <tr>
                         <th>Клиент</th>
@@ -116,12 +320,12 @@
                 </thead>
                 <tbody id="clients-body">
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">Загрузка данных...</td>
+                        <td colspan="5" class="text-center text-muted clients-empty">Загрузка данных...</td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <div class="card-footer d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2" id="clients-pagination">
+        <div class="card-footer d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 clients-pagination" id="clients-pagination">
             <div class="text-muted small" id="clients-summary">Показано 0 из 0</div>
             <nav>
                 <ul class="pagination pagination-sm mb-0" id="pagination-list"></ul>
@@ -207,6 +411,8 @@
             </div>
         </div>
     </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -374,7 +580,7 @@
 
             function renderEmptyState() {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="5" class="text-center py-5 text-muted">Клиентов пока нет.</td>';
+                row.innerHTML = '<td colspan="5" class="text-center text-muted clients-empty">Клиентов пока нет.</td>';
                 clientsBody.innerHTML = '';
                 clientsBody.appendChild(row);
             }
@@ -523,26 +729,34 @@
                     const lastVisit = client.last_visit_at_formatted || '—';
                     const tagsPreview = Array.isArray(client.tags) ? client.tags.slice(0, 2) : [];
                     const tagsExtra = Array.isArray(client.tags) && client.tags.length > 2
-                        ? `<span class="text-muted small">+ ещё ${client.tags.length - 2}</span>`
+                        ? `<span class="client-muted">+ ещё ${client.tags.length - 2}</span>`
                         : '';
 
                     tr.innerHTML = `
                         <td>
-                            <div class="fw-semibold">${client.name || 'Без имени'}</div>
-                            <div class="small text-muted">${tagsPreview.map(tag => `<span class="badge bg-label-primary me-1">${tag}</span>`).join(' ')} ${tagsExtra}</div>
-                        </td>
-                        <td>
-                            <div class="d-flex flex-column">
-                                <span>${client.phone ? `<i class=\"ri ri-phone-line me-1 text-muted\"></i>${client.phone}` : '—'}</span>
-                                <span>${client.email ? `<i class=\"ri ri-mail-line me-1 text-muted\"></i>${client.email}` : ''}</span>
+                            <div class="client-name">
+                                <strong>${client.name || 'Без имени'}</strong>
+                                <div class="client-tags">
+                                    ${tagsPreview.map(tag => `<span class="client-tag">${tag}</span>`).join('')}
+                                    ${tagsExtra}
+                                </div>
                             </div>
                         </td>
-                        <td>${lastVisit}</td>
                         <td>
-                            <span class="badge bg-label-info">${loyalty}</span>
+                            <div class="client-contacts">
+                                <span class="client-contact-line">${client.phone ? `<i class="ri ri-phone-line text-muted"></i>${client.phone}` : '<span class="client-muted">Без телефона</span>'}</span>
+                                <span class="client-contact-line">${client.email ? `<i class="ri ri-mail-line text-muted"></i>${client.email}` : '<span class="client-muted">Email не указан</span>'}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">${lastVisit}</div>
+                            <div class="client-muted">Последний контакт</div>
+                        </td>
+                        <td>
+                            <span class="client-loyalty">${loyalty}</span>
                         </td>
                         <td class="text-end">
-                            <div class="btn-group" role="group">
+                            <div class="client-actions" role="group">
                                 <button
                                     type="button"
                                     class="btn btn-sm btn-icon btn-text-secondary js-client-quick-view"
@@ -556,24 +770,24 @@
                                     type="button"
                                     class="btn btn-sm btn-icon btn-text-secondary js-client-reminder"
                                     data-client-id="${client.id}"
-                                    title="Автонапоминание"
-                                    aria-label="Автонапоминание"
+                                    title="Напоминание"
+                                    aria-label="Напоминание"
                                 >
                                     <i class="ri ri-notification-3-line"></i>
                                 </button>
                                 <a
                                     href="/clients/${client.id}"
                                     class="btn btn-sm btn-icon btn-text-secondary"
-                                    title="Подробнее"
-                                    aria-label="Подробнее"
+                                    title="Карточка клиента"
+                                    aria-label="Карточка клиента"
                                 >
                                     <i class="ri ri-user-line"></i>
                                 </a>
                                 <a
                                     href="/clients/${client.id}/edit"
                                     class="btn btn-sm btn-icon btn-text-secondary"
-                                    title="Изменить"
-                                    aria-label="Изменить"
+                                    title="Редактировать"
+                                    aria-label="Редактировать"
                                 >
                                     <i class="ri ri-edit-line"></i>
                                 </a>
@@ -688,7 +902,7 @@
                 if (!preserveAlerts) {
                     clearAlerts();
                 }
-                clientsBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Загрузка данных...</td></tr>';
+                clientsBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted clients-empty">Загрузка данных...</td></tr>';
 
                 state.page = page;
                 const params = new URLSearchParams({
