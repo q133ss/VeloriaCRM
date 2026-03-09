@@ -1,0 +1,341 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+          - /url: http://localhost:8080/dashboard
+          - img "Veloria" [ref=e9]
+          - generic [ref=e10]: Veloria
+        - link [ref=e11] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img [ref=e12]
+      - list [ref=e15]:
+        - listitem [ref=e629]:
+          - link "Дашборд" [ref=e630] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e632]: Дашборд
+        - listitem [ref=e633]:
+          - link "Календарь" [ref=e634] [cursor=pointer]:
+            - /url: /calendar
+            - generic [ref=e636]: Календарь
+        - listitem [ref=e637]:
+          - link "Записи" [ref=e638] [cursor=pointer]:
+            - /url: /orders
+            - generic [ref=e640]: Записи
+        - listitem [ref=e641]:
+          - link "Клиенты" [ref=e642] [cursor=pointer]:
+            - /url: /clients
+            - generic [ref=e644]: Клиенты
+        - listitem [ref=e645]:
+          - link "Услуги" [ref=e646] [cursor=pointer]:
+            - /url: /services
+            - generic [ref=e648]: Услуги
+        - listitem [ref=e649]:
+          - link "Инвойсы" [ref=e650] [cursor=pointer]:
+            - /url: /invoices
+            - generic [ref=e652]: Инвойсы
+        - listitem [ref=e653]:
+          - link "Сообщения" [ref=e654] [cursor=pointer]:
+            - /url: /messages
+            - generic [ref=e656]: Сообщения
+        - listitem [ref=e657]:
+          - link "Аналитика" [ref=e658] [cursor=pointer]:
+            - /url: /analytics
+            - generic [ref=e660]: Аналитика
+        - listitem [ref=e661]:
+          - link "Интеграции" [ref=e662] [cursor=pointer]:
+            - /url: /integrations
+            - generic [ref=e664]: Интеграции
+        - listitem [ref=e665]:
+          - link "Настройки" [ref=e666] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e668]: Настройки
+        - listitem [ref=e669]:
+          - link "Помощь" [ref=e670] [cursor=pointer]:
+            - /url: /help
+            - generic [ref=e672]: Помощь
+        - listitem [ref=e673]:
+          - link "Лендинги" [ref=e674] [cursor=pointer]:
+            - /url: /landings
+            - generic [ref=e676]: Лендинги
+        - listitem [ref=e677]:
+          - link "Маркетинг" [ref=e678] [cursor=pointer]:
+            - /url: /marketing
+            - generic [ref=e680]: Маркетинг
+        - listitem [ref=e681]:
+          - link "Обучение" [ref=e682] [cursor=pointer]:
+            - /url: /learning
+            - generic [ref=e684]: Обучение
+        - listitem [ref=e685]:
+          - link "Velory Studio" [ref=e686] [cursor=pointer]:
+            - /url: /velory
+            - generic [ref=e688]: Velory Studio
+    - generic [ref=e20]:
+      - navigation [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - link "Язык" [ref=e25] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - link "Тема (system)" [ref=e28] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - list [ref=e30]:
+            - listitem [ref=e31]:
+              - link "1" [ref=e689] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - generic: "1"
+            - listitem [ref=e34]:
+              - link "user-avatar" [ref=e690] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - img "user-avatar" [ref=e691]
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - heading "Календарь" [level=4] [ref=e42]
+              - generic [ref=e43]: март 2026 г.
+              - paragraph [ref=e44]: Планируйте расписание, контролируйте записи и следите за доступностью.
+            - generic [ref=e45]:
+              - group "Календарь" [ref=e46]:
+                - button "Предыдущий период" [ref=e47] [cursor=pointer]
+                - button "Следующий период" [ref=e49] [cursor=pointer]
+              - button "Обновить" [ref=e51] [cursor=pointer]: Обновить
+              - button "Сегодня" [ref=e53] [cursor=pointer]: Сегодня
+          - generic [ref=e55]:
+            - generic [ref=e57]:
+              - group "Месяц" [ref=e60]:
+                - button "Месяц" [ref=e61] [cursor=pointer]
+                - button "Неделя" [ref=e62] [cursor=pointer]
+                - button "День" [ref=e63] [cursor=pointer]
+                - button "Список" [ref=e64] [cursor=pointer]
+              - grid [ref=e69]:
+                - rowgroup [ref=e70]:
+                  - row "понедельник вторник среда четверг пятница суббота воскресенье" [ref=e74]:
+                    - columnheader "понедельник" [ref=e75]:
+                      - generic "понедельник" [ref=e77]: пн
+                    - columnheader "вторник" [ref=e78]:
+                      - generic "вторник" [ref=e80]: вт
+                    - columnheader "среда" [ref=e81]:
+                      - generic "среда" [ref=e83]: ср
+                    - columnheader "четверг" [ref=e84]:
+                      - generic "четверг" [ref=e86]: чт
+                    - columnheader "пятница" [ref=e87]:
+                      - generic "пятница" [ref=e89]: пт
+                    - columnheader "суббота" [ref=e90]:
+                      - generic "суббота" [ref=e92]: сб
+                    - columnheader "воскресенье" [ref=e93]:
+                      - generic "воскресенье" [ref=e95]: вс
+                - rowgroup [ref=e96]:
+                  - generic [ref=e99]:
+                    - row "23 февраля 2026 г. 24 февраля 2026 г. 25 февраля 2026 г. 26 февраля 2026 г. 27 февраля 2026 г. 28 февраля 2026 г. 1 марта 2026 г." [ref=e101]:
+                      - gridcell "23 февраля 2026 г." [ref=e102]:
+                        - generic "23 февраля 2026 г." [ref=e105]: "23"
+                      - gridcell "24 февраля 2026 г." [ref=e107]:
+                        - generic "24 февраля 2026 г." [ref=e110]: "24"
+                      - gridcell "25 февраля 2026 г." [ref=e112]:
+                        - generic [ref=e113]:
+                          - generic "25 февраля 2026 г." [ref=e115]: "25"
+                          - generic "25.02.2026 10:00 • Alexey Miroshkin • Классический маникюр" [ref=e693]:
+                            - generic [ref=e695]: 10:00
+                            - generic [ref=e696]: Alexey Miroshkin
+                      - gridcell "26 февраля 2026 г." [ref=e117]:
+                        - generic [ref=e118]:
+                          - generic "26 февраля 2026 г." [ref=e120]: "26"
+                          - generic "26.02.2026 09:00 • blockstar2k • Укладка" [ref=e698]:
+                            - generic [ref=e700]: 09:00
+                            - generic [ref=e701]: blockstar2k
+                      - gridcell "27 февраля 2026 г." [ref=e122]:
+                        - generic [ref=e123]:
+                          - generic "27 февраля 2026 г." [ref=e125]: "27"
+                          - generic "27.02.2026 09:00 • blockstar2k • Укладка" [ref=e703]:
+                            - generic [ref=e705]: 09:00
+                            - generic [ref=e706]: blockstar2k
+                      - gridcell "28 февраля 2026 г." [ref=e127]:
+                        - generic "28 февраля 2026 г." [ref=e130]: "28"
+                      - gridcell "1 марта 2026 г." [ref=e132]:
+                        - generic "1 марта 2026 г." [ref=e135]: "1"
+                    - row "2 марта 2026 г. 3 марта 2026 г. 4 марта 2026 г. 5 марта 2026 г. 6 марта 2026 г. 7 марта 2026 г. 8 марта 2026 г." [ref=e137]:
+                      - gridcell "2 марта 2026 г." [ref=e138]:
+                        - generic "2 марта 2026 г." [ref=e141]: "2"
+                      - gridcell "3 марта 2026 г." [ref=e143]:
+                        - generic "3 марта 2026 г." [ref=e146]: "3"
+                      - gridcell "4 марта 2026 г." [ref=e148]:
+                        - generic "4 марта 2026 г." [ref=e151]: "4"
+                      - gridcell "5 марта 2026 г." [ref=e153]:
+                        - generic "5 марта 2026 г." [ref=e156]: "5"
+                      - gridcell "6 марта 2026 г." [ref=e158]:
+                        - generic "6 марта 2026 г." [ref=e161]: "6"
+                      - gridcell "7 марта 2026 г." [ref=e163]:
+                        - generic "7 марта 2026 г." [ref=e166]: "7"
+                      - gridcell "8 марта 2026 г." [ref=e168]:
+                        - generic "8 марта 2026 г." [ref=e171]: "8"
+                    - row "9 марта 2026 г. 10 марта 2026 г. 11 марта 2026 г. 12 марта 2026 г. 13 марта 2026 г. 14 марта 2026 г. 15 марта 2026 г." [ref=e173]:
+                      - gridcell "9 марта 2026 г." [ref=e174]:
+                        - generic "9 марта 2026 г." [ref=e177]: "9"
+                      - gridcell "10 марта 2026 г." [ref=e181]:
+                        - generic "10 марта 2026 г." [ref=e184]: "10"
+                      - gridcell "11 марта 2026 г." [ref=e186]:
+                        - generic "11 марта 2026 г." [ref=e189]: "11"
+                      - gridcell "12 марта 2026 г." [ref=e191]:
+                        - generic "12 марта 2026 г." [ref=e194]: "12"
+                      - gridcell "13 марта 2026 г." [ref=e196]:
+                        - generic "13 марта 2026 г." [ref=e199]: "13"
+                      - gridcell "14 марта 2026 г." [ref=e201]:
+                        - generic "14 марта 2026 г." [ref=e204]: "14"
+                      - gridcell "15 марта 2026 г." [ref=e206]:
+                        - generic "15 марта 2026 г." [ref=e209]: "15"
+                    - row "16 марта 2026 г. 17 марта 2026 г. 18 марта 2026 г. 19 марта 2026 г. 20 марта 2026 г. 21 марта 2026 г. 22 марта 2026 г." [ref=e211]:
+                      - gridcell "16 марта 2026 г." [ref=e212]:
+                        - generic "16 марта 2026 г." [ref=e215]: "16"
+                      - gridcell "17 марта 2026 г." [ref=e217]:
+                        - generic "17 марта 2026 г." [ref=e220]: "17"
+                      - gridcell "18 марта 2026 г." [ref=e222]:
+                        - generic "18 марта 2026 г." [ref=e225]: "18"
+                      - gridcell "19 марта 2026 г." [ref=e227]:
+                        - generic "19 марта 2026 г." [ref=e230]: "19"
+                      - gridcell "20 марта 2026 г." [ref=e232]:
+                        - generic "20 марта 2026 г." [ref=e235]: "20"
+                      - gridcell "21 марта 2026 г." [ref=e237]:
+                        - generic "21 марта 2026 г." [ref=e240]: "21"
+                      - gridcell "22 марта 2026 г." [ref=e242]:
+                        - generic "22 марта 2026 г." [ref=e245]: "22"
+                    - row "23 марта 2026 г. 24 марта 2026 г. 25 марта 2026 г. 26 марта 2026 г. 27 марта 2026 г. 28 марта 2026 г. 29 марта 2026 г." [ref=e247]:
+                      - gridcell "23 марта 2026 г." [ref=e248]:
+                        - generic "23 марта 2026 г." [ref=e251]: "23"
+                      - gridcell "24 марта 2026 г." [ref=e253]:
+                        - generic "24 марта 2026 г." [ref=e256]: "24"
+                      - gridcell "25 марта 2026 г." [ref=e258]:
+                        - generic "25 марта 2026 г." [ref=e261]: "25"
+                      - gridcell "26 марта 2026 г." [ref=e263]:
+                        - generic "26 марта 2026 г." [ref=e266]: "26"
+                      - gridcell "27 марта 2026 г." [ref=e268]:
+                        - generic "27 марта 2026 г." [ref=e271]: "27"
+                      - gridcell "28 марта 2026 г." [ref=e273]:
+                        - generic "28 марта 2026 г." [ref=e276]: "28"
+                      - gridcell "29 марта 2026 г." [ref=e278]:
+                        - generic "29 марта 2026 г." [ref=e281]: "29"
+                    - row "30 марта 2026 г. 31 марта 2026 г. 1 апреля 2026 г. 2 апреля 2026 г. 3 апреля 2026 г. 4 апреля 2026 г. 5 апреля 2026 г." [ref=e283]:
+                      - gridcell "30 марта 2026 г." [ref=e284]:
+                        - generic "30 марта 2026 г." [ref=e287]: "30"
+                      - gridcell "31 марта 2026 г." [ref=e289]:
+                        - generic "31 марта 2026 г." [ref=e292]: "31"
+                      - gridcell "1 апреля 2026 г." [ref=e294]:
+                        - generic "1 апреля 2026 г." [ref=e297]: "1"
+                      - gridcell "2 апреля 2026 г." [ref=e299]:
+                        - generic "2 апреля 2026 г." [ref=e302]: "2"
+                      - gridcell "3 апреля 2026 г." [ref=e304]:
+                        - generic "3 апреля 2026 г." [ref=e307]: "3"
+                      - gridcell "4 апреля 2026 г." [ref=e309]:
+                        - generic "4 апреля 2026 г." [ref=e312]: "4"
+                      - gridcell "5 апреля 2026 г." [ref=e314]:
+                        - generic "5 апреля 2026 г." [ref=e317]: "5"
+            - generic [ref=e320]:
+              - generic [ref=e321]:
+                - generic [ref=e322]:
+                  - generic [ref=e323]: Детали дня
+                  - heading "Понедельник, 9 марта 2026 г." [level=5] [ref=e324]
+                  - paragraph [ref=e325]: В этот день пока нет записей
+                - button "Новая запись" [ref=e326] [cursor=pointer]: Новая запись
+              - generic [ref=e709]:
+                - generic [ref=e710]:
+                  - generic [ref=e711]:
+                    - heading "Свободные слоты" [level=6] [ref=e712]
+                    - generic [ref=e713]: "9"
+                  - paragraph [ref=e714]: Свободные слоты рассчитываются на основе рабочих часов в настройках.
+                  - generic [ref=e715]:
+                    - generic [ref=e716]: 09:00
+                    - generic [ref=e717]: 10:00
+                    - generic [ref=e718]: 11:00
+                    - generic [ref=e719]: 12:00
+                    - generic [ref=e720]: 13:00
+                    - generic [ref=e721]: 14:00
+                    - generic [ref=e722]: 15:00
+                    - generic [ref=e723]: 16:00
+                    - generic [ref=e724]: 17:00
+                - generic [ref=e725]:
+                  - heading "Записи" [level=6] [ref=e727]
+                  - generic [ref=e728]: В этот день пока нет записей.
+        - contentinfo [ref=e332]:
+          - generic [ref=e334]:
+            - generic [ref=e335]: © 2026
+            - generic [ref=e336]:
+              - link "Пользовательское соглашение" [ref=e337] [cursor=pointer]:
+                - /url: /terms
+              - link "Политика конфиденциальности" [ref=e338] [cursor=pointer]:
+                - /url: /policy
+  - generic [ref=e340]:
+    - link [ref=e341] [cursor=pointer]:
+      - /url: javascript:void(0)
+    - generic [ref=e342]:
+      - heading "Template Customizer" [level=6] [ref=e343]
+      - paragraph [ref=e344]: Customize and preview in real time
+      - generic [ref=e345]:
+        - link "Reset Customizer" [ref=e346] [cursor=pointer]:
+          - /url: javascript:void(0)
+        - link [ref=e348] [cursor=pointer]:
+          - /url: javascript:void(0)
+    - generic [ref=e350]:
+      - generic [ref=e351]:
+        - heading "Theming" [level=5] [ref=e352]
+        - generic [ref=e353]:
+          - generic [ref=e354]: Primary Color
+          - button "toggle color picker dialog" [ref=e374] [cursor=pointer]
+        - generic [ref=e375]:
+          - generic [ref=e376]: Theme
+          - generic [ref=e377]:
+            - generic [ref=e383] [cursor=pointer]: Light
+            - generic [ref=e389] [cursor=pointer]: Dark
+            - generic [ref=e395] [cursor=pointer]: System
+        - generic [ref=e396]:
+          - generic [ref=e397]: Skins
+          - generic [ref=e398]:
+            - generic [ref=e399]:
+              - img [ref=e403] [cursor=pointer]
+              - generic [ref=e419] [cursor=pointer]: Default
+            - generic [ref=e420]:
+              - img [ref=e424] [cursor=pointer]
+              - generic [ref=e439] [cursor=pointer]: Bordered
+        - generic [ref=e440]:
+          - generic [ref=e441]: Semi Dark
+          - checkbox [ref=e442]
+        - separator [ref=e446]
+      - generic [ref=e447]:
+        - heading "Layout" [level=5] [ref=e448]
+        - generic [ref=e449]:
+          - generic [ref=e450]: Menu (Navigation)
+          - generic [ref=e451]:
+            - generic [ref=e452]:
+              - img [ref=e456] [cursor=pointer]
+              - generic [ref=e472] [cursor=pointer]: Expanded
+            - generic [ref=e473]:
+              - img [ref=e477] [cursor=pointer]
+              - generic [ref=e493] [cursor=pointer]: Collapsed
+        - generic [ref=e494]:
+          - generic [ref=e495]: Navbar Type
+          - generic [ref=e496]:
+            - generic [ref=e497]:
+              - img [ref=e501] [cursor=pointer]
+              - generic [ref=e517] [cursor=pointer]: Sticky
+            - generic [ref=e518]:
+              - img [ref=e522] [cursor=pointer]
+              - generic [ref=e538] [cursor=pointer]: Static
+            - generic [ref=e539]:
+              - img [ref=e543] [cursor=pointer]
+              - generic [ref=e554] [cursor=pointer]: Hidden
+        - generic [ref=e555]:
+          - generic [ref=e556]: Content
+          - generic [ref=e557]:
+            - generic [ref=e558]:
+              - img [ref=e562] [cursor=pointer]
+              - generic [ref=e572] [cursor=pointer]: Compact
+            - generic [ref=e573]:
+              - img [ref=e577] [cursor=pointer]
+              - generic [ref=e587] [cursor=pointer]: Wide
+        - generic [ref=e588]:
+          - generic [ref=e589]: Direction
+          - generic [ref=e590]:
+            - generic [ref=e591]:
+              - img [ref=e595] [cursor=pointer]
+              - generic [ref=e609] [cursor=pointer]: Left to Right (En)
+            - generic [ref=e610]:
+              - img [ref=e614] [cursor=pointer]
+              - generic [ref=e628] [cursor=pointer]: Right to Left (Ar)

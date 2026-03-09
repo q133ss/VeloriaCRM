@@ -1,0 +1,377 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+        - /url: http://localhost:8080/dashboard
+        - img "Veloria" [ref=e9]
+        - generic [ref=e10]: Veloria
+      - link [ref=e11] [cursor=pointer]:
+        - /url: javascript:void(0);
+        - img [ref=e12]
+    - list [ref=e15]:
+      - listitem [ref=e372]:
+        - link "Дашборд" [ref=e373] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e375]: Дашборд
+      - listitem [ref=e376]:
+        - link "Календарь" [ref=e377] [cursor=pointer]:
+          - /url: /calendar
+          - generic [ref=e379]: Календарь
+      - listitem [ref=e380]:
+        - link "Записи" [ref=e381] [cursor=pointer]:
+          - /url: /orders
+          - generic [ref=e383]: Записи
+      - listitem [ref=e384]:
+        - link "Клиенты" [ref=e385] [cursor=pointer]:
+          - /url: /clients
+          - generic [ref=e387]: Клиенты
+      - listitem [ref=e388]:
+        - link "Услуги" [ref=e389] [cursor=pointer]:
+          - /url: /services
+          - generic [ref=e391]: Услуги
+      - listitem [ref=e392]:
+        - link "Инвойсы" [ref=e393] [cursor=pointer]:
+          - /url: /invoices
+          - generic [ref=e395]: Инвойсы
+      - listitem [ref=e396]:
+        - link "Сообщения" [ref=e397] [cursor=pointer]:
+          - /url: /messages
+          - generic [ref=e399]: Сообщения
+      - listitem [ref=e400]:
+        - link "Аналитика" [ref=e401] [cursor=pointer]:
+          - /url: /analytics
+          - generic [ref=e403]: Аналитика
+      - listitem [ref=e404]:
+        - link "Интеграции" [ref=e405] [cursor=pointer]:
+          - /url: /integrations
+          - generic [ref=e407]: Интеграции
+      - listitem [ref=e408]:
+        - link "Настройки" [ref=e409] [cursor=pointer]:
+          - /url: /settings
+          - generic [ref=e411]: Настройки
+      - listitem [ref=e412]:
+        - link "Помощь" [ref=e413] [cursor=pointer]:
+          - /url: /help
+          - generic [ref=e415]: Помощь
+      - listitem [ref=e416]:
+        - link "Лендинги" [ref=e417] [cursor=pointer]:
+          - /url: /landings
+          - generic [ref=e419]: Лендинги
+      - listitem [ref=e420]:
+        - link "Маркетинг" [ref=e421] [cursor=pointer]:
+          - /url: /marketing
+          - generic [ref=e423]: Маркетинг
+      - listitem [ref=e424]:
+        - link "Обучение" [ref=e425] [cursor=pointer]:
+          - /url: /learning
+          - generic [ref=e427]: Обучение
+      - listitem [ref=e428]:
+        - link "Velory Studio" [ref=e429] [cursor=pointer]:
+          - /url: /velory
+          - generic [ref=e431]: Velory Studio
+  - generic [ref=e20]:
+    - navigation [ref=e21]:
+      - link [ref=e23] [cursor=pointer]:
+        - /url: javascript:void(0)
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - link "Язык" [ref=e28] [cursor=pointer]:
+            - /url: javascript:void(0);
+          - link "Тема (light)" [ref=e31] [cursor=pointer]:
+            - /url: javascript:void(0);
+        - list [ref=e33]:
+          - listitem [ref=e34]:
+            - link "1" [ref=e432] [cursor=pointer]:
+              - /url: javascript:void(0);
+              - generic: "1"
+          - listitem [ref=e37]:
+            - link "user-avatar" [ref=e433] [cursor=pointer]:
+              - /url: javascript:void(0);
+              - img "user-avatar" [ref=e434]
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e45]:
+            - generic [ref=e47]:
+              - generic [ref=e48]: Календарь
+              - heading "Календарь" [level=1] [ref=e50]
+              - paragraph [ref=e51]: Планируйте расписание, контролируйте записи и следите за доступностью.
+              - generic [ref=e52]:
+                - generic [ref=e53]:
+                  - generic [ref=e54]: Период
+                  - strong [ref=e55]: март 2026 г.
+                - generic [ref=e56]:
+                  - generic [ref=e57]: Выбранный день
+                  - strong [ref=e58]: Понедельник, 9 марта 2026 г.
+                - generic [ref=e59]:
+                  - generic [ref=e60]: Записей в периоде
+                  - strong [ref=e61]: "3"
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - button "Предыдущий период" [ref=e65] [cursor=pointer]
+                - button "Следующий период" [ref=e67] [cursor=pointer]
+                - button "Обновить" [ref=e69] [cursor=pointer]
+                - button "Сегодня" [ref=e71] [cursor=pointer]: Сегодня
+              - generic [ref=e73]:
+                - generic [ref=e74]: Месяц
+                - generic [ref=e75]: Нажмите на день, чтобы увидеть детали
+          - generic [ref=e76]:
+            - generic [ref=e78]:
+              - group "Месяц" [ref=e80]:
+                - button "Месяц" [ref=e81] [cursor=pointer]
+                - button "Неделя" [ref=e82] [cursor=pointer]
+                - button "День" [ref=e83] [cursor=pointer]
+                - button "Список" [ref=e84] [cursor=pointer]
+              - grid [ref=e89]:
+                - rowgroup [ref=e90]:
+                  - row "понедельник вторник среда четверг пятница суббота воскресенье" [ref=e94]:
+                    - columnheader "понедельник" [ref=e95]:
+                      - generic "понедельник" [ref=e97]: пн
+                    - columnheader "вторник" [ref=e98]:
+                      - generic "вторник" [ref=e100]: вт
+                    - columnheader "среда" [ref=e101]:
+                      - generic "среда" [ref=e103]: ср
+                    - columnheader "четверг" [ref=e104]:
+                      - generic "четверг" [ref=e106]: чт
+                    - columnheader "пятница" [ref=e107]:
+                      - generic "пятница" [ref=e109]: пт
+                    - columnheader "суббота" [ref=e110]:
+                      - generic "суббота" [ref=e112]: сб
+                    - columnheader "воскресенье" [ref=e113]:
+                      - generic "воскресенье" [ref=e115]: вс
+                - rowgroup [ref=e116]:
+                  - generic [ref=e119]:
+                    - row "23 февраля 2026 г. 24 февраля 2026 г. 25 февраля 2026 г. 26 февраля 2026 г. 27 февраля 2026 г. 28 февраля 2026 г. 1 марта 2026 г." [ref=e121]:
+                      - gridcell "23 февраля 2026 г." [ref=e122]:
+                        - generic "23 февраля 2026 г." [ref=e125]: "23"
+                      - gridcell "24 февраля 2026 г." [ref=e127]:
+                        - generic "24 февраля 2026 г." [ref=e130]: "24"
+                      - gridcell "25 февраля 2026 г." [ref=e132]:
+                        - generic [ref=e133]:
+                          - generic "25 февраля 2026 г." [ref=e135]: "25"
+                          - generic "25.02.2026 10:00 • Alexey Miroshkin • Классический маникюр" [ref=e436]:
+                            - generic [ref=e438]: 10:00
+                            - generic: Alexey Miroshkin
+                      - gridcell "26 февраля 2026 г." [ref=e137]:
+                        - generic [ref=e138]:
+                          - generic "26 февраля 2026 г." [ref=e140]: "26"
+                          - generic "26.02.2026 09:00 • blockstar2k • Укладка" [ref=e440]:
+                            - generic [ref=e442]: 09:00
+                            - generic: blockstar2k
+                      - gridcell "27 февраля 2026 г." [ref=e142]:
+                        - generic [ref=e143]:
+                          - generic "27 февраля 2026 г." [ref=e145]: "27"
+                          - generic "27.02.2026 09:00 • blockstar2k • Укладка" [ref=e444]:
+                            - generic [ref=e446]: 09:00
+                            - generic: blockstar2k
+                      - gridcell "28 февраля 2026 г." [ref=e147]:
+                        - generic "28 февраля 2026 г." [ref=e150]: "28"
+                      - gridcell "1 марта 2026 г." [ref=e152]:
+                        - generic "1 марта 2026 г." [ref=e155]: "1"
+                    - row "2 марта 2026 г. 3 марта 2026 г. 4 марта 2026 г. 5 марта 2026 г. 6 марта 2026 г. 7 марта 2026 г. 8 марта 2026 г." [ref=e157]:
+                      - gridcell "2 марта 2026 г." [ref=e158]:
+                        - generic "2 марта 2026 г." [ref=e161]: "2"
+                      - gridcell "3 марта 2026 г." [ref=e163]:
+                        - generic "3 марта 2026 г." [ref=e166]: "3"
+                      - gridcell "4 марта 2026 г." [ref=e168]:
+                        - generic "4 марта 2026 г." [ref=e171]: "4"
+                      - gridcell "5 марта 2026 г." [ref=e173]:
+                        - generic "5 марта 2026 г." [ref=e176]: "5"
+                      - gridcell "6 марта 2026 г." [ref=e178]:
+                        - generic "6 марта 2026 г." [ref=e181]: "6"
+                      - gridcell "7 марта 2026 г." [ref=e183]:
+                        - generic "7 марта 2026 г." [ref=e186]: "7"
+                      - gridcell "8 марта 2026 г." [ref=e188]:
+                        - generic "8 марта 2026 г." [ref=e191]: "8"
+                    - row "9 марта 2026 г. 10 марта 2026 г. 11 марта 2026 г. 12 марта 2026 г. 13 марта 2026 г. 14 марта 2026 г. 15 марта 2026 г." [ref=e193]:
+                      - gridcell "9 марта 2026 г." [ref=e194]:
+                        - generic "9 марта 2026 г." [ref=e197]: "9"
+                      - gridcell "10 марта 2026 г." [ref=e201]:
+                        - generic "10 марта 2026 г." [ref=e204]: "10"
+                      - gridcell "11 марта 2026 г." [ref=e206]:
+                        - generic "11 марта 2026 г." [ref=e209]: "11"
+                      - gridcell "12 марта 2026 г." [ref=e211]:
+                        - generic "12 марта 2026 г." [ref=e214]: "12"
+                      - gridcell "13 марта 2026 г." [ref=e216]:
+                        - generic "13 марта 2026 г." [ref=e219]: "13"
+                      - gridcell "14 марта 2026 г." [ref=e221]:
+                        - generic "14 марта 2026 г." [ref=e224]: "14"
+                      - gridcell "15 марта 2026 г." [ref=e226]:
+                        - generic "15 марта 2026 г." [ref=e229]: "15"
+                    - row "16 марта 2026 г. 17 марта 2026 г. 18 марта 2026 г. 19 марта 2026 г. 20 марта 2026 г. 21 марта 2026 г. 22 марта 2026 г." [ref=e231]:
+                      - gridcell "16 марта 2026 г." [ref=e232]:
+                        - generic "16 марта 2026 г." [ref=e235]: "16"
+                      - gridcell "17 марта 2026 г." [ref=e237]:
+                        - generic "17 марта 2026 г." [ref=e240]: "17"
+                      - gridcell "18 марта 2026 г." [ref=e242]:
+                        - generic "18 марта 2026 г." [ref=e245]: "18"
+                      - gridcell "19 марта 2026 г." [ref=e247]:
+                        - generic "19 марта 2026 г." [ref=e250]: "19"
+                      - gridcell "20 марта 2026 г." [ref=e252]:
+                        - generic "20 марта 2026 г." [ref=e255]: "20"
+                      - gridcell "21 марта 2026 г." [ref=e257]:
+                        - generic "21 марта 2026 г." [ref=e260]: "21"
+                      - gridcell "22 марта 2026 г." [ref=e262]:
+                        - generic "22 марта 2026 г." [ref=e265]: "22"
+                    - row "23 марта 2026 г. 24 марта 2026 г. 25 марта 2026 г. 26 марта 2026 г. 27 марта 2026 г. 28 марта 2026 г. 29 марта 2026 г." [ref=e267]:
+                      - gridcell "23 марта 2026 г." [ref=e268]:
+                        - generic "23 марта 2026 г." [ref=e271]: "23"
+                      - gridcell "24 марта 2026 г." [ref=e273]:
+                        - generic "24 марта 2026 г." [ref=e276]: "24"
+                      - gridcell "25 марта 2026 г." [ref=e278]:
+                        - generic "25 марта 2026 г." [ref=e281]: "25"
+                      - gridcell "26 марта 2026 г." [ref=e283]:
+                        - generic "26 марта 2026 г." [ref=e286]: "26"
+                      - gridcell "27 марта 2026 г." [ref=e288]:
+                        - generic "27 марта 2026 г." [ref=e291]: "27"
+                      - gridcell "28 марта 2026 г." [ref=e293]:
+                        - generic "28 марта 2026 г." [ref=e296]: "28"
+                      - gridcell "29 марта 2026 г." [ref=e298]:
+                        - generic "29 марта 2026 г." [ref=e301]: "29"
+                    - row "30 марта 2026 г. 31 марта 2026 г. 1 апреля 2026 г. 2 апреля 2026 г. 3 апреля 2026 г. 4 апреля 2026 г. 5 апреля 2026 г." [ref=e303]:
+                      - gridcell "30 марта 2026 г." [ref=e304]:
+                        - generic "30 марта 2026 г." [ref=e307]: "30"
+                      - gridcell "31 марта 2026 г." [ref=e309]:
+                        - generic "31 марта 2026 г." [ref=e312]: "31"
+                      - gridcell "1 апреля 2026 г." [ref=e314]:
+                        - generic "1 апреля 2026 г." [ref=e317]: "1"
+                      - gridcell "2 апреля 2026 г." [ref=e319]:
+                        - generic "2 апреля 2026 г." [ref=e322]: "2"
+                      - gridcell "3 апреля 2026 г." [ref=e324]:
+                        - generic "3 апреля 2026 г." [ref=e327]: "3"
+                      - gridcell "4 апреля 2026 г." [ref=e329]:
+                        - generic "4 апреля 2026 г." [ref=e332]: "4"
+                      - gridcell "5 апреля 2026 г." [ref=e334]:
+                        - generic "5 апреля 2026 г." [ref=e337]: "5"
+            - generic [ref=e342]:
+              - generic [ref=e343]:
+                - generic [ref=e344]:
+                  - generic [ref=e345]: Детали дня
+                  - heading "Понедельник, 9 марта 2026 г." [level=4] [ref=e346]
+                  - paragraph [ref=e347]: В этот день пока нет записей
+                - button "Новая запись" [ref=e348] [cursor=pointer]: Новая запись
+              - generic [ref=e350]:
+                - generic [ref=e351]:
+                  - generic [ref=e352]: Записи
+                  - strong [ref=e353]: "0"
+                - generic [ref=e354]:
+                  - generic [ref=e355]: Свободно
+                  - strong [ref=e356]: "9"
+                - generic [ref=e357]:
+                  - generic [ref=e358]: Статус
+                  - strong [ref=e359]: Свободные слоты
+              - generic [ref=e362]: Свободные слоты
+              - generic [ref=e447]:
+                - generic [ref=e448]:
+                  - generic [ref=e449]:
+                    - heading "Свободные слоты" [level=6] [ref=e450]
+                    - generic [ref=e451]: "9"
+                  - paragraph [ref=e452]: Свободные слоты рассчитываются на основе рабочих часов в настройках.
+                  - generic [ref=e453]:
+                    - generic [ref=e454]: 09:00
+                    - generic [ref=e455]: 10:00
+                    - generic [ref=e456]: 11:00
+                    - generic [ref=e457]: 12:00
+                    - generic [ref=e458]: 13:00
+                    - generic [ref=e459]: 14:00
+                    - generic [ref=e460]: 15:00
+                    - generic [ref=e461]: 16:00
+                    - generic [ref=e462]: 17:00
+                - generic [ref=e463]:
+                  - generic [ref=e464]:
+                    - heading "Записи" [level=6] [ref=e465]
+                    - generic [ref=e466]: "0"
+                  - generic [ref=e467]: В этот день пока нет записей.
+        - dialog [ref=e468]:
+          - generic [ref=e469]:
+            - generic [ref=e470]:
+              - generic [ref=e471]:
+                - heading "Новая запись" [level=5] [ref=e472]
+                - paragraph [ref=e473]: Создайте запись, не покидая календарь.
+              - button "Close" [ref=e474] [cursor=pointer]
+            - generic [ref=e475]:
+              - generic [ref=e477]:
+                - generic [ref=e479]:
+                  - generic [ref=e480]:
+                    - generic [ref=e482]:
+                      - textbox "Найти клиентку" [ref=e483]:
+                        - /placeholder: Анна или +7...
+                        - text: Alexey Miroshkin
+                      - generic: Найти клиентку
+                    - generic [ref=e587]:
+                      - generic [ref=e588]: "Выбрана клиентка: Alexey Miroshkin"
+                      - generic [ref=e589]: +7 (951) 867-70-86
+                  - generic [ref=e506]:
+                    - textbox "Телефон" [ref=e507]:
+                      - /placeholder: +7(999)999-99-99
+                      - text: "+79518677086"
+                    - generic: Телефон
+                  - generic [ref=e509]:
+                    - textbox "Имя клиентки" [ref=e510]: Alexey Miroshkin
+                    - generic: Имя клиентки
+                  - generic [ref=e512]:
+                    - textbox "Дата и время" [ref=e513]: 2026-03-09T10:00
+                    - generic: Дата и время
+                  - generic [ref=e515]:
+                    - combobox "Статус" [ref=e516]:
+                      - option "Новая" [selected]
+                      - option "Подтверждена"
+                      - option "В работе"
+                      - option "Завершена"
+                      - option "Отменена"
+                      - option "Не пришёл"
+                    - generic: Статус
+                  - generic [ref=e518]:
+                    - textbox "Комментарий для мастера" [ref=e519]
+                    - generic: Комментарий для мастера
+                - generic [ref=e520]:
+                  - generic [ref=e521]:
+                    - generic [ref=e522]:
+                      - generic [ref=e523]: Предварительная сумма
+                      - strong [ref=e524]: 0 ₽
+                    - generic [ref=e525]:
+                      - generic [ref=e526]: Прогноз времени
+                      - strong [ref=e527]: 0 мин
+                  - generic [ref=e528]:
+                    - spinbutton "Своя сумма, если нужно" [ref=e529]
+                    - generic: Своя сумма, если нужно
+                  - generic [ref=e530]:
+                    - generic [ref=e531]:
+                      - heading "Услуги" [level=6] [ref=e532]
+                      - generic [ref=e533]: "0"
+                    - generic [ref=e534]:
+                      - generic [ref=e535]:
+                        - checkbox "Классический маникюр ~ 50 мин 1 200 ₽" [ref=e536] [cursor=pointer]
+                        - generic [ref=e537]:
+                          - generic [ref=e538]: Классический маникюр
+                          - text: ~ 50 мин
+                        - generic [ref=e539]: 1 200 ₽
+                      - generic [ref=e540]:
+                        - checkbox "Окрашивание ~ 120 мин 2 500 ₽" [ref=e541] [cursor=pointer]
+                        - generic [ref=e542]:
+                          - generic [ref=e543]: Окрашивание
+                          - text: ~ 120 мин
+                        - generic [ref=e544]: 2 500 ₽
+                      - generic [ref=e545]:
+                        - checkbox "Покрытие гель-лаком ~ 40 мин 700 ₽" [ref=e546] [cursor=pointer]
+                        - generic [ref=e547]:
+                          - generic [ref=e548]: Покрытие гель-лаком
+                          - text: ~ 40 мин
+                        - generic [ref=e549]: 700 ₽
+                      - generic [ref=e550]:
+                        - checkbox "Стрижка женская ~ 60 мин 1 500 ₽" [ref=e551] [cursor=pointer]
+                        - generic [ref=e552]:
+                          - generic [ref=e553]: Стрижка женская
+                          - text: ~ 60 мин
+                        - generic [ref=e554]: 1 500 ₽
+                      - generic [ref=e555]:
+                        - checkbox "Укладка ~ 30 мин 800 ₽" [ref=e556] [cursor=pointer]
+                        - generic [ref=e557]:
+                          - generic [ref=e558]: Укладка
+                          - text: ~ 30 мин
+                        - generic [ref=e559]: 800 ₽
+              - generic [ref=e560]:
+                - button "Отмена" [ref=e561] [cursor=pointer]
+                - button "Создать запись" [ref=e562] [cursor=pointer]
+      - contentinfo [ref=e366]:
+        - generic [ref=e369]: © 2026
