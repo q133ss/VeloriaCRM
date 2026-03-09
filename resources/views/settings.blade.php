@@ -1,46 +1,149 @@
 @extends('layouts.app')
 @section('content')
-    <div class="row">
-        <div class="col-md-12">
-            <div class="nav-align-top">
-                <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
+    <style>
+        .settings-hero {
+            border: 1px solid rgba(var(--bs-primary-rgb), 0.16);
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 28%),
+                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
+        }
+
+        .settings-anchor-nav .nav-link {
+            border-radius: 999px;
+        }
+
+        .settings-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+        }
+
+        .settings-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .settings-meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb), 0.08);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--bs-body-color);
+        }
+
+        .settings-compact-note {
+            padding: 0.9rem 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb), 0.04);
+            height: 100%;
+        }
+
+        .settings-password-toggle {
+            border: 1px dashed rgba(var(--bs-body-color-rgb), 0.14);
+            border-radius: 1rem;
+        }
+
+        .settings-password-fields {
+            display: none;
+        }
+
+        .settings-password-fields.is-visible {
+            display: flex;
+        }
+
+        .settings-danger-card {
+            border: 1px solid rgba(var(--bs-danger-rgb), 0.18);
+        }
+
+        .settings-work-table th,
+        .settings-work-table td {
+            vertical-align: middle;
+        }
+
+        .settings-summary-card {
+            position: sticky;
+            top: 1.5rem;
+        }
+    </style>
+
+    <div class="row g-6">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm settings-hero">
+                <div class="card-body p-6 p-lg-8">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-5">
+                        <div class="mw-lg-50">
+                            <span class="badge bg-label-primary mb-3">Veloria Profile</span>
+                            <h3 class="mb-2">{{ __('menu.settings') }}</h3>
+                            <p class="text-muted mb-0">Собрали настройки в короткие блоки: профиль, уведомления, график и безопасность. Лишние технические поля вынесены из первого экрана.</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-user-line"></i> Профиль</span>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-notification-4-line"></i> Уведомления</span>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-time-line"></i> График</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="nav-align-top settings-anchor-nav">
+                <ul class="nav nav-pills flex-column flex-md-row mb-0 gap-2 gap-lg-0">
                     <li class="nav-item">
                         <a class="nav-link active" href="#settings-account"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#settings-notifications"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#settings-work"><i class="icon-base ri ri-calendar-line icon-sm me-2"></i>{{ __('settings.work_settings') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#settings-location"><i class="icon-base ri ri-map-pin-line icon-sm me-2"></i>{{ __('settings.address') }}</a>
+                    </li>
                 </ul>
             </div>
-            <div class="card mb-6">
-                <div class="card-body">
-                    <div class="d-flex align-items-start align-items-sm-center gap-6">
-                        <div class="avatar w-px-100 h-px-100 rounded-4 overflow-hidden" id="uploadedAvatar">
-                            <img alt="user-avatar" class="w-100 h-100 d-none" id="uploadedAvatarImg" />
-                            <span class="avatar-initial w-100 h-100 rounded-4 bg-primary text-white fw-semibold d-flex align-items-center justify-content-center fs-2" id="uploadedAvatarInitials">?</span>
-                        </div>
-                        <div class="button-wrapper">
-                            <label for="upload" class="btn btn-primary me-3 mb-4" tabindex="0">
-                                <span class="d-none d-sm-block">{{ __('settings.upload_photo') }}</span>
-                                <i class="icon-base ri ri-upload-2-line d-block d-sm-none"></i>
-                                <input type="file" id="upload" class="account-file-input" hidden accept="image/png, image/jpeg" />
-                            </label>
-                            <button type="button" class="btn btn-outline-danger account-image-reset mb-4">
-                                <i class="icon-base ri ri-refresh-line d-block d-sm-none"></i>
-                                <span class="d-none d-sm-block">{{ __('settings.reset') }}</span>
-                            </button>
-                            <div>{{ __('settings.allowed_formats') }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body pt-0">
-                    <form id="settings-form" onsubmit="return false">
-                        <div id="form-messages"></div>
-                        <div class="row mt-1 g-5">
-                            <div class="col-12" id="settings-account">
-                                <h5 class="mb-1">Основные настройки</h5>
-                                <p class="text-muted mb-0">Основные настройки вашего аккаунта: контакты, часовой пояс и пароль.</p>
+        </div>
+
+        <div class="col-xl-8">
+            <form id="settings-form" onsubmit="return false">
+                <div id="form-messages" class="mb-6"></div>
+
+                <div class="card mb-6 settings-card" id="settings-account">
+                    <div class="card-body p-5 p-lg-6">
+                        <div class="settings-section-title">
+                            <div>
+                                <h5 class="mb-1">Профиль аккаунта</h5>
+                                <p class="text-muted mb-0">Только основные данные, которые нужны для связи с вами и работы системы.</p>
                             </div>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-shield-user-line"></i> Основное</span>
+                        </div>
+
+                        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-6 mb-6">
+                            <div class="avatar w-px-100 h-px-100 rounded-4 overflow-hidden" id="uploadedAvatar">
+                                <img alt="user-avatar" class="w-100 h-100 d-none" id="uploadedAvatarImg" />
+                                <span class="avatar-initial w-100 h-100 rounded-4 bg-primary text-white fw-semibold d-flex align-items-center justify-content-center fs-2" id="uploadedAvatarInitials">?</span>
+                            </div>
+                            <div class="button-wrapper">
+                                <label for="upload" class="btn btn-primary me-3 mb-3" tabindex="0">
+                                    <span class="d-none d-sm-block">{{ __('settings.upload_photo') }}</span>
+                                    <i class="icon-base ri ri-upload-2-line d-block d-sm-none"></i>
+                                    <input type="file" id="upload" class="account-file-input" hidden accept="image/png, image/jpeg" />
+                                </label>
+                                <button type="button" class="btn btn-outline-danger account-image-reset mb-3">
+                                    <i class="icon-base ri ri-refresh-line d-block d-sm-none"></i>
+                                    <span class="d-none d-sm-block">{{ __('settings.reset') }}</span>
+                                </button>
+                                <div class="text-muted small">{{ __('settings.allowed_formats') }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-5">
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" class="form-control" id="name" name="name" />
@@ -59,7 +162,7 @@
                                     <label for="phone">{{ __('settings.phone') }}</label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-floating form-floating-outline">
                                     <select id="timezone" name="timezone" class="form-select">
                                         @foreach(timezone_identifiers_list() as $tz)
@@ -69,7 +172,7 @@
                                     <label for="timezone">{{ __('settings.timezone') }}</label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-floating form-floating-outline">
                                     <select id="time_format" name="time_format" class="form-select">
                                         <option value="24h">24h</option>
@@ -79,247 +182,138 @@
                                 </div>
                             </div>
                             <div class="col-12">
-                                <h6 class="mb-1">Пароль</h6>
-                                <p class="text-muted mb-0">Заполните поля ниже, только если хотите изменить пароль.</p>
+                                <div class="settings-password-toggle p-4">
+                                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                                        <div>
+                                            <h6 class="mb-1">Сменить пароль</h6>
+                                            <p class="text-muted mb-0">Поля ниже нужны только если вы действительно хотите поменять пароль.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-password-fields">Открыть поля</button>
+                                    </div>
+                                    <div class="row g-4 mt-1 settings-password-fields" id="settings-password-fields">
+                                        <div class="col-md-4">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="password" class="form-control" id="current_password" name="current_password" />
+                                                <label for="current_password">{{ __('settings.current_password') }}</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="password" class="form-control" id="new_password" name="new_password" />
+                                                <label for="new_password">{{ __('settings.new_password') }}</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="password" class="form-control" id="new_password_confirmation" name="new_password_confirmation" />
+                                                <label for="new_password_confirmation">{{ __('settings.password_confirmation') }}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-6 settings-card" id="settings-notifications">
+                    <div class="card-body p-5 p-lg-6">
+                        <div class="settings-section-title">
+                            <div>
+                                <h5 class="mb-1">Уведомления</h5>
+                                <p class="text-muted mb-0">Выберите каналы, по которым хотите получать события о записях и сообщениях.</p>
+                            </div>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-mail-open-line"></i> Каналы</span>
+                        </div>
+
+                        <div class="row g-5">
                             <div class="col-md-4">
-                                <div class="form-floating form-floating-outline">
-                                    <input type="password" class="form-control" id="current_password" name="current_password" />
-                                    <label for="current_password">{{ __('settings.current_password') }}</label>
+                                <div class="settings-compact-note">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="notif-email" />
+                                        <label class="form-check-label fw-semibold" for="notif-email">{{ __('settings.email_notifications') }}</label>
+                                    </div>
+                                    <small class="text-muted d-block">Письма будут приходить на email из профиля.</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-floating form-floating-outline">
-                                    <input type="password" class="form-control" id="new_password" name="new_password" />
-                                    <label for="new_password">{{ __('settings.new_password') }}</label>
+                                <div class="settings-compact-note">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="notif-telegram" />
+                                        <label class="form-check-label fw-semibold" for="notif-telegram">{{ __('settings.telegram_notifications') }}</label>
+                                    </div>
+                                    <small class="text-muted d-block">Канал доступен после подключения Telegram в интеграциях.</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-floating form-floating-outline">
-                                    <input type="password" class="form-control" id="new_password_confirmation" name="new_password_confirmation" />
-                                    <label for="new_password_confirmation">{{ __('settings.password_confirmation') }}</label>
+                                <div class="settings-compact-note">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="notif-sms" />
+                                        <label class="form-check-label fw-semibold" for="notif-sms">{{ __('settings.sms_notifications') }}</label>
+                                    </div>
+                                    <small class="text-muted d-block">Нужен телефон и подключённый SMS-провайдер.</small>
                                 </div>
-                            </div>
-                            <div class="col-12" id="settings-notifications">
-                                <hr class="my-2">
-                                <h5 class="mt-2 mb-1">Уведомления</h5>
-                                <p class="text-muted mb-0">Укажите, через какие каналы вам присылать уведомления о новых записях, сообщениях и других событиях.</p>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mt-4">
-                                    <input class="form-check-input" type="checkbox" id="notif-email" />
-                                    <label class="form-check-label" for="notif-email">{{ __('settings.email_notifications') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Письма будут приходить на email из основного блока.</small>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mt-4">
-                                    <input class="form-check-input" type="checkbox" id="notif-telegram" />
-                                    <label class="form-check-label" for="notif-telegram">{{ __('settings.telegram_notifications') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Канал доступен после подключения Telegram в интеграциях.</small>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mt-4">
-                                    <input class="form-check-input" type="checkbox" id="notif-sms" />
-                                    <label class="form-check-label" for="notif-sms">{{ __('settings.sms_notifications') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Нужен телефон и подключенный SMS-провайдер (SmsAero).</small>
                             </div>
                             <div class="col-12">
                                 <div class="form-floating form-floating-outline">
-                                    <textarea
-                                        class="form-control"
-                                        id="reminder_message"
-                                        name="reminder_message"
-                                        style="height: 140px"
-                                    ></textarea>
+                                    <textarea class="form-control" id="reminder_message" name="reminder_message" style="height: 140px"></textarea>
                                     <label for="reminder_message">{{ __('settings.reminder_message') }}</label>
                                 </div>
                                 <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
                             </div>
-                            @if(false)
                             <div class="col-12">
-                                <hr class="my-2">
-                                <div id="settings-integrations">
-                                    <h5 class="mt-4 mb-1">Интеграции</h5>
-                                    <p class="text-muted mb-0">Подключите сервисы, чтобы автоматически отправлять клиентам напоминания, письма, сообщения и принимать предоплату.</p>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <h6 class="mt-2 mb-1">SmsAero (SMS)</h6>
-                                <p class="text-muted mb-0">Укажите API-ключ от SmsAero, чтобы отправлять клиентам SMS-сообщения и напоминания. Получить ключ можно в кабинете: <a href="https://smsaero.ru/" target="_blank" rel="noopener">smsaero.ru</a>.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="email" class="form-control" id="smsaero_email" name="integrations[smsaero][email]" />
-                                    <label for="smsaero_email">{{ __('settings.smsaero_email') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Email аккаунта SmsAero (если используете).</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="smsaero_api_key" name="integrations[smsaero][api_key]" />
-                                    <label for="smsaero_api_key">{{ __('settings.smsaero_api_key') }}</label>
-                                </div>
-                                <small class="text-muted d-block">API-ключ из личного кабинета SmsAero.</small>
-                            </div>
-                            <div class="col-12">
-                                <hr class="my-2">
-                                <h6 class="mt-2">{{ __('settings.smtp') }}</h6>
-                                <p class="text-muted mb-0">Нужен, чтобы отправлять вашим клиентам email-уведомления и письма.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="smtp_host" name="integrations[smtp][host]" />
-                                    <label for="smtp_host">{{ __('settings.smtp_host') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Адрес SMTP-сервера (например, smtp.gmail.com).</small>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="number" class="form-control" id="smtp_port" name="integrations[smtp][port]" min="1" max="65535" />
-                                    <label for="smtp_port">{{ __('settings.smtp_port') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Обычно 465 (SSL) или 587 (TLS).</small>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <select class="form-select" id="smtp_encryption" name="integrations[smtp][encryption]">
-                                        <option value="">—</option>
-                                        <option value="tls">TLS</option>
-                                        <option value="ssl">SSL</option>
-                                        <option value="starttls">STARTTLS</option>
-                                        <option value="none">{{ __('settings.smtp_encryption_none') }}</option>
-                                    </select>
-                                    <label for="smtp_encryption">{{ __('settings.smtp_encryption') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Тип шифрования зависит от провайдера почты.</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="smtp_username" name="integrations[smtp][username]" />
-                                    <label for="smtp_username">{{ __('settings.smtp_username') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Логин (часто это email).</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="password" class="form-control" id="smtp_password" name="integrations[smtp][password]" />
-                                    <label for="smtp_password">{{ __('settings.smtp_password') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Пароль или app-password (если включена 2FA).</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="email" class="form-control" id="smtp_from_address" name="integrations[smtp][from_address]" />
-                                    <label for="smtp_from_address">{{ __('settings.smtp_from_address') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Адрес отправителя, который увидят клиенты.</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="smtp_from_name" name="integrations[smtp][from_name]" />
-                                    <label for="smtp_from_name">{{ __('settings.smtp_from_name') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Имя отправителя (например, название вашего кабинета/студии).</small>
-                            </div>
-                            <div class="col-12">
-                                <hr class="my-2">
-                                <h6 class="mt-2">{{ __('settings.whatsapp') }}</h6>
-                                <p class="text-muted mb-0">Чтобы отправлять уведомления клиентам в WhatsApp. Важно: Meta Platforms Inc признана экстремистской организацией.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="whatsapp_api_key" name="integrations[whatsapp][api_key]" />
-                                    <label for="whatsapp_api_key">{{ __('settings.whatsapp_api_key') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Ключ доступа провайдера WhatsApp/WhatsApp Business API.</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="whatsapp_sender" name="integrations[whatsapp][sender]" />
-                                    <label for="whatsapp_sender">{{ __('settings.whatsapp_sender') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Идентификатор отправителя (номер/канал) от провайдера.</small>
-                            </div>
-                            <div class="col-12">
-                                <hr class="my-2">
-                                <h6 class="mt-2">{{ __('settings.telegram_notifications') }}</h6>
-                                <p class="text-muted mb-0"><strong>Записывайте клиентов автоматически через Бота TG</strong>, а также уведомляйте их сразу в Telegram. Для подключения создайте бота в <a href="https://t.me/botfather" target="_blank" rel="noopener">t.me/botfather</a>, получите токен и укажите его ниже.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="telegram_bot_token" name="integrations[telegram][bot_token]" />
-                                    <label for="telegram_bot_token">{{ __('settings.telegram_bot_token') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Токен бота из BotFather (храните в секрете).</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="telegram_sender" name="integrations[telegram][sender]" />
-                                    <label for="telegram_sender">{{ __('settings.telegram_sender') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Имя/идентификатор отправителя (например, username бота).</small>
-                            </div>
-                            <div class="col-12">
-                                <hr class="my-2">
-                                <h6 class="mt-2 mb-1">YooKassa</h6>
-                                <p class="text-muted mb-0">Вы можете получать предоплату, если необходимо. Это удобно, когда запись не должна создаваться без оплаты: для отдельных клиентов или для всех.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="yookassa_shop_id" name="integrations[yookassa][shop_id]" />
-                                    <label for="yookassa_shop_id">{{ __('settings.yookassa_shop_id') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Shop ID из личного кабинета YooKassa.</small>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="yookassa_secret_key" name="integrations[yookassa][secret_key]" />
-                                    <label for="yookassa_secret_key">{{ __('settings.yookassa_secret_key') }}</label>
-                                </div>
-                                <small class="text-muted d-block">Секретный ключ (не публикуйте его).</small>
-                            </div>
-                            @endif
-                            <div class="col-12">
-                                <div class="alert alert-primary mt-4 mb-0">
+                                <div class="alert alert-primary mt-1 mb-0">
                                     {{ __('integrations.moved_notice') }}
                                     <a href="{{ route('integrations') }}" class="alert-link">{{ __('menu.integrations') }}</a>.
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <h5 class="mt-4">{{ __('settings.work_settings') }}</h5>
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('settings.work_days') }}</th>
-                                            <th>{{ __('settings.from') }}</th>
-                                            <th>{{ __('settings.to') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
-                                        <tr>
-                                            <td>
-                                                <div class="form-check form-switch mt-2">
-                                                    <input class="form-check-input workday-check" type="checkbox" id="workday-{{ $day }}" data-day="{{ $day }}" />
-                                                    <label class="form-check-label" for="workday-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <input type="time" class="form-control workday-start" data-day="{{ $day }}" />
-                                            </td>
-                                            <td>
-                                                <input type="time" class="form-control workday-end" data-day="{{ $day }}" />
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-6 settings-card" id="settings-work">
+                    <div class="card-body p-5 p-lg-6">
+                        <div class="settings-section-title">
+                            <div>
+                                <h5 class="mb-1">{{ __('settings.work_settings') }}</h5>
+                                <p class="text-muted mb-0">Этот график влияет на свободные слоты в календаре и расчёт доступного времени.</p>
                             </div>
-                            <div class="col-12">
-                                <h6 class="mt-4">{{ __('settings.holidays') }}</h6>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-time-line"></i> Расписание</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table settings-work-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('settings.work_days') }}</th>
+                                        <th>{{ __('settings.from') }}</th>
+                                        <th>{{ __('settings.to') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
+                                    <tr>
+                                        <td>
+                                            <div class="form-check form-switch mt-2">
+                                                <input class="form-check-input workday-check" type="checkbox" id="workday-{{ $day }}" data-day="{{ $day }}" />
+                                                <label class="form-check-label" for="workday-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="time" class="form-control workday-start" data-day="{{ $day }}" />
+                                        </td>
+                                        <td>
+                                            <input type="time" class="form-control workday-end" data-day="{{ $day }}" />
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-5">
+                            <h6 class="mb-3">{{ __('settings.holidays') }}</h6>
+                            <div class="table-responsive">
                                 <table class="table" id="holidays-table">
                                     <thead>
                                         <tr>
@@ -329,54 +323,101 @@
                                     </thead>
                                     <tbody></tbody>
                                 </table>
-                                <button type="button" class="btn btn-sm btn-secondary" id="add-holiday">{{ __('settings.add') }}</button>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
+                            <button type="button" class="btn btn-sm btn-secondary" id="add-holiday">{{ __('settings.add') }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-6 settings-card" id="settings-location">
+                    <div class="card-body p-5 p-lg-6">
+                        <div class="settings-section-title">
+                            <div>
+                                <h5 class="mb-1">Локация</h5>
+                                <p class="text-muted mb-0">Адрес видят клиенты. Координаты можно заполнять только при необходимости.</p>
+                            </div>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-map-pin-line"></i> Адрес</span>
+                        </div>
+
+                        <div class="row g-5">
+                            <div class="col-12">
+                                <div class="form-floating form-floating-outline">
                                     <input type="text" class="form-control" id="address" name="address" />
                                     <label for="address">{{ __('settings.address') }}</label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="map_lat" name="map_point[lat]" />
-                                    <label for="map_lat">lat</label>
-                                </div>
+                            <div class="col-12">
+                                <details class="settings-password-toggle p-4">
+                                    <summary class="fw-semibold cursor-pointer">Координаты карты</summary>
+                                    <p class="text-muted small mt-2 mb-4">Нужны только если хотите вручную уточнить точку на карте. Обычно достаточно адреса.</p>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="text" class="form-control" id="map_lat" name="map_point[lat]" />
+                                                <label for="map_lat">lat</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="text" class="form-control" id="map_lng" name="map_point[lng]" />
+                                                <label for="map_lng">lng</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-floating form-floating-outline mb-4">
-                                    <input type="text" class="form-control" id="map_lng" name="map_point[lng]" />
-                                    <label for="map_lng">lng</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-6">
-                            <button type="submit" class="btn btn-primary me-3">{{ __('settings.save_changes') }}</button>
-                            <button type="reset" class="btn btn-outline-secondary">{{ __('settings.reset') }}</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div class="card">
-                <h5 class="card-header mb-1">{{ __('settings.delete_account_title') }}</h5>
-                <div class="card-body">
-                    <div class="mb-6 col-12 mb-0">
-                        <div class="alert alert-warning">
-                            <h6 class="alert-heading mb-1">{{ __('settings.delete_account') }}</h6>
-                            <p class="mb-0">{{ __('settings.delete_account_warning') }}</p>
                         </div>
                     </div>
-                    <form id="delete-form" onsubmit="return false">
-                        <div class="mb-6">
-                            <input type="password" class="form-control" name="password" placeholder="{{ __('settings.current_password') }}" />
+                </div>
+
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-6">
+                    <div class="text-muted">После редактирования любого блока просто нажмите сохранить внизу страницы.</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary">{{ __('settings.save_changes') }}</button>
+                        <button type="reset" class="btn btn-outline-secondary">{{ __('settings.reset') }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card mb-6 settings-card settings-summary-card">
+                <div class="card-body p-5">
+                    <span class="badge bg-label-secondary mb-3">Подсказка</span>
+                    <h5 class="mb-2">Что важно настроить сначала</h5>
+                    <p class="text-muted mb-4">Для старта достаточно профиля, уведомлений и графика. Остальное можно заполнить позже.</p>
+                    <div class="d-flex flex-column gap-3 small">
+                        <div class="settings-compact-note">Проверьте имя, email и телефон.</div>
+                        <div class="settings-compact-note">Выберите каналы уведомлений.</div>
+                        <div class="settings-compact-note">Укажите рабочие дни и часы.</div>
+                        <div class="settings-compact-note">Адрес нужен, если вы принимаете клиентов офлайн.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card settings-danger-card">
+                <div class="card-body p-5">
+                    <h5 class="mb-2">{{ __('settings.delete_account_title') }}</h5>
+                    <p class="text-muted mb-4">Эта секция скрыта, чтобы не мешать обычной работе с настройками.</p>
+                    <details>
+                        <summary class="fw-semibold text-danger cursor-pointer">{{ __('settings.delete_account') }}</summary>
+                        <div class="pt-4">
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading mb-1">{{ __('settings.delete_account') }}</h6>
+                                <p class="mb-0">{{ __('settings.delete_account_warning') }}</p>
+                            </div>
+                            <form id="delete-form" onsubmit="return false">
+                                <div class="mb-4">
+                                    <input type="password" class="form-control" name="password" placeholder="{{ __('settings.current_password') }}" />
+                                </div>
+                                <button type="submit" class="btn btn-danger">{{ __('settings.delete') }}</button>
+                            </form>
                         </div>
-                        <button type="submit" class="btn btn-danger">{{ __('settings.delete') }}</button>
-                    </form>
+                    </details>
                 </div>
             </div>
         </div>
     </div>
-
     <script>
     function getCookie(name) {
         var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -472,6 +513,15 @@
             init.textContent = initials || '?';
             init.classList.remove('d-none');
         }
+    }
+
+    const passwordToggleBtn = document.getElementById('toggle-password-fields');
+    const passwordFields = document.getElementById('settings-password-fields');
+    if (passwordToggleBtn && passwordFields) {
+        passwordToggleBtn.addEventListener('click', () => {
+            const isVisible = passwordFields.classList.toggle('is-visible');
+            passwordToggleBtn.textContent = isVisible ? 'Скрыть поля' : 'Открыть поля';
+        });
     }
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
