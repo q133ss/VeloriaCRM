@@ -69,6 +69,41 @@
             position: sticky;
             top: 1.5rem;
         }
+
+        .settings-feature-card {
+            border: 1px solid rgba(var(--bs-primary-rgb), 0.14);
+            border-radius: 1.25rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.12), transparent 32%),
+                rgba(var(--bs-primary-rgb), 0.04);
+        }
+
+        .settings-feature-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .settings-feature-list-item {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .settings-feature-lock {
+            border: 1px dashed rgba(var(--bs-warning-rgb), 0.36);
+            border-radius: 1.25rem;
+            background: rgba(var(--bs-warning-rgb), 0.08);
+        }
+
+        html[data-bs-theme="dark"] .settings-feature-card {
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.18), transparent 34%),
+                rgba(var(--bs-primary-rgb), 0.08);
+        }
+
+        html[data-bs-theme="dark"] .settings-feature-lock {
+            background: rgba(var(--bs-warning-rgb), 0.12);
+        }
     </style>
 
     <div class="row g-6">
@@ -262,6 +297,64 @@
                                 <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
                             </div>
                             <div class="col-12">
+                                <div class="settings-feature-card p-4 d-none" id="daily-post-ideas-elite">
+                                    <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3">
+                                        <div class="me-lg-4">
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                                <span class="badge bg-label-primary">Elite</span>
+                                                <span class="badge bg-label-secondary">AI-контент</span>
+                                            </div>
+                                            <h6 class="mb-2">Ежедневные идеи для постов</h6>
+                                            <p class="text-muted mb-3">Система будет присылать короткие идеи для Telegram или публикаций на платформе, чтобы не искать темы каждый день вручную.</p>
+                                            <div class="settings-feature-list small">
+                                                <div class="settings-feature-list-item">
+                                                    <i class="ri ri-check-line text-primary mt-1"></i>
+                                                    <span>Подсказки приходят каждый день и помогают быстро выбрать тему поста.</span>
+                                                </div>
+                                                <div class="settings-feature-list-item">
+                                                    <i class="ri ri-check-line text-primary mt-1"></i>
+                                                    <span>Идеи подходят и для Telegram, и для публикаций внутри платформы.</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="settings-compact-note flex-grow-1">
+                                            <div class="form-check form-switch mb-2">
+                                                <input class="form-check-input" type="checkbox" id="daily_post_ideas_enabled" name="daily_post_ideas_enabled" />
+                                                <label class="form-check-label fw-semibold" for="daily_post_ideas_enabled">Получать идеи каждый день</label>
+                                            </div>
+                                            <small class="text-muted d-block">Можно отключить в любой момент. Пока это работает как ежедневная AI-подборка внутри Elite.</small>
+                                            <div class="mt-4">
+                                                <label for="daily_post_ideas_channel" class="form-label fw-semibold">Куда готовить идеи</label>
+                                                <select class="form-select" id="daily_post_ideas_channel" name="daily_post_ideas_channel">
+                                                    <option value="both">Telegram и платформа</option>
+                                                    <option value="telegram">Только Telegram</option>
+                                                    <option value="platform">Только платформа</option>
+                                                </select>
+                                            </div>
+                                            <div class="mt-3">
+                                                <label for="daily_post_ideas_preferences" class="form-label fw-semibold">Темы и пожелания для ИИ</label>
+                                                <textarea class="form-control" id="daily_post_ideas_preferences" name="daily_post_ideas_preferences" rows="4" placeholder="Например: идеи про уход за волосами, сезонные процедуры, мягкий экспертный тон, короткие тексты с CTA на запись."></textarea>
+                                                <small class="text-muted d-block mt-2">Опишите темы, формат, тон и акценты. Эти вводные будут использоваться для генерации ежедневных идей.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="settings-feature-lock p-4 d-none" id="daily-post-ideas-locked">
+                                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                                        <div>
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                                <span class="badge bg-label-warning text-dark">Только Elite</span>
+                                            </div>
+                                            <h6 class="mb-2">Ежедневные идеи для постов</h6>
+                                            <p class="text-muted mb-0">Автоматические идеи для Telegram и публикаций на платформе доступны только на тарифе Elite.</p>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="/subscription" class="btn btn-outline-primary">Перейти на Elite</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
                                 <div class="alert alert-primary mt-1 mb-0">
                                     {{ __('integrations.moved_notice') }}
                                     <a href="{{ route('integrations') }}" class="alert-link">{{ __('menu.integrations') }}</a>.
@@ -442,6 +535,13 @@
         if(!res.ok) return;
         const data = await res.json();
         const form = document.getElementById('settings-form');
+        const dailyIdeasFeature = data.settings.features?.daily_post_ideas || {};
+        const hasDailyIdeasAccess = Boolean(dailyIdeasFeature.available);
+        const dailyIdeasEliteCard = document.getElementById('daily-post-ideas-elite');
+        const dailyIdeasLockedCard = document.getElementById('daily-post-ideas-locked');
+        const dailyIdeasToggle = document.getElementById('daily_post_ideas_enabled');
+        const dailyIdeasChannel = document.getElementById('daily_post_ideas_channel');
+        const dailyIdeasPreferences = document.getElementById('daily_post_ideas_preferences');
         form.name.value = data.user.name || '';
         form.email.value = data.user.email || '';
         form.phone.value = data.user.phone || '';
@@ -455,6 +555,21 @@
         document.getElementById('notif-sms').checked = data.settings.notifications?.sms ?? false;
         document.getElementById('notif-telegram').disabled = !data.user.telegram_id;
         document.getElementById('notif-sms').disabled = !data.user.phone;
+        if (dailyIdeasEliteCard) {
+            dailyIdeasEliteCard.classList.toggle('d-none', !hasDailyIdeasAccess);
+        }
+        if (dailyIdeasLockedCard) {
+            dailyIdeasLockedCard.classList.toggle('d-none', hasDailyIdeasAccess);
+        }
+        if (dailyIdeasToggle) {
+            dailyIdeasToggle.checked = Boolean(dailyIdeasFeature.enabled);
+        }
+        if (dailyIdeasChannel) {
+            dailyIdeasChannel.value = dailyIdeasFeature.channel || 'both';
+        }
+        if (dailyIdeasPreferences) {
+            dailyIdeasPreferences.value = dailyIdeasFeature.preferences || '';
+        }
         const days = ['mon','tue','wed','thu','fri','sat','sun'];
         days.forEach(day=>{
             const check = document.getElementById('workday-'+day);
@@ -543,6 +658,9 @@
             holidays: Array.from(document.querySelectorAll('.holiday-date')).map(i=>i.value).filter(Boolean),
             address: form.address.value,
             reminder_message: form.reminder_message.value,
+            daily_post_ideas_enabled: Boolean(document.getElementById('daily_post_ideas_enabled')?.checked),
+            daily_post_ideas_channel: document.getElementById('daily_post_ideas_channel')?.value || 'both',
+            daily_post_ideas_preferences: document.getElementById('daily_post_ideas_preferences')?.value || '',
             map_point: {
                 lat: form['map_point[lat]'].value,
                 lng: form['map_point[lng]'].value,

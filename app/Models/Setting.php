@@ -35,6 +35,9 @@ class Setting extends Model
         'yookassa_shop_id',
         'yookassa_secret_key',
         'reminder_message',
+        'daily_post_ideas_enabled',
+        'daily_post_ideas_channel',
+        'daily_post_ideas_preferences',
     ];
 
     protected function casts(): array
@@ -48,6 +51,7 @@ class Setting extends Model
             'branding' => 'array',
             'map_point' => 'array',
             'smtp_port' => 'integer',
+            'daily_post_ideas_enabled' => 'boolean',
         ];
     }
 

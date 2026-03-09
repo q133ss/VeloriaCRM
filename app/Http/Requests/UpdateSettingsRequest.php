@@ -50,6 +50,9 @@ class UpdateSettingsRequest extends BaseRequest
             'map_point.lat' => ['nullable', 'numeric'],
             'map_point.lng' => ['nullable', 'numeric'],
             'reminder_message' => ['nullable', 'string', 'max:2000'],
+            'daily_post_ideas_enabled' => ['nullable', 'boolean'],
+            'daily_post_ideas_channel' => ['nullable', Rule::in(['telegram', 'platform', 'both'])],
+            'daily_post_ideas_preferences' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

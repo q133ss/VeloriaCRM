@@ -9,6 +9,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class SettingController extends Controller
 {
@@ -16,6 +17,7 @@ class SettingController extends Controller
     {
         $user = $request->user();
         $settings = $user->setting ?? new Setting(['notification_prefs' => []]);
+        $hasEliteAccess = $this->userHasEliteAccess($user);
 
         return response()->json([
             'user' => [
@@ -37,6 +39,16 @@ class SettingController extends Controller
                 'address' => $settings->address,
                 'map_point' => $settings->map_point,
                 'reminder_message' => $settings->reminder_message,
+                'features' => [
+                    'daily_post_ideas' => [
+                        'enabled' => $hasEliteAccess ? (bool) $settings->daily_post_ideas_enabled : false,
+                        'available' => $hasEliteAccess,
+                        'channel' => $hasEliteAccess ? $settings->daily_post_ideas_channel : null,
+                        'preferences' => $hasEliteAccess ? $settings->daily_post_ideas_preferences : null,
+                        'required_plan' => 'elite',
+                        'upgrade_url' => url('/subscription'),
+                    ],
+                ],
             ],
         ]);
     }
@@ -55,6 +67,7 @@ class SettingController extends Controller
     {
         $user = $request->user();
         $data = $request->validated();
+        $hasEliteAccess = $this->userHasEliteAccess($user);
 
         $user->fill([
             'name' => $data['name'],
@@ -76,6 +89,15 @@ class SettingController extends Controller
             'address' => $data['address'] ?? null,
             'map_point' => $data['map_point'] ?? null,
             'reminder_message' => $data['reminder_message'] ?? null,
+            'daily_post_ideas_enabled' => $hasEliteAccess
+                ? (bool) ($data['daily_post_ideas_enabled'] ?? false)
+                : false,
+            'daily_post_ideas_channel' => $hasEliteAccess
+                ? ($data['daily_post_ideas_channel'] ?? 'both')
+                : null,
+            'daily_post_ideas_preferences' => $hasEliteAccess
+                ? ($data['daily_post_ideas_preferences'] ?? null)
+                : null,
         ];
 
         if (array_key_exists('integrations', $data)) {
@@ -181,5 +203,17 @@ class SettingController extends Controller
         }
 
         return true;
+    }
+
+    protected function userHasEliteAccess(User $user): bool
+    {
+        return $user->plans()
+            ->whereIn('name', ['elite', 'Elite', 'ELITE'])
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->exists();
     }
 }

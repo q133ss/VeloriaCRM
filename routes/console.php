@@ -2,6 +2,8 @@
 
 use App\Models\MarketingCampaign;
 use App\Models\Setting;
+use App\Models\User;
+use App\Services\DailyPostIdeaService;
 use App\Services\Marketing\MarketingCampaignService;
 use App\Services\SubscriptionPaymentSyncService;
 use App\Services\Telegram\TelegramBookingBotService;
@@ -85,5 +87,50 @@ Artisan::command('subscription:sync-pending', function () {
     $this->info("Synced {$updated} subscription payment(s).");
 })->purpose('Sync pending subscription payments with YooKassa');
 
+Artisan::command('content:send-daily-ideas {userId?}', function (?int $userId = null) {
+    /** @var DailyPostIdeaService $service */
+    $service = app(DailyPostIdeaService::class);
+    $result = $service->dispatchEnabledIdeas($userId);
+
+    $this->info(sprintf(
+        'Processed: %d, sent: %d, skipped: %d',
+        $result['processed'],
+        $result['sent'],
+        $result['skipped']
+    ));
+
+    foreach ($result['items'] as $item) {
+        $this->line(json_encode($item, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+})->purpose('Generate and deliver daily AI content ideas for Elite users');
+
+Artisan::command('content:test-daily-idea {userId?}', function (?int $userId = null) {
+    /** @var DailyPostIdeaService $service */
+    $service = app(DailyPostIdeaService::class);
+
+    $user = $userId
+        ? User::query()->findOrFail($userId)
+        : User::query()
+            ->whereHas('plans', function ($query) {
+                $query->whereIn('name', ['elite', 'Elite', 'ELITE']);
+            })
+            ->whereHas('setting', function ($query) {
+                $query->where('daily_post_ideas_enabled', true);
+            })
+            ->firstOrFail();
+
+    $idea = $service->generateIdeaForUser($user, $user->setting);
+
+    $this->info('AI idea generated for user #' . $user->id . ' (' . $user->name . ')');
+    $this->newLine();
+    $this->line('Title: ' . $idea['title']);
+    $this->line('Channel: ' . $idea['channel']);
+    $this->newLine();
+    $this->line($idea['idea']);
+    $this->newLine();
+    $this->line('CTA: ' . $idea['cta']);
+})->purpose('Generate one real AI content idea without sending it');
+
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
+Schedule::command('content:send-daily-ideas')->dailyAt('09:00');
