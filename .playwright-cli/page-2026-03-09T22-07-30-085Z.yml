@@ -1,0 +1,261 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+          - /url: http://localhost:8080/dashboard
+          - img "Veloria" [ref=e9]
+          - generic [ref=e10]: Veloria
+        - link [ref=e11] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img [ref=e12]
+      - list [ref=e15]:
+        - listitem [ref=e16]:
+          - link "Дашборд" [ref=e17] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e19]: Дашборд
+        - listitem [ref=e20]:
+          - link "Календарь" [ref=e21] [cursor=pointer]:
+            - /url: /calendar
+            - generic [ref=e23]: Календарь
+        - listitem [ref=e24]:
+          - link "Записи" [ref=e25] [cursor=pointer]:
+            - /url: /orders
+            - generic [ref=e27]: Записи
+        - listitem [ref=e28]:
+          - link "Клиенты" [ref=e29] [cursor=pointer]:
+            - /url: /clients
+            - generic [ref=e31]: Клиенты
+        - listitem [ref=e32]:
+          - link "Услуги" [ref=e33] [cursor=pointer]:
+            - /url: /services
+            - generic [ref=e35]: Услуги
+        - listitem [ref=e36]:
+          - link "Инвойсы" [ref=e37] [cursor=pointer]:
+            - /url: /invoices
+            - generic [ref=e39]: Инвойсы
+        - listitem [ref=e40]:
+          - link "Сообщения" [ref=e41] [cursor=pointer]:
+            - /url: /messages
+            - generic [ref=e43]: Сообщения
+        - listitem [ref=e44]:
+          - link "Аналитика" [ref=e45] [cursor=pointer]:
+            - /url: /analytics
+            - generic [ref=e47]: Аналитика
+        - listitem [ref=e48]:
+          - link "Интеграции" [ref=e49] [cursor=pointer]:
+            - /url: /integrations
+            - generic [ref=e51]: Интеграции
+        - listitem [ref=e52]:
+          - link "Настройки" [ref=e53] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e55]: Настройки
+        - listitem [ref=e56]:
+          - link "Помощь" [ref=e57] [cursor=pointer]:
+            - /url: /help
+            - generic [ref=e59]: Помощь
+    - generic [ref=e60]:
+      - navigation [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - link "Язык" [ref=e65] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - link "Тема (system)" [ref=e68] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - list [ref=e70]:
+            - listitem [ref=e71]:
+              - link [ref=e72] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e74]:
+              - link "WQ" [ref=e75] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - generic [ref=e77]: WQ
+      - generic [ref=e78]:
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - paragraph [ref=e86]: Главный экран
+                - heading "Фокус на сегодня" [level=1] [ref=e87]
+                - paragraph [ref=e88]: Сегодня нет запланированных визитов — самое время заняться привлечением клиентов.
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: Клиенты сегодня
+                  - strong [ref=e92]: "0"
+                - generic [ref=e93]:
+                  - generic [ref=e94]: Выручка
+                  - strong [ref=e95]: 0 ₽
+                - generic [ref=e97]: Прогноз прибыли — 0 ₽
+              - generic [ref=e98]:
+                - generic [ref=e99]: Обновлено 0 секунд назад
+                - generic [ref=e100]:
+                  - link "Быстрая запись" [ref=e101] [cursor=pointer]:
+                    - /url: http://localhost:8080/orders/create
+                  - link "Расписание на сегодня" [ref=e102] [cursor=pointer]:
+                    - /url: http://localhost:8080/calendar
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e107]:
+                  - paragraph [ref=e108]: В приоритете
+                  - heading "Советы ИИ-ассистента" [level=2] [ref=e109]
+                - generic [ref=e110]: Можно позже
+              - heading "Проверьте базу клиентов" [level=3] [ref=e111]
+              - paragraph [ref=e112]: Нет срочных задач. Напомните о себе клиентам, которые давно не приходили, и обновите предложения.
+              - generic [ref=e113]:
+                - link "Перейти к клиентам" [ref=e114] [cursor=pointer]:
+                  - /url: http://localhost:8080/clients
+                - link "Открыть полную аналитику" [ref=e115] [cursor=pointer]:
+                  - /url: http://localhost:8080/analytics
+          - generic [ref=e116]:
+            - generic [ref=e119]:
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - paragraph [ref=e122]: Следите за ключевыми визитами и сигналами от ИИ
+                  - heading "Расписание на сегодня" [level=2] [ref=e123]
+                - link "Расписание на сегодня" [ref=e124] [cursor=pointer]:
+                  - /url: http://localhost:8080/calendar
+              - generic [ref=e126]: Сегодня нет запланированных визитов — самое время заняться привлечением клиентов.
+            - generic [ref=e128]:
+              - generic [ref=e130]:
+                - generic [ref=e132]:
+                  - paragraph [ref=e133]: Сегодня в цифрах
+                  - heading "Сегодня в цифрах" [level=2] [ref=e134]
+                - generic [ref=e135]:
+                  - generic [ref=e136]:
+                    - paragraph [ref=e137]: Выручка
+                    - heading "0 ₽" [level=3] [ref=e138]
+                  - generic [ref=e139]:
+                    - paragraph [ref=e140]: Клиенты сегодня
+                    - heading "0" [level=3] [ref=e141]
+                  - generic [ref=e142]:
+                    - paragraph [ref=e143]: Средний чек
+                    - heading "0 ₽" [level=3] [ref=e144]
+                  - generic [ref=e145]:
+                    - paragraph [ref=e146]: Повторные визиты
+                    - heading "0.0%" [level=3] [ref=e147]
+              - generic [ref=e149]:
+                - generic [ref=e150]:
+                  - generic [ref=e151]:
+                    - paragraph [ref=e152]: Аналитика роста
+                    - heading "Финансы и эффективность" [level=2] [ref=e153]
+                  - link "Открыть полную аналитику" [ref=e154] [cursor=pointer]:
+                    - /url: http://localhost:8080/analytics
+                - generic [ref=e155]:
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: Маржа/час
+                    - generic [ref=e158]: "Лучший день: 4 мар, срд — 0 ₽"
+                  - generic [ref=e159]:
+                    - generic [ref=e160]: Топ-3 маржинальных услуг
+                    - generic [ref=e162]: Пока нет данных по услугам
+                  - generic [ref=e163]:
+                    - generic [ref=e164]: Выручка за период
+                    - generic [ref=e165]:
+                      - generic [ref=e166]:
+                        - generic [ref=e167]:
+                          - generic [ref=e168]: 10 мар
+                          - generic [ref=e169]: Нет данных для сравнения
+                        - generic [ref=e170]: 0 ₽
+                      - generic [ref=e171]:
+                        - generic [ref=e172]:
+                          - generic [ref=e173]: 9 мар
+                          - generic [ref=e174]: Нет данных для сравнения
+                        - generic [ref=e175]: 0 ₽
+                      - generic [ref=e176]:
+                        - generic [ref=e177]:
+                          - generic [ref=e178]: 8 мар
+                          - generic [ref=e179]: Нет данных для сравнения
+                        - generic [ref=e180]: 0 ₽
+          - generic [ref=e182]:
+            - generic [ref=e183]:
+              - paragraph [ref=e184]: Сейчас в тренде
+              - heading "Тренды и идеи для мастера" [level=2] [ref=e185]
+              - paragraph [ref=e186]: Напомните клиентам о дополнительных услугах или продуктах, чтобы повысить средний чек.
+            - generic [ref=e187]:
+              - link "Открыть тренды" [ref=e188] [cursor=pointer]:
+                - /url: http://localhost:8080/trends
+              - generic [ref=e189]: "Источник: Veloria рекомендации"
+        - contentinfo [ref=e190]:
+          - generic [ref=e192]:
+            - generic [ref=e193]: © 2026
+            - generic [ref=e194]:
+              - link "Пользовательское соглашение" [ref=e195] [cursor=pointer]:
+                - /url: /terms
+              - link "Политика конфиденциальности" [ref=e196] [cursor=pointer]:
+                - /url: /policy
+  - generic [ref=e198]:
+    - link [ref=e199] [cursor=pointer]:
+      - /url: javascript:void(0)
+    - generic [ref=e200]:
+      - heading "Template Customizer" [level=6] [ref=e201]
+      - paragraph [ref=e202]: Customize and preview in real time
+      - generic [ref=e203]:
+        - link "Reset Customizer" [ref=e204] [cursor=pointer]:
+          - /url: javascript:void(0)
+        - link [ref=e206] [cursor=pointer]:
+          - /url: javascript:void(0)
+    - generic [ref=e208]:
+      - generic [ref=e209]:
+        - heading "Theming" [level=5] [ref=e210]
+        - generic [ref=e211]:
+          - generic [ref=e212]: Primary Color
+          - button "toggle color picker dialog" [ref=e232] [cursor=pointer]
+        - generic [ref=e233]:
+          - generic [ref=e234]: Theme
+          - generic [ref=e235]:
+            - generic [ref=e241] [cursor=pointer]: Light
+            - generic [ref=e247] [cursor=pointer]: Dark
+            - generic [ref=e253] [cursor=pointer]: System
+        - generic [ref=e254]:
+          - generic [ref=e255]: Skins
+          - generic [ref=e256]:
+            - generic [ref=e257]:
+              - img [ref=e261] [cursor=pointer]
+              - generic [ref=e277] [cursor=pointer]: Default
+            - generic [ref=e278]:
+              - img [ref=e282] [cursor=pointer]
+              - generic [ref=e297] [cursor=pointer]: Bordered
+        - generic [ref=e298]:
+          - generic [ref=e299]: Semi Dark
+          - checkbox [ref=e300]
+        - separator [ref=e304]
+      - generic [ref=e305]:
+        - heading "Layout" [level=5] [ref=e306]
+        - generic [ref=e307]:
+          - generic [ref=e308]: Menu (Navigation)
+          - generic [ref=e309]:
+            - generic [ref=e310]:
+              - img [ref=e314] [cursor=pointer]
+              - generic [ref=e330] [cursor=pointer]: Expanded
+            - generic [ref=e331]:
+              - img [ref=e335] [cursor=pointer]
+              - generic [ref=e351] [cursor=pointer]: Collapsed
+        - generic [ref=e352]:
+          - generic [ref=e353]: Navbar Type
+          - generic [ref=e354]:
+            - generic [ref=e355]:
+              - img [ref=e359] [cursor=pointer]
+              - generic [ref=e375] [cursor=pointer]: Sticky
+            - generic [ref=e376]:
+              - img [ref=e380] [cursor=pointer]
+              - generic [ref=e396] [cursor=pointer]: Static
+            - generic [ref=e397]:
+              - img [ref=e401] [cursor=pointer]
+              - generic [ref=e412] [cursor=pointer]: Hidden
+        - generic [ref=e413]:
+          - generic [ref=e414]: Content
+          - generic [ref=e415]:
+            - generic [ref=e416]:
+              - img [ref=e420] [cursor=pointer]
+              - generic [ref=e430] [cursor=pointer]: Compact
+            - generic [ref=e431]:
+              - img [ref=e435] [cursor=pointer]
+              - generic [ref=e445] [cursor=pointer]: Wide
+        - generic [ref=e446]:
+          - generic [ref=e447]: Direction
+          - generic [ref=e448]:
+            - generic [ref=e449]:
+              - img [ref=e453] [cursor=pointer]
+              - generic [ref=e467] [cursor=pointer]: Left to Right (En)
+            - generic [ref=e468]:
+              - img [ref=e472] [cursor=pointer]
+              - generic [ref=e486] [cursor=pointer]: Right to Left (Ar)

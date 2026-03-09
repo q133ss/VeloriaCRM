@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Client;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ClientPortalWaitlistRequest;
 use App\Http\Requests\ClientPortalBookAppointmentRequest;
 use App\Http\Requests\ClientPortalServicesRequest;
 use App\Http\Requests\ClientPortalSlotsRequest;
@@ -14,6 +15,7 @@ use App\Models\ServiceCategory;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\AvailabilityService;
+use App\Services\Booking\BookingConflictService;
 use App\Services\NotificationService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +26,7 @@ class BookingController extends Controller
 {
     public function __construct(
         private readonly AvailabilityService $availability,
+        private readonly BookingConflictService $conflicts,
         private readonly NotificationService $notifications,
         private readonly OrderService $orderService,
     ) {}
@@ -142,6 +145,16 @@ class BookingController extends Controller
         $startsAt = $startsAtLocal->copy()->timezone(config('app.timezone'));
         $endsAt = $startsAt->copy()->addMinutes((int) ($service->duration_min ?? 60));
 
+        $conflict = $this->conflicts->detectConflict($masterId, $startsAt, (int) ($service->duration_min ?? 60));
+        if ($conflict !== null) {
+            return response()->json([
+                'error' => [
+                    'code' => 'slot_unavailable',
+                    'message' => __('client_portal.booking.slot_unavailable'),
+                ],
+            ], 422);
+        }
+
         $clientUser = $this->resolveOrCreateClientUser($client);
 
         // Create order so master sees it in calendar/orders UI (Telegram bot uses orders as canonical bookings).
@@ -184,6 +197,50 @@ class BookingController extends Controller
             'data' => [
                 'appointment' => $appointment,
             ],
+        ], 201);
+    }
+
+    public function waitlist(ClientPortalWaitlistRequest $request): JsonResponse
+    {
+        /** @var Client $client */
+        $client = $request->user();
+        $masterId = (int) $client->user_id;
+        $validated = $request->validated();
+
+        $service = Service::query()->findOrFail((int) $validated['service_id']);
+
+        if ((int) $service->user_id !== $masterId) {
+            return response()->json([
+                'error' => [
+                    'code' => 'forbidden',
+                    'message' => __('client_portal.auth.unauthorized'),
+                ],
+            ], 403);
+        }
+
+        $clientUser = $this->resolveOrCreateClientUser($client);
+
+        $entry = \App\Models\WaitlistEntry::query()->create([
+            'user_id' => $masterId,
+            'client_id' => $client->id,
+            'client_user_id' => $clientUser->id,
+            'service_id' => $service->id,
+            'preferred_slots' => [],
+            'preferred_dates' => collect($validated['preferred_dates'])->map(fn ($date) => Carbon::parse($date)->toDateString())->values()->all(),
+            'preferred_time_windows' => $validated['preferred_time_windows'] ?? [],
+            'flexibility_days' => (int) ($validated['flexibility_days'] ?? 0),
+            'priority' => 0,
+            'priority_manual' => 0,
+            'status' => 'pending',
+            'source' => 'client_portal',
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return response()->json([
+            'data' => [
+                'waitlist_entry_id' => $entry->id,
+            ],
+            'message' => __('waitlist.messages.created'),
         ], 201);
     }
 

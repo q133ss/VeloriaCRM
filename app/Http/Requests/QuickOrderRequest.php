@@ -21,6 +21,7 @@ class QuickOrderRequest extends BaseRequest
             'client_phone' => ['nullable', 'required_without:client_id', 'string', 'max:20', new PhoneNumberRule()],
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
+            'waitlist_entry_id' => ['nullable', 'integer', 'exists:waitlist_entries,id'],
             'scheduled_at' => ['required', 'date'],
             'note' => ['nullable', 'string', 'max:1000'],
             'services' => ['nullable', 'array'],

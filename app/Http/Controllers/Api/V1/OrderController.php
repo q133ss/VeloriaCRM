@@ -14,8 +14,11 @@ use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\WaitlistEntry;
+use App\Services\Booking\BookingConflictService;
 use App\Services\OpenAIService;
 use App\Services\OrderService;
+use App\Services\WaitlistMatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -34,6 +37,8 @@ class OrderController extends Controller
     public function __construct(
         private readonly OpenAIService $openAI,
         private readonly OrderService $orderService,
+        private readonly BookingConflictService $conflicts,
+        private readonly WaitlistMatchService $waitlistMatches,
     ) {
     }
     public function index(OrderFilterRequest $request): JsonResponse
@@ -104,20 +109,28 @@ class OrderController extends Controller
                 $totalPrice = $services->sum('base_price');
             }
 
+            $scheduledAt = Carbon::parse($validated['scheduled_at']);
+            $durationForecast = (int) ($services->sum('duration_min') ?: 60);
+            $this->ensureNoBookingConflict($masterId, $scheduledAt, $durationForecast);
+
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
-            return Order::create([
+            $order = Order::create([
                 'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => $servicePayload,
-                'scheduled_at' => Carbon::parse($validated['scheduled_at']),
+                'scheduled_at' => $scheduledAt,
                 'note' => Arr::get($validated, 'note'),
-                'duration_forecast' => $services->sum('duration_min') ?: null,
+                'duration_forecast' => $durationForecast ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
                 'source' => Arr::get($validated, 'source', 'manual'),
                 'recommended_services' => $this->serializeRecommendations($recommended),
             ]);
+
+            $this->markWaitlistEntryBooked(Arr::get($validated, 'waitlist_entry_id'), $scheduledAt, $order);
+
+            return $order;
         });
 
         $order->load(['client', 'master']);
@@ -173,10 +186,12 @@ class OrderController extends Controller
                 $totalPrice = $services->sum('base_price');
             }
 
-            $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
-
             $newScheduledAt = Carbon::parse($validated['scheduled_at']);
             $scheduledChanged = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
+            $durationForecast = (int) ($services->sum('duration_min') ?: $order->duration_forecast ?: 60);
+            $this->ensureNoBookingConflict($masterId, $newScheduledAt, $durationForecast, $order->id);
+
+            $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
             $payload = [
                 'master_id' => $masterId,
@@ -184,7 +199,7 @@ class OrderController extends Controller
                 'services' => $servicePayload,
                 'scheduled_at' => $newScheduledAt,
                 'note' => Arr::get($validated, 'note'),
-                'duration_forecast' => $services->sum('duration_min') ?: null,
+                'duration_forecast' => $durationForecast ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => $validated['status'],
                 'recommended_services' => $this->serializeRecommendations($recommended),
@@ -195,6 +210,7 @@ class OrderController extends Controller
             }
 
             $order->update($payload);
+            $this->markWaitlistEntryBooked(Arr::get($validated, 'waitlist_entry_id'), $newScheduledAt, $order);
         });
 
         $order->refresh()->loadMissing(['client', 'master']);
@@ -317,19 +333,28 @@ class OrderController extends Controller
                 $totalPrice = $services->sum('base_price');
             }
 
+            $scheduledAt = Carbon::parse($validated['scheduled_at']);
+            $durationForecast = (int) ($services->sum('duration_min') ?: 60);
+            $this->ensureNoBookingConflict($masterId, $scheduledAt, $durationForecast);
+
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
 
-            return Order::create([
+            $order = Order::create([
                 'master_id' => $masterId,
                 'client_id' => $client->id,
                 'services' => $servicePayload,
-                'scheduled_at' => Carbon::parse($validated['scheduled_at']),
+                'scheduled_at' => $scheduledAt,
                 'note' => Arr::get($validated, 'note'),
+                'duration_forecast' => $durationForecast ?: null,
                 'total_price' => $totalPrice ?? 0,
                 'status' => 'new',
                 'source' => 'quick_modal',
                 'recommended_services' => $this->serializeRecommendations($recommended),
             ]);
+
+            $this->markWaitlistEntryBooked(Arr::get($validated, 'waitlist_entry_id'), $scheduledAt, $order);
+
+            return $order;
         });
 
         $order->load(['client', 'master']);
@@ -435,6 +460,9 @@ class OrderController extends Controller
     {
         $this->ensureOrderBelongsToCurrentUser($order);
         $validated = $request->validated();
+        $previousSlot = $order->scheduled_at?->copy();
+        $serviceId = collect($order->services ?? [])->pluck('id')->filter()->map(fn ($id) => (int) $id)->first();
+        $duration = $this->conflicts->resolveOrderDuration($order);
 
         $order->update([
             'status' => 'cancelled',
@@ -443,6 +471,10 @@ class OrderController extends Controller
         ]);
 
         $order->refresh();
+
+        if ($previousSlot) {
+            $this->waitlistMatches->notifyMatchesForSlot($this->currentUserId(), $previousSlot, $duration, $serviceId);
+        }
 
         return response()->json([
             'data' => $this->decorateOrder($order),
@@ -456,9 +488,17 @@ class OrderController extends Controller
         $validated = $request->validated();
 
         $previousDate = $order->scheduled_at;
+        $newScheduledAt = Carbon::parse($validated['scheduled_at']);
+        $this->ensureNoBookingConflict(
+            $this->currentUserId(),
+            $newScheduledAt,
+            $this->conflicts->resolveOrderDuration($order),
+            $order->id
+        );
+
         $order->update([
             'rescheduled_from' => $previousDate && !$order->rescheduled_from ? $previousDate : $order->rescheduled_from,
-            'scheduled_at' => Carbon::parse($validated['scheduled_at']),
+            'scheduled_at' => $newScheduledAt,
             'reschedule_count' => ($order->reschedule_count ?? 0) + 1,
             'start_confirmation_notified_at' => null,
         ]);
@@ -466,6 +506,16 @@ class OrderController extends Controller
         $order->refresh();
 
         $this->orderService->scheduleStartReminder($order);
+
+        if ($previousDate) {
+            $serviceId = collect($order->services ?? [])->pluck('id')->filter()->map(fn ($id) => (int) $id)->first();
+            $this->waitlistMatches->notifyMatchesForSlot(
+                $this->currentUserId(),
+                $previousDate->copy(),
+                $this->conflicts->resolveOrderDuration($order),
+                $serviceId
+            );
+        }
 
         return response()->json([
             'data' => $this->decorateOrder($order),
@@ -1722,6 +1772,47 @@ PROMPT;
         }
 
         return $userId;
+    }
+
+    protected function ensureNoBookingConflict(int $masterId, Carbon $scheduledAt, int $durationMinutes, ?int $ignoreOrderId = null): void
+    {
+        $conflict = $this->conflicts->detectConflict($masterId, $scheduledAt, $durationMinutes, $ignoreOrderId);
+
+        if ($conflict === null) {
+            return;
+        }
+
+        $start = $conflict['starts_at'] instanceof Carbon
+            ? $conflict['starts_at']->format('d.m.Y H:i')
+            : $scheduledAt->format('d.m.Y H:i');
+
+        throw ValidationException::withMessages([
+            'scheduled_at' => 'Это время уже занято. Ближайший конфликт начинается в ' . $start . '.',
+        ]);
+    }
+
+    protected function markWaitlistEntryBooked(?int $waitlistEntryId, Carbon $scheduledAt, Order $order): void
+    {
+        if (! $waitlistEntryId) {
+            return;
+        }
+
+        $entry = WaitlistEntry::query()
+            ->where('user_id', $this->currentUserId())
+            ->find($waitlistEntryId);
+
+        if (! $entry) {
+            return;
+        }
+
+        $entry->update([
+            'status' => 'booked',
+            'matched_slot' => $scheduledAt,
+            'match_score' => $entry->match_score,
+            'meta' => array_merge($entry->meta ?? [], [
+                'booked_order_id' => $order->id,
+            ]),
+        ]);
     }
 
     protected function resolveUserSettings(): ?Setting

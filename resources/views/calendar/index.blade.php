@@ -363,6 +363,24 @@
             color: var(--bs-secondary-color);
         }
 
+        .calendar-match-card {
+            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            border-radius: 1rem;
+            padding: 1rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.04);
+        }
+
+        .calendar-match-reasons span {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.3rem 0.6rem;
+            background: rgba(var(--bs-body-color-rgb, 88, 96, 116), 0.08);
+            color: var(--bs-secondary-color);
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+
         .calendar-order-card .calendar-order-services span {
             display: inline-flex;
             align-items: center;
@@ -606,10 +624,16 @@
                                     <h4 class="mb-1" id="calendar-day-title">-</h4>
                                     <p class="text-muted mb-0" id="calendar-day-summary">{{ $calendarDayTranslations['subtitle']['zero'] }}</p>
                                 </div>
-                                <button type="button" class="btn btn-primary" id="calendar-create-order" disabled>
-                                    <i class="ri ri-add-line me-1"></i>
-                                    {{ __('calendar.actions.create_order') }}
-                                </button>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary" id="calendar-open-waitlist" disabled>
+                                        <i class="ri ri-timer-flash-line me-1"></i>
+                                        Умный waitlist
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="calendar-create-order" disabled>
+                                        <i class="ri ri-add-line me-1"></i>
+                                        {{ __('calendar.actions.create_order') }}
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="calendar-day-summary-grid">
@@ -669,6 +693,18 @@
                                         {{ __('calendar.day.orders_empty') }}
                                     </div>
                                 </div>
+
+                                <div class="calendar-section-card mt-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <h6 class="mb-0">Умный лист ожидания</h6>
+                                        <span class="badge bg-label-warning" id="calendar-day-waitlist-badge">0</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">Клиенты, которым выбранный день подходит лучше всего.</p>
+                                    <div id="calendar-day-waitlist" class="d-flex flex-column gap-3"></div>
+                                    <div id="calendar-day-waitlist-empty" class="text-muted small d-none">
+                                        Пока нет подходящих клиентов в листе ожидания.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -691,6 +727,7 @@
                         <div class="modal-body p-4">
                             <div id="calendar-create-alerts" class="mb-3"></div>
                             <input type="hidden" id="calendar-create-client-id" name="client_id" />
+                            <input type="hidden" id="calendar-create-waitlist-entry-id" name="waitlist_entry_id" />
 
                             <div class="row g-4">
                                 <div class="col-lg-7">
@@ -818,6 +855,91 @@
             </div>
         </div>
 
+        <div class="modal fade calendar-create-modal" id="calendar-waitlist-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header px-4 py-3">
+                        <div>
+                            <h5 class="modal-title mb-1">Умный лист ожидания</h5>
+                            <p class="text-muted mb-0 small">Добавьте клиента, чтобы быстро закрывать отмены и свободные окна.</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="calendar-waitlist-form">
+                        <div class="modal-body p-4">
+                            <div id="calendar-waitlist-alerts" class="mb-3"></div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="text" class="form-control" id="calendar-waitlist-client-name" placeholder="Имя" />
+                                        <label for="calendar-waitlist-client-name">Имя клиентки</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="text" class="form-control" id="calendar-waitlist-client-phone" placeholder="+7..." data-phone-mask required />
+                                        <label for="calendar-waitlist-client-phone">Телефон</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="email" class="form-control" id="calendar-waitlist-client-email" placeholder="email@example.com" />
+                                        <label for="calendar-waitlist-client-email">Email, если есть</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <select class="form-select" id="calendar-waitlist-service" required></select>
+                                        <label for="calendar-waitlist-service">Услуга</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="date" class="form-control" id="calendar-waitlist-date" required />
+                                        <label for="calendar-waitlist-date">Нужная дата</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="time" class="form-control" id="calendar-waitlist-time-start" />
+                                        <label for="calendar-waitlist-time-start">С</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="time" class="form-control" id="calendar-waitlist-time-end" />
+                                        <label for="calendar-waitlist-time-end">До</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="number" min="0" max="14" class="form-control" id="calendar-waitlist-flexibility" value="0" />
+                                        <label for="calendar-waitlist-flexibility">Гибкость по дням</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="number" min="0" max="5" class="form-control" id="calendar-waitlist-priority" value="0" />
+                                        <label for="calendar-waitlist-priority">Ручной приоритет</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating form-floating-outline">
+                                        <textarea class="form-control" id="calendar-waitlist-notes" style="height: 110px"></textarea>
+                                        <label for="calendar-waitlist-notes">Комментарий</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer px-4 py-3">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary" id="calendar-waitlist-submit">Добавить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
 @endsection
 
 @section('scripts')
@@ -876,14 +998,19 @@
             const dayOrdersEmptyEl = document.getElementById('calendar-day-orders-empty');
             const dayOrdersCountEl = document.getElementById('calendar-day-orders-count');
             const dayOrdersBadgeEl = document.getElementById('calendar-day-orders-badge');
+            const dayWaitlistEl = document.getElementById('calendar-day-waitlist');
+            const dayWaitlistEmptyEl = document.getElementById('calendar-day-waitlist-empty');
+            const dayWaitlistBadgeEl = document.getElementById('calendar-day-waitlist-badge');
             const dayStatusTextEl = document.getElementById('calendar-day-status-text');
             const dayStatusBadgeEl = document.getElementById('calendar-day-status-badge');
             const dayStatusLabelEl = document.getElementById('calendar-day-status-label');
             const createOrderBtn = document.getElementById('calendar-create-order');
+            const openWaitlistBtn = document.getElementById('calendar-open-waitlist');
             const createOrderModalEl = document.getElementById('calendar-create-modal');
             const createOrderForm = document.getElementById('calendar-create-form');
             const createOrderAlertsEl = document.getElementById('calendar-create-alerts');
             const createOrderClientIdEl = document.getElementById('calendar-create-client-id');
+            const createOrderWaitlistEntryIdEl = document.getElementById('calendar-create-waitlist-entry-id');
             const createOrderClientSearchEl = document.getElementById('calendar-create-client-search');
             const createOrderClientResultsEl = document.getElementById('calendar-create-client-results');
             const createOrderClientSuggestionsEl = document.getElementById('calendar-create-client-suggestions');
@@ -899,6 +1026,20 @@
             const createOrderSummaryPriceEl = document.getElementById('calendar-create-summary-price');
             const createOrderSummaryDurationEl = document.getElementById('calendar-create-summary-duration');
             const createOrderSubmitEl = document.getElementById('calendar-create-submit');
+            const waitlistModalEl = document.getElementById('calendar-waitlist-modal');
+            const waitlistForm = document.getElementById('calendar-waitlist-form');
+            const waitlistAlertsEl = document.getElementById('calendar-waitlist-alerts');
+            const waitlistClientNameEl = document.getElementById('calendar-waitlist-client-name');
+            const waitlistClientPhoneEl = document.getElementById('calendar-waitlist-client-phone');
+            const waitlistClientEmailEl = document.getElementById('calendar-waitlist-client-email');
+            const waitlistServiceEl = document.getElementById('calendar-waitlist-service');
+            const waitlistDateEl = document.getElementById('calendar-waitlist-date');
+            const waitlistTimeStartEl = document.getElementById('calendar-waitlist-time-start');
+            const waitlistTimeEndEl = document.getElementById('calendar-waitlist-time-end');
+            const waitlistFlexibilityEl = document.getElementById('calendar-waitlist-flexibility');
+            const waitlistPriorityEl = document.getElementById('calendar-waitlist-priority');
+            const waitlistNotesEl = document.getElementById('calendar-waitlist-notes');
+            const waitlistSubmitEl = document.getElementById('calendar-waitlist-submit');
             const refreshBtn = document.getElementById('calendar-refresh');
             const todayBtn = document.getElementById('calendar-today');
             const navButtons = document.querySelectorAll('[data-calendar-nav]');
@@ -906,8 +1047,13 @@
             const createOrderModal = (typeof bootstrap !== 'undefined' && createOrderModalEl)
                 ? new bootstrap.Modal(createOrderModalEl)
                 : null;
+            const waitlistModal = (typeof bootstrap !== 'undefined' && waitlistModalEl)
+                ? new bootstrap.Modal(waitlistModalEl)
+                : null;
 
             let selectedDate = null;
+            let lastDayAvailableSlots = [];
+            let waitlistOptionsLoaded = false;
 
             function toggle(el, show) {
                 if (!el) return;
@@ -1021,6 +1167,21 @@
                 createOrderAlertsEl.appendChild(alert);
             }
 
+            function clearWaitlistAlerts() {
+                if (!waitlistAlertsEl) return;
+                waitlistAlertsEl.innerHTML = '';
+            }
+
+            function showWaitlistAlert(type, message) {
+                if (!waitlistAlertsEl) return;
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-' + type + ' mb-0';
+                alert.setAttribute('role', 'alert');
+                alert.textContent = message;
+                waitlistAlertsEl.innerHTML = '';
+                waitlistAlertsEl.appendChild(alert);
+            }
+
             function formatCreatePhone(phone) {
                 const digits = (phone || '').replace(/\D/g, '');
 
@@ -1059,6 +1220,19 @@
                         option.selected = true;
                     }
                     createOrderStatusEl.appendChild(option);
+                });
+            }
+
+            function renderWaitlistServices(services) {
+                if (!waitlistServiceEl) return;
+                waitlistServiceEl.innerHTML = '';
+
+                (services || []).forEach(function (service, index) {
+                    const option = document.createElement('option');
+                    option.value = String(service.id);
+                    option.textContent = service.name + ' · ' + (service.duration || 0) + ' мин';
+                    option.selected = index === 0;
+                    waitlistServiceEl.appendChild(option);
                 });
             }
 
@@ -1369,6 +1543,10 @@
                     delete createOrderTotalPriceEl.dataset.userEdited;
                 }
 
+                if (createOrderWaitlistEntryIdEl) {
+                    createOrderWaitlistEntryIdEl.value = '';
+                }
+
                 if (createOrderScheduledAtEl) {
                     const timePart = '10:00';
                     createOrderScheduledAtEl.value = (dateStr || new Date().toISOString().slice(0, 10)) + 'T' + timePart;
@@ -1388,6 +1566,172 @@
                 if (createOrderModal) {
                     createOrderModal.show();
                 }
+            }
+
+            async function loadWaitlistOptions() {
+                if (waitlistOptionsLoaded) return;
+
+                const response = await fetch('/api/v1/waitlist/options', {
+                    headers: authHeaders,
+                });
+
+                if (!response.ok) {
+                    showWaitlistAlert('danger', 'Не удалось загрузить данные для waitlist.');
+                    return;
+                }
+
+                const data = await response.json();
+                renderWaitlistServices(data.services || []);
+                waitlistOptionsLoaded = true;
+            }
+
+            function resetWaitlistForm(dateStr) {
+                if (!waitlistForm) return;
+                waitlistForm.reset();
+                clearWaitlistAlerts();
+
+                if (waitlistDateEl) {
+                    waitlistDateEl.value = dateStr || new Date().toISOString().slice(0, 10);
+                }
+
+                if (waitlistFlexibilityEl) {
+                    waitlistFlexibilityEl.value = '0';
+                }
+
+                if (waitlistPriorityEl) {
+                    waitlistPriorityEl.value = '0';
+                }
+            }
+
+            async function openWaitlistModal(dateStr) {
+                await loadWaitlistOptions();
+                resetWaitlistForm(dateStr);
+                if (waitlistModal) {
+                    waitlistModal.show();
+                }
+            }
+
+            function renderWaitlistMatches(matches) {
+                if (!dayWaitlistEl) return;
+
+                dayWaitlistEl.innerHTML = '';
+                const items = Array.isArray(matches) ? matches : [];
+
+                if (dayWaitlistBadgeEl) {
+                    dayWaitlistBadgeEl.textContent = String(items.length);
+                }
+
+                toggle(dayWaitlistEmptyEl, items.length === 0);
+
+                items.forEach(function (match) {
+                    const card = document.createElement('div');
+                    card.className = 'calendar-match-card';
+
+                    const reasons = Array.isArray(match.match_reasons) ? match.match_reasons : [];
+                    const serviceName = match.service && match.service.name ? match.service.name : 'Услуга не указана';
+
+                    card.innerHTML = `
+                        <div class="d-flex align-items-start justify-content-between gap-3">
+                            <div>
+                                <div class="fw-semibold">${match.client && match.client.name ? match.client.name : 'Без имени'}</div>
+                                <div class="small text-muted">${formatCreatePhone(match.client && match.client.phone ? match.client.phone : '') || 'Без телефона'}</div>
+                                <div class="small mt-2">${serviceName}</div>
+                            </div>
+                            <span class="badge bg-label-primary">Score ${match.match_score || 0}</span>
+                        </div>
+                    `;
+
+                    if (reasons.length) {
+                        const reasonsWrap = document.createElement('div');
+                        reasonsWrap.className = 'calendar-match-reasons d-flex flex-wrap gap-2 mt-3';
+                        reasons.forEach(function (reason) {
+                            const pill = document.createElement('span');
+                            pill.textContent = reason;
+                            reasonsWrap.appendChild(pill);
+                        });
+                        card.appendChild(reasonsWrap);
+                    }
+
+                    if (match.notes) {
+                        const note = document.createElement('div');
+                        note.className = 'small text-muted mt-3';
+                        note.textContent = match.notes;
+                        card.appendChild(note);
+                    }
+
+                    const actionRow = document.createElement('div');
+                    actionRow.className = 'd-flex justify-content-end mt-3';
+
+                    const bookBtn = document.createElement('button');
+                    bookBtn.type = 'button';
+                    bookBtn.className = 'btn btn-sm btn-outline-primary';
+                    bookBtn.textContent = 'Записать';
+                    bookBtn.addEventListener('click', async function () {
+                        const targetDate = selectedDate || new Date().toISOString().slice(0, 10);
+                        await openCreateOrderModal(targetDate);
+
+                        if (createOrderWaitlistEntryIdEl) {
+                            createOrderWaitlistEntryIdEl.value = match.id;
+                        }
+
+                        if (createOrderClientIdEl) {
+                            createOrderClientIdEl.value = '';
+                        }
+
+                        if (createOrderClientSearchEl) {
+                            createOrderClientSearchEl.value = '';
+                        }
+
+                        if (createOrderClientNameEl) {
+                            createOrderClientNameEl.value = match.client && match.client.name ? match.client.name : '';
+                        }
+
+                        if (createOrderClientPhoneEl) {
+                            createOrderClientPhoneEl.value = match.client && match.client.phone ? match.client.phone : '';
+                        }
+
+                        if (createOrderNoteEl && match.notes) {
+                            createOrderNoteEl.value = match.notes;
+                        }
+
+                        if (createOrderScheduledAtEl) {
+                            const time = lastDayAvailableSlots[0] || (match.preferred_time_windows && match.preferred_time_windows[0] ? match.preferred_time_windows[0].start : '10:00');
+                            createOrderScheduledAtEl.value = targetDate + 'T' + (time || '10:00');
+                        }
+
+                        if (match.service && match.service.id) {
+                            document.querySelectorAll('.calendar-create-service-checkbox').forEach(function (checkbox) {
+                                checkbox.checked = Number(checkbox.value) === Number(match.service.id);
+                            });
+                            updateCreateSummary();
+                        }
+                    });
+                    actionRow.appendChild(bookBtn);
+                    card.appendChild(actionRow);
+                    dayWaitlistEl.appendChild(card);
+                });
+            }
+
+            async function loadWaitlistMatches(dateStr, timeStr) {
+                if (!dateStr) {
+                    renderWaitlistMatches([]);
+                    return;
+                }
+
+                const url = new URL('/api/v1/waitlist/matches', window.location.origin);
+                url.searchParams.set('date', dateStr);
+                if (timeStr) {
+                    url.searchParams.set('time', timeStr);
+                }
+
+                const response = await fetch(url.toString(), { headers: authHeaders });
+                if (!response.ok) {
+                    renderWaitlistMatches([]);
+                    return;
+                }
+
+                const json = await response.json().catch(function () { return {}; });
+                renderWaitlistMatches(json && json.data ? json.data.matches : []);
             }
 
 
@@ -1438,6 +1782,10 @@
                 if (!createOrderBtn) return;
                 createOrderBtn.dataset.date = dateStr || '';
                 createOrderBtn.disabled = !dateStr;
+                if (openWaitlistBtn) {
+                    openWaitlistBtn.dataset.date = dateStr || '';
+                    openWaitlistBtn.disabled = !dateStr;
+                }
             }
 
             function renderOrderCard(order) {
@@ -1548,6 +1896,7 @@
                 }
 
                 const availableSlots = Array.isArray(payload.available_slots) ? payload.available_slots : [];
+                lastDayAvailableSlots = availableSlots.slice();
                 daySlotsEl.innerHTML = '';
                 if (availableSlots.length) {
                     availableSlots.forEach(function (slot) {
@@ -1604,6 +1953,7 @@
                     updateDayStatus('primary', translations.day.free_slots_title || 'Свободные слоты');
                 }
 
+                loadWaitlistMatches(dateStr, availableSlots[0] || null);
                 setDayLoading(false);
             }
 
@@ -1845,6 +2195,7 @@
 
                     const payload = {
                         client_id: createOrderClientIdEl && createOrderClientIdEl.value ? Number(createOrderClientIdEl.value) : null,
+                        waitlist_entry_id: createOrderWaitlistEntryIdEl && createOrderWaitlistEntryIdEl.value ? Number(createOrderWaitlistEntryIdEl.value) : null,
                         client_phone: createOrderClientPhoneEl ? createOrderClientPhoneEl.value : '',
                         client_name: createOrderClientNameEl ? createOrderClientNameEl.value : '',
                         scheduled_at: createOrderScheduledAtEl ? createOrderScheduledAtEl.value : '',
@@ -1923,6 +2274,71 @@
                     const date = createOrderBtn.dataset.date;
                     if (!date) return;
                     openCreateOrderModal(date);
+                });
+            }
+
+            if (openWaitlistBtn) {
+                openWaitlistBtn.addEventListener('click', function () {
+                    const date = openWaitlistBtn.dataset.date;
+                    if (!date) return;
+                    openWaitlistModal(date);
+                });
+            }
+
+            if (waitlistForm) {
+                waitlistForm.addEventListener('submit', async function (event) {
+                    event.preventDefault();
+                    clearWaitlistAlerts();
+
+                    if (waitlistSubmitEl) {
+                        waitlistSubmitEl.disabled = true;
+                    }
+
+                    const payload = {
+                        client_name: waitlistClientNameEl ? waitlistClientNameEl.value.trim() : '',
+                        client_phone: waitlistClientPhoneEl ? waitlistClientPhoneEl.value.trim() : '',
+                        client_email: waitlistClientEmailEl ? waitlistClientEmailEl.value.trim() : '',
+                        service_id: waitlistServiceEl && waitlistServiceEl.value ? Number(waitlistServiceEl.value) : null,
+                        preferred_dates: waitlistDateEl && waitlistDateEl.value ? [waitlistDateEl.value] : [],
+                        preferred_time_windows: (waitlistTimeStartEl && waitlistTimeStartEl.value && waitlistTimeEndEl && waitlistTimeEndEl.value)
+                            ? [{ start: waitlistTimeStartEl.value, end: waitlistTimeEndEl.value }]
+                            : [],
+                        flexibility_days: waitlistFlexibilityEl && waitlistFlexibilityEl.value ? Number(waitlistFlexibilityEl.value) : 0,
+                        priority_manual: waitlistPriorityEl && waitlistPriorityEl.value ? Number(waitlistPriorityEl.value) : 0,
+                        notes: waitlistNotesEl ? waitlistNotesEl.value.trim() : '',
+                        source: 'manual',
+                    };
+
+                    const response = await fetch('/api/v1/waitlist', {
+                        method: 'POST',
+                        headers: Object.assign({}, authHeaders, { 'Content-Type': 'application/json' }),
+                        body: JSON.stringify(payload),
+                    });
+
+                    const result = await response.json().catch(function () {
+                        return {};
+                    });
+
+                    if (!response.ok) {
+                        showWaitlistAlert('danger', (result.error && result.error.message) || 'Не удалось добавить клиента в waitlist.');
+                        if (waitlistSubmitEl) {
+                            waitlistSubmitEl.disabled = false;
+                        }
+                        return;
+                    }
+
+                    if (waitlistModal) {
+                        waitlistModal.hide();
+                    }
+
+                    showPageFeedback('success', result.message || 'Клиент добавлен в waitlist.');
+                    if (selectedDate) {
+                        loadWaitlistMatches(selectedDate, lastDayAvailableSlots[0] || null);
+                    }
+
+                    if (waitlistSubmitEl) {
+                        waitlistSubmitEl.disabled = false;
+                    }
                 });
             }
 

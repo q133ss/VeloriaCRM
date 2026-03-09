@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\TrendsController;
 use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionController;
+use App\Http\Controllers\Api\V1\WaitlistController;
 
 Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -40,6 +41,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::get('/services', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'services']);
             Route::get('/services/{service}/slots', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'slots']);
             Route::post('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'book']);
+            Route::post('/waitlist', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'waitlist']);
         });
     });
 
@@ -74,6 +76,12 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::post('/orders/{order}/cancel', [ApiOrderController::class, 'cancel']);
         Route::post('/orders/{order}/reschedule', [ApiOrderController::class, 'reschedule']);
         Route::get('/orders/{order}/analytics', [ApiOrderController::class, 'analytics']);
+        Route::get('/waitlist/options', [WaitlistController::class, 'options']);
+        Route::get('/waitlist', [WaitlistController::class, 'index']);
+        Route::post('/waitlist', [WaitlistController::class, 'store']);
+        Route::patch('/waitlist/{waitlist}', [WaitlistController::class, 'update']);
+        Route::delete('/waitlist/{waitlist}', [WaitlistController::class, 'destroy']);
+        Route::get('/waitlist/matches', [WaitlistController::class, 'matches']);
         Route::get('/calendar/events', [CalendarController::class, 'events']);
         Route::get('/calendar/day', [CalendarController::class, 'day']);
         Route::get('/help/overview', [HelpCenterController::class, 'overview']);
