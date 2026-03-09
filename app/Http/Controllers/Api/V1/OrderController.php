@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -306,11 +307,7 @@ class OrderController extends Controller
         $masterId = $this->currentUserId();
 
         $order = DB::transaction(function () use ($validated, $masterId) {
-            $client = $this->resolveClient(
-                $validated['client_phone'],
-                Arr::get($validated, 'client_name'),
-                Arr::get($validated, 'client_email')
-            );
+            $client = $this->resolveQuickOrderClient($validated);
 
             $services = $this->collectServices(Arr::get($validated, 'services', []));
 
@@ -565,9 +562,13 @@ class OrderController extends Controller
         $client = null;
         $clientProfile = null;
         $suggestions = collect();
+        $recentClients = $this->buildRecentClients();
+        $search = trim((string) $request->input('client_search', ''));
 
         if ($request->filled('client_id')) {
-            $client = User::find($request->input('client_id'));
+            $client = $this->findSelectableClient((int) $request->input('client_id'));
+        } elseif ($search !== '') {
+            $suggestions = $this->searchSelectableClients($search);
         } elseif ($request->filled('client_phone')) {
             $client = User::where('phone', $this->normalizePhone($request->input('client_phone')))->first();
             $suggestions = $this->buildClientSuggestions($request->input('client_phone'));
@@ -595,8 +596,32 @@ class OrderController extends Controller
                 'phone' => $client->phone,
                 'email' => $clientProfile?->email ?? $client->email,
             ] : null,
+            'recent_clients' => $recentClients->values(),
             'suggestions' => $suggestions->values(),
         ]);
+    }
+
+    protected function resolveQuickOrderClient(array $validated): User
+    {
+        $selectedClientId = Arr::get($validated, 'client_id');
+
+        if ($selectedClientId) {
+            $client = $this->findSelectableClient((int) $selectedClientId);
+
+            if ($client) {
+                return $client;
+            }
+
+            throw ValidationException::withMessages([
+                'client_id' => 'Выберите клиента из списка или укажите номер нового клиента.',
+            ]);
+        }
+
+        return $this->resolveClient(
+            (string) Arr::get($validated, 'client_phone', ''),
+            Arr::get($validated, 'client_name'),
+            Arr::get($validated, 'client_email')
+        );
     }
 
     protected function buildClientSuggestions(?string $phone): Collection
@@ -667,6 +692,79 @@ class OrderController extends Controller
         }
 
         return $suggestions->values();
+    }
+
+    protected function buildRecentClients(int $limit = 6): Collection
+    {
+        return Order::query()
+            ->with('client')
+            ->where('master_id', $this->currentUserId())
+            ->whereNotNull('client_id')
+            ->latest('scheduled_at')
+            ->get()
+            ->filter(fn (Order $order) => $order->client !== null)
+            ->unique('client_id')
+            ->take($limit)
+            ->map(fn (Order $order) => $this->transformSelectableClient($order->client, $order->scheduled_at));
+    }
+
+    protected function searchSelectableClients(string $search, int $limit = 8): Collection
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return collect();
+        }
+
+        $digits = preg_replace('/[^0-9]+/', '', $search);
+
+        return Order::query()
+            ->with('client')
+            ->where('master_id', $this->currentUserId())
+            ->whereNotNull('client_id')
+            ->whereHas('client', function ($query) use ($search, $digits) {
+                $query->where(function ($nested) use ($search, $digits) {
+                    $nested->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+
+                    if ($digits !== '') {
+                        $nested->orWhere('phone', 'like', '%' . $digits . '%');
+                    }
+                });
+            })
+            ->latest('scheduled_at')
+            ->get()
+            ->filter(fn (Order $order) => $order->client !== null)
+            ->unique('client_id')
+            ->take($limit)
+            ->map(fn (Order $order) => $this->transformSelectableClient($order->client, $order->scheduled_at));
+    }
+
+    protected function findSelectableClient(int $clientId): ?User
+    {
+        return User::query()
+            ->whereKey($clientId)
+            ->whereExists(function ($query) use ($clientId) {
+                $query->selectRaw('1')
+                    ->from('orders')
+                    ->whereColumn('orders.client_id', 'users.id')
+                    ->where('orders.master_id', $this->currentUserId())
+                    ->where('orders.client_id', $clientId);
+            })
+            ->first();
+    }
+
+    protected function transformSelectableClient(User $client, $lastVisitAt = null): array
+    {
+        return [
+            'id' => $client->id,
+            'name' => $client->name,
+            'phone' => $client->phone,
+            'email' => $client->email,
+            'last_visit_at' => $lastVisitAt?->toIso8601String(),
+            'last_visit_at_formatted' => $lastVisitAt?->format('d.m.Y H:i'),
+        ];
     }
 
     protected function collectServices(array $serviceIds)

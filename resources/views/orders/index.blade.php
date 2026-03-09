@@ -22,6 +22,30 @@
 
     <div id="orders-alerts"></div>
 
+    <style>
+        #quickCreateModal .quick-client-layer {
+            position: relative;
+        }
+
+        #quickCreateModal #quick-client-results,
+        #quickCreateModal #quick-client-suggestions {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            right: 0;
+            max-height: 260px;
+            overflow-y: auto;
+            z-index: 40;
+            margin-top: 0;
+            background: var(--bs-paper-bg, var(--bs-body-bg));
+        }
+
+        #quickCreateModal #quick-client-results,
+        #quickCreateModal #quick-client-suggestions {
+            box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.28);
+        }
+    </style>
+
     <div class="card mb-4">
         <div class="card-body">
             <form id="filters-form" class="row g-3 align-items-end">
@@ -116,9 +140,27 @@
                 </div>
                 <form id="quick-create-form" onsubmit="return false;">
                     <div class="modal-body">
-                        <p class="text-muted">Укажите телефон клиента и время визита. Если клиента нет в базе, мы создадим его автоматически.</p>
+                        <p class="text-muted">Сначала найдите клиента по имени или телефону. Если нужного человека нет в истории, ниже можно сразу создать нового.</p>
                         <input type="hidden" id="quick_master_name" value="{{ auth()->user()?->name ?? 'Вы' }}" />
+                        <input type="hidden" id="quick_client_id" name="client_id" />
                         <div class="row g-3">
+                            <div class="col-12">
+                                <div class="quick-client-layer">
+                                    <div class="form-floating form-floating-outline">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="quick_client_search"
+                                        placeholder="Анна, +7..., Иван"
+                                        autocomplete="off"
+                                    />
+                                    <label for="quick_client_search">Найти существующего клиента</label>
+                                    </div>
+                                    <div id="quick-client-results" class="list-group list-group-flush border rounded-3 shadow-sm mt-2 d-none"></div>
+                                </div>
+                                <div class="form-text">Поиск по имени и телефону. В списке сначала показываются недавние клиенты.</div>
+                                <div id="quick-selected-client" class="alert alert-primary d-none mt-2 mb-0"></div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
                                     <input type="datetime-local" class="form-control" id="quick_scheduled_at" name="scheduled_at" required />
@@ -126,19 +168,21 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-floating form-floating-outline">
-                                    <input
-                                        type="text"
-                                        class="form-control"
-                                        id="quick_client_phone"
-                                        name="client_phone"
-                                        placeholder="+7(999)999-99-99"
-                                        data-phone-mask
-                                        required
-                                    />
-                                    <label for="quick_client_phone">Телефон клиента</label>
+                                <div class="quick-client-layer">
+                                    <div class="form-floating form-floating-outline">
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            id="quick_client_phone"
+                                            name="client_phone"
+                                            placeholder="+7(999)999-99-99"
+                                            data-phone-mask
+                                            required
+                                        />
+                                        <label for="quick_client_phone">Телефон нового клиента</label>
+                                    </div>
+                                    <div id="quick-client-suggestions" class="list-group list-group-flush border rounded-3 shadow-sm mt-2 d-none"></div>
                                 </div>
-                                <div id="quick-client-suggestions" class="list-group list-group-flush border rounded-3 shadow-sm mt-2 d-none"></div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating form-floating-outline">
@@ -218,11 +262,16 @@
         const quickForm = document.getElementById('quick-create-form');
         const quickServicesContainer = document.getElementById('quick-services-container');
         const quickServicesSummary = document.getElementById('quick-services-summary');
+        const quickClientIdInput = document.getElementById('quick_client_id');
+        const quickClientSearchInput = document.getElementById('quick_client_search');
         const quickClientPhoneInput = document.getElementById('quick_client_phone');
         const quickClientNameInput = document.getElementById('quick_client_name');
+        const quickSelectedClient = document.getElementById('quick-selected-client');
+        const quickClientResults = document.getElementById('quick-client-results');
         const quickClientSuggestions = document.getElementById('quick-client-suggestions');
         let quickLookupController = null;
         let quickLookupTimer = null;
+        let quickRecentClients = [];
 
         function showAlert(type, message, sticky = false) {
             const wrapper = document.createElement('div');
@@ -366,6 +415,125 @@
             return `+${country} (${city}) ${first}-${second}-${third}`;
         }
 
+        function clearQuickClientResults() {
+            if (!quickClientResults) {
+                return;
+            }
+
+            quickClientResults.innerHTML = '';
+            quickClientResults.classList.add('d-none');
+        }
+
+        function setQuickClientSelection(client) {
+            const hasClient = Boolean(client && client.id);
+
+            if (quickClientIdInput) {
+                quickClientIdInput.value = hasClient ? client.id : '';
+            }
+
+            if (quickSelectedClient) {
+                if (hasClient) {
+                    const phone = formatSuggestionPhone(client.phone || '');
+                    const lastVisit = client.last_visit_at_formatted
+                        ? `<div class="small mt-1 opacity-75">Последний визит: ${client.last_visit_at_formatted}</div>`
+                        : '';
+
+                    quickSelectedClient.innerHTML = `
+                        <div>
+                            <div class="fw-semibold">Выбран клиент: ${client.name || 'Без имени'}</div>
+                            <div class="small">${phone || 'Без телефона'}</div>
+                            ${lastVisit}
+                        </div>
+                    `;
+                    quickSelectedClient.classList.remove('d-none');
+                } else {
+                    quickSelectedClient.innerHTML = '';
+                    quickSelectedClient.classList.add('d-none');
+                }
+            }
+
+            if (quickClientPhoneInput) {
+                quickClientPhoneInput.required = !hasClient;
+                quickClientPhoneInput.readOnly = hasClient;
+                quickClientPhoneInput.value = hasClient ? (client.phone || '') : '';
+            }
+
+            if (quickClientNameInput) {
+                quickClientNameInput.readOnly = hasClient;
+                quickClientNameInput.value = hasClient ? (client.name || '') : '';
+            }
+
+            clearQuickClientSuggestions();
+
+            if (hasClient) {
+                clearQuickClientResults();
+            } else if (quickClientSearchInput && quickClientSearchInput.value.trim() === '') {
+                renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
+            } else {
+                clearQuickClientResults();
+            }
+        }
+
+        function renderQuickClientResults(items, title = 'Клиенты') {
+            if (!quickClientResults) {
+                return;
+            }
+
+            quickClientResults.innerHTML = '';
+
+            if (!Array.isArray(items) || !items.length) {
+                quickClientResults.classList.add('d-none');
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'list-group-item small text-muted';
+            header.textContent = title;
+            header.tabIndex = -1;
+            quickClientResults.appendChild(header);
+
+            items.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action d-flex align-items-start justify-content-between gap-2';
+                button.innerHTML = `
+                    <div class="d-flex flex-column text-start">
+                        <span class="fw-medium">${item.name || 'Без имени'}</span>
+                        <span class="small text-muted">${formatSuggestionPhone(item.phone || '') || 'Без телефона'}</span>
+                    </div>
+                    <span class="small text-muted text-end">${item.last_visit_at_formatted || ''}</span>
+                `;
+                button.addEventListener('click', () => {
+                    setQuickClientSelection(item);
+                    if (quickClientSearchInput) {
+                        quickClientSearchInput.value = item.name || item.phone || '';
+                    }
+                });
+                quickClientResults.appendChild(button);
+            });
+
+            const createButton = document.createElement('button');
+            createButton.type = 'button';
+            createButton.className = 'list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-2 text-primary';
+            createButton.innerHTML = `
+                <span class="fw-medium">Добавить нового клиента</span>
+                <i class="ri ri-user-add-line"></i>
+            `;
+            createButton.addEventListener('click', () => {
+                setQuickClientSelection(null);
+                clearQuickClientResults();
+                if (quickClientSearchInput) {
+                    quickClientSearchInput.value = '';
+                }
+                if (quickClientPhoneInput) {
+                    quickClientPhoneInput.focus();
+                }
+            });
+            quickClientResults.appendChild(createButton);
+
+            quickClientResults.classList.remove('d-none');
+        }
+
         function clearQuickClientSuggestions() {
             if (!quickClientSuggestions) {
                 return;
@@ -402,18 +570,25 @@
                     <span class="small text-muted">${formatSuggestionPhone(item.phone)}</span>
                 `;
                 button.addEventListener('click', () => {
-                    if (quickClientPhoneInput) {
-                        quickClientPhoneInput.value = item.phone || '';
-                        quickClientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        quickClientPhoneInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+                    if (item.id) {
+                        setQuickClientSelection(item);
+                        if (quickClientSearchInput) {
+                            quickClientSearchInput.value = item.name || item.phone || '';
+                        }
+                    } else {
+                        if (quickClientPhoneInput) {
+                            quickClientPhoneInput.value = item.phone || '';
+                            quickClientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            quickClientPhoneInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
 
-                    if (quickClientNameInput) {
-                        quickClientNameInput.value = item.name || '';
+                        if (quickClientNameInput) {
+                            quickClientNameInput.value = item.name || '';
+                        }
                     }
 
                     clearQuickClientSuggestions();
-                    lookupQuickClient(item.phone || '');
+                    clearQuickClientResults();
                 });
 
                 quickClientSuggestions.appendChild(button);
@@ -505,6 +680,11 @@
 
                 const data = await response.json();
                 renderQuickServices(data.services || []);
+                quickRecentClients = Array.isArray(data.recent_clients) ? data.recent_clients : [];
+
+                if (quickClientSearchInput && quickClientSearchInput.value.trim() === '') {
+                    renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
+                }
             } catch (error) {
                 if (error?.name === 'AbortError') {
                     return;
@@ -514,21 +694,28 @@
             }
         }
 
-        async function lookupQuickClient(phone) {
-            if (!quickClientPhoneInput) {
+        async function lookupQuickClient(query, mode = 'search') {
+            if (!quickClientPhoneInput && !quickClientSearchInput) {
                 return;
             }
 
-            const value = (phone || '').toString().trim();
-            const digits = value.replace(/[^0-9]+/g, '');
+            const value = (query || '').toString().trim();
 
-            if (!value || !digits.length) {
+            if (!value) {
+                clearQuickClientSuggestions();
+                if (mode === 'search') {
+                    renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
+                }
+                return;
+            }
+
+            if (mode === 'phone' && value.replace(/[^0-9]+/g, '').length < 3) {
                 clearQuickClientSuggestions();
                 return;
             }
 
-            if (digits.length < 3) {
-                clearQuickClientSuggestions();
+            if (mode === 'search' && value.length < 2) {
+                renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
                 return;
             }
 
@@ -539,7 +726,11 @@
             quickLookupController = new AbortController();
 
             try {
-                const params = new URLSearchParams({ client_phone: value });
+                const params = new URLSearchParams(
+                    mode === 'phone'
+                        ? { client_phone: value }
+                        : { client_search: value }
+                );
                 const response = await fetch(`/api/v1/orders/options?${params.toString()}`, {
                     headers: authHeaders(),
                     credentials: 'include',
@@ -553,13 +744,16 @@
 
                 const data = await response.json();
 
-                if (Array.isArray(data.suggestions)) {
+                if (mode === 'search') {
+                    renderQuickClientResults(Array.isArray(data.suggestions) ? data.suggestions : [], 'Найденные клиенты');
+                    clearQuickClientSuggestions();
+                } else if (Array.isArray(data.suggestions)) {
                     renderQuickClientSuggestions(data.suggestions);
                 } else {
                     clearQuickClientSuggestions();
                 }
 
-                if (data.client && quickClientNameInput && !quickClientNameInput.matches(':focus')) {
+                if (mode === 'phone' && data.client && quickClientNameInput && !quickClientNameInput.matches(':focus')) {
                     quickClientNameInput.value = data.client.name || '';
                 }
             } catch (error) {
@@ -567,7 +761,11 @@
                     return;
                 }
 
-                clearQuickClientSuggestions();
+                if (mode === 'search') {
+                    clearQuickClientResults();
+                } else {
+                    clearQuickClientSuggestions();
+                }
             }
         }
 
@@ -777,6 +975,10 @@
 
         if (quickClientPhoneInput) {
             quickClientPhoneInput.addEventListener('input', function () {
+                if (quickClientIdInput && quickClientIdInput.value) {
+                    return;
+                }
+
                 const value = this.value.trim();
                 const digits = value.replace(/[^0-9]+/g, '');
 
@@ -797,15 +999,49 @@
                     return;
                 }
 
-                quickLookupTimer = setTimeout(() => lookupQuickClient(value), 400);
+                quickLookupTimer = setTimeout(() => lookupQuickClient(value, 'phone'), 400);
             });
 
             quickClientPhoneInput.addEventListener('blur', function () {
+                if (quickClientIdInput && quickClientIdInput.value) {
+                    return;
+                }
+
                 const value = this.value.trim();
                 if (value) {
-                    lookupQuickClient(value);
+                    lookupQuickClient(value, 'phone');
                 } else {
                     clearQuickClientSuggestions();
+                }
+            });
+        }
+
+        if (quickClientSearchInput) {
+            quickClientSearchInput.addEventListener('input', function () {
+                const value = this.value.trim();
+
+                if (quickLookupTimer) {
+                    clearTimeout(quickLookupTimer);
+                }
+
+                if (!value) {
+                    if (quickClientIdInput && quickClientIdInput.value) {
+                        setQuickClientSelection(null);
+                    }
+                    renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
+                    return;
+                }
+
+                if (quickClientIdInput && quickClientIdInput.value) {
+                    setQuickClientSelection(null);
+                }
+
+                quickLookupTimer = setTimeout(() => lookupQuickClient(value, 'search'), 250);
+            });
+
+            quickClientSearchInput.addEventListener('focus', function () {
+                if (!this.value.trim()) {
+                    renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
                 }
             });
         }
@@ -813,8 +1049,12 @@
         const quickModalElement = document.getElementById('quickCreateModal');
         if (quickModalElement) {
             quickModalElement.addEventListener('shown.bs.modal', () => {
-                if (quickClientPhoneInput && quickClientPhoneInput.value.trim()) {
-                    lookupQuickClient(quickClientPhoneInput.value.trim());
+                if (quickClientSearchInput && !quickClientSearchInput.value.trim()) {
+                    renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
+                } else if (quickClientSearchInput && quickClientSearchInput.value.trim()) {
+                    lookupQuickClient(quickClientSearchInput.value.trim(), 'search');
+                } else if (quickClientPhoneInput && quickClientPhoneInput.value.trim()) {
+                    lookupQuickClient(quickClientPhoneInput.value.trim(), 'phone');
                 }
             });
 
@@ -823,24 +1063,30 @@
                     quickForm.reset();
                     updateQuickSummary();
                 }
+                setQuickClientSelection(null);
                 clearQuickClientSuggestions();
+                clearQuickClientResults();
             });
         }
 
         document.addEventListener('click', function (event) {
-            if (!quickClientSuggestions || quickClientSuggestions.classList.contains('d-none')) {
-                return;
+            if (
+                quickClientSuggestions &&
+                !quickClientSuggestions.classList.contains('d-none') &&
+                event.target !== quickClientPhoneInput &&
+                !quickClientSuggestions.contains(event.target)
+            ) {
+                clearQuickClientSuggestions();
             }
 
-            if (event.target === quickClientPhoneInput) {
-                return;
+            if (
+                quickClientResults &&
+                !quickClientResults.classList.contains('d-none') &&
+                event.target !== quickClientSearchInput &&
+                !quickClientResults.contains(event.target)
+            ) {
+                clearQuickClientResults();
             }
-
-            if (quickClientSuggestions.contains(event.target)) {
-                return;
-            }
-
-            clearQuickClientSuggestions();
         });
 
         loadQuickServices();
@@ -853,6 +1099,7 @@
                 errorsContainer.innerHTML = '';
 
                 const payload = {
+                    client_id: form.client_id.value ? Number(form.client_id.value) : null,
                     client_phone: form.client_phone.value.trim(),
                     client_name: form.client_name.value.trim(),
                     scheduled_at: form.scheduled_at.value,
