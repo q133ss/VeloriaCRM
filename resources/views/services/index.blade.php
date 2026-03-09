@@ -3,131 +3,319 @@
 @section('title', __('services.title'))
 
 @section('content')
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-        <div>
-            <h4 class="mb-1">{{ __('services.title') }}</h4>
-            <p class="text-muted mb-0">{{ __('services.subtitle') }}</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-secondary" id="new-category-btn">
-                <i class="ri ri-folder-add-line me-1"></i>
-                {{ __('services.actions.create_category') }}
-            </button>
-            <button type="button" class="btn btn-primary" id="new-service-btn">
-                <i class="ri ri-scissors-2-line me-1"></i>
-                {{ __('services.actions.create_service') }}
-            </button>
-        </div>
-    </div>
+    <style>
+        .services-page {
+            --services-border: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            --services-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
 
-    <div id="services-alerts"></div>
+        .services-page .services-hero,
+        .services-page .services-surface {
+            border: 1px solid var(--services-border);
+            border-radius: 1.5rem;
+            box-shadow: var(--services-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 96%, transparent);
+        }
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <form id="services-filters-form" class="row g-3 align-items-end">
-                <div class="col-lg-4">
-                    <label for="filter-search" class="form-label">{{ __('services.filters.search_label') }}</label>
-                    <div class="position-relative">
-                        <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted">
-                            <i class="ri ri-search-line"></i>
-                        </span>
-                        <input
-                            type="text"
-                            class="form-control ps-5"
-                            id="filter-search"
-                            name="search"
-                            placeholder="{{ __('services.filters.search_placeholder') }}"
-                        />
+        .services-page .services-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 1.5rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14), transparent 34%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+        }
+
+        .services-page .services-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            filter: blur(12px);
+        }
+
+        .services-page .services-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .services-page .services-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .services-page .services-hero .btn {
+            white-space: nowrap;
+        }
+
+        .services-page .services-surface {
+            padding: 1.25rem;
+        }
+
+        .services-page .services-search-icon {
+            left: 0.15rem;
+            pointer-events: none;
+        }
+
+        .services-page .services-search-input {
+            padding-left: 1.3rem !important;
+        }
+
+        .services-page .services-summary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.04);
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+        }
+
+        .services-page details.services-advanced summary {
+            cursor: pointer;
+            list-style: none;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .services-page details.services-advanced summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .services-page details.services-advanced summary::after {
+            content: 'Развернуть';
+            margin-left: 0.5rem;
+        }
+
+        .services-page details.services-advanced[open] summary::after {
+            content: 'Свернуть';
+        }
+
+        .services-page .services-group-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+            border-radius: 1.35rem;
+            background: color-mix(in srgb, var(--bs-card-bg) 98%, transparent);
+            box-shadow: var(--services-shadow);
+        }
+
+        .services-page .service-row + .service-row {
+            margin-top: 0.85rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.08);
+        }
+
+        .services-page .service-price {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            color: var(--bs-primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .services-page .service-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.45rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .services-page .service-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .services-page .service-secondary {
+            margin-top: 0.4rem;
+            font-size: 0.82rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .services-page .service-actions .btn,
+        .services-page .group-actions .btn {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767.98px) {
+            .services-page .service-row {
+                gap: 0.75rem;
+            }
+
+            .services-page .service-actions {
+                width: 100%;
+            }
+
+            .services-page .service-actions .btn-group {
+                width: 100%;
+            }
+
+            .services-page .service-actions .btn-group .btn {
+                flex: 1 1 auto;
+            }
+        }
+    </style>
+
+    <div class="services-page d-flex flex-column gap-4">
+        <section class="services-hero">
+            <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-4">
+                <div class="d-flex flex-column gap-3">
+                    <span class="services-eyebrow">
+                        <i class="ri ri-scissors-cut-line text-primary"></i>
+                        Каталог услуг
+                    </span>
+                    <div>
+                        <h4 class="mb-1">{{ __('services.title') }}</h4>
+                        <p class="text-muted mb-0">{{ __('services.subtitle') }}</p>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-2">
-                    <label for="filter-category" class="form-label">{{ __('services.filters.category_label') }}</label>
-                    <select class="form-select" id="filter-category" name="category_id">
-                        <option value="">{{ __('services.filters.category_placeholder') }}</option>
-                    </select>
-                </div>
-                <div class="col-sm-6 col-lg-2">
-                    <label class="form-label">{{ __('services.filters.price_label') }}</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="form-control"
-                                id="filter-price-min"
-                                name="price_min"
-                                placeholder="{{ __('services.filters.price_min_placeholder') }}"
-                            />
-                        </div>
-                        <div class="col-6">
-                            <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="form-control"
-                                id="filter-price-max"
-                                name="price_max"
-                                placeholder="{{ __('services.filters.price_max_placeholder') }}"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-2">
-                    <label class="form-label">{{ __('services.filters.duration_label') }}</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input
-                                type="number"
-                                min="0"
-                                step="5"
-                                class="form-control"
-                                id="filter-duration-min"
-                                name="duration_min"
-                                placeholder="{{ __('services.filters.duration_min_placeholder') }}"
-                            />
-                        </div>
-                        <div class="col-6">
-                            <input
-                                type="number"
-                                min="0"
-                                step="5"
-                                class="form-control"
-                                id="filter-duration-max"
-                                name="duration_max"
-                                placeholder="{{ __('services.filters.duration_max_placeholder') }}"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-1">
-                    <label for="filter-sort" class="form-label">{{ __('services.filters.sort_label') }}</label>
-                    <select class="form-select" id="filter-sort" name="sort">
-                        <option value="name">{{ __('services.filters.sort_options.name') }}</option>
-                        <option value="base_price">{{ __('services.filters.sort_options.base_price') }}</option>
-                        <option value="duration_min">{{ __('services.filters.sort_options.duration_min') }}</option>
-                        <option value="created_at">{{ __('services.filters.sort_options.created_at') }}</option>
-                    </select>
-                </div>
-                <div class="col-sm-6 col-lg-1">
-                    <label for="filter-direction" class="form-label">{{ __('services.filters.direction_label') }}</label>
-                    <select class="form-select" id="filter-direction" name="direction">
-                        <option value="asc">{{ __('services.filters.direction_options.asc') }}</option>
-                        <option value="desc">{{ __('services.filters.direction_options.desc') }}</option>
-                    </select>
-                </div>
-                <div class="col-lg-12 col-xl-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">{{ __('services.filters.apply') }}</button>
-                    <button type="button" class="btn btn-outline-secondary flex-fill" id="filters-reset">
-                        {{ __('services.filters.reset') }}
+                <div class="d-flex flex-column flex-sm-row gap-2 align-self-start">
+                    <button type="button" class="btn btn-outline-secondary" id="new-category-btn">
+                        <i class="ri ri-folder-add-line me-1"></i>
+                        {{ __('services.actions.create_category') }}
+                    </button>
+                    <button type="button" class="btn btn-primary" id="new-service-btn">
+                        <i class="ri ri-scissors-2-line me-1"></i>
+                        {{ __('services.actions.create_service') }}
                     </button>
                 </div>
-            </form>
-            <div id="services-summary" class="small text-muted mt-3 d-flex flex-wrap gap-3"></div>
-        </div>
-    </div>
+            </div>
+        </section>
 
-    <div id="services-groups" class="row g-4"></div>
+        <div id="services-alerts"></div>
+
+        <section class="services-surface">
+            <form id="services-filters-form" class="d-flex flex-column gap-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-6">
+                        <label for="filter-search" class="form-label">{{ __('services.filters.search_label') }}</label>
+                        <div class="position-relative">
+                            <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted">
+                                <span class="services-search-icon position-absolute top-50 translate-middle-y text-muted">
+                                    <i class="ri ri-search-line"></i>
+                                </span>
+                            </span>
+                            <input
+                                type="text"
+                                class="form-control services-search-input"
+                                id="filter-search"
+                                name="search"
+                                placeholder="{{ __('services.filters.search_placeholder') }}"
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="filter-category" class="form-label">{{ __('services.filters.category_label') }}</label>
+                        <select class="form-select" id="filter-category" name="category_id">
+                            <option value="">{{ __('services.filters.category_placeholder') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">{{ __('services.filters.apply') }}</button>
+                        <button type="button" class="btn btn-outline-secondary flex-fill" id="filters-reset">
+                            {{ __('services.filters.reset') }}
+                        </button>
+                    </div>
+                </div>
+
+                <details class="services-advanced">
+                    <summary>Расширенный фильтр</summary>
+                    <div class="row g-3 mt-1">
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label">{{ __('services.filters.price_label') }}</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="form-control"
+                                        id="filter-price-min"
+                                        name="price_min"
+                                        placeholder="{{ __('services.filters.price_min_placeholder') }}"
+                                    />
+                                </div>
+                                <div class="col-6">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="form-control"
+                                        id="filter-price-max"
+                                        name="price_max"
+                                        placeholder="{{ __('services.filters.price_max_placeholder') }}"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label">{{ __('services.filters.duration_label') }}</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="5"
+                                        class="form-control"
+                                        id="filter-duration-min"
+                                        name="duration_min"
+                                        placeholder="{{ __('services.filters.duration_min_placeholder') }}"
+                                    />
+                                </div>
+                                <div class="col-6">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="5"
+                                        class="form-control"
+                                        id="filter-duration-max"
+                                        name="duration_max"
+                                        placeholder="{{ __('services.filters.duration_max_placeholder') }}"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <label for="filter-sort" class="form-label">{{ __('services.filters.sort_label') }}</label>
+                            <select class="form-select" id="filter-sort" name="sort">
+                                <option value="name">{{ __('services.filters.sort_options.name') }}</option>
+                                <option value="base_price">{{ __('services.filters.sort_options.base_price') }}</option>
+                                <option value="duration_min">{{ __('services.filters.sort_options.duration_min') }}</option>
+                                <option value="created_at">{{ __('services.filters.sort_options.created_at') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <label for="filter-direction" class="form-label">{{ __('services.filters.direction_label') }}</label>
+                            <select class="form-select" id="filter-direction" name="direction">
+                                <option value="asc">{{ __('services.filters.direction_options.asc') }}</option>
+                                <option value="desc">{{ __('services.filters.direction_options.desc') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </details>
+
+                <div id="services-summary" class="d-flex flex-wrap gap-2"></div>
+            </form>
+        </section>
+
+        <div id="services-groups" class="d-flex flex-column gap-3"></div>
+    </div>
 
     <div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -690,11 +878,10 @@
             function setLoading(loading) {
                 state.loading = loading;
                 if (loading) {
-                    groupsContainer.innerHTML = '<div class="col-12"><div class="card border-0 shadow-sm">' +
-                        '<div class="card-body text-center py-5 text-muted">' +
+                    groupsContainer.innerHTML = '<div class="services-group-card p-4 text-center text-muted">' +
                         '<div class="spinner-border text-primary mb-3" role="status"></div>' +
                         '<div>' + escapeHtml(translations.ui.loading) + '</div>' +
-                        '</div></div></div>';
+                        '</div>';
                 }
             }
 
@@ -731,7 +918,7 @@
                 }
 
                 summaryContainer.innerHTML = fragments.map(function (item) {
-                    return '<span>' + item + '</span>';
+                    return '<span class="services-summary-pill">' + item + '</span>';
                 }).join('');
             }
 
@@ -751,47 +938,41 @@
                 }
 
                 if (!state.groups.length) {
-                    groupsContainer.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0">' + escapeHtml(translations.alerts.noServices) + '</div></div>';
+                    groupsContainer.innerHTML = '<div class="services-group-card p-4"><div class="alert alert-info mb-0">' + escapeHtml(translations.alerts.noServices) + '</div></div>';
                     return;
                 }
 
                 const html = state.groups.map(function (group) {
                     const totalInCategory = totalForCategory(group.id);
                     const servicesHtml = (group.services || []).map(function (service) {
-                        const metadataItems = [
-                            { icon: 'ri-time-line', label: translations.table.duration, value: formatDuration(service.duration_min) },
-                        ];
-
+                        const secondaryParts = [];
                         if (service.cost !== null && service.cost !== undefined) {
-                            metadataItems.push({ icon: 'ri-calculator-line', label: translations.table.cost, value: formatCurrency(service.cost) });
+                            secondaryParts.push(escapeHtml(translations.table.cost) + ': ' + escapeHtml(formatCurrency(service.cost)));
                         }
-
                         if (service.margin !== null && service.margin !== undefined) {
-                            metadataItems.push({ icon: 'ri-equalizer-line', label: translations.table.margin, value: formatCurrency(service.margin) });
+                            secondaryParts.push(escapeHtml(translations.table.margin) + ': ' + escapeHtml(formatCurrency(service.margin)));
                         }
 
-                        const metadataHtml = metadataItems.map(function (item) {
-                            return '<li><i class="ri ' + item.icon + ' me-2"></i><span class="text-muted me-1">' + escapeHtml(item.label) + ':</span>' + escapeHtml(item.value) + '</li>';
-                        }).join('');
-
-                        const updated = service.updated_at ? escapeHtml(translations.table.updatedAt.replace(':date', formatDate(service.updated_at))) : '';
+                        const secondaryHtml = secondaryParts.length
+                            ? '<div class="service-secondary">' + secondaryParts.join(' · ') + '</div>'
+                            : '';
 
                         return (
-                            '<div class="col-12 col-lg-12">' +
-                                '<div class="card h-100 shadow-none border">' +
-                                    '<div class="card-body d-flex flex-column">' +
-                                        '<div class="d-flex justify-content-between align-items-start mb-3">' +
-                                            '<div>' +
-                                                '<h6 class="mb-1">' + escapeHtml(service.name) + '</h6>' +
-                                                '<span class="badge bg-label-primary">' + escapeHtml(formatCurrency(service.base_price)) + '</span>' +
-                                            '</div>' +
-                                            '<div class="btn-group btn-group-sm">' +
-                                                '<button type="button" class="btn btn-outline-primary" data-action="edit-service" data-service-id="' + service.id + '"><i class="ri ri-edit-line"></i></button>' +
-                                                '<button type="button" class="btn btn-outline-danger" data-action="delete-service" data-service-id="' + service.id + '"><i class="ri ri-delete-bin-line"></i></button>' +
-                                            '</div>' +
-                                        '</div>' +
-                                        '<ul class="list-unstyled small text-muted mb-3 d-flex flex-column gap-1">' + (metadataHtml || '') + '</ul>' +
-                                        (updated ? '<div class="mt-auto text-muted small">' + updated + '</div>' : '') +
+                            '<div class="service-row d-flex flex-column flex-md-row align-items-md-start justify-content-between">' +
+                                '<div class="flex-grow-1 pe-md-3">' +
+                                    '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                                        '<h6 class="mb-0">' + escapeHtml(service.name) + '</h6>' +
+                                        '<span class="service-price">' + escapeHtml(formatCurrency(service.base_price)) + '</span>' +
+                                    '</div>' +
+                                    '<div class="service-meta">' +
+                                        '<span><i class="ri ri-time-line"></i>' + escapeHtml(formatDuration(service.duration_min)) + '</span>' +
+                                    '</div>' +
+                                    secondaryHtml +
+                                '</div>' +
+                                '<div class="service-actions mt-3 mt-md-0">' +
+                                    '<div class="btn-group btn-group-sm">' +
+                                        '<button type="button" class="btn btn-outline-primary" data-action="edit-service" data-service-id="' + service.id + '"><i class="ri ri-edit-line"></i></button>' +
+                                        '<button type="button" class="btn btn-outline-danger" data-action="delete-service" data-service-id="' + service.id + '"><i class="ri ri-delete-bin-line"></i></button>' +
                                     '</div>' +
                                 '</div>' +
                             '</div>'
@@ -799,11 +980,11 @@
                     }).join('');
 
                     const servicesContent = servicesHtml
-                        ? '<div class="row g-3">' + servicesHtml + '</div>'
+                        ? servicesHtml
                         : '<div class="text-muted">' + escapeHtml(translations.alerts.noServices) + '</div>';
 
                     const categoryActions = group.id !== null
-                        ? '<div class="btn-group btn-group-sm">' +
+                        ? '<div class="group-actions btn-group btn-group-sm">' +
                             '<button type="button" class="btn btn-outline-primary" data-action="edit-category" data-category-id="' + group.id + '"><i class="ri ri-edit-line"></i></button>' +
                             '<button type="button" class="btn btn-outline-danger" data-action="delete-category" data-category-id="' + group.id + '"><i class="ri ri-delete-bin-line"></i></button>' +
                           '</div>'
@@ -814,18 +995,16 @@
                         : '<small class="text-muted">' + group.services_count + ' / ' + (totalInCategory || group.services_count) + '</small>';
 
                     return (
-                        '<div class="col-12">' +
-                            '<div class="card">' +
-                                '<div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-2">' +
-                                    '<div>' +
-                                        '<h5 class="mb-0">' + escapeHtml(group.name) + '</h5>' +
-                                        (subtitle ? subtitle : '') +
-                                    '</div>' +
-                                    categoryActions +
+                        '<section class="services-group-card p-4">' +
+                            '<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-3 mb-3">' +
+                                '<div>' +
+                                    '<h5 class="mb-1">' + escapeHtml(group.name) + '</h5>' +
+                                    (subtitle ? subtitle : '') +
                                 '</div>' +
-                                '<div class="card-body">' + servicesContent + '</div>' +
+                                categoryActions +
                             '</div>' +
-                        '</div>'
+                            '<div>' + servicesContent + '</div>' +
+                        '</section>'
                     );
                 }).join('');
 
