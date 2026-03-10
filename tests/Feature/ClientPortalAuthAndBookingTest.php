@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ClientPortalAuthAndBookingTest extends TestCase
@@ -185,5 +186,91 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
         $register->assertStatus(409)
             ->assertJsonPath('error.code', 'already_registered');
+    }
+
+    public function test_client_slots_support_shift_cycle_schedule(): void
+    {
+        $master = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+        ]);
+
+        $service = Service::create([
+            'user_id' => $master->id,
+            'name' => 'Color',
+            'base_price' => 2000,
+            'cost' => 600,
+            'duration_min' => 60,
+        ]);
+
+        Setting::create([
+            'user_id' => $master->id,
+            'schedule_rules' => [
+                'mode' => 'cycle',
+                'cycle' => [
+                    'anchor_date' => '2026-03-10',
+                    'work_days' => 2,
+                    'rest_days' => 2,
+                    'slots' => ['09:00', '19:00'],
+                ],
+            ],
+        ]);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Portal Client',
+            'phone' => '79990000000',
+            'email' => 'portal@example.com',
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-10')
+            ->assertOk()
+            ->assertJsonPath('data.slots.0', '09:00')
+            ->assertJsonPath('data.slots.1', '19:00');
+
+        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-12')
+            ->assertOk()
+            ->assertJsonPath('data.slots', []);
+    }
+
+    public function test_client_slots_support_custom_month_schedule_with_half_hour_slots(): void
+    {
+        $master = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+        ]);
+
+        $service = Service::create([
+            'user_id' => $master->id,
+            'name' => 'Styling',
+            'base_price' => 2500,
+            'cost' => 800,
+            'duration_min' => 30,
+        ]);
+
+        Setting::create([
+            'user_id' => $master->id,
+            'schedule_rules' => [
+                'mode' => 'monthly',
+                'monthly' => [
+                    'dates' => [
+                        '2026-03-20' => ['09:00', '15:30', '19:00'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Portal Client',
+            'phone' => '79990000001',
+            'email' => 'portal-month@example.com',
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-20')
+            ->assertOk()
+            ->assertJsonPath('data.slots.1', '15:30');
     }
 }

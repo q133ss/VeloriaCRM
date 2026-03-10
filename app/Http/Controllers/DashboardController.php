@@ -9,6 +9,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\DashboardAiService;
+use App\Services\ScheduleService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
@@ -22,6 +23,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private readonly DashboardAiService $aiService,
+        private readonly ScheduleService $scheduleService,
     ) {
     }
 
@@ -254,15 +256,7 @@ class DashboardController extends Controller
             return 0;
         }
 
-        $workHours = $setting->work_hours ?? [];
-        if (! is_array($workHours)) {
-            return 0;
-        }
-
-        $dayKey = strtolower($day->format('D'));
-        $slots = $workHours[$dayKey] ?? [];
-
-        return is_array($slots) ? count($slots) : 0;
+        return count($this->scheduleService->resolveSlotsForDate($setting, $day));
     }
 
     protected function resolveAverageRevenue(int $userId, CarbonInterface $today, string $timezone): float
@@ -533,9 +527,7 @@ class DashboardController extends Controller
     {
         $freeSlots = collect();
         if ($setting) {
-            $workHours = $setting->work_hours ?? [];
-            $dayKey = strtolower($tomorrowStart->format('D'));
-            $slots = collect($workHours[$dayKey] ?? []);
+            $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $tomorrowStart, $timezone));
             $booked = $appointmentsTomorrow
                 ->map(fn (Appointment $appt) => $appt->starts_at?->copy()->timezone($timezone)->format('H:i'))
                 ->filter();

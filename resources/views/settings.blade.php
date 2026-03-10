@@ -95,6 +95,38 @@
             background: rgba(var(--bs-warning-rgb), 0.08);
         }
 
+        .schedule-mode-card {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
+            border-radius: 1rem;
+            padding: 1rem;
+            height: 100%;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .schedule-mode-card.is-active {
+            border-color: rgba(var(--bs-primary-rgb), 0.38);
+            background: rgba(var(--bs-primary-rgb), 0.06);
+            transform: translateY(-1px);
+        }
+
+        .schedule-panel {
+            display: none;
+            padding: 1.25rem;
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb), 0.02);
+        }
+
+        .schedule-panel.is-active {
+            display: block;
+        }
+
+        .schedule-help {
+            font-size: 0.8125rem;
+            color: var(--bs-secondary-color);
+        }
+
         html[data-bs-theme="dark"] .settings-feature-card {
             background:
                 radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.18), transparent 34%),
@@ -103,6 +135,11 @@
 
         html[data-bs-theme="dark"] .settings-feature-lock {
             background: rgba(var(--bs-warning-rgb), 0.12);
+        }
+
+        html[data-bs-theme="dark"] .schedule-mode-card.is-active,
+        html[data-bs-theme="dark"] .schedule-panel {
+            background: rgba(var(--bs-primary-rgb), 0.1);
         }
     </style>
 
@@ -369,34 +406,113 @@
                             <span class="settings-meta-chip"><i class="icon-base ri ri-time-line"></i> Расписание</span>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table settings-work-table">
-                                <thead>
-                                    <tr>
-                                        <th>{{ __('settings.work_days') }}</th>
-                                        <th>{{ __('settings.from') }}</th>
-                                        <th>{{ __('settings.to') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
-                                    <tr>
-                                        <td>
-                                            <div class="form-check form-switch mt-2">
-                                                <input class="form-check-input workday-check" type="checkbox" id="workday-{{ $day }}" data-day="{{ $day }}" />
-                                                <label class="form-check-label" for="workday-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <input type="time" class="form-control workday-start" data-day="{{ $day }}" />
-                                        </td>
-                                        <td>
-                                            <input type="time" class="form-control workday-end" data-day="{{ $day }}" />
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="row g-4 mb-5">
+                            <div class="col-lg-4">
+                                <label class="schedule-mode-card d-block" for="schedule-mode-weekly" data-schedule-card="weekly">
+                                    <input class="form-check-input me-2" type="radio" name="schedule_mode" id="schedule-mode-weekly" value="weekly" checked />
+                                    <span class="fw-semibold d-block mb-1">{{ __('settings.schedule_mode_weekly') }}</span>
+                                    <span class="text-muted small">{{ __('settings.schedule_mode_weekly_hint') }}</span>
+                                </label>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="schedule-mode-card d-block" for="schedule-mode-cycle" data-schedule-card="cycle">
+                                    <input class="form-check-input me-2" type="radio" name="schedule_mode" id="schedule-mode-cycle" value="cycle" />
+                                    <span class="fw-semibold d-block mb-1">{{ __('settings.schedule_mode_cycle') }}</span>
+                                    <span class="text-muted small">{{ __('settings.schedule_mode_cycle_hint') }}</span>
+                                </label>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="schedule-mode-card d-block" for="schedule-mode-monthly" data-schedule-card="monthly">
+                                    <input class="form-check-input me-2" type="radio" name="schedule_mode" id="schedule-mode-monthly" value="monthly" />
+                                    <span class="fw-semibold d-block mb-1">{{ __('settings.schedule_mode_monthly') }}</span>
+                                    <span class="text-muted small">{{ __('settings.schedule_mode_monthly_hint') }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="schedule-panel is-active mb-5" data-schedule-panel="weekly">
+                            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-4">
+                                <div>
+                                    <h6 class="mb-1">{{ __('settings.schedule_mode_weekly') }}</h6>
+                                    <p class="text-muted mb-0">{{ __('settings.schedule_slots_hint') }}</p>
+                                </div>
+                                <span class="schedule-help">{{ __('settings.schedule_slots_example') }}</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table settings-work-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('settings.work_days') }}</th>
+                                            <th>{{ __('settings.work_hours') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
+                                        <tr>
+                                            <td class="align-middle">
+                                                <div class="form-check form-switch mt-2">
+                                                    <input class="form-check-input weekly-day-check" type="checkbox" id="weekly-day-{{ $day }}" data-day="{{ $day }}" />
+                                                    <label class="form-check-label" for="weekly-day-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control weekly-day-slots" data-day="{{ $day }}" placeholder="09:00, 10:00, 15:30, 19:00" />
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="schedule-panel mb-5" data-schedule-panel="cycle">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="date" class="form-control" id="cycle_anchor_date" />
+                                        <label for="cycle_anchor_date">{{ __('settings.schedule_cycle_anchor') }}</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="number" min="1" max="31" class="form-control" id="cycle_work_days" />
+                                        <label for="cycle_work_days">{{ __('settings.schedule_cycle_work_days') }}</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="number" min="1" max="31" class="form-control" id="cycle_rest_days" />
+                                        <label for="cycle_rest_days">{{ __('settings.schedule_cycle_rest_days') }}</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label for="cycle_slots" class="form-label fw-semibold">{{ __('settings.work_hours') }}</label>
+                                    <input type="text" class="form-control" id="cycle_slots" placeholder="09:00, 10:00, 15:30, 19:00" />
+                                    <div class="schedule-help mt-2">{{ __('settings.schedule_cycle_slots_hint') }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="schedule-panel mb-5" data-schedule-panel="monthly">
+                            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-4">
+                                <div>
+                                    <h6 class="mb-1">{{ __('settings.schedule_mode_monthly') }}</h6>
+                                    <p class="text-muted mb-0">{{ __('settings.schedule_monthly_hint') }}</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="add-monthly-row">{{ __('settings.add') }}</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table mb-0" id="monthly-schedule-table">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('settings.date') }}</th>
+                                            <th>{{ __('settings.work_hours') }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div class="mt-5">
@@ -525,6 +641,107 @@
         tr.querySelector('.remove-holiday').addEventListener('click', () => tr.remove());
         tbody.appendChild(tr);
     }
+    const scheduleDays = ['mon','tue','wed','thu','fri','sat','sun'];
+    function parseSlots(value) {
+        return Array.from(new Set(String(value || '')
+            .split(/[\n,;]+/)
+            .map(item => item.trim())
+            .filter(item => /^\d{2}:\d{2}$/.test(item)))).sort();
+    }
+    function slotsToInput(slots) {
+        return Array.isArray(slots) ? slots.join(', ') : '';
+    }
+    function toggleSchedulePanels(mode) {
+        document.querySelectorAll('[data-schedule-panel]').forEach(panel => {
+            panel.classList.toggle('is-active', panel.dataset.schedulePanel === mode);
+        });
+        document.querySelectorAll('[data-schedule-card]').forEach(card => {
+            card.classList.toggle('is-active', card.dataset.scheduleCard === mode);
+        });
+    }
+    function getSelectedScheduleMode() {
+        return document.querySelector('input[name="schedule_mode"]:checked')?.value || 'weekly';
+    }
+    function addMonthlyScheduleRow(date = '', slots = '') {
+        const tbody = document.querySelector('#monthly-schedule-table tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="date" class="form-control monthly-schedule-date" value="${date}"></td>
+            <td><input type="text" class="form-control monthly-schedule-slots" value="${slots}" placeholder="09:00, 10:00, 15:30"></td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-monthly-row">{{ __('settings.delete') }}</button></td>
+        `;
+        tr.querySelector('.remove-monthly-row').addEventListener('click', () => tr.remove());
+        tbody.appendChild(tr);
+    }
+    function populateWeeklySchedule(weekly = {}) {
+        scheduleDays.forEach(day => {
+            const check = document.getElementById('weekly-day-' + day);
+            const slotsInput = document.querySelector(`.weekly-day-slots[data-day="${day}"]`);
+            const dayRules = weekly?.[day] || {};
+            const slots = Array.isArray(dayRules.slots) ? dayRules.slots : [];
+            check.checked = Boolean(dayRules.enabled) || slots.length > 0;
+            slotsInput.value = slotsToInput(slots);
+        });
+    }
+    function populateCycleSchedule(cycle = {}) {
+        document.getElementById('cycle_anchor_date').value = cycle.anchor_date || '';
+        document.getElementById('cycle_work_days').value = cycle.work_days || 2;
+        document.getElementById('cycle_rest_days').value = cycle.rest_days || 2;
+        document.getElementById('cycle_slots').value = slotsToInput(cycle.slots || []);
+    }
+    function populateMonthlySchedule(monthly = {}) {
+        const tbody = document.querySelector('#monthly-schedule-table tbody');
+        tbody.innerHTML = '';
+        const entries = Object.entries(monthly?.dates || {});
+        if (!entries.length) {
+            addMonthlyScheduleRow();
+            return;
+        }
+        entries.forEach(([date, slots]) => addMonthlyScheduleRow(date, slotsToInput(slots)));
+    }
+    function collectScheduleRules() {
+        const weekly = {};
+        scheduleDays.forEach(day => {
+            const enabled = document.getElementById('weekly-day-' + day).checked;
+            const slots = parseSlots(document.querySelector(`.weekly-day-slots[data-day="${day}"]`).value);
+            weekly[day] = { enabled: enabled && slots.length > 0, slots: enabled ? slots : [] };
+        });
+        const monthlyDates = {};
+        document.querySelectorAll('#monthly-schedule-table tbody tr').forEach(row => {
+            const date = row.querySelector('.monthly-schedule-date')?.value || '';
+            const slots = parseSlots(row.querySelector('.monthly-schedule-slots')?.value || '');
+            if (date && slots.length) {
+                monthlyDates[date] = slots;
+            }
+        });
+        return {
+            mode: getSelectedScheduleMode(),
+            weekly,
+            cycle: {
+                anchor_date: document.getElementById('cycle_anchor_date').value || '',
+                work_days: parseInt(document.getElementById('cycle_work_days').value || '2', 10),
+                rest_days: parseInt(document.getElementById('cycle_rest_days').value || '2', 10),
+                slots: parseSlots(document.getElementById('cycle_slots').value || ''),
+            },
+            monthly: {
+                dates: monthlyDates,
+            },
+        };
+    }
+    function buildLegacyScheduleFromRules(scheduleRules) {
+        const work_days = [];
+        const work_hours = {};
+        const weekly = scheduleRules?.weekly || {};
+        scheduleDays.forEach(day => {
+            const dayRules = weekly[day] || {};
+            const slots = Array.isArray(dayRules.slots) ? dayRules.slots : [];
+            if (dayRules.enabled && slots.length) {
+                work_days.push(day);
+                work_hours[day] = slots;
+            }
+        });
+        return { work_days, work_hours };
+    }
     async function loadSettings() {
         const res = await fetch('/api/v1/settings', { headers: authHeaders(), credentials: 'include' });
         if(!res.ok) return;
@@ -569,21 +786,15 @@
         if (dailyIdeasPreferences) {
             dailyIdeasPreferences.value = dailyIdeasFeature.preferences || '';
         }
-        const days = ['mon','tue','wed','thu','fri','sat','sun'];
-        days.forEach(day=>{
-            const check = document.getElementById('workday-'+day);
-            const start = document.querySelector(`input.workday-start[data-day="${day}"]`);
-            const end = document.querySelector(`input.workday-end[data-day="${day}"]`);
-            check.checked = (data.settings.work_days || []).includes(day);
-            const hours = data.settings.work_hours?.[day] || [];
-            if(hours.length){
-                start.value = hours[0];
-                end.value = hours[hours.length-1];
-            } else {
-                start.value = '';
-                end.value = '';
-            }
-        });
+        const scheduleRules = data.settings.schedule_rules || {};
+        const modeInput = document.querySelector(`input[name="schedule_mode"][value="${scheduleRules.mode || 'weekly'}"]`);
+        if (modeInput) {
+            modeInput.checked = true;
+        }
+        toggleSchedulePanels(scheduleRules.mode || 'weekly');
+        populateWeeklySchedule(scheduleRules.weekly || {});
+        populateCycleSchedule(scheduleRules.cycle || {});
+        populateMonthlySchedule(scheduleRules.monthly || {});
         const holidaysBody = document.querySelector('#holidays-table tbody');
         holidaysBody.innerHTML = '';
         (data.settings.holidays || []).forEach(date => addHolidayRow(date.split('T')[0]));
@@ -597,6 +808,11 @@
     }
     loadSettings();
     document.getElementById('add-holiday').addEventListener('click', () => addHolidayRow());
+    document.getElementById('add-monthly-row').addEventListener('click', () => addMonthlyScheduleRow());
+    document.querySelectorAll('input[name="schedule_mode"]').forEach(input => {
+        input.addEventListener('change', () => toggleSchedulePanels(input.value));
+    });
+    toggleSchedulePanels(getSelectedScheduleMode());
 
     function showMessage(type, text){
         const container = document.getElementById('form-messages');
@@ -663,28 +879,12 @@
             map_point: {
                 lat: form['map_point[lat]'].value,
                 lng: form['map_point[lng]'].value,
-            }
+            },
+            schedule_rules: collectScheduleRules(),
         };
-        const days=['mon','tue','wed','thu','fri','sat','sun'];
-        payload.work_days=[];
-        payload.work_hours={};
-        days.forEach(day=>{
-            const check=document.getElementById('workday-'+day);
-            const start=document.querySelector(`input.workday-start[data-day="${day}"]`).value;
-            const end=document.querySelector(`input.workday-end[data-day="${day}"]`).value;
-            if(check.checked){
-                payload.work_days.push(day);
-                if(start && end){
-                    let s=parseInt(start.split(':')[0]);
-                    let e=parseInt(end.split(':')[0]);
-                    let arr=[];
-                    for(let h=s; h<=e; h++){
-                        arr.push(String(h).padStart(2,'0')+':00');
-                    }
-                    payload.work_hours[day]=arr;
-                }
-            }
-        });
+        const legacySchedule = buildLegacyScheduleFromRules(payload.schedule_rules);
+        payload.work_days = legacySchedule.work_days;
+        payload.work_hours = legacySchedule.work_hours;
         if(form.new_password.value){
             payload.current_password = form.current_password.value;
             payload.new_password = form.new_password.value;

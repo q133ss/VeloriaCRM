@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateIntegrationsRequest;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
+use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -13,11 +14,17 @@ use App\Models\User;
 
 class SettingController extends Controller
 {
+    public function __construct(
+        private readonly ScheduleService $scheduleService,
+    ) {
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
         $settings = $user->setting ?? new Setting(['notification_prefs' => []]);
         $hasEliteAccess = $this->userHasEliteAccess($user);
+        $schedulePayload = $this->scheduleService->buildSettingsPayload($settings);
 
         return response()->json([
             'user' => [
@@ -33,8 +40,9 @@ class SettingController extends Controller
             'settings' => [
                 'notifications' => $settings->notification_prefs ?? [],
                 'integrations' => $this->integrationPayload($settings),
-                'work_days' => $settings->work_days,
-                'work_hours' => $settings->work_hours,
+                'work_days' => $schedulePayload['work_days'],
+                'work_hours' => $schedulePayload['work_hours'],
+                'schedule_rules' => $schedulePayload['schedule_rules'],
                 'holidays' => $user->holidays()->pluck('date')->map(fn ($d) => Carbon::parse($d)->toDateString()),
                 'address' => $settings->address,
                 'map_point' => $settings->map_point,
@@ -82,10 +90,18 @@ class SettingController extends Controller
             $user->save();
         }
 
+        $normalizedScheduleRules = $this->scheduleService->normalizeRules(
+            $data['schedule_rules'] ?? null,
+            $data['work_days'] ?? [],
+            $data['work_hours'] ?? [],
+        );
+        $legacySchedule = $this->scheduleService->deriveLegacyFields($normalizedScheduleRules);
+
         $settingsAttributes = [
             'notification_prefs' => $data['notifications'] ?? [],
-            'work_days' => $data['work_days'] ?? [],
-            'work_hours' => $data['work_hours'] ?? [],
+            'work_days' => $legacySchedule['work_days'],
+            'work_hours' => $legacySchedule['work_hours'],
+            'schedule_rules' => $normalizedScheduleRules,
             'address' => $data['address'] ?? null,
             'map_point' => $data['map_point'] ?? null,
             'reminder_message' => $data['reminder_message'] ?? null,

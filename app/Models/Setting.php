@@ -13,6 +13,7 @@ class Setting extends Model
         'user_id',
         'work_days',
         'work_hours',
+        'schedule_rules',
         'cancel_policy',
         'deposit_policy',
         'notification_prefs',
@@ -45,6 +46,7 @@ class Setting extends Model
         return [
             'work_days' => 'array',
             'work_hours' => 'array',
+            'schedule_rules' => 'array',
             'cancel_policy' => 'array',
             'deposit_policy' => 'array',
             'notification_prefs' => 'array',

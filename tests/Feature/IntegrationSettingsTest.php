@@ -124,4 +124,45 @@ class IntegrationSettingsTest extends TestCase
             'reminder_message' => 'Preserved reminder',
         ]);
     }
+
+    public function test_settings_update_persists_schedule_rules_and_legacy_weekly_fields(): void
+    {
+        $user = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->patchJson('/api/v1/settings', [
+            'name' => 'Planner',
+            'email' => 'planner@example.com',
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+            'notifications' => [
+                'email' => true,
+                'telegram' => false,
+                'sms' => false,
+            ],
+            'schedule_rules' => [
+                'mode' => 'weekly',
+                'weekly' => [
+                    'mon' => ['enabled' => true, 'slots' => ['09:00', '15:30']],
+                    'tue' => ['enabled' => false, 'slots' => []],
+                    'wed' => ['enabled' => true, 'slots' => ['10:00']],
+                ],
+            ],
+            'holidays' => [],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('settings.schedule_rules.mode', 'weekly')
+            ->assertJsonPath('settings.schedule_rules.weekly.mon.slots.1', '15:30');
+
+        $setting = $user->fresh()->setting;
+
+        $this->assertSame(['mon', 'wed'], $setting->work_days);
+        $this->assertSame(['09:00', '15:30'], $setting->work_hours['mon']);
+        $this->assertSame('weekly', $setting->schedule_rules['mode']);
+    }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\CalendarDayRequest;
 use App\Http\Requests\CalendarEventRequest;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Services\ScheduleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -14,15 +15,10 @@ use Illuminate\Support\Facades\Auth;
 
 class CalendarController extends Controller
 {
-    private const ISO_DAY_MAP = [
-        1 => 'mon',
-        2 => 'tue',
-        3 => 'wed',
-        4 => 'thu',
-        5 => 'fri',
-        6 => 'sat',
-        7 => 'sun',
-    ];
+    public function __construct(
+        private readonly ScheduleService $scheduleService,
+    ) {
+    }
 
     public function events(CalendarEventRequest $request): JsonResponse
     {
@@ -65,9 +61,9 @@ class CalendarController extends Controller
             ->get();
 
         $settings = $this->resolveUserSettings($userId);
-        $weekdayKey = self::ISO_DAY_MAP[$date->isoWeekday()] ?? null;
-        $workHours = $weekdayKey ? Arr::get($settings?->work_hours ?? [], $weekdayKey, []) : [];
-        $isWorkingDay = $weekdayKey ? in_array($weekdayKey, $settings?->work_days ?? [], true) : false;
+        $timezone = Auth::guard('sanctum')->user()?->timezone ?? config('app.timezone');
+        $resolvedSlots = collect($this->scheduleService->resolveSlotsForDate($settings, $date, $timezone));
+        $isWorkingDay = $resolvedSlots->isNotEmpty();
 
         $busySlots = $orders
             ->filter(fn (Order $order) => $order->scheduled_at !== null)
@@ -75,11 +71,9 @@ class CalendarController extends Controller
             ->unique()
             ->values();
 
-        $availableSlots = $weekdayKey && $workHours
-            ? collect($workHours)
-                ->filter(fn ($slot) => ! $busySlots->contains($slot))
-                ->values()
-            : collect();
+        $availableSlots = $resolvedSlots
+            ->filter(fn ($slot) => ! $busySlots->contains($slot))
+            ->values();
 
         return response()->json([
             'data' => [

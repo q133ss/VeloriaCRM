@@ -6,11 +6,16 @@ use App\Models\Appointment;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use App\Services\ScheduleService;
 
 class AvailabilityService
 {
+    public function __construct(
+        private readonly ScheduleService $scheduleService,
+    ) {
+    }
+
     /**
      * @return array<int, string> list of HH:MM slots
      */
@@ -25,13 +30,9 @@ class AvailabilityService
         $setting = $setting ?: Setting::query()->where('user_id', $masterId)->first();
 
         $day = Carbon::parse($date, $timezone)->startOfDay();
-        $dayKey = strtolower($day->format('D'));
         $serviceDuration = (int) ($service->duration_min ?? 60);
 
-        $workHours = $setting?->work_hours ?? [];
-        $slots = collect(is_array($workHours) ? Arr::get($workHours, $dayKey, []) : [])
-            ->filter(fn ($slot) => is_string($slot) && preg_match('/^\\d{2}:\\d{2}$/', $slot))
-            ->values();
+        $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $day, $timezone));
 
         if ($slots->isEmpty()) {
             return [];
@@ -70,7 +71,7 @@ class AvailabilityService
             }
 
             $duration = collect($order->services ?? [])
-                ->sum(fn ($item) => (int) Arr::get($item, 'duration', 0));
+                ->sum(fn ($item) => (int) data_get($item, 'duration', 0));
             $duration = $duration > 0 ? $duration : 60;
 
             $busy->push([
@@ -100,4 +101,3 @@ class AvailabilityService
         })->values()->all();
     }
 }
-
