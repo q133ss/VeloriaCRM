@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Models\Setting;
+use App\Models\User;
 use App\Services\DashboardAiService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -185,7 +186,12 @@ class DashboardController extends Controller
             'top_services' => $topServices->map(fn (array $service) => Arr::only($service, ['id', 'name', 'margin_per_hour']))->all(),
         ];
 
-        $aiSuggestions = $this->aiService->suggestions($user->id, $todayStart, $aiContext);
+        $hasEliteAccess = $this->userHasEliteAccess($user);
+        $activePlan = $this->activePlanSlug($user);
+
+        $aiSuggestions = $hasEliteAccess
+            ? $this->aiService->suggestions($user->id, $todayStart, $aiContext)
+            : [];
         $dailyTip = $this->aiService->dailyTip($user->id, $todayStart, [
             'metrics' => $aiContext['metrics'],
             'top_services' => $aiContext['top_services'],
@@ -207,7 +213,39 @@ class DashboardController extends Controller
             'servicesInsight' => $servicesInsight,
             'topClients' => $topClients,
             'dailyTip' => $dailyTip,
+            'aiAccess' => [
+                'available' => $hasEliteAccess,
+                'current_plan' => $activePlan,
+                'required_plan' => 'elite',
+                'upgrade_url' => url('/subscription'),
+            ],
         ]);
+    }
+
+    protected function userHasEliteAccess(User $user): bool
+    {
+        return $user->plans()
+            ->whereIn('plans.name', ['elite', 'Elite', 'ELITE'])
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->exists();
+    }
+
+    protected function activePlanSlug(User $user): string
+    {
+        $plan = $user->plans()
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->orderByDesc('plan_user.created_at')
+            ->first();
+
+        return strtolower((string) ($plan?->slug ?: 'lite'));
     }
 
     protected function resolveCapacity(?Setting $setting, CarbonInterface $day): int
