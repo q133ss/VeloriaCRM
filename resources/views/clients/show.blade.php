@@ -184,13 +184,70 @@
             padding-top: 1rem;
         }
 
+        .client-show-page .client-lock-card {
+            display: grid;
+            gap: 1rem;
+            align-items: center;
+            padding: 1.15rem;
+            border-radius: 1.2rem;
+            border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), transparent 34%),
+                rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.6);
+        }
+
+        .client-show-page .client-lock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
+            color: var(--bs-primary);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .client-show-page .client-lock-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
+            gap: 1rem;
+        }
+
+        .client-show-page .client-lock-preview {
+            display: grid;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .client-show-page .client-lock-preview-pill {
+            min-height: 2.8rem;
+            border-radius: 0.9rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.05);
+        }
+
         .client-show-page .soft-hidden {
             display: none;
+        }
+
+        html[data-bs-theme="dark"] .client-show-page .client-lock-card {
+            background: rgba(20, 23, 34, 0.84);
+        }
+
+        html[data-bs-theme="dark"] .client-show-page .client-lock-preview,
+        html[data-bs-theme="dark"] .client-show-page .client-lock-preview-pill {
+            background: rgba(255, 255, 255, 0.03);
         }
 
         @media (max-width: 991.98px) {
             .client-show-page .meta-grid,
             .client-show-page .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .client-show-page .client-lock-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -305,7 +362,7 @@
                                 <h2 class="h5 mb-0">Статистика по визитам</h2>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="client-analytics-btn">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="client-analytics-btn" hidden>
                                     <i class="ri ri-bar-chart-line me-1"></i>
                                     Аналитика
                                 </button>
@@ -339,6 +396,26 @@
                         <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
                             <h2 class="h5 mb-0">Рекомендации ИИ</h2>
                             <span class="badge bg-label-secondary" id="client-ai-badge">ИИ</span>
+                        </div>
+                        <div class="client-lock-card" id="client-ai-lock" hidden>
+                            <div class="client-lock-grid">
+                                <div>
+                                    <span class="client-lock-badge">
+                                        <i class="ri ri-vip-crown-line"></i>
+                                        {{ __('analytics.smart_lock.badge') }}
+                                    </span>
+                                    <h3 class="h5 mt-3 mb-2">{{ __('analytics.smart_lock.title') }}</h3>
+                                    <p class="text-muted mb-3">{{ __('analytics.smart_lock.description') }}</p>
+                                    <a href="{{ url('/subscription') }}" class="btn btn-primary">
+                                        {{ __('analytics.smart_lock.cta') }}
+                                    </a>
+                                </div>
+                                <div class="client-lock-preview" aria-hidden="true">
+                                    <div class="client-lock-preview-pill"></div>
+                                    <div class="client-lock-preview-pill"></div>
+                                    <div class="client-lock-preview-pill"></div>
+                                </div>
+                            </div>
                         </div>
                         <details class="surface-collapse" id="client-ai-details">
                             <summary class="text-muted small">Показываем только то, что может помочь с удержанием и апсейлом.</summary>
@@ -439,6 +516,7 @@
             const personalizationDetails = document.getElementById('client-personalization-details');
             const personalizationHint = document.getElementById('client-personalization-hint');
             const aiDetails = document.getElementById('client-ai-details');
+            const aiLock = document.getElementById('client-ai-lock');
             const editLink = document.getElementById('client-edit-link');
             const reminderButton = document.getElementById('client-reminder-btn');
             const analyticsButton = document.getElementById('client-analytics-btn');
@@ -732,9 +810,9 @@
                     return;
                 }
 
-                if (!clientMeta.has_pro_access) {
+                if (!clientMeta.has_elite_access) {
                     if (aiBadge) {
-                        aiBadge.textContent = 'PRO';
+                        aiBadge.textContent = 'Elite';
                         aiBadge.className = 'badge bg-label-secondary';
                     }
                     recommendationsContainer.innerHTML = '<p class="text-muted mb-0">Доступно только в тарифах PRO и Elite.</p>';
@@ -861,7 +939,7 @@
                     return;
                 }
 
-                if (!clientMeta.has_pro_access) {
+                if (!clientMeta.has_elite_access) {
                     analyticsContent.innerHTML = '<p class="text-muted mb-0">Аналитика доступна только в тарифах PRO и Elite.</p>';
                     return;
                 }
@@ -885,7 +963,7 @@
             }
 
             async function loadAnalytics() {
-                if (!clientMeta.has_pro_access || analyticsLoading || analyticsLoaded) {
+                if (!clientMeta.has_elite_access || analyticsLoading || analyticsLoaded) {
                     renderAnalyticsModal();
                     return;
                 }
@@ -919,7 +997,7 @@
             }
 
             async function loadRecommendations() {
-                if (!clientMeta.has_pro_access || recommendationsLoading || recommendationsLoaded) {
+                if (!clientMeta.has_elite_access || recommendationsLoading || recommendationsLoaded) {
                     return;
                 }
 
@@ -1022,10 +1100,19 @@
                 if (aiDetails) {
                     aiDetails.open = false;
                 }
+                if (analyticsButton) {
+                    analyticsButton.hidden = !clientMeta.has_elite_access;
+                }
+                if (aiDetails) {
+                    aiDetails.hidden = !clientMeta.has_elite_access;
+                }
+                if (aiLock) {
+                    aiLock.hidden = !!clientMeta.has_elite_access;
+                }
                 renderStatistics(clientMeta.statistics || null);
                 renderRisk(clientMeta.risk || null);
 
-                if (clientMeta.has_pro_access) {
+                if (clientMeta.has_elite_access) {
                     loadRecommendations();
                 } else {
                     renderRecommendations([]);
@@ -1075,9 +1162,12 @@
 
             if (analyticsButton && analyticsModal) {
                 analyticsButton.addEventListener('click', function () {
+                    if (!clientMeta.has_elite_access) {
+                        return;
+                    }
                     renderAnalyticsModal();
                     analyticsModal.show();
-                    if (clientMeta.has_pro_access && !analyticsLoaded) {
+                    if (clientMeta.has_elite_access && !analyticsLoaded) {
                         loadAnalytics();
                     }
                 });

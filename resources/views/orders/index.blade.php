@@ -760,6 +760,21 @@
             }
         }
 
+        function applyQuickClientDraft(client) {
+            setQuickClientSelection(null);
+
+            if (quickClientPhoneInput) {
+                quickClientPhoneInput.value = client.phone || '';
+            }
+
+            if (quickClientNameInput) {
+                quickClientNameInput.value = client.name || '';
+            }
+
+            clearQuickClientSuggestions();
+            clearQuickClientResults();
+        }
+
         function renderQuickClientResults(items, title = 'Клиенты') {
             if (!quickClientResults) {
                 return;
@@ -790,7 +805,12 @@
                     <span class="small text-muted text-end">${item.last_visit_at_formatted || ''}</span>
                 `;
                 button.addEventListener('click', () => {
-                    setQuickClientSelection(item);
+                    if (item.id) {
+                        setQuickClientSelection(item);
+                    } else {
+                        applyQuickClientDraft(item);
+                    }
+
                     if (quickClientSearchInput) {
                         quickClientSearchInput.value = item.name || item.phone || '';
                     }
@@ -862,15 +882,7 @@
                             quickClientSearchInput.value = item.name || item.phone || '';
                         }
                     } else {
-                        if (quickClientPhoneInput) {
-                            quickClientPhoneInput.value = item.phone || '';
-                            quickClientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            quickClientPhoneInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-
-                        if (quickClientNameInput) {
-                            quickClientNameInput.value = item.name || '';
-                        }
+                        applyQuickClientDraft(item);
                     }
 
                     clearQuickClientSuggestions();

@@ -133,6 +133,7 @@ class ClientController extends Controller
                 'loyalty_levels' => Client::loyaltyLevels(),
                 'statistics' => $this->buildClientStatistics($client),
                 'has_pro_access' => $this->userHasProAccess(),
+                'has_elite_access' => $this->userHasEliteAccess(),
                 'risk' => $this->calculateNoShowRisk($client),
             ],
         ]);
@@ -142,7 +143,7 @@ class ClientController extends Controller
     {
         $this->ensureClientBelongsToCurrentUser($client);
 
-        if (! $this->userHasProAccess()) {
+        if (! $this->userHasEliteAccess()) {
             return response()->json([
                 'error' => [
                     'code' => 'feature_unavailable',
@@ -202,7 +203,7 @@ class ClientController extends Controller
     {
         $this->ensureClientBelongsToCurrentUser($client);
 
-        if (! $this->userHasProAccess()) {
+        if (! $this->userHasEliteAccess()) {
             return response()->json([
                 'error' => [
                     'code' => 'feature_unavailable',
@@ -1513,6 +1514,24 @@ PROMPT;
 
         return $user->plans()
             ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->exists();
+    }
+
+    protected function userHasEliteAccess(): bool
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->plans()
+            ->whereIn('name', ['elite', 'Elite', 'ELITE'])
             ->where(function ($query) {
                 $query
                     ->whereNull('plan_user.ends_at')

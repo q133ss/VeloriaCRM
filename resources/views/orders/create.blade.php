@@ -841,6 +841,22 @@
             updateProgressState();
         }
 
+        function applyClientDraft(client) {
+            setClientSelection(null);
+
+            if (clientPhoneInput) {
+                clientPhoneInput.value = client.phone || '';
+            }
+
+            if (clientNameInput) {
+                clientNameInput.value = client.name || '';
+            }
+
+            clearClientSuggestions();
+            clearClientResults();
+            updateProgressState();
+        }
+
         function renderClientResults(items, title = 'Клиентки') {
             if (!clientResults) {
                 return;
@@ -871,7 +887,12 @@
                     <span class="small text-muted text-end">${item.last_visit_at_formatted || ''}</span>
                 `;
                 button.addEventListener('click', () => {
-                    setClientSelection(item);
+                    if (item.id) {
+                        setClientSelection(item);
+                    } else {
+                        applyClientDraft(item);
+                    }
+
                     if (clientSearchInput) {
                         clientSearchInput.value = item.name || item.phone || '';
                     }
@@ -937,15 +958,7 @@
                             clientSearchInput.value = item.name || item.phone || '';
                         }
                     } else {
-                        if (clientPhoneInput) {
-                            clientPhoneInput.value = item.phone || '';
-                            clientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            clientPhoneInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-
-                        if (clientNameInput && !clientNameInput.matches(':focus')) {
-                            clientNameInput.value = item.name || '';
-                        }
+                        applyClientDraft(item);
                     }
 
                     clearClientSuggestions();

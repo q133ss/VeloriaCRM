@@ -743,7 +743,7 @@ class OrderController extends Controller
 
     protected function buildRecentClients(int $limit = 6): Collection
     {
-        return Order::query()
+        $recentFromOrders = Order::query()
             ->with('client')
             ->where('master_id', $this->currentUserId())
             ->whereNotNull('client_id')
@@ -751,8 +751,17 @@ class OrderController extends Controller
             ->get()
             ->filter(fn (Order $order) => $order->client !== null)
             ->unique('client_id')
-            ->take($limit)
             ->map(fn (Order $order) => $this->transformSelectableClient($order->client, $order->scheduled_at));
+
+        $recentProfiles = Client::query()
+            ->where('user_id', $this->currentUserId())
+            ->orderByDesc('last_visit_at')
+            ->latest('updated_at')
+            ->limit($limit * 2)
+            ->get()
+            ->map(fn (Client $client) => $this->transformClientProfile($client));
+
+        return $this->mergeSelectableClients($recentFromOrders, $recentProfiles, $limit);
     }
 
     protected function searchSelectableClients(string $search, int $limit = 8): Collection
@@ -765,7 +774,7 @@ class OrderController extends Controller
 
         $digits = preg_replace('/[^0-9]+/', '', $search);
 
-        return Order::query()
+        $matchedFromOrders = Order::query()
             ->with('client')
             ->where('master_id', $this->currentUserId())
             ->whereNotNull('client_id')
@@ -784,8 +793,25 @@ class OrderController extends Controller
             ->get()
             ->filter(fn (Order $order) => $order->client !== null)
             ->unique('client_id')
-            ->take($limit)
             ->map(fn (Order $order) => $this->transformSelectableClient($order->client, $order->scheduled_at));
+
+        $matchedProfiles = Client::query()
+            ->where('user_id', $this->currentUserId())
+            ->where(function ($query) use ($search, $digits) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+
+                if ($digits !== '') {
+                    $query->orWhere('phone', 'like', '%' . $digits . '%');
+                }
+            })
+            ->orderBy('name')
+            ->limit($limit * 2)
+            ->get()
+            ->map(fn (Client $client) => $this->transformClientProfile($client));
+
+        return $this->mergeSelectableClients($matchedFromOrders, $matchedProfiles, $limit);
     }
 
     protected function findSelectableClient(int $clientId): ?User
@@ -812,6 +838,63 @@ class OrderController extends Controller
             'last_visit_at' => $lastVisitAt?->toIso8601String(),
             'last_visit_at_formatted' => $lastVisitAt?->format('d.m.Y H:i'),
         ];
+    }
+
+    protected function transformClientProfile(Client $client): array
+    {
+        return [
+            'id' => null,
+            'name' => $client->name,
+            'phone' => $client->phone,
+            'email' => $client->email,
+            'last_visit_at' => $client->last_visit_at?->toIso8601String(),
+            'last_visit_at_formatted' => $client->last_visit_at?->format('d.m.Y H:i'),
+        ];
+    }
+
+    protected function mergeSelectableClients(Collection $primary, Collection $secondary, int $limit): Collection
+    {
+        $merged = collect();
+
+        foreach ([$primary, $secondary] as $items) {
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $key = $this->selectableClientKey($item);
+                $existing = $merged->get($key);
+
+                if ($existing === null || (empty($existing['id']) && ! empty($item['id']))) {
+                    $merged->put($key, $item);
+                }
+            }
+        }
+
+        return $merged->values()->take($limit);
+    }
+
+    protected function selectableClientKey(array $client): string
+    {
+        $phone = trim((string) ($client['phone'] ?? ''));
+        if ($phone !== '') {
+            return 'phone:' . $this->normalizePhone($phone);
+        }
+
+        $email = trim((string) ($client['email'] ?? ''));
+        if ($email !== '') {
+            return 'email:' . Str::lower($email);
+        }
+
+        if (! empty($client['id'])) {
+            return 'id:' . $client['id'];
+        }
+
+        return 'fallback:' . md5(json_encode([
+            $client['name'] ?? null,
+            $client['phone'] ?? null,
+            $client['email'] ?? null,
+        ]));
     }
 
     protected function collectServices(array $serviceIds)
