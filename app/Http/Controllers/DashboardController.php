@@ -61,6 +61,9 @@ class DashboardController extends Controller
             : collect();
 
         $setting = Setting::where('user_id', $user->id)->first();
+        $clientCount = Client::where('user_id', $user->id)->count();
+        $serviceCount = Service::where('user_id', $user->id)->count();
+        $scheduleConfigured = $this->hasConfiguredSchedule($setting);
 
         $appointmentsToday = $appointments->filter(fn (Appointment $appt) => $this->isWithinDay($appt->starts_at, $todayStart, $todayEnd));
         $appointmentsTomorrow = $appointments->filter(fn (Appointment $appt) => $this->isWithinDay($appt->starts_at, $tomorrowStart, $tomorrowEnd));
@@ -221,6 +224,43 @@ class DashboardController extends Controller
                 'required_plan' => 'elite',
                 'upgrade_url' => url('/subscription'),
             ],
+            'onboarding' => [
+                'user_id' => $user->id,
+                'schedule_configured' => $scheduleConfigured,
+                'service_count' => $serviceCount,
+                'client_count' => $clientCount,
+                'completed_steps' => collect([
+                    $scheduleConfigured,
+                    $serviceCount > 0,
+                    $clientCount > 0,
+                ])->filter()->count(),
+                'steps' => [
+                    [
+                        'key' => 'schedule',
+                        'title' => 'График работы',
+                        'description' => 'Укажите дни и часы, когда вы принимаете клиентов.',
+                        'href' => route('settings') . '#settings-work',
+                        'cta' => 'Заполнить график',
+                        'completed' => $scheduleConfigured,
+                    ],
+                    [
+                        'key' => 'services',
+                        'title' => 'Услуги',
+                        'description' => 'Добавьте процедуры и цены, чтобы можно было сразу оформлять запись.',
+                        'href' => route('services.index'),
+                        'cta' => 'Добавить услугу',
+                        'completed' => $serviceCount > 0,
+                    ],
+                    [
+                        'key' => 'clients',
+                        'title' => 'Клиенты',
+                        'description' => 'Сохраните первого клиента, чтобы не держать всё в заметках.',
+                        'href' => route('clients.create'),
+                        'cta' => 'Добавить клиента',
+                        'completed' => $clientCount > 0,
+                    ],
+                ],
+            ],
         ]);
     }
 
@@ -257,6 +297,33 @@ class DashboardController extends Controller
         }
 
         return count($this->scheduleService->resolveSlotsForDate($setting, $day));
+    }
+
+    protected function hasConfiguredSchedule(?Setting $setting): bool
+    {
+        if (! $setting) {
+            return false;
+        }
+
+        $payload = $this->scheduleService->buildSettingsPayload($setting);
+        $rules = $payload['schedule_rules'] ?? [];
+        $weekly = $rules['weekly'] ?? [];
+        $cycle = $rules['cycle'] ?? [];
+        $monthly = $rules['monthly'] ?? [];
+
+        $hasWeeklySlots = collect($weekly)->contains(function ($dayRules) {
+            return ! empty($dayRules['enabled']) && ! empty($dayRules['slots']);
+        });
+
+        if ($hasWeeklySlots) {
+            return true;
+        }
+
+        if (! empty($cycle['slots'])) {
+            return true;
+        }
+
+        return ! empty($monthly['dates']);
     }
 
     protected function resolveAverageRevenue(int $userId, CarbonInterface $today, string $timezone): float

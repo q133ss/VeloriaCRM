@@ -137,9 +137,73 @@
             background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
         }
 
+        .client-create-page .step-card details {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .client-create-page .step-card summary {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            list-style: none;
+            font-weight: 700;
+        }
+
+        .client-create-page .step-card summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .client-create-page .step-card summary::before {
+            content: '';
+            width: 0.65rem;
+            height: 0.65rem;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: rotate(-45deg);
+            transition: transform 0.2s ease;
+            opacity: 0.7;
+            margin-left: 0.2rem;
+        }
+
+        .client-create-page .step-card details[open] summary::before {
+            transform: rotate(45deg);
+        }
+
+        .client-create-page .profile-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .client-create-page .profile-grid .profile-email-block {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .client-create-page .profile-grid .form-text {
+            margin-top: 0;
+            padding-left: 0.1rem;
+        }
+
         @media (max-width: 1199.98px) {
             .client-create-page .summary-card {
                 position: static;
+            }
+
+            .client-create-page .profile-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .client-create-page .profile-grid .profile-email-block {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .client-create-page .profile-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -197,32 +261,33 @@
                                         <label for="client-phone">Телефон</label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="email" class="form-control" id="client-email" name="email" placeholder="email@example.com" />
-                                        <label for="client-email">Email</label>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <div class="step-card">
                             <details>
                                 <summary class="fw-semibold" style="cursor: pointer;">2. Профиль клиента</summary>
-                                <div class="row g-3 pt-3">
-                                    <div class="col-md-4">
+                                <div class="profile-grid pt-2">
+                                    <div class="profile-email-block">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="email" class="form-control" id="client-email" name="email" placeholder="email@example.com" />
+                                            <label for="client-email">Email</label>
+                                        </div>
+                                        <div class="form-text">Если email не нужен сейчас, оставьте поле пустым.</div>
+                                    </div>
+                                    <div>
                                         <div class="form-floating form-floating-outline">
                                             <input type="date" class="form-control" id="client-birthday" name="birthday" />
                                             <label for="client-birthday">День рождения</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div>
                                         <div class="form-floating form-floating-outline">
                                             <input type="datetime-local" class="form-control" id="client-last-visit" name="last_visit_at" />
                                             <label for="client-last-visit">Последний визит</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div>
                                         <div class="form-floating form-floating-outline">
                                             <select class="form-select" id="client-loyalty" name="loyalty_level"></select>
                                             <label for="client-loyalty">Уровень лояльности</label>

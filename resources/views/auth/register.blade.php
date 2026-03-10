@@ -316,6 +316,12 @@ document.getElementById('formAuthentication').addEventListener('submit', async f
     if (result.token) {
         document.cookie = 'token=' + result.token + '; path=/';
     }
+    try {
+        window.localStorage.setItem('veloria:onboarding:pending', JSON.stringify({
+            source: 'register',
+            at: Date.now()
+        }));
+    } catch (error) {}
     window.location.href = '/dashboard';
 });
 </script>

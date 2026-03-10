@@ -339,6 +339,261 @@
                 var(--bs-card-bg);
         }
 
+        .dashboard-onboarding-card {
+            border: 0;
+            border-radius: 1.5rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 36%),
+                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
+            box-shadow: 0 1.25rem 2.5rem -2rem rgba(17, 24, 39, 0.28);
+        }
+
+        .dashboard-onboarding-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .dashboard-onboarding-copy {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .dashboard-onboarding-copy h2 {
+            margin-bottom: 0;
+            font-size: 1.35rem;
+        }
+
+        .dashboard-onboarding-copy p {
+            margin-bottom: 0;
+            color: var(--bs-secondary-color);
+        }
+
+        .dashboard-onboarding-progress {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .dashboard-onboarding-progress-bar {
+            width: 100%;
+            height: 0.65rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-color-rgb), 0.08);
+            overflow: hidden;
+        }
+
+        .dashboard-onboarding-progress-bar span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, rgba(var(--bs-primary-rgb), 0.62), rgba(var(--bs-primary-rgb), 1));
+        }
+
+        .dashboard-onboarding-progress-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .dashboard-onboarding-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .dashboard-onboarding-item {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 0.9rem;
+            align-items: center;
+            padding: 0.95rem 1rem;
+            border-radius: 1.1rem;
+            background: rgba(var(--bs-body-color-rgb), 0.04);
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+        }
+
+        .dashboard-onboarding-item[data-completed="true"] {
+            background: rgba(25, 135, 84, 0.08);
+            border-color: rgba(25, 135, 84, 0.16);
+        }
+
+        .dashboard-onboarding-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb), 0.12);
+            color: var(--bs-primary);
+            font-weight: 700;
+            flex: 0 0 auto;
+        }
+
+        .dashboard-onboarding-item[data-completed="true"] .dashboard-onboarding-marker {
+            background: rgba(25, 135, 84, 0.16);
+            color: #146c43;
+        }
+
+        .dashboard-onboarding-item-title {
+            margin-bottom: 0.2rem;
+            font-size: 0.98rem;
+            font-weight: 700;
+        }
+
+        .dashboard-onboarding-item-text {
+            margin-bottom: 0;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .onboarding-modal .modal-content {
+            border: 0;
+            border-radius: 1.75rem;
+            overflow: hidden;
+            box-shadow: 0 2rem 4rem -2rem rgba(17, 24, 39, 0.42);
+        }
+
+        .onboarding-modal .modal-header,
+        .onboarding-modal .modal-body,
+        .onboarding-modal .modal-footer {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+
+        .onboarding-modal .modal-header {
+            padding-top: 1.5rem;
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .onboarding-modal .modal-body {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .onboarding-modal .modal-footer {
+            padding-top: 0;
+            padding-bottom: 1.5rem;
+            border-top: 0;
+        }
+
+        .onboarding-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-bottom: 0.75rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--bs-primary);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .onboarding-title {
+            margin-bottom: 0.75rem;
+            font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+            line-height: 1.08;
+        }
+
+        .onboarding-text {
+            max-width: 38rem;
+            margin-bottom: 1.25rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .onboarding-progress {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .onboarding-progress-bar {
+            flex: 1 1 14rem;
+            height: 0.6rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-color-rgb), 0.08);
+            overflow: hidden;
+        }
+
+        .onboarding-progress-bar span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, rgba(var(--bs-primary-rgb), 0.62), rgba(var(--bs-primary-rgb), 1));
+        }
+
+        .onboarding-progress-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .onboarding-step-list {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .onboarding-step {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem 1.1rem;
+            border-radius: 1.25rem;
+            background: rgba(var(--bs-body-color-rgb), 0.035);
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+        }
+
+        .onboarding-step[data-completed="true"] {
+            background: rgba(25, 135, 84, 0.08);
+            border-color: rgba(25, 135, 84, 0.18);
+        }
+
+        .onboarding-step-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb), 0.12);
+            color: var(--bs-primary);
+            font-weight: 700;
+            flex: 0 0 auto;
+        }
+
+        .onboarding-step[data-completed="true"] .onboarding-step-marker {
+            background: rgba(25, 135, 84, 0.16);
+            color: #146c43;
+        }
+
+        .onboarding-step-title {
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .onboarding-step-text {
+            margin-bottom: 0;
+            color: var(--bs-secondary-color);
+        }
+
+        .onboarding-step-action {
+            min-width: 11rem;
+            justify-content: center;
+        }
+
+        .onboarding-note {
+            margin-top: 1rem;
+            margin-bottom: 0;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
         [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button,
         [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button {
             border-color: rgba(168, 139, 250, 0.24);
@@ -402,11 +657,50 @@
             color: #8b2c6d;
         }
 
+        [data-bs-theme="dark"] .onboarding-modal .modal-content {
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.18), transparent 30%),
+                #1f2433;
+            color: #f6f7fb;
+        }
+
+        [data-bs-theme="dark"] .dashboard-onboarding-item {
+            background: rgba(255, 255, 255, 0.035);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        [data-bs-theme="dark"] .dashboard-onboarding-item[data-completed="true"] {
+            background: rgba(25, 135, 84, 0.12);
+            border-color: rgba(25, 135, 84, 0.24);
+        }
+
+        [data-bs-theme="dark"] .dashboard-onboarding-progress-bar {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        [data-bs-theme="dark"] .onboarding-step {
+            background: rgba(255, 255, 255, 0.035);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        [data-bs-theme="dark"] .onboarding-step[data-completed="true"] {
+            background: rgba(25, 135, 84, 0.12);
+            border-color: rgba(25, 135, 84, 0.24);
+        }
+
+        [data-bs-theme="dark"] .onboarding-progress-bar {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
         @media (max-width: 991.98px) {
             .dashboard-hero .card-body,
             .dashboard-panel .card-body,
             .dashboard-soft-card .card-body {
                 padding: 1.25rem;
+            }
+
+            .dashboard-onboarding-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -421,6 +715,24 @@
 
             .dashboard-panel-header {
                 flex-direction: column;
+            }
+
+            .dashboard-onboarding-item {
+                grid-template-columns: auto minmax(0, 1fr);
+            }
+
+            .dashboard-onboarding-item .btn {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+
+            .onboarding-step {
+                grid-template-columns: auto minmax(0, 1fr);
+            }
+
+            .onboarding-step-action {
+                grid-column: 1 / -1;
+                width: 100%;
             }
 
         }
@@ -440,9 +752,62 @@
         $greetingText = $todayCount > 0
             ? __('dashboard.sections.focus.schedule.subtitle')
             : __('dashboard.sections.focus.schedule.empty');
+        $onboardingSteps = collect($onboarding['steps'] ?? []);
+        $onboardingCompleted = (int) ($onboarding['completed_steps'] ?? 0);
+        $onboardingProgress = $onboardingSteps->count() > 0
+            ? (int) round(($onboardingCompleted / $onboardingSteps->count()) * 100)
+            : 0;
     @endphp
 
     <div class="dashboard-shell">
+        @if ($onboardingCompleted < $onboardingSteps->count())
+            <div class="card dashboard-onboarding-card">
+                <div class="card-body">
+                    <div class="dashboard-onboarding-grid">
+                        <div class="dashboard-onboarding-copy">
+                            <div>
+                                <p class="dashboard-section-label">Первые шаги</p>
+                                <h2>Подготовим кабинет к первым записям</h2>
+                            </div>
+                            <p>Начните с базовой настройки. Остальное можно доделывать по ходу работы, без спешки.</p>
+                            <div class="dashboard-onboarding-progress">
+                                <div class="dashboard-onboarding-progress-bar" aria-hidden="true">
+                                    <span style="width: {{ $onboardingProgress }}%;"></span>
+                                </div>
+                                <div class="dashboard-onboarding-progress-label">{{ $onboardingCompleted }} из {{ $onboardingSteps->count() }} шагов готово</div>
+                            </div>
+                            <div class="dashboard-hero-actions">
+                                <a href="{{ data_get($onboardingSteps->firstWhere('completed', false), 'href', data_get($onboardingSteps->first(), 'href', route('settings'))) }}" class="btn btn-primary">
+                                    {{ data_get($onboardingSteps->firstWhere('completed', false), 'cta', 'Продолжить') }}
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-onboarding-list">
+                            @foreach ($onboardingSteps as $index => $step)
+                                <div class="dashboard-onboarding-item" data-completed="{{ ! empty($step['completed']) ? 'true' : 'false' }}">
+                                    <div class="dashboard-onboarding-marker">
+                                        @if (! empty($step['completed']))
+                                            <i class="icon-base ri ri-check-line"></i>
+                                        @else
+                                            {{ $index + 1 }}
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="dashboard-onboarding-item-title">{{ $step['title'] }}</div>
+                                        <p class="dashboard-onboarding-item-text">{{ $step['description'] }}</p>
+                                    </div>
+                                    <a href="{{ $step['href'] }}" class="btn {{ ! empty($step['completed']) ? 'btn-outline-success' : 'btn-outline-primary' }} btn-sm">
+                                        {{ ! empty($step['completed']) ? 'Открыть' : $step['cta'] }}
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="row g-4">
             <div class="col-12 col-xl-8">
                 <div class="card dashboard-hero h-100">
@@ -737,4 +1102,103 @@
             </div>
         </div>
     </div>
+
+    <div
+        class="modal fade onboarding-modal"
+        id="newUserOnboardingModal"
+        tabindex="-1"
+        aria-labelledby="newUserOnboardingTitle"
+        aria-hidden="true"
+        data-onboarding-user-id="{{ $onboarding['user_id'] ?? '' }}"
+        data-onboarding-completed="{{ $onboardingCompleted }}">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <div class="onboarding-kicker">Первые шаги</div>
+                        <h2 class="onboarding-title" id="newUserOnboardingTitle">Подготовим Veloria к первой записи</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="onboarding-text">
+                        Это займёт пару минут. Начните с самого важного, остальное можно сделать позже.
+                    </p>
+
+                    <div class="onboarding-progress">
+                        <div class="onboarding-progress-bar" aria-hidden="true">
+                            <span style="width: {{ $onboardingProgress }}%;"></span>
+                        </div>
+                        <div class="onboarding-progress-label">{{ $onboardingCompleted }} из {{ max($onboardingSteps->count(), 1) }} шагов готово</div>
+                    </div>
+
+                    <div class="onboarding-step-list">
+                        @foreach ($onboardingSteps as $index => $step)
+                            <div class="onboarding-step" data-completed="{{ ! empty($step['completed']) ? 'true' : 'false' }}">
+                                <div class="onboarding-step-marker">
+                                    @if (! empty($step['completed']))
+                                        <i class="icon-base ri ri-check-line"></i>
+                                    @else
+                                        {{ $index + 1 }}
+                                    @endif
+                                </div>
+                                <div>
+                                    <div class="onboarding-step-title">{{ $step['title'] }}</div>
+                                    <p class="onboarding-step-text">{{ $step['description'] }}</p>
+                                </div>
+                                <a href="{{ $step['href'] }}" class="btn {{ $index === 0 ? 'btn-primary' : 'btn-outline-primary' }} onboarding-step-action">
+                                    {{ ! empty($step['completed']) ? 'Открыть' : $step['cta'] }}
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <p class="onboarding-note">Вы сможете вернуться к этим шагам позже на главной странице.</p>
+                </div>
+                <div class="modal-footer justify-content-between flex-column flex-md-row gap-2">
+                    <button type="button" class="btn btn-outline-secondary w-100 w-md-auto" data-bs-dismiss="modal">
+                        Пропустить пока
+                    </button>
+                    <a href="{{ data_get($onboardingSteps->first(), 'href', route('settings')) }}" class="btn btn-primary w-100 w-md-auto">
+                        {{ data_get($onboardingSteps->first(), 'cta', 'Продолжить') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modalElement = document.getElementById('newUserOnboardingModal');
+            if (!modalElement || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+                return;
+            }
+
+            var completedSteps = Number(modalElement.dataset.onboardingCompleted || '0');
+            var storageKey = 'veloria:onboarding:pending';
+            if (completedSteps >= 3) {
+                try {
+                    window.localStorage.removeItem(storageKey);
+                } catch (error) {}
+                return;
+            }
+
+            var marker = null;
+
+            try {
+                marker = window.localStorage.getItem(storageKey);
+            } catch (error) {
+                marker = null;
+            }
+
+            if (!marker) {
+                return;
+            }
+
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        });
+    </script>
 @endsection
