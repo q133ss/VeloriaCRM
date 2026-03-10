@@ -1,0 +1,146 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+          - /url: http://localhost:8080/dashboard
+          - img "Veloria" [ref=e9]
+          - generic [ref=e10]: Veloria
+        - link [ref=e11] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img [ref=e12]
+      - list [ref=e15]:
+        - listitem [ref=e16]:
+          - link "Загрузка..." [ref=e17] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - generic [ref=e19]: Загрузка...
+    - generic [ref=e20]:
+      - navigation [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - link "Язык" [ref=e25] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - link "Тема (system)" [ref=e28] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - list [ref=e30]:
+            - listitem [ref=e31]:
+              - link [ref=e32] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e34]:
+              - link "?" [ref=e35] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - generic [ref=e37]: "?"
+      - generic [ref=e38]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - heading "Пользователи" [level=1] [ref=e43]
+            - paragraph [ref=e44]: "Люди, а не технический реестр: быстрый поиск, статус аккаунта, заметки оператора и понятная карточка пользователя."
+          - generic [ref=e45]:
+            - link "Обзор" [ref=e46] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/overview
+            - link "Пользователи" [ref=e47] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/users
+            - link "Поддержка" [ref=e48] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/support
+          - generic [ref=e49]:
+            - generic [ref=e52]:
+              - searchbox "Найти по имени, email или телефону" [ref=e53]
+              - combobox [ref=e54]:
+                - option "Все статусы" [selected]
+                - option "Active"
+                - option "Suspended"
+            - generic [ref=e57]: Выберите пользователя слева, чтобы посмотреть контекст и управлять статусом.
+        - contentinfo [ref=e58]:
+          - generic [ref=e60]:
+            - generic [ref=e61]: © 2026
+            - generic [ref=e62]:
+              - link "Пользовательское соглашение" [ref=e63] [cursor=pointer]:
+                - /url: /terms
+              - link "Политика конфиденциальности" [ref=e64] [cursor=pointer]:
+                - /url: /policy
+  - generic [ref=e66]:
+    - link [ref=e67] [cursor=pointer]:
+      - /url: javascript:void(0)
+    - generic [ref=e68]:
+      - heading "Template Customizer" [level=6] [ref=e69]
+      - paragraph [ref=e70]: Customize and preview in real time
+      - generic [ref=e71]:
+        - link "Reset Customizer" [ref=e72] [cursor=pointer]:
+          - /url: javascript:void(0)
+        - link [ref=e74] [cursor=pointer]:
+          - /url: javascript:void(0)
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - heading "Theming" [level=5] [ref=e78]
+        - generic [ref=e79]:
+          - generic [ref=e80]: Primary Color
+          - button "toggle color picker dialog" [ref=e100] [cursor=pointer]
+        - generic [ref=e101]:
+          - generic [ref=e102]: Theme
+          - generic [ref=e103]:
+            - generic [ref=e109] [cursor=pointer]: Light
+            - generic [ref=e115] [cursor=pointer]: Dark
+            - generic [ref=e121] [cursor=pointer]: System
+        - generic [ref=e122]:
+          - generic [ref=e123]: Skins
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - img [ref=e129] [cursor=pointer]
+              - generic [ref=e145] [cursor=pointer]: Default
+            - generic [ref=e146]:
+              - img [ref=e150] [cursor=pointer]
+              - generic [ref=e165] [cursor=pointer]: Bordered
+        - generic [ref=e166]:
+          - generic [ref=e167]: Semi Dark
+          - checkbox [ref=e168]
+        - separator [ref=e172]
+      - generic [ref=e173]:
+        - heading "Layout" [level=5] [ref=e174]
+        - generic [ref=e175]:
+          - generic [ref=e176]: Menu (Navigation)
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - img [ref=e182] [cursor=pointer]
+              - generic [ref=e198] [cursor=pointer]: Expanded
+            - generic [ref=e199]:
+              - img [ref=e203] [cursor=pointer]
+              - generic [ref=e219] [cursor=pointer]: Collapsed
+        - generic [ref=e220]:
+          - generic [ref=e221]: Header Types
+          - generic [ref=e222]:
+            - generic [ref=e223]:
+              - img [ref=e227] [cursor=pointer]
+              - generic [ref=e237] [cursor=pointer]: Fixed
+            - generic [ref=e238]:
+              - img [ref=e242] [cursor=pointer]
+              - generic [ref=e253] [cursor=pointer]: Static
+        - generic [ref=e254]:
+          - generic [ref=e255]: Navbar Type
+          - generic [ref=e256]:
+            - generic [ref=e257]:
+              - img [ref=e261] [cursor=pointer]
+              - generic [ref=e277] [cursor=pointer]: Sticky
+            - generic [ref=e278]:
+              - img [ref=e282] [cursor=pointer]
+              - generic [ref=e298] [cursor=pointer]: Static
+            - generic [ref=e299]:
+              - img [ref=e303] [cursor=pointer]
+              - generic [ref=e314] [cursor=pointer]: Hidden
+        - generic [ref=e315]:
+          - generic [ref=e316]: Content
+          - generic [ref=e317]:
+            - generic [ref=e318]:
+              - img [ref=e322] [cursor=pointer]
+              - generic [ref=e332] [cursor=pointer]: Compact
+            - generic [ref=e333]:
+              - img [ref=e337] [cursor=pointer]
+              - generic [ref=e347] [cursor=pointer]: Wide
+        - generic [ref=e348]:
+          - generic [ref=e349]: Direction
+          - generic [ref=e350]:
+            - generic [ref=e351]:
+              - img [ref=e355] [cursor=pointer]
+              - generic [ref=e369] [cursor=pointer]: Left to Right (En)
+            - generic [ref=e370]:
+              - img [ref=e374] [cursor=pointer]
+              - generic [ref=e388] [cursor=pointer]: Right to Left (Ar)

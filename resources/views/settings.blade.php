@@ -474,7 +474,7 @@
         </div>
 
         <div class="col-xl-4">
-            <div class="card mb-6 settings-card settings-summary-card">
+            <div class="card mb-6 settings-card settings-summary-card z-3">
                 <div class="card-body p-5">
                     <span class="badge bg-label-secondary mb-3">Подсказка</span>
                     <h5 class="mb-2">Что важно настроить сначала</h5>

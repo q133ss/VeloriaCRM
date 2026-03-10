@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\Admin\AdminPageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LocaleController;
@@ -97,5 +98,15 @@ Route::middleware('set.locale')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::view('/subscription', 'subscription.index')->name('subscription');
         });
+
+        Route::prefix('admin')
+            ->middleware(['auth:sanctum', 'user.active', 'admin.access'])
+            ->group(function () {
+                Route::redirect('/', '/admin/overview');
+                Route::get('/overview', [AdminPageController::class, 'overview'])->name('admin.overview');
+                Route::get('/users', [AdminPageController::class, 'users'])->name('admin.users');
+                Route::get('/support', [AdminPageController::class, 'support'])->name('admin.support');
+                Route::get('/audit', [AdminPageController::class, 'audit'])->name('admin.audit');
+            });
     });
 });

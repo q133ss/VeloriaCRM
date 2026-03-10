@@ -27,6 +27,10 @@ class AuthService extends BaseService
         }
 
         $user = Auth::user();
+        if ($user && method_exists($user, 'isSuspended') && $user->isSuspended()) {
+            Auth::logout();
+            $this->throwError('unauthorized', __('auth.failed'), [], 403);
+        }
         $token = $user->createToken('api')->plainTextToken;
 
         return ['user' => $user, 'token' => $token];

@@ -483,6 +483,8 @@ document.addEventListener('DOMContentLoaded', function () {
         ]
     };
 
+    var ADMIN_ITEM = { label: 'Backoffice', href: '/admin/overview', icon: 'ri-shield-user-line' };
+
     function getCookie(name) {
         var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
         return match ? match[1] : null;
@@ -796,6 +798,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     menu.push(item);
                 }
             });
+
+            if (user.is_admin) {
+                menu.push(ADMIN_ITEM);
+            }
 
             var menuEl = document.getElementById('main-menu');
             if (!menuEl) return;

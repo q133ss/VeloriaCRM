@@ -1,0 +1,210 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+          - /url: http://localhost:8080/dashboard
+          - img "Veloria" [ref=e9]
+          - generic [ref=e10]: Veloria
+        - link [ref=e11] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img [ref=e12]
+      - list [ref=e15]:
+        - listitem [ref=e386]:
+          - link "Дашборд" [ref=e387] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e389]: Дашборд
+        - listitem [ref=e390]:
+          - link "Календарь" [ref=e391] [cursor=pointer]:
+            - /url: /calendar
+            - generic [ref=e393]: Календарь
+        - listitem [ref=e394]:
+          - link "Записи" [ref=e395] [cursor=pointer]:
+            - /url: /orders
+            - generic [ref=e397]: Записи
+        - listitem [ref=e398]:
+          - link "Клиенты" [ref=e399] [cursor=pointer]:
+            - /url: /clients
+            - generic [ref=e401]: Клиенты
+        - listitem [ref=e402]:
+          - link "Услуги" [ref=e403] [cursor=pointer]:
+            - /url: /services
+            - generic [ref=e405]: Услуги
+        - listitem [ref=e406]:
+          - link "Инвойсы" [ref=e407] [cursor=pointer]:
+            - /url: /invoices
+            - generic [ref=e409]: Инвойсы
+        - listitem [ref=e410]:
+          - link "Сообщения" [ref=e411] [cursor=pointer]:
+            - /url: /messages
+            - generic [ref=e413]: Сообщения
+        - listitem [ref=e414]:
+          - link "Аналитика" [ref=e415] [cursor=pointer]:
+            - /url: /analytics
+            - generic [ref=e417]: Аналитика
+        - listitem [ref=e418]:
+          - link "Интеграции" [ref=e419] [cursor=pointer]:
+            - /url: /integrations
+            - generic [ref=e421]: Интеграции
+        - listitem [ref=e422]:
+          - link "Настройки" [ref=e423] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e425]: Настройки
+        - listitem [ref=e426]:
+          - link "Помощь" [ref=e427] [cursor=pointer]:
+            - /url: /help
+            - generic [ref=e429]: Помощь
+        - listitem [ref=e430]:
+          - link "Backoffice" [ref=e431] [cursor=pointer]:
+            - /url: /admin/overview
+            - generic [ref=e433]: Backoffice
+    - generic [ref=e20]:
+      - navigation [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - link "Язык" [ref=e25] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - link "Тема (system)" [ref=e28] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - list [ref=e30]:
+            - listitem [ref=e31]:
+              - link [ref=e32] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e34]:
+              - link "AV" [ref=e434] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - generic [ref=e37]: AV
+      - generic [ref=e38]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - heading "Журнал действий" [level=1] [ref=e43]
+            - paragraph [ref=e44]: "Полный лог изменений из backoffice: кто что изменил, у какого пользователя, с какими метаданными и когда именно."
+          - generic [ref=e45]:
+            - link "Обзор" [ref=e46] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/overview
+            - link "Пользователи" [ref=e47] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/users
+            - link "Поддержка" [ref=e48] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/support
+            - link "Журнал" [ref=e49] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/audit
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - searchbox "Поиск по действию, пользователю или админу" [ref=e53]
+              - searchbox "Фильтр по action" [ref=e54]
+            - generic [ref=e435]:
+              - article [ref=e436]:
+                - generic [ref=e437]:
+                  - generic [ref=e438]: admin.subscription_updated
+                  - generic [ref=e439]: "Админ: Admin Veloria • Пользователь: Alina Master • 10.03.2026, 06:33:35"
+                  - generic [ref=e440]: "ends_at: 2026-04-10T12:00:00+03:00 • new_plan_id: 3 • previous_plan_id: null"
+                - generic [ref=e441]: App\Models\User
+              - article [ref=e442]:
+                - generic [ref=e443]:
+                  - generic [ref=e444]: admin.support_ticket_replied
+                  - generic [ref=e445]: "Админ: Admin Veloria • Пользователь: Alina Master • 10.03.2026, 06:11:46"
+                  - generic [ref=e446]: "message_id: 3"
+                - generic [ref=e447]: App\Models\SupportTicket
+              - article [ref=e448]:
+                - generic [ref=e449]:
+                  - generic [ref=e450]: admin.support_ticket_replied
+                  - generic [ref=e451]: "Админ: Admin Veloria • Пользователь: Alina Master • 10.03.2026, 05:58:01"
+                  - generic [ref=e452]: "message_id: 2"
+                - generic [ref=e453]: App\Models\SupportTicket
+              - article [ref=e454]:
+                - generic [ref=e455]:
+                  - generic [ref=e456]: admin.support_ticket_updated
+                  - generic [ref=e457]: "Админ: Admin Veloria • Пользователь: Alina Master • 10.03.2026, 05:57:43"
+                  - generic [ref=e458]: "status: waiting • category: ai-access • priority: urgent • assigned_to: 13"
+                - generic [ref=e459]: App\Models\SupportTicket
+              - article [ref=e460]:
+                - generic [ref=e461]:
+                  - generic [ref=e462]: admin.user_suspended
+                  - generic [ref=e463]: "Админ: Admin Veloria • Пользователь: Alina Master • 10.03.2026, 05:56:46"
+                  - generic [ref=e464]: "admin_notes: Проверка через backoffice"
+                - generic [ref=e465]: App\Models\User
+        - contentinfo [ref=e55]:
+          - generic [ref=e57]:
+            - generic [ref=e58]: © 2026
+            - generic [ref=e59]:
+              - link "Пользовательское соглашение" [ref=e60] [cursor=pointer]:
+                - /url: /terms
+              - link "Политика конфиденциальности" [ref=e61] [cursor=pointer]:
+                - /url: /policy
+  - generic [ref=e63]:
+    - link [ref=e64] [cursor=pointer]:
+      - /url: javascript:void(0)
+    - generic [ref=e65]:
+      - heading "Template Customizer" [level=6] [ref=e66]
+      - paragraph [ref=e67]: Customize and preview in real time
+      - generic [ref=e68]:
+        - link "Reset Customizer" [ref=e69] [cursor=pointer]:
+          - /url: javascript:void(0)
+        - link [ref=e71] [cursor=pointer]:
+          - /url: javascript:void(0)
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - heading "Theming" [level=5] [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e77]: Primary Color
+          - button "toggle color picker dialog" [ref=e97] [cursor=pointer]
+        - generic [ref=e98]:
+          - generic [ref=e99]: Theme
+          - generic [ref=e100]:
+            - generic [ref=e106] [cursor=pointer]: Light
+            - generic [ref=e112] [cursor=pointer]: Dark
+            - generic [ref=e118] [cursor=pointer]: System
+        - generic [ref=e119]:
+          - generic [ref=e120]: Skins
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - img [ref=e126] [cursor=pointer]
+              - generic [ref=e142] [cursor=pointer]: Default
+            - generic [ref=e143]:
+              - img [ref=e147] [cursor=pointer]
+              - generic [ref=e162] [cursor=pointer]: Bordered
+        - generic [ref=e163]:
+          - generic [ref=e164]: Semi Dark
+          - checkbox [ref=e165]
+        - separator [ref=e169]
+      - generic [ref=e170]:
+        - heading "Layout" [level=5] [ref=e171]
+        - generic [ref=e172]:
+          - generic [ref=e173]: Menu (Navigation)
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - img [ref=e179] [cursor=pointer]
+              - generic [ref=e195] [cursor=pointer]: Expanded
+            - generic [ref=e196]:
+              - img [ref=e200] [cursor=pointer]
+              - generic [ref=e216] [cursor=pointer]: Collapsed
+        - generic [ref=e251]:
+          - generic [ref=e252]: Navbar Type
+          - generic [ref=e253]:
+            - generic [ref=e254]:
+              - img [ref=e258] [cursor=pointer]
+              - generic [ref=e274] [cursor=pointer]: Sticky
+            - generic [ref=e275]:
+              - img [ref=e279] [cursor=pointer]
+              - generic [ref=e295] [cursor=pointer]: Static
+            - generic [ref=e296]:
+              - img [ref=e300] [cursor=pointer]
+              - generic [ref=e311] [cursor=pointer]: Hidden
+        - generic [ref=e312]:
+          - generic [ref=e313]: Content
+          - generic [ref=e314]:
+            - generic [ref=e315]:
+              - img [ref=e319] [cursor=pointer]
+              - generic [ref=e329] [cursor=pointer]: Compact
+            - generic [ref=e330]:
+              - img [ref=e334] [cursor=pointer]
+              - generic [ref=e344] [cursor=pointer]: Wide
+        - generic [ref=e345]:
+          - generic [ref=e346]: Direction
+          - generic [ref=e347]:
+            - generic [ref=e348]:
+              - img [ref=e352] [cursor=pointer]
+              - generic [ref=e366] [cursor=pointer]: Left to Right (En)
+            - generic [ref=e367]:
+              - img [ref=e371] [cursor=pointer]
+              - generic [ref=e385] [cursor=pointer]: Right to Left (Ar)

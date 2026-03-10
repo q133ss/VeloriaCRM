@@ -19,21 +19,34 @@ class SupportTicket extends Model
 
     protected $fillable = [
         'user_id',
+        'assigned_to',
         'subject',
         'status',
+        'priority',
+        'category',
+        'source',
         'last_message_at',
+        'first_responded_at',
+        'closed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'last_message_at' => 'datetime',
+            'first_responded_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     public function messages(): HasMany
@@ -46,5 +59,30 @@ class SupportTicket extends Model
         $this->forceFill([
             'last_message_at' => $date ?? now(),
         ])->save();
+    }
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_OPEN,
+            self::STATUS_WAITING,
+            self::STATUS_RESPONDED,
+            self::STATUS_CLOSED,
+        ];
+    }
+
+    public static function priorities(): array
+    {
+        return ['low', 'normal', 'high', 'urgent'];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return ucfirst($this->status);
+    }
+
+    public function getPriorityLabelAttribute(): string
+    {
+        return ucfirst($this->priority ?: 'normal');
     }
 }

@@ -1,0 +1,143 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+          - /url: http://localhost:8080/dashboard
+          - img "Veloria" [ref=e9]
+          - generic [ref=e10]: Veloria
+        - link [ref=e11] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img [ref=e12]
+      - list [ref=e15]:
+        - listitem [ref=e16]:
+          - link "Загрузка..." [ref=e17] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - generic [ref=e19]: Загрузка...
+    - generic [ref=e20]:
+      - navigation [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - link "Язык" [ref=e25] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - link "Тема (system)" [ref=e28] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - list [ref=e30]:
+            - listitem [ref=e31]:
+              - link [ref=e32] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e34]:
+              - link "?" [ref=e35] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - generic [ref=e37]: "?"
+      - generic [ref=e38]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - heading "Журнал действий" [level=1] [ref=e43]
+            - paragraph [ref=e44]: "Полный лог изменений из backoffice: кто что изменил, у какого пользователя, с какими метаданными и когда именно."
+          - generic [ref=e45]:
+            - link "Обзор" [ref=e46] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/overview
+            - link "Пользователи" [ref=e47] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/users
+            - link "Поддержка" [ref=e48] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/support
+            - link "Журнал" [ref=e49] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/audit
+          - generic [ref=e52]:
+            - searchbox "Поиск по действию, пользователю или админу" [ref=e53]
+            - searchbox "Фильтр по action" [ref=e54]
+        - contentinfo [ref=e55]:
+          - generic [ref=e57]:
+            - generic [ref=e58]: © 2026
+            - generic [ref=e59]:
+              - link "Пользовательское соглашение" [ref=e60] [cursor=pointer]:
+                - /url: /terms
+              - link "Политика конфиденциальности" [ref=e61] [cursor=pointer]:
+                - /url: /policy
+  - generic [ref=e63]:
+    - link [ref=e64] [cursor=pointer]:
+      - /url: javascript:void(0)
+    - generic [ref=e65]:
+      - heading "Template Customizer" [level=6] [ref=e66]
+      - paragraph [ref=e67]: Customize and preview in real time
+      - generic [ref=e68]:
+        - link "Reset Customizer" [ref=e69] [cursor=pointer]:
+          - /url: javascript:void(0)
+        - link [ref=e71] [cursor=pointer]:
+          - /url: javascript:void(0)
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - heading "Theming" [level=5] [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e77]: Primary Color
+          - button "toggle color picker dialog" [ref=e97] [cursor=pointer]
+        - generic [ref=e98]:
+          - generic [ref=e99]: Theme
+          - generic [ref=e100]:
+            - generic [ref=e106] [cursor=pointer]: Light
+            - generic [ref=e112] [cursor=pointer]: Dark
+            - generic [ref=e118] [cursor=pointer]: System
+        - generic [ref=e119]:
+          - generic [ref=e120]: Skins
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - img [ref=e126] [cursor=pointer]
+              - generic [ref=e142] [cursor=pointer]: Default
+            - generic [ref=e143]:
+              - img [ref=e147] [cursor=pointer]
+              - generic [ref=e162] [cursor=pointer]: Bordered
+        - generic [ref=e163]:
+          - generic [ref=e164]: Semi Dark
+          - checkbox [ref=e165]
+        - separator [ref=e169]
+      - generic [ref=e170]:
+        - heading "Layout" [level=5] [ref=e171]
+        - generic [ref=e172]:
+          - generic [ref=e173]: Menu (Navigation)
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - img [ref=e179] [cursor=pointer]
+              - generic [ref=e195] [cursor=pointer]: Expanded
+            - generic [ref=e196]:
+              - img [ref=e200] [cursor=pointer]
+              - generic [ref=e216] [cursor=pointer]: Collapsed
+        - generic [ref=e217]:
+          - generic [ref=e218]: Header Types
+          - generic [ref=e219]:
+            - generic [ref=e220]:
+              - img [ref=e224] [cursor=pointer]
+              - generic [ref=e234] [cursor=pointer]: Fixed
+            - generic [ref=e235]:
+              - img [ref=e239] [cursor=pointer]
+              - generic [ref=e250] [cursor=pointer]: Static
+        - generic [ref=e251]:
+          - generic [ref=e252]: Navbar Type
+          - generic [ref=e253]:
+            - generic [ref=e254]:
+              - img [ref=e258] [cursor=pointer]
+              - generic [ref=e274] [cursor=pointer]: Sticky
+            - generic [ref=e275]:
+              - img [ref=e279] [cursor=pointer]
+              - generic [ref=e295] [cursor=pointer]: Static
+            - generic [ref=e296]:
+              - img [ref=e300] [cursor=pointer]
+              - generic [ref=e311] [cursor=pointer]: Hidden
+        - generic [ref=e312]:
+          - generic [ref=e313]: Content
+          - generic [ref=e314]:
+            - generic [ref=e315]:
+              - img [ref=e319] [cursor=pointer]
+              - generic [ref=e329] [cursor=pointer]: Compact
+            - generic [ref=e330]:
+              - img [ref=e334] [cursor=pointer]
+              - generic [ref=e344] [cursor=pointer]: Wide
+        - generic [ref=e345]:
+          - generic [ref=e346]: Direction
+          - generic [ref=e347]:
+            - generic [ref=e348]:
+              - img [ref=e352] [cursor=pointer]
+              - generic [ref=e366] [cursor=pointer]: Left to Right (En)
+            - generic [ref=e367]:
+              - img [ref=e371] [cursor=pointer]
+              - generic [ref=e385] [cursor=pointer]: Right to Left (Ar)

@@ -18,6 +18,14 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_SUSPENDED = 'suspended';
+
+    public const ADMIN_ROLE_SUPER_ADMIN = 'super_admin';
+    public const ADMIN_ROLE_SUPPORT = 'support';
+    public const ADMIN_ROLE_FINANCE = 'finance';
+    public const ADMIN_ROLE_ANALYST = 'analyst';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -30,12 +38,19 @@ class User extends Authenticatable
         'timezone',
         'time_format',
         'avatar_path',
-        'password'
+        'password',
+        'is_admin',
+        'admin_role',
+        'status',
+        'suspended_at',
+        'admin_notes',
     ];
 
     protected $appends = [
         'avatar_url',
         'initials',
+        'status_label',
+        'admin_role_label',
     ];
 
     /**
@@ -59,6 +74,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'suspended_at' => 'datetime',
         ];
     }
 
@@ -113,5 +130,44 @@ class User extends Authenticatable
 
         $initials = $firstChar . $lastChar;
         return $initials !== '' ? $initials : '?';
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === self::STATUS_SUSPENDED;
+    }
+
+    public function canAccessAdmin(): bool
+    {
+        return (bool) $this->is_admin && in_array($this->admin_role, self::adminRoles(), true);
+    }
+
+    public static function adminRoles(): array
+    {
+        return [
+            self::ADMIN_ROLE_SUPER_ADMIN,
+            self::ADMIN_ROLE_SUPPORT,
+            self::ADMIN_ROLE_FINANCE,
+            self::ADMIN_ROLE_ANALYST,
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_SUSPENDED => 'Suspended',
+            default => 'Active',
+        };
+    }
+
+    public function getAdminRoleLabelAttribute(): ?string
+    {
+        return match ($this->admin_role) {
+            self::ADMIN_ROLE_SUPER_ADMIN => 'Super Admin',
+            self::ADMIN_ROLE_SUPPORT => 'Support',
+            self::ADMIN_ROLE_FINANCE => 'Finance',
+            self::ADMIN_ROLE_ANALYST => 'Analyst',
+            default => null,
+        };
     }
 }

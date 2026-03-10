@@ -1,0 +1,336 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Veloria Veloria" [ref=e6] [cursor=pointer]:
+          - /url: http://localhost:8080/dashboard
+          - img "Veloria" [ref=e9]
+          - generic [ref=e10]: Veloria
+        - link [ref=e11] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img [ref=e12]
+      - list [ref=e15]:
+        - listitem [ref=e68]:
+          - link "Дашборд" [ref=e69] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e71]: Дашборд
+        - listitem [ref=e72]:
+          - link "Календарь" [ref=e73] [cursor=pointer]:
+            - /url: /calendar
+            - generic [ref=e75]: Календарь
+        - listitem [ref=e76]:
+          - link "Записи" [ref=e77] [cursor=pointer]:
+            - /url: /orders
+            - generic [ref=e79]: Записи
+        - listitem [ref=e80]:
+          - link "Клиенты" [ref=e81] [cursor=pointer]:
+            - /url: /clients
+            - generic [ref=e83]: Клиенты
+        - listitem [ref=e84]:
+          - link "Услуги" [ref=e85] [cursor=pointer]:
+            - /url: /services
+            - generic [ref=e87]: Услуги
+        - listitem [ref=e88]:
+          - link "Инвойсы" [ref=e89] [cursor=pointer]:
+            - /url: /invoices
+            - generic [ref=e91]: Инвойсы
+        - listitem [ref=e92]:
+          - link "Сообщения" [ref=e93] [cursor=pointer]:
+            - /url: /messages
+            - generic [ref=e95]: Сообщения
+        - listitem [ref=e96]:
+          - link "Аналитика" [ref=e97] [cursor=pointer]:
+            - /url: /analytics
+            - generic [ref=e99]: Аналитика
+        - listitem [ref=e100]:
+          - link "Интеграции" [ref=e101] [cursor=pointer]:
+            - /url: /integrations
+            - generic [ref=e103]: Интеграции
+        - listitem [ref=e104]:
+          - link "Настройки" [ref=e105] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e107]: Настройки
+        - listitem [ref=e108]:
+          - link "Помощь" [ref=e109] [cursor=pointer]:
+            - /url: /help
+            - generic [ref=e111]: Помощь
+        - listitem [ref=e112]:
+          - link "Backoffice" [ref=e113] [cursor=pointer]:
+            - /url: /admin/overview
+            - generic [ref=e115]: Backoffice
+    - generic [ref=e20]:
+      - navigation [ref=e21]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - link "Язык" [ref=e28] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - link "Тема (system)" [ref=e31] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - list [ref=e33]:
+            - listitem [ref=e34]:
+              - link [ref=e35] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e37]:
+              - link "AV" [ref=e116] [cursor=pointer]:
+                - /url: javascript:void(0);
+                - generic [ref=e40]: AV
+      - generic [ref=e41]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "Пользователи" [level=1] [ref=e46]
+            - paragraph [ref=e47]: "Люди, а не технический реестр: быстрый поиск, статус аккаунта, заметки оператора и понятная карточка пользователя."
+          - generic [ref=e48]:
+            - link "Обзор" [ref=e49] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/overview
+            - link "Пользователи" [ref=e50] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/users
+            - link "Поддержка" [ref=e51] [cursor=pointer]:
+              - /url: http://localhost:8080/admin/support
+          - generic [ref=e52]:
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - button "Новый пользователь" [ref=e56] [cursor=pointer]
+                - searchbox "Найти по имени, email или телефону" [ref=e57]
+                - combobox [ref=e58]:
+                  - option "Все статусы" [selected]
+                  - option "Active"
+                  - option "Suspended"
+              - generic [ref=e117]:
+                - article [ref=e944] [cursor=pointer]:
+                  - generic [ref=e945]:
+                    - generic [ref=e946]: Alina Master
+                    - generic [ref=e947]: master@veloria.test • 0 клиентов • 1 платежей
+                  - generic [ref=e948]: Suspended
+                - article [ref=e949] [cursor=pointer]:
+                  - generic [ref=e950]:
+                    - generic [ref=e951]: Paused User
+                    - generic [ref=e952]: paused@veloria.test • 0 клиентов • 0 платежей
+                  - generic [ref=e953]: Suspended
+                - article [ref=e954] [cursor=pointer]:
+                  - generic [ref=e955]:
+                    - generic [ref=e956]: Admin Veloria
+                    - generic [ref=e957]: admin@veloria.test • 0 клиентов • 0 платежей
+                  - generic [ref=e958]: Active
+                - article [ref=e959] [cursor=pointer]:
+                  - generic [ref=e960]:
+                    - generic [ref=e961]: Waitlist QA
+                    - generic [ref=e962]: waitlistqa@example.com • 0 клиентов • 0 платежей
+                  - generic [ref=e963]: Active
+                - article [ref=e964] [cursor=pointer]:
+                  - generic [ref=e965]:
+                    - generic [ref=e966]: blockstar2k
+                    - generic [ref=e967]: blockstar2k@gmail.com • 0 клиентов • 0 платежей
+                  - generic [ref=e968]: Active
+                - article [ref=e969] [cursor=pointer]:
+                  - generic [ref=e970]:
+                    - generic [ref=e971]: ddd
+                    - generic [ref=e972]: ddd@dedd.dd • 0 клиентов • 0 платежей
+                  - generic [ref=e973]: Active
+                - article [ref=e974] [cursor=pointer]:
+                  - generic [ref=e975]:
+                    - generic [ref=e976]: Alexey Miroshkin
+                    - generic [ref=e977]: Без email • 1 клиентов • 0 платежей
+                  - generic [ref=e978]: Active
+                - article [ref=e979] [cursor=pointer]:
+                  - generic [ref=e980]:
+                    - generic [ref=e981]: Иван Петров
+                    - generic [ref=e982]: Без email • 1 клиентов • 0 платежей
+                  - generic [ref=e983]: Active
+                - article [ref=e984] [cursor=pointer]:
+                  - generic [ref=e985]:
+                    - generic [ref=e986]: Светлана Крылова
+                    - generic [ref=e987]: svetlana.krylova@client.test • 0 клиентов • 0 платежей
+                  - generic [ref=e988]: Active
+                - article [ref=e989] [cursor=pointer]:
+                  - generic [ref=e990]:
+                    - generic [ref=e991]: Дмитрий Фадеев
+                    - generic [ref=e992]: dmitry.fadeev@client.test • 0 клиентов • 0 платежей
+                  - generic [ref=e993]: Active
+                - article [ref=e994] [cursor=pointer]:
+                  - generic [ref=e995]:
+                    - generic [ref=e996]: Наталья Зуева
+                    - generic [ref=e997]: natalia.zueva@veloria.test • 0 клиентов • 0 платежей
+                  - generic [ref=e998]: Active
+                - article [ref=e999] [cursor=pointer]:
+                  - generic [ref=e1000]:
+                    - generic [ref=e1001]: Мария Соколова
+                    - generic [ref=e1002]: maria.sokolova@veloria.test • 0 клиентов • 0 платежей
+                  - generic [ref=e1003]: Active
+                - article [ref=e1004] [cursor=pointer]:
+                  - generic [ref=e1005]:
+                    - generic [ref=e1006]: Алексей Морозов
+                    - generic [ref=e1007]: alexey.morozov@veloria.test • 0 клиентов • 0 платежей
+                  - generic [ref=e1008]: Active
+                - article [ref=e1009] [cursor=pointer]:
+                  - generic [ref=e1010]:
+                    - generic [ref=e1011]: QA Manager
+                    - generic [ref=e1012]: user@email.net • 5 клиентов • 2 платежей
+                  - generic [ref=e1013]: Active
+                - article [ref=e1014] [cursor=pointer]:
+                  - generic [ref=e1015]:
+                    - generic [ref=e1016]: Елена Морозова
+                    - generic [ref=e1017]: elena.morozova@client.test • 0 клиентов • 0 платежей
+                  - generic [ref=e1018]: Active
+            - generic [ref=e1019]:
+              - generic [ref=e1020]:
+                - generic [ref=e1021]:
+                  - heading "Alina Master" [level=3] [ref=e1022]
+                  - paragraph [ref=e1023]: master@veloria.test • +79990000001
+                - generic [ref=e1024]: Suspended
+              - generic [ref=e1025]:
+                - generic [ref=e1026]:
+                  - generic [ref=e1027]: Тариф
+                  - generic [ref=e1028]: Без плана
+                - generic [ref=e1029]:
+                  - generic [ref=e1030]: Клиенты
+                  - generic [ref=e1031]: "0"
+                - generic [ref=e1032]:
+                  - generic [ref=e1033]: Заказы
+                  - generic [ref=e1034]: "0"
+                - generic [ref=e1035]:
+                  - generic [ref=e1036]: Тикеты
+                  - generic [ref=e1037]: "1"
+              - generic [ref=e1038]:
+                - generic [ref=e1039]: Последний платеж
+                - generic [ref=e1040]: pro • 1900
+                - generic [ref=e1041]: 10.03.2026, 02:52:48
+              - generic [ref=e1042]:
+                - generic [ref=e1043]:
+                  - generic [ref=e1044]: Имя
+                  - textbox "Имя" [ref=e1045]: Alina Master
+                - generic [ref=e1046]:
+                  - generic [ref=e1047]: Email
+                  - textbox "Email" [ref=e1048]: master@veloria.test
+                - generic [ref=e1049]:
+                  - generic [ref=e1050]: Телефон
+                  - textbox "Телефон" [ref=e1051]: "+79990000001"
+                - generic [ref=e1052]:
+                  - generic [ref=e1053]: Новый пароль
+                  - textbox "Новый пароль" [ref=e1054]:
+                    - /placeholder: Оставьте пустым, если не меняете
+                - generic [ref=e1055]:
+                  - generic [ref=e1056]: Статус
+                  - combobox "Статус" [ref=e1057]:
+                    - option "Active"
+                    - option "Suspended" [selected]
+                - generic [ref=e1058]:
+                  - generic [ref=e1059]: Доступ в backoffice
+                  - combobox "Доступ в backoffice" [ref=e1060]:
+                    - option "Нет" [selected]
+                    - option "Да"
+                - generic [ref=e1061]:
+                  - generic [ref=e1062]: Роль backoffice
+                  - combobox "Роль backoffice" [ref=e1063]:
+                    - option "Без роли" [selected]
+                    - option "Super Admin"
+                    - option "Support"
+                    - option "Finance"
+                    - option "Analyst"
+                - generic [ref=e1064]:
+                  - generic [ref=e1065]: Заметки оператора
+                  - textbox "Заметки оператора" [ref=e1066]:
+                    - /placeholder: Почему аккаунт был ограничен, что уже проверили, какие следующие шаги
+                    - text: Проверка через backoffice
+                - generic [ref=e1067]:
+                  - button "Сохранить" [ref=e1068] [cursor=pointer]
+                  - button "Удалить пользователя" [ref=e1069] [cursor=pointer]
+              - generic [ref=e1070]:
+                - generic [ref=e1071]: Последние административные события
+                - generic [ref=e1072]:
+                  - generic [ref=e1074]:
+                    - generic [ref=e1075]: admin.support_ticket_replied
+                    - generic [ref=e1076]: 10.03.2026, 06:11:46
+                  - generic [ref=e1078]:
+                    - generic [ref=e1079]: admin.support_ticket_replied
+                    - generic [ref=e1080]: 10.03.2026, 05:58:01
+                  - generic [ref=e1082]:
+                    - generic [ref=e1083]: admin.support_ticket_updated
+                    - generic [ref=e1084]: 10.03.2026, 05:57:43
+                  - generic [ref=e1086]:
+                    - generic [ref=e1087]: admin.user_suspended
+                    - generic [ref=e1088]: 10.03.2026, 05:56:46
+        - contentinfo [ref=e62]:
+          - generic [ref=e64]:
+            - generic [ref=e65]: © 2026
+            - generic [ref=e263]:
+              - link "Пользовательское соглашение" [ref=e264] [cursor=pointer]:
+                - /url: /terms
+              - link "Политика конфиденциальности" [ref=e265] [cursor=pointer]:
+                - /url: /policy
+  - generic [ref=e266]:
+    - link [ref=e267] [cursor=pointer]:
+      - /url: javascript:void(0)
+    - generic [ref=e268]:
+      - heading "Template Customizer" [level=6] [ref=e269]
+      - paragraph [ref=e270]: Customize and preview in real time
+      - generic [ref=e271]:
+        - link "Reset Customizer" [ref=e272] [cursor=pointer]:
+          - /url: javascript:void(0)
+        - link [ref=e274] [cursor=pointer]:
+          - /url: javascript:void(0)
+    - generic [ref=e276]:
+      - generic [ref=e277]:
+        - heading "Theming" [level=5] [ref=e278]
+        - generic [ref=e279]:
+          - generic [ref=e280]: Primary Color
+          - button "toggle color picker dialog" [ref=e300] [cursor=pointer]
+        - generic [ref=e301]:
+          - generic [ref=e302]: Theme
+          - generic [ref=e303]:
+            - generic [ref=e309] [cursor=pointer]: Light
+            - generic [ref=e315] [cursor=pointer]: Dark
+            - generic [ref=e321] [cursor=pointer]: System
+        - generic [ref=e322]:
+          - generic [ref=e323]: Skins
+          - generic [ref=e324]:
+            - generic [ref=e325]:
+              - img [ref=e329] [cursor=pointer]
+              - generic [ref=e345] [cursor=pointer]: Default
+            - generic [ref=e346]:
+              - img [ref=e350] [cursor=pointer]
+              - generic [ref=e365] [cursor=pointer]: Bordered
+        - generic [ref=e366]:
+          - generic [ref=e367]: Semi Dark
+          - checkbox [ref=e368]
+        - separator [ref=e372]
+      - generic [ref=e373]:
+        - heading "Layout" [level=5] [ref=e374]
+        - generic [ref=e375]:
+          - generic [ref=e376]: Menu (Navigation)
+          - generic [ref=e377]:
+            - generic [ref=e378]:
+              - img [ref=e382] [cursor=pointer]
+              - generic [ref=e398] [cursor=pointer]: Expanded
+            - generic [ref=e399]:
+              - img [ref=e403] [cursor=pointer]
+              - generic [ref=e419] [cursor=pointer]: Collapsed
+        - generic [ref=e420]:
+          - generic [ref=e421]: Navbar Type
+          - generic [ref=e422]:
+            - generic [ref=e423]:
+              - img [ref=e427] [cursor=pointer]
+              - generic [ref=e443] [cursor=pointer]: Sticky
+            - generic [ref=e444]:
+              - img [ref=e448] [cursor=pointer]
+              - generic [ref=e464] [cursor=pointer]: Static
+            - generic [ref=e465]:
+              - img [ref=e469] [cursor=pointer]
+              - generic [ref=e480] [cursor=pointer]: Hidden
+        - generic [ref=e481]:
+          - generic [ref=e482]: Content
+          - generic [ref=e483]:
+            - generic [ref=e484]:
+              - img [ref=e488] [cursor=pointer]
+              - generic [ref=e498] [cursor=pointer]: Compact
+            - generic [ref=e499]:
+              - img [ref=e503] [cursor=pointer]
+              - generic [ref=e513] [cursor=pointer]: Wide
+        - generic [ref=e514]:
+          - generic [ref=e515]: Direction
+          - generic [ref=e516]:
+            - generic [ref=e517]:
+              - img [ref=e521] [cursor=pointer]
+              - generic [ref=e535] [cursor=pointer]: Left to Right (En)
+            - generic [ref=e536]:
+              - img [ref=e540] [cursor=pointer]
+              - generic [ref=e554] [cursor=pointer]: Right to Left (Ar)

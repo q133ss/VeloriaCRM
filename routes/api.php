@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\V1\Marketing\MarketingCampaignController;
 use App\Http\Controllers\Api\V1\Marketing\PromotionController;
 use App\Http\Controllers\Api\V1\Marketing\WarmupController;
 use App\Http\Controllers\Api\V1\AnalyticsController;
+use App\Http\Controllers\Api\V1\Admin\AdminOverviewController;
+use App\Http\Controllers\Api\V1\Admin\AdminAuditController;
+use App\Http\Controllers\Api\V1\Admin\AdminSupportTicketController;
+use App\Http\Controllers\Api\V1\Admin\AdminUserController as ApiAdminUserController;
 use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\TrendsController;
@@ -45,7 +49,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         });
     });
 
-    Route::middleware(['auth:sanctum', 'token.user'])->group(function () {
+    Route::middleware(['auth:sanctum', 'token.user', 'user.active'])->group(function () {
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::get('/settings/integrations', [SettingController::class, 'integrations']);
@@ -132,4 +136,22 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::post('/notifications', [NotificationController::class, 'store']);
         Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
     });
+
+    Route::middleware(['auth:sanctum', 'token.user', 'user.active', 'admin.access'])
+        ->prefix('admin')
+        ->group(function () {
+            Route::get('/overview', [AdminOverviewController::class, 'index']);
+            Route::get('/audit', [AdminAuditController::class, 'index']);
+            Route::get('/users', [ApiAdminUserController::class, 'index']);
+            Route::post('/users', [ApiAdminUserController::class, 'store']);
+            Route::get('/users/{user}', [ApiAdminUserController::class, 'show']);
+            Route::patch('/users/{user}', [ApiAdminUserController::class, 'update']);
+            Route::delete('/users/{user}', [ApiAdminUserController::class, 'destroy']);
+            Route::post('/users/{user}/subscription', [ApiAdminUserController::class, 'updateSubscription']);
+
+            Route::get('/support/tickets', [AdminSupportTicketController::class, 'index']);
+            Route::get('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'show']);
+            Route::patch('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'update']);
+            Route::post('/support/tickets/{ticket}/reply', [AdminSupportTicketController::class, 'reply']);
+        });
 });

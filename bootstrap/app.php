@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'set.locale' => \App\Http\Middleware\SetLocale::class,
             'token.user' => \App\Http\Middleware\EnsureSanctumTokenIsUser::class,
             'token.client' => \App\Http\Middleware\EnsureSanctumTokenIsClient::class,
+            'admin.access' => \App\Http\Middleware\EnsureAdminAccess::class,
+            'user.active' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
 
         $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);
