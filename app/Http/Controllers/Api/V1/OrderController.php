@@ -153,7 +153,7 @@ class OrderController extends Controller
         return response()->json([
             'data' => $this->decorateOrder($order),
             'meta' => [
-                'has_pro_access' => $this->userHasProAccess(),
+                'has_elite_access' => $this->userHasEliteAccess(),
                 'reminder_message' => optional($settings)->reminder_message,
             ],
         ]);
@@ -528,11 +528,11 @@ class OrderController extends Controller
         $this->ensureOrderBelongsToCurrentUser($order);
         $order->loadMissing(['client']);
 
-        if (! $this->userHasProAccess()) {
+        if (! $this->userHasEliteAccess()) {
             return response()->json([
                 'error' => [
                     'code' => 'feature_unavailable',
-                    'message' => 'Аналитика доступна только в тарифах PRO и Elite.',
+                    'message' => 'Аналитика доступна только в тарифе Elite.',
                 ],
             ], 403);
         }
@@ -1919,6 +1919,24 @@ PROMPT;
 
         return $user->plans()
             ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->exists();
+    }
+
+    protected function userHasEliteAccess(): bool
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->plans()
+            ->whereIn('name', ['elite', 'Elite', 'ELITE'])
             ->where(function ($query) {
                 $query
                     ->whereNull('plan_user.ends_at')

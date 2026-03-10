@@ -256,69 +256,16 @@
             background: rgba(var(--bs-warning-rgb, 255, 171, 0), 0.16);
         }
 
-        .analytics-page .analytics-lock-card {
-            display: grid;
-            gap: 1rem;
-            align-items: center;
-            padding: 1.35rem;
-            border-radius: 1.35rem;
-            border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), transparent 34%),
-                rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.6);
-        }
-
-        .analytics-page .analytics-lock-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-            color: var(--bs-primary);
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-
-        .analytics-page .analytics-lock-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.3fr) minmax(240px, 0.7fr);
-            gap: 1rem;
-        }
-
-        .analytics-page .analytics-lock-preview {
-            display: grid;
-            gap: 0.75rem;
-            padding: 1rem;
-            border-radius: 1rem;
-            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
-        }
-
-        .analytics-page .analytics-lock-preview-row {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.65rem;
-        }
-
-        .analytics-page .analytics-lock-preview-pill {
-            min-height: 3rem;
-            border-radius: 0.9rem;
-            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.05);
-        }
-
         html[data-bs-theme="dark"] .analytics-page .analytics-focus-card,
         html[data-bs-theme="dark"] .analytics-page .analytics-peak-summary,
         html[data-bs-theme="dark"] .analytics-page .analytics-driver-item,
         html[data-bs-theme="dark"] .analytics-page .analytics-action-card,
-        html[data-bs-theme="dark"] .analytics-page .analytics-heatmap-shell,
-        html[data-bs-theme="dark"] .analytics-page .analytics-lock-card {
+        html[data-bs-theme="dark"] .analytics-page .analytics-heatmap-shell {
             background: rgba(20, 23, 34, 0.84);
         }
 
         html[data-bs-theme="dark"] .analytics-page .analytics-peak-stat,
-        html[data-bs-theme="dark"] .analytics-page .analytics-heatmap-cell,
-        html[data-bs-theme="dark"] .analytics-page .analytics-lock-preview,
-        html[data-bs-theme="dark"] .analytics-page .analytics-lock-preview-pill {
+        html[data-bs-theme="dark"] .analytics-page .analytics-heatmap-cell {
             background: rgba(255, 255, 255, 0.03);
         }
 
@@ -391,10 +338,6 @@
                 font-size: 0.82rem;
             }
 
-            .analytics-page .analytics-lock-grid,
-            .analytics-page .analytics-lock-preview-row {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 575.98px) {
@@ -623,31 +566,7 @@
             </div>
 
             <div class="analytics-lock-card" id="analytics-peak-hours-locked" hidden>
-                <div class="analytics-lock-grid">
-                    <div>
-                        <span class="analytics-lock-badge" id="analytics-smart-lock-badge-top">
-                            <i class="ri ri-vip-crown-line"></i>
-                            —
-                        </span>
-                        <h5 class="mt-3 mb-2" id="analytics-smart-lock-title-top">—</h5>
-                        <p class="text-muted mb-3" id="analytics-smart-lock-description-top">—</p>
-                        <a href="/subscription" class="btn btn-primary" id="analytics-smart-lock-link-top">
-                            —
-                        </a>
-                    </div>
-                    <div class="analytics-lock-preview" aria-hidden="true">
-                        <div class="analytics-lock-preview-row">
-                            <div class="analytics-lock-preview-pill"></div>
-                            <div class="analytics-lock-preview-pill"></div>
-                            <div class="analytics-lock-preview-pill"></div>
-                        </div>
-                        <div class="analytics-lock-preview-row">
-                            <div class="analytics-lock-preview-pill"></div>
-                            <div class="analytics-lock-preview-pill"></div>
-                            <div class="analytics-lock-preview-pill"></div>
-                        </div>
-                    </div>
-                </div>
+                @include('components.elite-lock-card')
             </div>
         </section>
 
@@ -702,26 +621,7 @@
         </section>
 
         <section class="analytics-card" id="analytics-smart-panels-locked" hidden>
-            <div class="analytics-lock-card">
-                <div class="analytics-lock-grid">
-                    <div>
-                        <span class="analytics-lock-badge" id="analytics-smart-lock-badge-bottom">
-                            <i class="ri ri-vip-crown-line"></i>
-                            —
-                        </span>
-                        <h5 class="mt-3 mb-2" id="analytics-smart-lock-title-bottom">—</h5>
-                        <p class="text-muted mb-3" id="analytics-smart-lock-description-bottom">—</p>
-                        <a href="/subscription" class="btn btn-primary" id="analytics-smart-lock-link-bottom">
-                            —
-                        </a>
-                    </div>
-                    <div class="analytics-lock-preview" aria-hidden="true">
-                        <div class="analytics-soft-card">AI</div>
-                        <div class="analytics-soft-card">Insights</div>
-                        <div class="analytics-soft-card">Upsell</div>
-                    </div>
-                </div>
-            </div>
+            @include('components.elite-lock-card')
         </section>
 
         <details class="analytics-collapse" open id="analytics-sales-details">
@@ -879,7 +779,6 @@
             const segmentLabels = @json(trans('analytics.segments'));
             const aiTexts = @json(trans('analytics.ai'));
             const peakHoursTexts = @json(trans('analytics.peak_hours'));
-            const smartLockTexts = @json(trans('analytics.smart_lock'));
 
             const state = {
                 filters: {
@@ -940,21 +839,6 @@
             const peakLockedEl = document.getElementById('analytics-peak-hours-locked');
             const smartPanelsEl = document.getElementById('analytics-smart-panels');
             const smartPanelsLockedEl = document.getElementById('analytics-smart-panels-locked');
-
-            const smartLockTargets = [
-                {
-                    badge: document.getElementById('analytics-smart-lock-badge-top'),
-                    title: document.getElementById('analytics-smart-lock-title-top'),
-                    description: document.getElementById('analytics-smart-lock-description-top'),
-                    link: document.getElementById('analytics-smart-lock-link-top')
-                },
-                {
-                    badge: document.getElementById('analytics-smart-lock-badge-bottom'),
-                    title: document.getElementById('analytics-smart-lock-title-bottom'),
-                    description: document.getElementById('analytics-smart-lock-description-bottom'),
-                    link: document.getElementById('analytics-smart-lock-link-bottom')
-                }
-            ];
 
             if (typeof window.Chart === 'undefined') {
                 console.error('Chart.js library is required for analytics charts.');
@@ -1345,15 +1229,6 @@
             function renderSmartAccess(access) {
                 const smartAccess = access && access.smart_insights ? access.smart_insights : null;
                 const available = !smartAccess || smartAccess.available !== false;
-
-                smartLockTargets.forEach(function (target) {
-                    if (!target.badge || !target.title || !target.description || !target.link) return;
-                    target.badge.innerHTML = '<i class="ri ri-vip-crown-line"></i>' + (smartAccess && smartAccess.badge ? smartAccess.badge : smartLockTexts.badge);
-                    target.title.textContent = smartAccess && smartAccess.title ? smartAccess.title : smartLockTexts.title;
-                    target.description.textContent = smartAccess && smartAccess.description ? smartAccess.description : smartLockTexts.description;
-                    target.link.textContent = smartAccess && smartAccess.cta ? smartAccess.cta : smartLockTexts.cta;
-                    target.link.href = smartAccess && smartAccess.upgrade_url ? smartAccess.upgrade_url : '/subscription';
-                });
 
                 if (smartPanelsEl && smartPanelsLockedEl) {
                     smartPanelsEl.hidden = !available;

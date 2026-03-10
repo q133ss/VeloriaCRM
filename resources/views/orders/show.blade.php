@@ -37,11 +37,12 @@
             box-shadow: 0 0 0 1px var(--bs-body-bg)!important;
             top: 5px!important;
         }
+
     </style>
 @endsection
 
 @section('content')
-    <div id="order-view" data-order-id="{{ $orderId ?? '' }}">
+    <div id="order-view" class="order-show-page" data-order-id="{{ $orderId ?? '' }}">
         <div class="mb-4">
             <div class="d-flex flex-column gap-2">
                 <div>
@@ -181,6 +182,10 @@
         </div>
     </div>
 
+    <template id="order-ai-lock-template">
+        @include('components.elite-lock-card')
+    </template>
+
     <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -245,6 +250,7 @@
         const rescheduleErrors = document.getElementById('reschedule-errors');
         const analyticsContent = document.getElementById('analytics-content');
         const aiBadge = document.getElementById('ai-recommendations-badge');
+        const aiLockTemplate = document.getElementById('order-ai-lock-template');
 
         const actionEdit = document.getElementById('action-edit');
         const actionStart = document.getElementById('action-start');
@@ -255,7 +261,7 @@
         const actionAnalytics = document.getElementById('action-analytics');
 
         let currentOrder = null;
-        let meta = { has_pro_access: false, reminder_message: null };
+        let meta = { has_elite_access: false, reminder_message: null };
         let analyticsData = null;
         let analyticsLoaded = false;
         let analyticsLoading = false;
@@ -355,12 +361,12 @@
         function renderRecommendations(recommendations) {
             const container = document.getElementById('order-ai-recommendations');
             container.innerHTML = '';
-            if (!meta.has_pro_access) {
+            if (!meta.has_elite_access) {
                 if (aiBadge) {
-                    aiBadge.textContent = 'PRO';
+                    aiBadge.textContent = 'Elite';
                     aiBadge.className = 'badge bg-label-secondary';
                 }
-                container.innerHTML = '<p class="text-muted mb-0">Доступно только в тарифах PRO и Elite.</p>';
+                container.innerHTML = aiLockTemplate ? aiLockTemplate.innerHTML : '<p class="text-muted mb-0">Доступно только в тарифе Elite.</p>';
                 return;
             }
             if (aiBadge) {
@@ -473,8 +479,8 @@
         }
 
         function renderAnalyticsModal() {
-            if (!meta.has_pro_access) {
-                analyticsContent.innerHTML = '<p class="text-muted mb-0">Аналитика доступна только в тарифах PRO и Elite.</p>';
+            if (!meta.has_elite_access) {
+                analyticsContent.innerHTML = '<p class="text-muted mb-0">Аналитика доступна только в тарифе Elite.</p>';
                 return;
             }
 
@@ -497,7 +503,7 @@
         }
 
         async function loadAnalytics() {
-            if (!meta.has_pro_access) {
+            if (!meta.has_elite_access) {
                 renderAnalyticsModal();
                 return;
             }
@@ -593,7 +599,7 @@
             actionRemind.hidden = !canRemind;
             actionRemind.disabled = !canRemind;
 
-            const canSeeAnalytics = !!meta.has_pro_access && !!order.client?.id;
+            const canSeeAnalytics = !!meta.has_elite_access && !!order.client?.id;
             actionAnalytics.hidden = !canSeeAnalytics;
             actionAnalytics.disabled = !canSeeAnalytics;
         }
@@ -692,7 +698,7 @@
         });
 
         actionAnalytics.addEventListener('click', function () {
-            if (!meta.has_pro_access) {
+            if (!meta.has_elite_access) {
                 renderAnalyticsModal();
                 return;
             }

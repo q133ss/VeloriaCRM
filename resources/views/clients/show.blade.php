@@ -184,61 +184,8 @@
             padding-top: 1rem;
         }
 
-        .client-show-page .client-lock-card {
-            display: grid;
-            gap: 1rem;
-            align-items: center;
-            padding: 1.15rem;
-            border-radius: 1.2rem;
-            border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), transparent 34%),
-                rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.6);
-        }
-
-        .client-show-page .client-lock-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-            color: var(--bs-primary);
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-
-        .client-show-page .client-lock-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
-            gap: 1rem;
-        }
-
-        .client-show-page .client-lock-preview {
-            display: grid;
-            gap: 0.75rem;
-            padding: 1rem;
-            border-radius: 1rem;
-            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
-        }
-
-        .client-show-page .client-lock-preview-pill {
-            min-height: 2.8rem;
-            border-radius: 0.9rem;
-            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.05);
-        }
-
         .client-show-page .soft-hidden {
             display: none;
-        }
-
-        html[data-bs-theme="dark"] .client-show-page .client-lock-card {
-            background: rgba(20, 23, 34, 0.84);
-        }
-
-        html[data-bs-theme="dark"] .client-show-page .client-lock-preview,
-        html[data-bs-theme="dark"] .client-show-page .client-lock-preview-pill {
-            background: rgba(255, 255, 255, 0.03);
         }
 
         @media (max-width: 991.98px) {
@@ -247,9 +194,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .client-show-page .client-lock-grid {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 
@@ -397,25 +341,8 @@
                             <h2 class="h5 mb-0">Рекомендации ИИ</h2>
                             <span class="badge bg-label-secondary" id="client-ai-badge">ИИ</span>
                         </div>
-                        <div class="client-lock-card" id="client-ai-lock" hidden>
-                            <div class="client-lock-grid">
-                                <div>
-                                    <span class="client-lock-badge">
-                                        <i class="ri ri-vip-crown-line"></i>
-                                        {{ __('analytics.smart_lock.badge') }}
-                                    </span>
-                                    <h3 class="h5 mt-3 mb-2">{{ __('analytics.smart_lock.title') }}</h3>
-                                    <p class="text-muted mb-3">{{ __('analytics.smart_lock.description') }}</p>
-                                    <a href="{{ url('/subscription') }}" class="btn btn-primary">
-                                        {{ __('analytics.smart_lock.cta') }}
-                                    </a>
-                                </div>
-                                <div class="client-lock-preview" aria-hidden="true">
-                                    <div class="client-lock-preview-pill"></div>
-                                    <div class="client-lock-preview-pill"></div>
-                                    <div class="client-lock-preview-pill"></div>
-                                </div>
-                            </div>
+                        <div id="client-ai-lock" hidden>
+                            @include('components.elite-lock-card')
                         </div>
                         <details class="surface-collapse" id="client-ai-details">
                             <summary class="text-muted small">Показываем только то, что может помочь с удержанием и апсейлом.</summary>

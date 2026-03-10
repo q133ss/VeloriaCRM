@@ -185,50 +185,6 @@
             margin-top: 1.25rem;
         }
 
-        .dashboard-lock-card {
-            display: grid;
-            gap: 1rem;
-            align-items: center;
-            padding: 1.15rem;
-            border-radius: 1.35rem;
-            border: 1px dashed rgba(var(--bs-primary-rgb), 0.24);
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.08), transparent 34%),
-                rgba(var(--bs-body-bg-rgb), 0.6);
-        }
-
-        .dashboard-lock-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb), 0.08);
-            color: var(--bs-primary);
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-
-        .dashboard-lock-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
-            gap: 1rem;
-        }
-
-        .dashboard-lock-preview {
-            display: grid;
-            gap: 0.75rem;
-            padding: 1rem;
-            border-radius: 1rem;
-            background: rgba(var(--bs-body-color-rgb), 0.03);
-        }
-
-        .dashboard-lock-preview-pill {
-            min-height: 2.8rem;
-            border-radius: 0.9rem;
-            background: rgba(var(--bs-body-color-rgb), 0.05);
-        }
-
         .dashboard-secondary-item {
             display: flex;
             gap: 0.75rem;
@@ -401,15 +357,6 @@
             color: #fff;
         }
 
-        [data-bs-theme="dark"] .dashboard-lock-card {
-            background: rgba(20, 23, 34, 0.84);
-        }
-
-        [data-bs-theme="dark"] .dashboard-lock-preview,
-        [data-bs-theme="dark"] .dashboard-lock-preview-pill {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
         [data-bs-theme="light"] .dashboard-hero {
             background:
                 radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 28%),
@@ -476,9 +423,6 @@
                 flex-direction: column;
             }
 
-            .dashboard-lock-grid {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 @endsection
@@ -557,26 +501,9 @@
                         </div>
 
                         @if (! $aiAvailable)
-                            <div class="dashboard-lock-card">
-                                <div class="dashboard-lock-grid">
-                                    <div>
-                                        <span class="dashboard-lock-badge">
-                                            <i class="ri ri-vip-crown-line"></i>
-                                            {{ __('analytics.smart_lock.badge') }}
-                                        </span>
-                                        <h3 class="h5 mt-3 mb-2">{{ __('analytics.smart_lock.title') }}</h3>
-                                        <p class="text-muted mb-3">{{ __('analytics.smart_lock.description') }}</p>
-                                        <a href="{{ data_get($aiAccess, 'upgrade_url', url('/subscription')) }}" class="btn btn-primary">
-                                            {{ __('analytics.smart_lock.cta') }}
-                                        </a>
-                                    </div>
-                                    <div class="dashboard-lock-preview" aria-hidden="true">
-                                        <div class="dashboard-lock-preview-pill"></div>
-                                        <div class="dashboard-lock-preview-pill"></div>
-                                        <div class="dashboard-lock-preview-pill"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            @include('components.elite-lock-card', [
+                                'href' => data_get($aiAccess, 'upgrade_url', url('/subscription')),
+                            ])
                         @elseif ($primarySuggestion)
                             <h3 class="h5 mb-2">{{ $primarySuggestion['title'] }}</h3>
                             <p class="text-muted mb-0">{{ $primarySuggestion['description'] }}</p>

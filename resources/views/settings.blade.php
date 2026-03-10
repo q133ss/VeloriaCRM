@@ -339,20 +339,15 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="settings-feature-lock p-4 d-none" id="daily-post-ideas-locked">
-                                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-                                        <div>
-                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                                <span class="badge bg-label-warning text-dark">Только Elite</span>
-                                            </div>
-                                            <h6 class="mb-2">Ежедневные идеи для постов</h6>
-                                            <p class="text-muted mb-0">Автоматические идеи для Telegram и публикаций на платформе доступны только на тарифе Elite.</p>
-                                        </div>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            <a href="/subscription" class="btn btn-outline-primary">Перейти на Elite</a>
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
+                            <div class="col-12 d-none" id="daily-post-ideas-locked-shared">
+                                @include('components.elite-lock-card', [
+                                    'wrapperClass' => 'settings-feature-lock p-4',
+                                    'title' => 'Ежедневные идеи для постов',
+                                    'description' => 'Автоматические идеи для Telegram и публикаций на платформе доступны только на тарифе Elite.',
+                                    'cta' => 'Перейти на Elite',
+                                    'buttonClass' => 'btn btn-outline-primary',
+                                ])
                             </div>
                             <div class="col-12">
                                 <div class="alert alert-primary mt-1 mb-0">
@@ -539,6 +534,7 @@
         const hasDailyIdeasAccess = Boolean(dailyIdeasFeature.available);
         const dailyIdeasEliteCard = document.getElementById('daily-post-ideas-elite');
         const dailyIdeasLockedCard = document.getElementById('daily-post-ideas-locked');
+        const dailyIdeasLockedSharedCard = document.getElementById('daily-post-ideas-locked-shared');
         const dailyIdeasToggle = document.getElementById('daily_post_ideas_enabled');
         const dailyIdeasChannel = document.getElementById('daily_post_ideas_channel');
         const dailyIdeasPreferences = document.getElementById('daily_post_ideas_preferences');
@@ -559,7 +555,10 @@
             dailyIdeasEliteCard.classList.toggle('d-none', !hasDailyIdeasAccess);
         }
         if (dailyIdeasLockedCard) {
-            dailyIdeasLockedCard.classList.toggle('d-none', hasDailyIdeasAccess);
+            dailyIdeasLockedCard.classList.add('d-none');
+        }
+        if (dailyIdeasLockedSharedCard) {
+            dailyIdeasLockedSharedCard.classList.toggle('d-none', hasDailyIdeasAccess);
         }
         if (dailyIdeasToggle) {
             dailyIdeasToggle.checked = Boolean(dailyIdeasFeature.enabled);
