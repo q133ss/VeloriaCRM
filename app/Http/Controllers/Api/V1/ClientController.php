@@ -603,6 +603,11 @@ class ClientController extends Controller
             ];
         }
 
+        $activeOrder = $orders
+            ->filter(fn (Order $order) => $order->status === 'in_progress')
+            ->sortByDesc(fn (Order $order) => $order->actual_started_at ?? $order->scheduled_at)
+            ->first();
+
         $total = $orders->count();
         $noShows = $orders->where('status', 'no_show');
         $cancelled = $orders->where('status', 'cancelled');
@@ -672,12 +677,39 @@ class ClientController extends Controller
         $signals = array_values(array_unique($signals));
         $suggestions = array_values(array_unique($suggestions));
 
-        return [
+        $historicalRisk = [
             'level' => $level,
             'label' => $label,
             'score' => $score,
             'signals' => $signals,
             'suggestions' => $suggestions,
+        ];
+
+        if (! $activeOrder) {
+            return $historicalRisk;
+        }
+
+        $activeVisitTime = $activeOrder->actual_started_at ?? $activeOrder->scheduled_at;
+
+        return [
+            'level' => 'active_visit',
+            'label' => 'Сейчас на визите',
+            'score' => null,
+            'signals' => array_values(array_filter([
+                'Текущая запись уже началась, поэтому риск неявки для этого визита не актуален.',
+                $activeVisitTime ? 'Начало зафиксировано: ' . $activeVisitTime->format('d.m.Y H:i') . '.' : null,
+                'Исторические отмены и неявки продолжают учитываться в общем профиле клиента.',
+            ])),
+            'suggestions' => array_values(array_filter([
+                'После завершения услуги сохраните запись как завершённую, чтобы история клиента оставалась точной.',
+                'Исторический риск клиента: ' . $historicalRisk['label'] . '.',
+            ])),
+            'historical' => $historicalRisk,
+            'active_order' => [
+                'id' => $activeOrder->id,
+                'started_at' => optional($activeOrder->actual_started_at)->toIso8601String(),
+                'scheduled_at' => optional($activeOrder->scheduled_at)->toIso8601String(),
+            ],
         ];
     }
 

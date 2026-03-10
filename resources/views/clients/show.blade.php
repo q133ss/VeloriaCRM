@@ -702,12 +702,15 @@
                     low: 'bg-label-success',
                     medium: 'bg-label-warning',
                     high: 'bg-label-danger',
+                    active_visit: 'bg-label-info',
                 }[risk.level] || 'bg-label-secondary';
 
                 riskBadge.className = 'badge ' + levelClass;
                 riskBadge.textContent = risk.label || '—';
 
-                if (typeof risk.score === 'number') {
+                if (risk.level === 'active_visit' && risk.historical?.label) {
+                    riskScoreEl.textContent = `Клиент уже на визите. Исторический риск: ${risk.historical.label}.`;
+                } else if (typeof risk.score === 'number') {
                     riskScoreEl.textContent = `Оценка риска: ${Math.round(risk.score)} из 100.`;
                 } else {
                     riskScoreEl.textContent = 'Оценка риска доступна на основе истории визитов.';
