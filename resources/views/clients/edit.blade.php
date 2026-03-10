@@ -3,7 +3,97 @@
 @section('title', 'Редактирование клиента')
 
 @section('content')
-    <div id="client-edit" data-client-id="{{ $clientId ?? '' }}">
+    <style>
+        .client-edit-page .chip-input-shell {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .client-edit-page .chip-textarea {
+            display: none;
+        }
+
+        .client-edit-page .tagify {
+            --tags-border-color: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.12);
+            --tags-hover-border-color: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.28);
+            --tags-focus-border-color: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.44);
+            --tag-bg: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.1);
+            --tag-hover: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.16);
+            --tag-text-color: var(--bs-emphasis-color);
+            min-height: calc(3.25rem + 2px);
+            padding: 0.5rem 0.75rem;
+            border-radius: 1rem;
+            background: var(--bs-body-bg);
+        }
+
+        .client-edit-page .tagify__input {
+            margin: 0.25rem 0;
+        }
+
+        .client-edit-page .suggestion-chip {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.42rem 0.8rem;
+            background: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.1);
+            color: var(--bs-emphasis-color);
+            font-weight: 600;
+        }
+
+        .client-edit-page .preferences-card {
+            display: grid;
+            gap: 0.85rem;
+            margin-top: 0.35rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.03);
+        }
+
+        .client-edit-page .preferences-hint {
+            color: var(--bs-secondary-color);
+            font-size: 0.92rem;
+        }
+
+        .client-edit-page .preferences-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .client-edit-page .preference-row {
+            display: grid;
+            grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr) auto;
+            gap: 0.75rem;
+            align-items: start;
+        }
+
+        .client-edit-page .preference-row .btn {
+            height: calc(3.25rem + 2px);
+            border-radius: 1rem;
+        }
+
+        .client-edit-page .preference-empty {
+            padding: 0.95rem 1rem;
+            border: 1px dashed rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.14);
+            border-radius: 1rem;
+            color: var(--bs-secondary-color);
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.02);
+        }
+
+        html[data-bs-theme="dark"] .client-edit-page .preferences-card,
+        html[data-bs-theme="dark"] .client-edit-page .preference-empty {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        @media (max-width: 767.98px) {
+            .client-edit-page .preference-row {
+                grid-template-columns: 1fr;
+            }
+
+            .client-edit-page .preference-row .btn {
+                height: auto;
+            }
+        }
+    </style>
+    <div id="client-edit" class="client-edit-page" data-client-id="{{ $clientId ?? '' }}">
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
             <div>
                 <h4 class="mb-1" id="client-edit-title">Редактирование клиента</h4>
@@ -58,8 +148,9 @@
                 <div class="col-md-4">
                     <div class="form-floating form-floating-outline">
                         <select class="form-select" id="client-loyalty" name="loyalty_level"></select>
-                        <label for="client-loyalty">Уровень лояльности</label>
+                        <label for="client-loyalty">Статус клиента</label>
                     </div>
+                    <div class="form-text">Можно не заполнять. Используйте статус так, как вам удобно вести клиентскую базу.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="client-tags" class="form-label">Теги</label>
@@ -94,6 +185,8 @@
 
 @section('scripts')
     @include('components.phone-mask-script')
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/tagify/tagify.css') }}" />
+    <script src="{{ asset('assets/vendor/libs/tagify/tagify.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const container = document.getElementById('client-edit');
@@ -128,6 +221,11 @@
             const tagsInput = document.getElementById('client-tags');
             const allergiesInput = document.getElementById('client-allergies');
             const preferencesInput = document.getElementById('client-preferences');
+            let tagsTagify = null;
+            let allergiesTagify = null;
+            tagsTagify = createTagifyField(tagsInput, 'Например: любит спокойную музыку');
+            allergiesTagify = createTagifyField(allergiesInput, 'Например: сильный запах ацетона');
+            const preferencesEditor = setupPreferencesEditor(preferencesInput);
 
             function showAlert(type, message) {
                 const alert = document.createElement('div');
@@ -189,7 +287,7 @@
                     }
                     const badge = document.createElement('button');
                     badge.type = 'button';
-                    badge.className = 'badge bg-label-primary border-0';
+                    badge.className = 'suggestion-chip';
                     badge.textContent = item;
                     badge.addEventListener('click', () => handler(item));
                     container.appendChild(badge);
@@ -244,6 +342,197 @@
                 input.value = current ? current + '\n' + line : line;
             }
 
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
+            function createTagifyField(textarea, placeholder) {
+                if (!textarea || typeof Tagify === 'undefined') {
+                    return null;
+                }
+
+                textarea.classList.add('chip-textarea');
+
+                const shell = document.createElement('div');
+                shell.className = 'chip-input-shell';
+                textarea.insertAdjacentElement('afterend', shell);
+                shell.appendChild(textarea);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'form-control';
+                input.placeholder = placeholder;
+                shell.appendChild(input);
+
+                return new Tagify(input, {
+                    duplicates: false,
+                    editTags: 1,
+                    trim: true,
+                    originalInputValueFormat: values => values.map(item => item.value).join(', '),
+                    dropdown: {
+                        enabled: 0,
+                        maxItems: 12,
+                        closeOnSelect: false,
+                    },
+                });
+            }
+
+            function setTagifySuggestions(tagify, items) {
+                if (!tagify) return;
+                tagify.settings.whitelist = Array.isArray(items) ? items : [];
+            }
+
+            function setTagifyValues(tagify, values) {
+                if (!tagify) return;
+                tagify.removeAllTags();
+                if (Array.isArray(values) && values.length) {
+                    tagify.addTags(values);
+                }
+            }
+
+            function addTagValue(tagify, value) {
+                if (!tagify || !value) return;
+                const existing = tagify.value.map(item => item.value);
+                if (!existing.includes(value)) {
+                    tagify.addTags([value]);
+                }
+            }
+
+            function readTagifyValues(tagify, fallbackTextarea) {
+                if (!tagify) {
+                    return parseList(fallbackTextarea?.value || '');
+                }
+
+                return tagify.value.map(item => item.value).filter(Boolean);
+            }
+
+            function setupPreferencesEditor(textarea) {
+                if (!textarea) {
+                    return null;
+                }
+
+                textarea.classList.add('chip-textarea');
+
+                const card = document.createElement('div');
+                card.className = 'preferences-card';
+                card.innerHTML = `
+                    <div class="preferences-hint">Здесь лучше хранить несколько деталей, которые помогают сделать сервис более личным.</div>
+                    <div class="preferences-list"></div>
+                    <div class="preference-empty">Пока ничего не добавлено. Это поле необязательно.</div>
+                    <button type="button" class="btn btn-outline-primary align-self-start">
+                        <i class="ri ri-add-line me-1"></i>
+                        Добавить предпочтение
+                    </button>
+                `;
+                textarea.insertAdjacentElement('afterend', card);
+                const legacyHint = card.nextElementSibling;
+                if (legacyHint && legacyHint.classList.contains('form-text')) {
+                    legacyHint.hidden = true;
+                }
+
+                const list = card.querySelector('.preferences-list');
+                const empty = card.querySelector('.preference-empty');
+                const addButton = card.querySelector('button');
+
+                function sync() {
+                    const result = {};
+                    list.querySelectorAll('[data-preference-row]').forEach(function (row) {
+                        const key = row.querySelector('[data-preference-key]')?.value?.trim() || '';
+                        const value = row.querySelector('[data-preference-value]')?.value?.trim() || '';
+                        if (key) {
+                            result[key] = value;
+                        }
+                    });
+
+                    textarea.value = Object.entries(result)
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join('\n');
+
+                    empty.hidden = list.children.length > 0;
+                }
+
+                function addRow(key = '', value = '') {
+                    const row = document.createElement('div');
+                    row.className = 'preference-row';
+                    row.setAttribute('data-preference-row', 'true');
+                    row.innerHTML = `
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" class="form-control" data-preference-key placeholder="Например: Напиток" value="${escapeHtml(key)}" />
+                            <label>Что важно</label>
+                        </div>
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" class="form-control" data-preference-value placeholder="Например: Вода без газа" value="${escapeHtml(value)}" />
+                            <label>Значение</label>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary" data-remove-preference>
+                            <i class="ri ri-delete-bin-line"></i>
+                        </button>
+                    `;
+
+                    row.querySelectorAll('input').forEach(function (input) {
+                        input.addEventListener('input', sync);
+                        input.addEventListener('change', sync);
+                    });
+
+                    row.querySelector('[data-remove-preference]').addEventListener('click', function () {
+                        row.remove();
+                        sync();
+                    });
+
+                    list.appendChild(row);
+                    sync();
+                    return row;
+                }
+
+                function populate(preferences) {
+                    list.innerHTML = '';
+                    const entries = preferences && typeof preferences === 'object'
+                        ? Object.entries(preferences).filter(([key]) => key && String(key).trim() !== '')
+                        : [];
+
+                    if (!entries.length) {
+                        sync();
+                        return;
+                    }
+
+                    entries.forEach(function ([key, value]) {
+                        addRow(key, value || '');
+                    });
+                }
+
+                function appendSuggested(key) {
+                    const normalizedKey = (key || '').replace(/:$/, '').trim();
+                    if (!normalizedKey) return;
+
+                    const existing = Array.from(list.querySelectorAll('[data-preference-key]')).find(function (input) {
+                        return input.value.trim().toLowerCase() === normalizedKey.toLowerCase();
+                    });
+
+                    if (existing) {
+                        existing.closest('[data-preference-row]')?.querySelector('[data-preference-value]')?.focus();
+                        return;
+                    }
+
+                    const row = addRow(normalizedKey, '');
+                    row.querySelector('[data-preference-value]')?.focus();
+                }
+
+                addButton.addEventListener('click', function () {
+                    const row = addRow('', '');
+                    row.querySelector('[data-preference-key]')?.focus();
+                });
+
+                return {
+                    sync,
+                    populate,
+                    appendSuggested,
+                };
+            }
+
             function formatListForInput(items) {
                 if (!Array.isArray(items)) {
                     return '';
@@ -282,9 +571,11 @@
                     }
 
                     renderSelectOptions(loyaltySelect, Object.assign({ '': 'Не задан' }, result.loyalty_levels || {}));
-                    renderSuggestionBadges(tagSuggestions, result.tag_suggestions || [], value => appendToListInput(tagsInput, value));
-                    renderSuggestionBadges(allergySuggestions, result.allergy_suggestions || [], value => appendToListInput(allergiesInput, value));
-                    renderSuggestionBadges(preferenceSuggestions, result.preference_suggestions || [], value => appendPreference(preferencesInput, value));
+                    setTagifySuggestions(tagsTagify, result.tag_suggestions || []);
+                    setTagifySuggestions(allergiesTagify, result.allergy_suggestions || []);
+                    renderSuggestionBadges(tagSuggestions, result.tag_suggestions || [], value => addTagValue(tagsTagify, value));
+                    renderSuggestionBadges(allergySuggestions, result.allergy_suggestions || [], value => addTagValue(allergiesTagify, value));
+                    renderSuggestionBadges(preferenceSuggestions, result.preference_suggestions || [], value => preferencesEditor?.appendSuggested(value));
 
                     return result;
                 } catch (error) {
@@ -330,12 +621,16 @@
                 form.allergies.value = formatListForInput(client.allergies || []);
                 form.preferences.value = formatPreferencesForInput(client.preferences);
                 form.notes.value = client.notes || '';
+                setTagifyValues(tagsTagify, client.tags || []);
+                setTagifyValues(allergiesTagify, client.allergies || []);
+                preferencesEditor?.populate(client.preferences || {});
             }
 
             form.addEventListener('submit', async function (event) {
                 event.preventDefault();
                 clearAlerts();
                 clearFieldErrors();
+                preferencesEditor?.sync();
 
                 const payload = {
                     name: form.name.value.trim(),
@@ -345,8 +640,8 @@
                     last_visit_at: form.last_visit_at.value || null,
                     loyalty_level: form.loyalty_level.value || null,
                     notes: form.notes.value.trim() || null,
-                    tags: parseList(form.tags.value),
-                    allergies: parseList(form.allergies.value),
+                    tags: readTagifyValues(tagsTagify, form.tags),
+                    allergies: readTagifyValues(allergiesTagify, form.allergies),
                     preferences: parsePreferences(form.preferences.value),
                 };
 
