@@ -207,6 +207,8 @@ class OrderController extends Controller
 
             if ($scheduledChanged) {
                 $payload['start_confirmation_notified_at'] = null;
+                $payload['allergy_reminder_sent_at'] = null;
+                $payload['allergy_reminder_sent_for'] = null;
             }
 
             $order->update($payload);
@@ -501,6 +503,8 @@ class OrderController extends Controller
             'scheduled_at' => $newScheduledAt,
             'reschedule_count' => ($order->reschedule_count ?? 0) + 1,
             'start_confirmation_notified_at' => null,
+            'allergy_reminder_sent_at' => null,
+            'allergy_reminder_sent_for' => null,
         ]);
 
         $order->refresh();

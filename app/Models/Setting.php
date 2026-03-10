@@ -36,6 +36,9 @@ class Setting extends Model
         'yookassa_shop_id',
         'yookassa_secret_key',
         'reminder_message',
+        'allergy_reminder_enabled',
+        'allergy_reminder_minutes',
+        'allergy_reminder_exclusions',
         'daily_post_ideas_enabled',
         'daily_post_ideas_channel',
         'daily_post_ideas_preferences',
@@ -53,6 +56,9 @@ class Setting extends Model
             'branding' => 'array',
             'map_point' => 'array',
             'smtp_port' => 'integer',
+            'allergy_reminder_enabled' => 'boolean',
+            'allergy_reminder_minutes' => 'integer',
+            'allergy_reminder_exclusions' => 'array',
             'daily_post_ideas_enabled' => 'boolean',
         ];
     }

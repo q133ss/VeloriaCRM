@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateIntegrationsRequest;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
+use App\Services\AllergyReminderService;
 use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -15,6 +16,7 @@ use App\Models\User;
 class SettingController extends Controller
 {
     public function __construct(
+        private readonly AllergyReminderService $allergyReminderService,
         private readonly ScheduleService $scheduleService,
     ) {
     }
@@ -23,6 +25,7 @@ class SettingController extends Controller
     {
         $user = $request->user();
         $settings = $user->setting ?? new Setting(['notification_prefs' => []]);
+        $hasProAccess = $this->userHasProAccess($user);
         $hasEliteAccess = $this->userHasEliteAccess($user);
         $schedulePayload = $this->scheduleService->buildSettingsPayload($settings);
 
@@ -47,7 +50,15 @@ class SettingController extends Controller
                 'address' => $settings->address,
                 'map_point' => $settings->map_point,
                 'reminder_message' => $settings->reminder_message,
+                'options' => [
+                    'services' => $this->allergyReminderService->availableServices($user),
+                ],
                 'features' => [
+                    'allergy_reminders' => $this->allergyReminderService->buildSettingsPayload(
+                        $settings,
+                        $user,
+                        $hasProAccess,
+                    ),
                     'daily_post_ideas' => [
                         'enabled' => $hasEliteAccess ? (bool) $settings->daily_post_ideas_enabled : false,
                         'available' => $hasEliteAccess,
@@ -75,6 +86,8 @@ class SettingController extends Controller
     {
         $user = $request->user();
         $data = $request->validated();
+        $settings = Setting::firstOrNew(['user_id' => $user->id]);
+        $hasProAccess = $this->userHasProAccess($user);
         $hasEliteAccess = $this->userHasEliteAccess($user);
 
         $user->fill([
@@ -105,16 +118,24 @@ class SettingController extends Controller
             'address' => $data['address'] ?? null,
             'map_point' => $data['map_point'] ?? null,
             'reminder_message' => $data['reminder_message'] ?? null,
-            'daily_post_ideas_enabled' => $hasEliteAccess
-                ? (bool) ($data['daily_post_ideas_enabled'] ?? false)
-                : false,
-            'daily_post_ideas_channel' => $hasEliteAccess
-                ? ($data['daily_post_ideas_channel'] ?? 'both')
-                : null,
-            'daily_post_ideas_preferences' => $hasEliteAccess
-                ? ($data['daily_post_ideas_preferences'] ?? null)
-                : null,
         ];
+
+        if ($hasProAccess) {
+            $settingsAttributes['allergy_reminder_enabled'] = (bool) ($data['allergy_reminder_enabled'] ?? false);
+            $settingsAttributes['allergy_reminder_minutes'] = (int) ($data['allergy_reminder_minutes']
+                ?? $settings->allergy_reminder_minutes
+                ?? AllergyReminderService::DEFAULT_MINUTES);
+            $settingsAttributes['allergy_reminder_exclusions'] = $this->allergyReminderService->normalizeExclusions(
+                $data['allergy_reminder_exclusions'] ?? $settings->allergy_reminder_exclusions,
+                $user,
+            );
+        }
+
+        if ($hasEliteAccess) {
+            $settingsAttributes['daily_post_ideas_enabled'] = (bool) ($data['daily_post_ideas_enabled'] ?? false);
+            $settingsAttributes['daily_post_ideas_channel'] = $data['daily_post_ideas_channel'] ?? 'both';
+            $settingsAttributes['daily_post_ideas_preferences'] = $data['daily_post_ideas_preferences'] ?? null;
+        }
 
         if (array_key_exists('integrations', $data)) {
             $settingsAttributes = array_merge($settingsAttributes, $this->integrationAttributes($data));
@@ -225,6 +246,18 @@ class SettingController extends Controller
     {
         return $user->plans()
             ->whereIn('name', ['elite', 'Elite', 'ELITE'])
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->exists();
+    }
+
+    protected function userHasProAccess(User $user): bool
+    {
+        return $user->plans()
+            ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
             ->where(function ($query) {
                 $query
                     ->whereNull('plan_user.ends_at')

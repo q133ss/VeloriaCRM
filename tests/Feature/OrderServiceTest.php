@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Jobs\SendOrderStartReminderJob;
+use App\Models\Client;
 use App\Models\Order;
+use App\Models\Plan;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\OrderService;
@@ -82,6 +85,79 @@ class OrderServiceTest extends TestCase
         ]);
 
         $this->assertNotNull($order->fresh()->start_confirmation_notified_at);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_allergy_reminder_command_creates_notification_for_due_order(): void
+    {
+        Carbon::setTestNow('2025-01-01 12:00:00');
+
+        $plan = Plan::query()->create([
+            'name' => 'pro',
+            'price' => 999,
+        ]);
+
+        $master = User::factory()->create();
+        $master->plans()->attach($plan->id, ['ends_at' => Carbon::now()->addMonth()]);
+
+        Setting::query()->create([
+            'user_id' => $master->id,
+            'allergy_reminder_enabled' => true,
+            'allergy_reminder_minutes' => 15,
+            'allergy_reminder_exclusions' => [
+                'allergies' => [],
+                'services' => [],
+            ],
+        ]);
+
+        $client = User::factory()->create([
+            'name' => 'Анна Клиент',
+            'phone' => '+79990000001',
+        ]);
+
+        Client::query()->create([
+            'user_id' => $client->id,
+            'name' => 'Анна Клиент',
+            'phone' => $client->phone,
+            'email' => $client->email,
+            'allergies' => ['Латекс', 'Цитрусы'],
+        ]);
+
+        $order = Order::query()->create([
+            'master_id' => $master->id,
+            'client_id' => $client->id,
+            'services' => [[
+                'id' => 1,
+                'name' => 'Окрашивание',
+                'price' => 2500,
+                'duration' => 120,
+            ]],
+            'scheduled_at' => Carbon::now()->addMinutes(15),
+            'total_price' => 2500,
+            'status' => 'confirmed',
+            'source' => 'manual',
+        ]);
+
+        $this->artisan('alerts:send-allergy-reminders', ['userId' => $master->id])
+            ->expectsOutputToContain('Processed: 1, sent: 1, skipped: 0')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $master->id,
+            'title' => 'Проверьте аллергию перед записью',
+            'action_url' => '/orders/' . $order->id,
+        ]);
+
+        $notification = \App\Models\Notification::query()
+            ->where('user_id', $master->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($notification);
+        $this->assertStringContainsString('Анна Клиент', $notification->message);
+        $this->assertStringContainsString('Латекс, Цитрусы', $notification->message);
+        $this->assertNotNull($order->fresh()->allergy_reminder_sent_at);
 
         Carbon::setTestNow();
     }

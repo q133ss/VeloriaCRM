@@ -3,6 +3,7 @@
 use App\Models\MarketingCampaign;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\AllergyReminderService;
 use App\Services\DailyPostIdeaService;
 use App\Services\Marketing\MarketingCampaignService;
 use App\Services\SubscriptionPaymentSyncService;
@@ -131,6 +132,24 @@ Artisan::command('content:test-daily-idea {userId?}', function (?int $userId = n
     $this->line('CTA: ' . $idea['cta']);
 })->purpose('Generate one real AI content idea without sending it');
 
+Artisan::command('alerts:send-allergy-reminders {userId?}', function (?int $userId = null) {
+    /** @var AllergyReminderService $service */
+    $service = app(AllergyReminderService::class);
+    $result = $service->dispatchDueReminders(now(), $userId);
+
+    $this->info(sprintf(
+        'Processed: %d, sent: %d, skipped: %d',
+        $result['processed'],
+        $result['sent'],
+        $result['skipped']
+    ));
+
+    foreach ($result['items'] as $item) {
+        $this->line(json_encode($item, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+})->purpose('Send in-app allergy reminders before appointments for Pro and Elite users');
+
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
+Schedule::command('alerts:send-allergy-reminders')->everyMinute();
 Schedule::command('content:send-daily-ideas')->dailyAt('09:00');

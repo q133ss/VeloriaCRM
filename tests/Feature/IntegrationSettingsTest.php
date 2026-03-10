@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Setting;
+use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -164,5 +166,61 @@ class IntegrationSettingsTest extends TestCase
         $this->assertSame(['mon', 'wed'], $setting->work_days);
         $this->assertSame(['09:00', '15:30'], $setting->work_hours['mon']);
         $this->assertSame('weekly', $setting->schedule_rules['mode']);
+    }
+
+    public function test_pro_user_can_save_allergy_reminder_settings(): void
+    {
+        $plan = Plan::query()->create([
+            'name' => 'pro',
+            'price' => 999,
+        ]);
+
+        $user = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+        ]);
+        $user->plans()->attach($plan->id, ['ends_at' => Carbon::now()->addMonth()]);
+
+        Setting::query()->create([
+            'user_id' => $user->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->patchJson('/api/v1/settings', [
+            'name' => 'Pro Master',
+            'email' => 'pro@example.com',
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+            'notifications' => [
+                'email' => true,
+                'telegram' => false,
+                'sms' => false,
+            ],
+            'holidays' => [],
+            'allergy_reminder_enabled' => true,
+            'allergy_reminder_minutes' => 25,
+            'allergy_reminder_exclusions' => [
+                'allergies' => ['Латекс', 'Отдушка'],
+                'services' => [],
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('settings.features.allergy_reminders.available', true)
+            ->assertJsonPath('settings.features.allergy_reminders.enabled', true)
+            ->assertJsonPath('settings.features.allergy_reminders.minutes', 25)
+            ->assertJsonPath('settings.features.allergy_reminders.exclusions.allergies.0', 'Латекс');
+
+        $this->assertDatabaseHas('settings', [
+            'user_id' => $user->id,
+            'allergy_reminder_enabled' => true,
+            'allergy_reminder_minutes' => 25,
+        ]);
+
+        $this->assertSame(
+            ['allergies' => ['Латекс', 'Отдушка'], 'services' => []],
+            $user->fresh()->setting->allergy_reminder_exclusions
+        );
     }
 }

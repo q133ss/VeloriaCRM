@@ -95,6 +95,65 @@
             background: rgba(var(--bs-warning-rgb), 0.08);
         }
 
+        .allergy-reminder-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .allergy-reminder-copy {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .allergy-reminder-controls {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .allergy-reminder-panel {
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-bg-rgb), 0.34);
+            padding: 1rem;
+        }
+
+        .allergy-reminder-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .allergy-reminder-toggle-copy {
+            display: grid;
+            gap: 0.2rem;
+        }
+
+        .allergy-reminder-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.45rem;
+        }
+
+        .allergy-reminder-help {
+            font-size: 0.8125rem;
+            color: var(--bs-secondary-color);
+            margin-top: 0.45rem;
+        }
+
+        .allergy-reminder-select {
+            min-height: 10rem;
+        }
+
+        .allergy-reminder-note {
+            border-radius: 0.9rem;
+            padding: 0.85rem 1rem;
+            background: rgba(var(--bs-primary-rgb), 0.08);
+            font-size: 0.875rem;
+        }
+
         .schedule-mode-card {
             border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
             border-radius: 1rem;
@@ -137,9 +196,29 @@
             background: rgba(var(--bs-warning-rgb), 0.12);
         }
 
+        html[data-bs-theme="dark"] .allergy-reminder-panel {
+            background: rgba(var(--bs-body-bg-rgb), 0.2);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        html[data-bs-theme="dark"] .allergy-reminder-note {
+            background: rgba(var(--bs-primary-rgb), 0.14);
+        }
+
         html[data-bs-theme="dark"] .schedule-mode-card.is-active,
         html[data-bs-theme="dark"] .schedule-panel {
             background: rgba(var(--bs-primary-rgb), 0.1);
+        }
+
+        @media (max-width: 991.98px) {
+            .allergy-reminder-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .allergy-reminder-toggle {
+                align-items: flex-start;
+                flex-direction: column;
+            }
         }
     </style>
 
@@ -332,6 +411,74 @@
                                     <label for="reminder_message">{{ __('settings.reminder_message') }}</label>
                                 </div>
                                 <small class="text-muted">{{ __('settings.reminder_message_hint') }}</small>
+                            </div>
+                            <div class="col-12">
+                                <div class="settings-feature-card p-4 d-none" id="allergy-reminders-pro">
+                                    <div class="allergy-reminder-layout">
+                                        <div class="allergy-reminder-copy">
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                                <span class="badge bg-label-primary">Pro / Elite</span>
+                                                <span class="badge bg-label-secondary">Безопасность</span>
+                                            </div>
+                                            <h6 class="mb-2">Автонапоминания об аллергии</h6>
+                                            <p class="text-muted mb-0">Перед визитом мастер получит отдельное уведомление, если в карточке клиента указаны аллергии. Настройку можно оставить совсем простой: включить напоминание и выбрать время.</p>
+                                            <div class="settings-feature-list small">
+                                                <div class="settings-feature-list-item">
+                                                    <i class="ri ri-check-line text-primary mt-1"></i>
+                                                    <span>Напоминание приходит только по клиентам с заполненным блоком аллергий.</span>
+                                                </div>
+                                                <div class="settings-feature-list-item">
+                                                    <i class="ri ri-check-line text-primary mt-1"></i>
+                                                    <span>Исключения помогают не дублировать контроль там, где вы уже работаете по отдельному протоколу.</span>
+                                                </div>
+                                            </div>
+                                            <div class="allergy-reminder-note">
+                                                Если исключения не нужны, оставьте поля ниже пустыми. Напоминание всё равно будет работать.
+                                            </div>
+                                        </div>
+                                        <div class="allergy-reminder-controls">
+                                            <div class="allergy-reminder-panel">
+                                                <div class="allergy-reminder-toggle">
+                                                    <div class="allergy-reminder-toggle-copy">
+                                                        <strong>Напоминать мастеру перед записью</strong>
+                                                        <span class="text-muted small">Включите один раз, дальше напоминания будут приходить автоматически.</span>
+                                                    </div>
+                                                    <div class="form-check form-switch m-0">
+                                                        <input class="form-check-input" type="checkbox" id="allergy_reminder_enabled" name="allergy_reminder_enabled" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="allergy-reminder-panel">
+                                                <label class="allergy-reminder-label" for="allergy_reminder_minutes">Когда прислать напоминание</label>
+                                                <div class="input-group">
+                                                    <input type="number" min="1" max="1440" class="form-control" id="allergy_reminder_minutes" name="allergy_reminder_minutes" value="15" />
+                                                    <span class="input-group-text">минут до записи</span>
+                                                </div>
+                                                <div class="allergy-reminder-help">Обычно достаточно 10-15 минут, чтобы мастер успел обратить внимание перед началом процедуры.</div>
+                                            </div>
+                                            <div class="allergy-reminder-panel">
+                                                <label class="allergy-reminder-label" for="allergy_reminder_service_exclusions">Какие услуги не учитывать</label>
+                                                <select class="form-select allergy-reminder-select" id="allergy_reminder_service_exclusions" name="allergy_reminder_service_exclusions" multiple size="5"></select>
+                                                <div class="allergy-reminder-help">Выберите только те услуги, где отдельное напоминание не нужно. Поле можно не заполнять.</div>
+                                            </div>
+                                            <div class="allergy-reminder-panel">
+                                                <label class="allergy-reminder-label" for="allergy_reminder_allergy_exclusions">Какие аллергии пропускать</label>
+                                                <textarea class="form-control" id="allergy_reminder_allergy_exclusions" name="allergy_reminder_allergy_exclusions" rows="3" placeholder="Например: пыльца, латекс"></textarea>
+                                                <div class="allergy-reminder-help">Укажите через запятую или с новой строки. Если такой пункт есть у клиента, напоминание не придёт.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-none" id="allergy-reminders-locked-shared">
+                                @include('components.elite-lock-card', [
+                                    'wrapperClass' => 'settings-feature-lock p-4',
+                                    'badge' => 'Pro / Elite',
+                                    'title' => 'Автонапоминания об аллергии',
+                                    'description' => 'Система предупредит мастера перед записью, если у клиента есть отмеченные аллергии. Функция доступна на тарифах Pro и Elite.',
+                                    'cta' => 'Открыть тарифы',
+                                    'buttonClass' => 'btn btn-outline-primary',
+                                ])
                             </div>
                             <div class="col-12">
                                 <div class="settings-feature-card p-4 d-none" id="daily-post-ideas-elite">
@@ -742,11 +889,49 @@
         });
         return { work_days, work_hours };
     }
+    function parseReminderList(value) {
+        return Array.from(new Set(String(value || '')
+            .split(/[\n,;]+/)
+            .map(item => item.trim())
+            .filter(Boolean)));
+    }
+    function populateReminderServiceOptions(services, selectedIds) {
+        const select = document.getElementById('allergy_reminder_service_exclusions');
+        if (!select) return;
+        const selected = new Set((selectedIds || []).map(id => String(id)));
+        select.innerHTML = '';
+        if (!(services || []).length) {
+            const option = document.createElement('option');
+            option.textContent = 'Сначала добавьте услуги';
+            option.disabled = true;
+            select.appendChild(option);
+            return;
+        }
+        (services || []).forEach(service => {
+            const option = document.createElement('option');
+            option.value = service.id;
+            option.textContent = service.name;
+            option.selected = selected.has(String(service.id));
+            select.appendChild(option);
+        });
+    }
+    function setReminderFieldsDisabled(disabled) {
+        ['allergy_reminder_enabled', 'allergy_reminder_minutes', 'allergy_reminder_service_exclusions', 'allergy_reminder_allergy_exclusions'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.disabled = disabled;
+            }
+        });
+    }
     async function loadSettings() {
         const res = await fetch('/api/v1/settings', { headers: authHeaders(), credentials: 'include' });
         if(!res.ok) return;
         const data = await res.json();
         const form = document.getElementById('settings-form');
+        const allergyReminderFeature = data.settings.features?.allergy_reminders || {};
+        const hasAllergyReminderAccess = Boolean(allergyReminderFeature.available);
+        const allergyReminderCard = document.getElementById('allergy-reminders-pro');
+        const allergyReminderLockedCard = document.getElementById('allergy-reminders-locked-shared');
         const dailyIdeasFeature = data.settings.features?.daily_post_ideas || {};
         const hasDailyIdeasAccess = Boolean(dailyIdeasFeature.available);
         const dailyIdeasEliteCard = document.getElementById('daily-post-ideas-elite');
@@ -768,6 +953,17 @@
         document.getElementById('notif-sms').checked = data.settings.notifications?.sms ?? false;
         document.getElementById('notif-telegram').disabled = !data.user.telegram_id;
         document.getElementById('notif-sms').disabled = !data.user.phone;
+        if (allergyReminderCard) {
+            allergyReminderCard.classList.toggle('d-none', !hasAllergyReminderAccess);
+        }
+        if (allergyReminderLockedCard) {
+            allergyReminderLockedCard.classList.toggle('d-none', hasAllergyReminderAccess);
+        }
+        document.getElementById('allergy_reminder_enabled').checked = Boolean(allergyReminderFeature.enabled);
+        document.getElementById('allergy_reminder_minutes').value = allergyReminderFeature.minutes || 15;
+        document.getElementById('allergy_reminder_allergy_exclusions').value = (allergyReminderFeature.exclusions?.allergies || []).join(', ');
+        populateReminderServiceOptions(data.settings.options?.services || [], allergyReminderFeature.exclusions?.services || []);
+        setReminderFieldsDisabled(!hasAllergyReminderAccess);
         if (dailyIdeasEliteCard) {
             dailyIdeasEliteCard.classList.toggle('d-none', !hasDailyIdeasAccess);
         }
@@ -882,6 +1078,17 @@
             },
             schedule_rules: collectScheduleRules(),
         };
+        const allergyReminderToggle = document.getElementById('allergy_reminder_enabled');
+        if (allergyReminderToggle && !allergyReminderToggle.disabled) {
+            payload.allergy_reminder_enabled = Boolean(allergyReminderToggle.checked);
+            payload.allergy_reminder_minutes = parseInt(document.getElementById('allergy_reminder_minutes').value || '15', 10);
+            payload.allergy_reminder_exclusions = {
+                allergies: parseReminderList(document.getElementById('allergy_reminder_allergy_exclusions').value || ''),
+                services: Array.from(document.getElementById('allergy_reminder_service_exclusions').selectedOptions || [])
+                    .map(option => parseInt(option.value, 10))
+                    .filter(Number.isFinite),
+            };
+        }
         const legacySchedule = buildLegacyScheduleFromRules(payload.schedule_rules);
         payload.work_days = legacySchedule.work_days;
         payload.work_hours = legacySchedule.work_hours;
