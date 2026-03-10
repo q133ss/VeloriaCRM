@@ -566,7 +566,10 @@
             </div>
 
             <div class="analytics-lock-card" id="analytics-peak-hours-locked" hidden>
-                @include('components.elite-lock-card')
+                @include('components.elite-lock-card', [
+                    'title' => 'Когда у вас лучший доход',
+                    'description' => 'Спокойный обзор недели: в какие часы у вас чаще выше выручка и где легче делать мягкие допродажи.',
+                ])
             </div>
         </section>
 
@@ -621,7 +624,10 @@
         </section>
 
         <section class="analytics-card" id="analytics-smart-panels-locked" hidden>
-            @include('components.elite-lock-card')
+            @include('components.elite-lock-card', [
+                'title' => 'Какие AI-инсайты и прогнозы вам доступны',
+                'description' => 'Здесь появятся короткие выводы по выручке, клиентам, удержанию и прогнозу, чтобы быстрее понимать, на чём расти дальше.',
+            ])
         </section>
 
         <details class="analytics-collapse" open id="analytics-sales-details">
