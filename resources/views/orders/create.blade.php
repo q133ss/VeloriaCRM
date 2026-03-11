@@ -2,6 +2,10 @@
 
 @section('title', 'Новая запись')
 
+@section('meta')
+    @include('components.veloria-datetime-picker-styles')
+@endsection
+
 @section('content')
     <style>
         .order-create-page {
@@ -374,17 +378,27 @@
                             </div>
 
                             <div class="row g-3 mb-4">
-                                <div class="col-md-7">
+                                <div class="col-md-7 d-none">
                                     <div class="form-floating form-floating-outline">
                                         <input
                                             type="datetime-local"
                                             class="form-control"
-                                            id="scheduled_at"
-                                            name="scheduled_at"
+                                            id="scheduled_at_legacy"
+                                            name="scheduled_at_legacy"
                                             required
                                         />
                                         <label for="scheduled_at">Дата и время записи</label>
                                     </div>
+                                </div>
+                                <div class="col-md-7">
+                                    @include('components.veloria-datetime-field', [
+                                        'id' => 'scheduled_at',
+                                        'name' => 'scheduled_at',
+                                        'label' => 'Дата и время записи',
+                                        'required' => true,
+                                        'helper' => 'Нажмите на поле, чтобы открыть календарь, или выберите быстрый слот ниже.',
+                                        'timeSlots' => ['09:00', '11:00', '13:00', '15:00', '18:00'],
+                                    ])
                                 </div>
                                 <div class="col-md-5 d-flex align-items-center">
                                     <div class="small text-muted">Мастер: <span class="fw-semibold text-body">{{ auth()->user()?->name ?? 'Вы' }}</span>. Статус новой записи можно поменять в блоке `Дополнительно`.</div>
@@ -504,6 +518,7 @@
 
 @section('scripts')
     @include('components.phone-mask-script')
+    @include('components.veloria-datetime-picker-script')
     <script>
         function getCookie(name) {
             var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -1054,7 +1069,11 @@
             const currentValue = scheduledAtInput.value || '';
             const timePart = currentValue.includes('T') ? currentValue.split('T')[1] : '00:00';
 
-            scheduledAtInput.value = `${dateParam}T${timePart}`;
+            if (window.VeloriaDateTimePicker) {
+                window.VeloriaDateTimePicker.setValue(scheduledAtInput, `${dateParam}T${timePart}`);
+            } else {
+                scheduledAtInput.value = `${dateParam}T${timePart}`;
+            }
         }
 
         async function loadOptions() {
@@ -1124,7 +1143,16 @@
                             feedback.className = 'invalid-feedback';
                             feedback.textContent = fields[key][0];
                             if (!input.nextElementSibling || !input.nextElementSibling.classList.contains('invalid-feedback')) {
-                                input.parentNode.appendChild(feedback);
+                                const target = input.type === 'hidden' && input.hasAttribute('data-veloria-datetime-value')
+                                    ? input.closest('.veloria-datetime-field')
+                                    : input.parentNode;
+
+                                const displayInput = input.type === 'hidden'
+                                    ? target?.querySelector('[data-veloria-datetime-display]')
+                                    : null;
+
+                                displayInput?.classList.add('is-invalid');
+                                target?.appendChild(feedback);
                             }
                         }
                     });

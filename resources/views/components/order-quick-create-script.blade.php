@@ -480,6 +480,16 @@
         });
 
         quickModalElement.addEventListener('shown.bs.modal', () => {
+            if (!quickForm.scheduled_at.value && window.VeloriaDateTimePicker) {
+                const now = new Date();
+                now.setHours(10, 0, 0, 0);
+                window.VeloriaDateTimePicker.setValue(quickForm.scheduled_at, [
+                    now.getFullYear(),
+                    String(now.getMonth() + 1).padStart(2, '0'),
+                    String(now.getDate()).padStart(2, '0')
+                ].join('-') + 'T10:00');
+            }
+
             if (!quickClientSearchInput.value.trim()) {
                 renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
             } else if (quickClientSearchInput.value.trim()) {
@@ -493,6 +503,7 @@
             quickForm.reset();
             quickCreateErrors.innerHTML = '';
             updateQuickSummary();
+            window.VeloriaDateTimePicker?.sync(quickForm.scheduled_at);
             setQuickClientSelection(null);
             clearQuickClientSuggestions();
             clearQuickClientResults();

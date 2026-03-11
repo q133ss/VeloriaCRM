@@ -24,6 +24,7 @@
 
 @section('meta')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css">
+    @include('components.veloria-datetime-picker-styles')
     <style>
         .calendar-page {
             --calendar-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
@@ -415,16 +416,15 @@
         }
 
         .calendar-modal-search-layer {
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
         .calendar-modal-results,
         .calendar-modal-suggestions {
-            position: absolute;
-            top: calc(100% + 0.45rem);
-            left: 0;
-            right: 0;
-            z-index: 35;
+            position: static;
+            z-index: 1;
             max-height: 260px;
             overflow-y: auto;
             margin: 0;
@@ -780,17 +780,28 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-6">
+                                        <div class="col-md-6 d-none">
                                             <div class="form-floating form-floating-outline">
                                                 <input
                                                     type="datetime-local"
                                                     class="form-control"
-                                                    id="calendar-create-scheduled-at"
-                                                    name="scheduled_at"
+                                                    id="calendar-create-scheduled-at-legacy"
+                                                    name="scheduled_at_legacy"
                                                     required
                                                 />
                                                 <label for="calendar-create-scheduled-at">Дата и время</label>
                                             </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            @include('components.veloria-datetime-field', [
+                                                'id' => 'calendar-create-scheduled-at',
+                                                'name' => 'scheduled_at',
+                                                'label' => 'Дата и время',
+                                                'required' => true,
+                                                'helper' => 'Сначала выберите день, затем время. Для быстрого сценария используйте готовые слоты ниже.',
+                                                'timeSlots' => ['09:00', '10:00', '12:00', '15:00', '18:00'],
+                                            ])
                                         </div>
 
                                         <div class="col-md-6">
@@ -944,6 +955,7 @@
 
 @section('scripts')
     @include('components.phone-mask-script')
+    @include('components.veloria-datetime-picker-script')
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
     <script>
@@ -1549,7 +1561,11 @@
 
                 if (createOrderScheduledAtEl) {
                     const timePart = '10:00';
-                    createOrderScheduledAtEl.value = (dateStr || new Date().toISOString().slice(0, 10)) + 'T' + timePart;
+                    if (window.VeloriaDateTimePicker) {
+                        window.VeloriaDateTimePicker.setValue(createOrderScheduledAtEl, (dateStr || new Date().toISOString().slice(0, 10)) + 'T' + timePart);
+                    } else {
+                        createOrderScheduledAtEl.value = (dateStr || new Date().toISOString().slice(0, 10)) + 'T' + timePart;
+                    }
                 }
 
                 document.querySelectorAll('.calendar-create-service-checkbox').forEach(function (checkbox) {
@@ -1696,7 +1712,11 @@
 
                         if (createOrderScheduledAtEl) {
                             const time = lastDayAvailableSlots[0] || (match.preferred_time_windows && match.preferred_time_windows[0] ? match.preferred_time_windows[0].start : '10:00');
-                            createOrderScheduledAtEl.value = targetDate + 'T' + (time || '10:00');
+                            if (window.VeloriaDateTimePicker) {
+                                window.VeloriaDateTimePicker.setValue(createOrderScheduledAtEl, targetDate + 'T' + (time || '10:00'));
+                            } else {
+                                createOrderScheduledAtEl.value = targetDate + 'T' + (time || '10:00');
+                            }
                         }
 
                         if (match.service && match.service.id) {

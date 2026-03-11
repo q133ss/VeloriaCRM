@@ -1,17 +1,16 @@
 <style>
     #quickCreateModal .quick-client-layer {
-        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
 
     #quickCreateModal #quick-client-results,
     #quickCreateModal #quick-client-suggestions {
-        position: absolute;
-        top: calc(100% + 0.5rem);
-        left: 0;
-        right: 0;
+        position: static;
         max-height: 260px;
         overflow-y: auto;
-        z-index: 40;
+        z-index: 1;
         margin-top: 0;
         background: var(--bs-paper-bg, var(--bs-body-bg));
         box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.28);
@@ -49,10 +48,14 @@
                             <div id="quick-selected-client" class="alert alert-primary d-none mt-2 mb-0"></div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-floating form-floating-outline">
-                                <input type="datetime-local" class="form-control" id="quick_scheduled_at" name="scheduled_at" required />
-                                <label for="quick_scheduled_at">Дата и время</label>
-                            </div>
+                            @include('components.veloria-datetime-field', [
+                                'id' => 'quick_scheduled_at',
+                                'name' => 'scheduled_at',
+                                'label' => 'Дата и время',
+                                'required' => true,
+                                'helper' => 'Клик по полю открывает календарь. Ниже можно сразу выбрать день и удобное время.',
+                                'timeSlots' => ['09:00', '11:00', '13:00', '15:00', '18:00'],
+                            ])
                         </div>
                         <div class="col-md-6">
                             <div class="quick-client-layer">

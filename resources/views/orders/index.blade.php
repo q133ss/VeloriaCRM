@@ -2,6 +2,10 @@
 
 @section('title', 'Записи')
 
+@section('meta')
+    @include('components.veloria-datetime-picker-styles')
+@endsection
+
 @section('content')
     <div class="orders-page">
         <div class="d-flex flex-column gap-4">
@@ -380,6 +384,7 @@
 
 @section('scripts')
     @include('components.phone-mask-script')
+    @include('components.veloria-datetime-picker-script')
     <script>
         function getCookie(name) {
             var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));

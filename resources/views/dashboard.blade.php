@@ -3,6 +3,7 @@
 @section('title', __('dashboard.title'))
 
 @section('meta')
+    @include('components.veloria-datetime-picker-styles')
     <style>
         .dashboard-shell {
             display: flex;
@@ -1171,6 +1172,7 @@
 
 @section('scripts')
     @include('components.phone-mask-script')
+    @include('components.veloria-datetime-picker-script')
     @include('components.order-quick-create-modal')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
