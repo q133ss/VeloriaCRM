@@ -41,13 +41,24 @@ class LandingStoreRequest extends BaseRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', Rule::in(['general', 'promotion', 'service'])],
+            'type' => ['required', 'string', Rule::in(['general', 'promotion', 'service', 'seasonal', 'consultation'])],
             'slug' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+$/', 'unique:landings,slug'],
             'landing' => ['nullable', 'string', 'max:255'],
             'settings' => ['required', 'array'],
             'settings.primary_color' => ['required', 'string', 'max:50'],
             'settings.background_type' => ['required', 'string', Rule::in(['preset', 'upload'])],
             'settings.background_value' => ['nullable', 'string', 'max:255'],
+            'settings.subtitle' => ['nullable', 'string', 'max:500'],
+            'settings.cta_label' => ['nullable', 'string', 'max:120'],
+            'settings.secondary_cta_label' => ['nullable', 'string', 'max:120'],
+            'settings.booking_hint' => ['nullable', 'string', 'max:255'],
+            'settings.phone' => ['nullable', 'string', 'max:32'],
+            'settings.whatsapp_url' => ['nullable', 'url', 'max:255'],
+            'settings.telegram_url' => ['nullable', 'url', 'max:255'],
+            'settings.address' => ['nullable', 'string', 'max:255'],
+            'settings.proof_items_text' => ['nullable', 'string'],
+            'settings.faq_items_text' => ['nullable', 'string'],
+            'settings.bonus_text' => ['nullable', 'string', 'max:255'],
             'settings.greeting' => ['nullable', 'string'],
             'settings.show_all_services' => ['nullable', 'boolean'],
             'settings.service_ids' => ['nullable', 'array'],
@@ -64,6 +75,11 @@ class LandingStoreRequest extends BaseRequest
             'settings.service_id' => ['nullable', 'integer', 'exists:services,id'],
             'settings.service_name' => ['nullable', 'string', 'max:255'],
             'settings.service_description' => ['nullable', 'string'],
+            'settings.price_from' => ['nullable', 'string', 'max:100'],
+            'settings.duration_label' => ['nullable', 'string', 'max:100'],
+            'settings.benefit_items_text' => ['nullable', 'string'],
+            'settings.season_label' => ['nullable', 'string', 'max:120'],
+            'settings.lead_magnet' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }
@@ -103,6 +119,33 @@ class LandingStoreRequest extends BaseRequest
                     $validator->errors()->add('settings.service_id', __('landings.validation.service_id_required'));
                 }
             }
+
+            if ($type === 'seasonal') {
+                foreach ([
+                    'headline' => 'headline_required',
+                    'description' => 'description_required',
+                ] as $field => $messageKey) {
+                    if (! filled(data_get($settings, $field))) {
+                        $validator->errors()->add('settings.' . $field, __('landings.validation.' . $messageKey));
+                    }
+                }
+
+                if (empty(data_get($settings, 'service_ids', []))) {
+                    $validator->errors()->add('settings.service_ids', __('landings.validation.service_ids_required'));
+                }
+            }
+
+            if ($type === 'consultation') {
+                foreach ([
+                    'headline' => 'headline_required',
+                    'description' => 'description_required',
+                    'service_id' => 'service_id_required',
+                ] as $field => $messageKey) {
+                    if (! filled(data_get($settings, $field))) {
+                        $validator->errors()->add('settings.' . $field, __('landings.validation.' . $messageKey));
+                    }
+                }
+            }
         });
     }
 
@@ -132,6 +175,8 @@ class LandingStoreRequest extends BaseRequest
             'settings.promo_code.max' => __('landings.validation.promo_code_max'),
             'settings.ends_at.date' => __('landings.validation.ends_at_date'),
             'settings.service_id.exists' => __('landings.validation.service_exists'),
+            'settings.whatsapp_url.url' => __('landings.validation.url_invalid'),
+            'settings.telegram_url.url' => __('landings.validation.url_invalid'),
         ];
     }
 }

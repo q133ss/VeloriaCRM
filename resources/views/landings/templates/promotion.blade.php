@@ -1,60 +1,38 @@
 @php
-    $endsAtFormatted = null;
-    if (!empty($settings['ends_at'])) {
-        try {
-            $endsAtFormatted = \Illuminate\Support\Carbon::parse($settings['ends_at'])->translatedFormat('d F Y');
-        } catch (Exception $e) {
-            $endsAtFormatted = $settings['ends_at'];
-        }
-    }
+    $featuredService = $featuredServices->first();
 @endphp
-<div style="display: grid; gap: 28px;">
-    <div>
-        <div style="text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: rgba(15,23,42,0.6);">
-            {{ __('landings.templates.promotion.highlight') }}
-        </div>
-        <h2 style="margin: 12px 0 0; font-size: 36px; color: var(--primary-color);">
-            {{ $settings['headline'] ?? __('landings.templates.promotion.default_headline') }}
-        </h2>
+
+<section class="landing-section-card">
+    <div class="landing-section-head">
+        <h2>{{ $settings['headline'] ?? __('landings.templates.promotion.default_headline') }}</h2>
+        <p>{{ $settings['description'] ?? __('landings.templates.promotion.default_description') }}</p>
     </div>
-    <div style="font-size: 18px; line-height: 1.7; color: rgba(15,23,42,0.78);">
-        {{ $settings['description'] ?? __('landings.templates.promotion.default_description') }}
-    </div>
-    <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+
+    <div class="landing-metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
         @if(!empty($settings['discount_percent']))
-            <div style="flex: 1 1 220px; padding: 20px; border-radius: 18px; background: rgba(99,102,241,0.08);">
-                <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(15,23,42,0.5);">
-                    {{ __('landings.templates.promotion.discount_label') }}
-                </div>
-                <div style="font-size: 32px; font-weight: 700; color: var(--primary-color);">
-                    {{ number_format((float) $settings['discount_percent'], 0) }}%
-                </div>
+            <div class="landing-metric">
+                <span>{{ __('landings.templates.promotion.discount_label') }}</span>
+                <strong>{{ number_format((float) $settings['discount_percent'], 0) }}%</strong>
             </div>
         @endif
         @if(!empty($settings['promo_code']))
-            <div style="flex: 1 1 220px; padding: 20px; border-radius: 18px; background: rgba(79,70,229,0.08);">
-                <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(15,23,42,0.5);">
-                    {{ __('landings.templates.promotion.promo_code_label') }}
-                </div>
-                <div style="font-size: 28px; font-weight: 700; letter-spacing: 0.08em;">
-                    {{ strtoupper($settings['promo_code']) }}
-                </div>
+            <div class="landing-metric">
+                <span>{{ __('landings.templates.promotion.promo_code_label') }}</span>
+                <strong>{{ strtoupper($settings['promo_code']) }}</strong>
             </div>
         @endif
-        @if($endsAtFormatted)
-            <div style="flex: 1 1 220px; padding: 20px; border-radius: 18px; background: rgba(15,23,42,0.08);">
-                <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(15,23,42,0.5);">
-                    {{ __('landings.templates.promotion.ends_at_label') }}
-                </div>
-                <div style="font-size: 22px; font-weight: 600;">
-                    {{ $endsAtFormatted }}
-                </div>
+        @if(!empty($settings['ends_at']))
+            <div class="landing-metric">
+                <span>{{ __('landings.templates.promotion.ends_at_label') }}</span>
+                <strong>{{ $settings['ends_at'] }}</strong>
             </div>
         @endif
     </div>
-    <div>
-        <a href="#book" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border-radius: 999px; background: var(--primary-color); color: #fff; text-decoration: none; font-weight: 600;">
-            {{ __('landings.templates.promotion.cta') }}
-        </a>
-    </div>
-</div>
+
+    @if($featuredService)
+        <div class="landing-proof-card" style="margin-top: 1rem;">
+            <strong>{{ $featuredService->name }}</strong>
+            <div class="landing-booking-meta">{{ __('landings.templates.promotion.featured_service_note') }}</div>
+        </div>
+    @endif
+</section>

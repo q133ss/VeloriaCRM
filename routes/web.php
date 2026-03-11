@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\AdminPageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\LandingRequestController;
 use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,9 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
     Route::get('/l/{slug}', LandingPageController::class)->name('landings.public');
+    Route::post('/l/{slug}/request', LandingRequestController::class)
+        ->middleware('throttle:10,1')
+        ->name('landings.request');
 
     Route::view('/login', 'auth.login')->name('login');
     Route::view('/register', 'auth.register')->name('register.form');

@@ -49,7 +49,7 @@ class LandingUpdateRequest extends BaseRequest
 
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'type' => ['sometimes', 'required', 'string', Rule::in(['general', 'promotion', 'service'])],
+            'type' => ['sometimes', 'required', 'string', Rule::in(['general', 'promotion', 'service', 'seasonal', 'consultation'])],
             'slug' => [
                 'sometimes',
                 'nullable',
@@ -63,6 +63,17 @@ class LandingUpdateRequest extends BaseRequest
             'settings.primary_color' => ['sometimes', 'required', 'string', 'max:50'],
             'settings.background_type' => ['sometimes', 'required', 'string', Rule::in(['preset', 'upload'])],
             'settings.background_value' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'settings.subtitle' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'settings.cta_label' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'settings.secondary_cta_label' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'settings.booking_hint' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'settings.phone' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'settings.whatsapp_url' => ['sometimes', 'nullable', 'url', 'max:255'],
+            'settings.telegram_url' => ['sometimes', 'nullable', 'url', 'max:255'],
+            'settings.address' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'settings.proof_items_text' => ['sometimes', 'nullable', 'string'],
+            'settings.faq_items_text' => ['sometimes', 'nullable', 'string'],
+            'settings.bonus_text' => ['sometimes', 'nullable', 'string', 'max:255'],
             'settings.greeting' => ['sometimes', 'nullable', 'string'],
             'settings.show_all_services' => ['sometimes', 'nullable', 'boolean'],
             'settings.service_ids' => ['sometimes', 'nullable', 'array'],
@@ -79,6 +90,11 @@ class LandingUpdateRequest extends BaseRequest
             'settings.service_id' => ['sometimes', 'nullable', 'integer', 'exists:services,id'],
             'settings.service_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'settings.service_description' => ['sometimes', 'nullable', 'string'],
+            'settings.price_from' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'settings.duration_label' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'settings.benefit_items_text' => ['sometimes', 'nullable', 'string'],
+            'settings.season_label' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'settings.lead_magnet' => ['sometimes', 'nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
@@ -90,7 +106,7 @@ class LandingUpdateRequest extends BaseRequest
             $landing = $this->route('landing');
             $type = $this->input('type', $landing?->type);
 
-            if (! in_array($type, ['general', 'promotion', 'service'], true)) {
+            if (! in_array($type, ['general', 'promotion', 'service', 'seasonal', 'consultation'], true)) {
                 return;
             }
 
@@ -135,6 +151,33 @@ class LandingUpdateRequest extends BaseRequest
                     $validator->errors()->add('settings.service_id', __('landings.validation.service_id_required'));
                 }
             }
+
+            if ($type === 'seasonal') {
+                foreach ([
+                    'headline' => 'headline_required',
+                    'description' => 'description_required',
+                ] as $field => $messageKey) {
+                    if (! filled(data_get($effectiveSettings, $field))) {
+                        $validator->errors()->add('settings.' . $field, __('landings.validation.' . $messageKey));
+                    }
+                }
+
+                if (empty(data_get($effectiveSettings, 'service_ids', []))) {
+                    $validator->errors()->add('settings.service_ids', __('landings.validation.service_ids_required'));
+                }
+            }
+
+            if ($type === 'consultation') {
+                foreach ([
+                    'headline' => 'headline_required',
+                    'description' => 'description_required',
+                    'service_id' => 'service_id_required',
+                ] as $field => $messageKey) {
+                    if (! filled(data_get($effectiveSettings, $field))) {
+                        $validator->errors()->add('settings.' . $field, __('landings.validation.' . $messageKey));
+                    }
+                }
+            }
         });
     }
 
@@ -163,6 +206,8 @@ class LandingUpdateRequest extends BaseRequest
             'settings.promo_code.max' => __('landings.validation.promo_code_max'),
             'settings.ends_at.date' => __('landings.validation.ends_at_date'),
             'settings.service_id.exists' => __('landings.validation.service_exists'),
+            'settings.whatsapp_url.url' => __('landings.validation.url_invalid'),
+            'settings.telegram_url.url' => __('landings.validation.url_invalid'),
         ];
     }
 }

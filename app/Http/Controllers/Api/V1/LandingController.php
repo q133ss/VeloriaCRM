@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LandingStoreRequest;
 use App\Http\Requests\LandingUpdateRequest;
 use App\Models\Landing;
+use App\Models\LandingRequest;
 use App\Models\Promotion;
 use App\Models\Service;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -22,6 +24,8 @@ class LandingController extends Controller
         $userId = $this->currentUserId();
 
         $landings = Landing::forUser($userId)
+            ->withCount('requests')
+            ->withMax('requests', 'created_at')
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (Landing $landing) => $this->transformLanding($landing))
@@ -61,7 +65,9 @@ class LandingController extends Controller
         $this->ensureProAccess();
         $this->ensureLandingBelongsToUser($landing);
 
-        return response()->json(['data' => $this->transformLanding($landing)]);
+        $landing->loadCount('requests')->loadMax('requests', 'created_at');
+
+        return response()->json(['data' => $this->transformLanding($landing, includeRecentRequests: true)]);
     }
 
     public function update(LandingUpdateRequest $request, Landing $landing): JsonResponse
@@ -90,7 +96,7 @@ class LandingController extends Controller
 
         return response()->json([
             'message' => __('landings.notifications.updated'),
-            'data' => $this->transformLanding($landing->fresh()),
+            'data' => $this->transformLanding($landing->fresh()->loadCount('requests')->loadMax('requests', 'created_at'), includeRecentRequests: true),
         ]);
     }
 
@@ -141,9 +147,14 @@ class LandingController extends Controller
         ]);
     }
 
-    protected function transformLanding(Landing $landing): array
+    protected function transformLanding(Landing $landing, bool $includeRecentRequests = false): array
     {
-        return [
+        $lastRequestAt = $landing->requests_max_created_at;
+        if (is_string($lastRequestAt) && $lastRequestAt !== '') {
+            $lastRequestAt = Carbon::parse($lastRequestAt);
+        }
+
+        $payload = [
             'id' => $landing->id,
             'title' => $landing->title,
             'type' => $landing->type,
@@ -152,12 +163,37 @@ class LandingController extends Controller
             'settings' => $landing->settings,
             'is_active' => (bool) $landing->is_active,
             'views' => (int) $landing->views,
+            'requests_count' => (int) ($landing->requests_count ?? $landing->requests()->count()),
+            'last_request_at' => optional($lastRequestAt ?: $landing->requests()->max('created_at'))->toIso8601String(),
             'created_at' => optional($landing->created_at)->toIso8601String(),
             'updated_at' => optional($landing->updated_at)->toIso8601String(),
             'urls' => [
                 'public' => url('/l/' . $landing->slug),
             ],
         ];
+
+        if ($includeRecentRequests) {
+            $payload['recent_requests'] = LandingRequest::query()
+                ->where('landing_id', $landing->id)
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(fn (LandingRequest $request) => [
+                    'id' => $request->id,
+                    'client_name' => $request->client_name,
+                    'client_phone' => $request->client_phone,
+                    'client_email' => $request->client_email,
+                    'preferred_date' => optional($request->preferred_date)->toDateString(),
+                    'message' => $request->message,
+                    'status' => $request->status,
+                    'service_name' => Arr::get($request->meta, 'service_name'),
+                    'created_at' => optional($request->created_at)->toIso8601String(),
+                ])
+                ->values()
+                ->all();
+        }
+
+        return $payload;
     }
 
     protected function generateSlug(?string $slug, ?string $title, ?int $ignoreId = null, bool $allowExisting = false): string
@@ -194,6 +230,8 @@ class LandingController extends Controller
             'general' => 'landings.templates.general',
             'promotion' => 'landings.templates.promotion',
             'service' => 'landings.templates.service',
+            'seasonal' => 'landings.templates.seasonal',
+            'consultation' => 'landings.templates.consultation',
         ];
 
         return $templates[$type] ?? 'landings.templates.general';

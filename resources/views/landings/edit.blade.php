@@ -18,7 +18,9 @@
             defaultTemplate: {
                 general: 'landings.templates.general',
                 promotion: 'landings.templates.promotion',
-                service: 'landings.templates.service'
+                service: 'landings.templates.service',
+                seasonal: 'landings.templates.seasonal',
+                consultation: 'landings.templates.consultation'
             }
         };
     </script>

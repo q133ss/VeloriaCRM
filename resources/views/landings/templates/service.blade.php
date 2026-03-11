@@ -1,28 +1,36 @@
-<div style="display: grid; gap: 28px;">
-    <div>
-        <div style="text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: rgba(15,23,42,0.6);">
-            {{ __('landings.templates.service.highlight') }}
-        </div>
-        <h2 style="margin: 12px 0 0; font-size: 36px; color: var(--primary-color);">
-            {{ $settings['service_name'] ?? __('landings.templates.service.default_title') }}
-        </h2>
+@php
+    $benefits = collect(preg_split('/\r\n|\r|\n/', (string) ($settings['benefit_items_text'] ?? '')))
+        ->map(fn ($item) => trim($item))
+        ->filter()
+        ->values();
+@endphp
+
+<section class="landing-section-card">
+    <div class="landing-section-head">
+        <h2>{{ $settings['service_name'] ?? __('landings.templates.service.default_title') }}</h2>
+        <p>{{ $settings['service_description'] ?? __('landings.templates.service.default_description') }}</p>
     </div>
-    <div style="font-size: 18px; line-height: 1.7; color: rgba(15,23,42,0.78);">
-        {{ $settings['service_description'] ?? __('landings.templates.service.default_description') }}
+
+    <div class="landing-metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        @if(!empty($settings['price_from']))
+            <div class="landing-metric">
+                <span>{{ __('landings.templates.service.price_label') }}</span>
+                <strong>{{ $settings['price_from'] }}</strong>
+            </div>
+        @endif
+        @if(!empty($settings['duration_label']))
+            <div class="landing-metric">
+                <span>{{ __('landings.templates.service.duration_label') }}</span>
+                <strong>{{ $settings['duration_label'] }}</strong>
+            </div>
+        @endif
     </div>
-    <div style="display: grid; gap: 16px;">
-        <div style="display: inline-flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 14px; background: rgba(99,102,241,0.08); color: var(--primary-color); font-weight: 600;">
-            <span>✨</span>
-            <span>{{ __('landings.templates.service.benefit_one') }}</span>
-        </div>
-        <div style="display: inline-flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 14px; background: rgba(99,102,241,0.08); color: var(--primary-color); font-weight: 600;">
-            <span>🤝</span>
-            <span>{{ __('landings.templates.service.benefit_two') }}</span>
-        </div>
-    </div>
-    <div>
-        <a href="#booking" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border-radius: 999px; background: var(--primary-color); color: #fff; text-decoration: none; font-weight: 600;">
-            {{ __('landings.templates.service.cta') }}
-        </a>
-    </div>
-</div>
+
+    @if($benefits->isNotEmpty())
+        <ul class="landing-list" style="margin-top: 1rem;">
+            @foreach($benefits as $item)
+                <li>{{ $item }}</li>
+            @endforeach
+        </ul>
+    @endif
+</section>
