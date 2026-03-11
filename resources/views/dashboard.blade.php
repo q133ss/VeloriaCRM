@@ -837,9 +837,9 @@
                                 {{ __('dashboard.sections.focus.updated', ['time' => $updated_at->copy()->locale(app()->getLocale())->diffForHumans()]) }}
                             </div>
                             <div class="dashboard-hero-actions">
-                                <a href="{{ route('orders.create') }}" class="btn btn-primary">
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
                                     {{ __('dashboard.sections.focus.schedule.quick_book') }}
-                                </a>
+                                </button>
                                 <a href="{{ route('calendar') }}" class="btn dashboard-secondary-button">
                                     {{ __('dashboard.sections.focus.schedule.title') }}
                                 </a>
@@ -1165,10 +1165,13 @@
                 </div>
             </div>
         </div>
+        <div id="quick-create-alerts" class="mt-4"></div>
     </div>
 @endsection
 
 @section('scripts')
+    @include('components.phone-mask-script')
+    @include('components.order-quick-create-modal')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var modalElement = document.getElementById('newUserOnboardingModal');
@@ -1201,4 +1204,5 @@
             modal.show();
         });
     </script>
+    @include('components.order-quick-create-script')
 @endsection
