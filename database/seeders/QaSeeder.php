@@ -21,6 +21,18 @@ class QaSeeder extends Seeder
      */
     public function run(): void
     {
+        User::updateOrCreate(
+            ['email' => 'admin@email.net'],
+            [
+                'name' => 'Admin',
+                'password' => 'password',
+                'phone' => '+79991110000',
+                'is_admin' => true,
+                'admin_role' => User::ADMIN_ROLE_SUPER_ADMIN,
+                'status' => User::STATUS_ACTIVE,
+            ]
+        );
+
         $user = User::updateOrCreate(
             ['email' => 'user@email.net'],
             [

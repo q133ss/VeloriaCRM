@@ -19,6 +19,11 @@ class LearningArticle extends Model
         'topic',
         'content',
         'action',
+        'is_published',
+        'is_featured',
+        'sort_order',
+        'source_url',
+        'published_at',
     ];
 
     protected function casts(): array
@@ -28,6 +33,10 @@ class LearningArticle extends Model
             'summary' => 'array',
             'content' => 'array',
             'action' => 'array',
+            'is_published' => 'boolean',
+            'is_featured' => 'boolean',
+            'sort_order' => 'integer',
+            'published_at' => 'datetime',
         ];
     }
 }

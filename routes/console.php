@@ -7,6 +7,7 @@ use App\Services\AllergyReminderService;
 use App\Services\DailyPostIdeaService;
 use App\Services\Marketing\MarketingCampaignService;
 use App\Services\SubscriptionPaymentSyncService;
+use App\Services\UsefulDigestService;
 use App\Services\Telegram\TelegramBookingBotService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
@@ -132,6 +133,48 @@ Artisan::command('content:test-daily-idea {userId?}', function (?int $userId = n
     $this->line('CTA: ' . $idea['cta']);
 })->purpose('Generate one real AI content idea without sending it');
 
+Artisan::command('content:send-weekly-useful {userId?}', function (?int $userId = null) {
+    /** @var UsefulDigestService $service */
+    $service = app(UsefulDigestService::class);
+    $result = $service->dispatchEnabledDigests($userId);
+
+    $this->info(sprintf(
+        'Processed: %d, sent: %d, skipped: %d',
+        $result['processed'],
+        $result['sent'],
+        $result['skipped']
+    ));
+
+    foreach ($result['items'] as $item) {
+        $this->line(json_encode($item, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+})->purpose('Deliver the weekly useful digest to Pro and Elite users');
+
+Artisan::command('content:test-weekly-useful {userId?}', function (?int $userId = null) {
+    /** @var UsefulDigestService $service */
+    $service = app(UsefulDigestService::class);
+
+    $user = $userId
+        ? User::query()->findOrFail($userId)
+        : User::query()
+            ->whereHas('plans', function ($query) {
+                $query->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE']);
+            })
+            ->whereHas('setting', function ($query) {
+                $query->where('weekly_useful_digest_enabled', true);
+            })
+            ->firstOrFail();
+
+    $result = $service->sendTestDigest($user, app()->getLocale());
+
+    $this->info('Useful digest prepared for user #' . $user->id . ' (' . $user->name . ')');
+    $this->newLine();
+    $this->line('Title: ' . ($result['digest']['title'] ?? 'Weekly useful digest'));
+    $this->line('Delivery: ' . implode(', ', $result['delivery']['delivered_to'] ?? []));
+    $this->newLine();
+    $this->line($result['digest']['summary'] ?? '');
+})->purpose('Generate and send one weekly useful digest immediately');
+
 Artisan::command('alerts:send-allergy-reminders {userId?}', function (?int $userId = null) {
     /** @var AllergyReminderService $service */
     $service = app(AllergyReminderService::class);
@@ -153,3 +196,4 @@ Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
 Schedule::command('alerts:send-allergy-reminders')->everyMinute();
 Schedule::command('content:send-daily-ideas')->dailyAt('09:00');
+Schedule::command('content:send-weekly-useful')->weeklyOn(1, '09:00');

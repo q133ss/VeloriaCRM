@@ -17,6 +17,11 @@ class AdminPageController extends Controller
         return view('admin.users.index');
     }
 
+    public function useful(): View
+    {
+        return view('admin.useful.index');
+    }
+
     public function support(): View
     {
         return view('admin.support.index');

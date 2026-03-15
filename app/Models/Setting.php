@@ -42,6 +42,9 @@ class Setting extends Model
         'daily_post_ideas_enabled',
         'daily_post_ideas_channel',
         'daily_post_ideas_preferences',
+        'weekly_useful_digest_enabled',
+        'weekly_useful_digest_channel',
+        'weekly_useful_digest_preferences',
     ];
 
     protected function casts(): array
@@ -60,6 +63,7 @@ class Setting extends Model
             'allergy_reminder_minutes' => 'integer',
             'allergy_reminder_exclusions' => 'array',
             'daily_post_ideas_enabled' => 'boolean',
+            'weekly_useful_digest_enabled' => 'boolean',
         ];
     }
 

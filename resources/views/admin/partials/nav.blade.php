@@ -5,6 +5,9 @@
     <a href="{{ route('admin.users') }}" class="admin-subnav-link {{ request()->routeIs('admin.users') ? 'is-active' : '' }}">
         Пользователи
     </a>
+    <a href="{{ route('admin.useful') }}" class="admin-subnav-link {{ request()->routeIs('admin.useful') ? 'is-active' : '' }}">
+        Полезное
+    </a>
     <a href="{{ route('admin.support') }}" class="admin-subnav-link {{ request()->routeIs('admin.support') ? 'is-active' : '' }}">
         Поддержка
     </a>

@@ -19,13 +19,16 @@ Current UI direction:
 - OpenAI-backed assistant features exist behind paid plans
 
 ## Important Current Product State
-The old `learning` module has been replaced by `trends`.
+The old `learning` and `trends` product wording has been consolidated into `useful`.
 
 Current state:
-- web route `/learning` redirects to `/trends`
-- API route `/api/v1/trends/overview` replaces the old learning overview flows
-- old learning view/controllers were removed
-- learning data models still exist and are reused as the content source for trends
+- canonical web route: `/useful`
+- legacy web routes `/learning` and `/trends` redirect to `/useful`
+- canonical API route: `/api/v1/useful/overview`
+- legacy API route `/api/v1/trends/overview` remains as a compatibility alias
+- user page: `resources/views/useful/index.blade.php`
+- admin page: `resources/views/admin/useful/index.blade.php`
+- learning data models still exist and are reused as the content source for useful posts, guides, scripts, and weekly digests
 
 If you touch docs, routes, menus, dashboard promos, or feature descriptions, keep this replacement consistent.
 
@@ -65,13 +68,15 @@ Key recent backend/UI decisions:
 - hidden analytics sections are lazily loaded
 - avoid shipping hidden heavy blocks in the initial API payload
 
-### Trends
-- page: `resources/views/trends/index.blade.php`
-- API: `app/Http/Controllers/Api/V1/TrendsController.php`
+### Useful
+- page: `resources/views/useful/index.blade.php`
+- API: `app/Http/Controllers/Api/V1/UsefulController.php`
+- admin API: `app/Http/Controllers/Api/V1/Admin/AdminUsefulPostController.php`
 
 Purpose:
-- show niche-relevant trend cards, articles, and ready-to-use scripts
-- keep the experience inspirational and lightweight, not evaluative or academic
+- show curated useful posts for beauty professionals
+- combine weekly digest, business tips, taxes/rules, ideas, and ready-to-use scripts
+- keep the experience lightweight, practical, and task-first for inexperienced users
 
 ### Subscription
 - page: `resources/views/subscription/index.blade.php`
@@ -92,17 +97,18 @@ These sections were also simplified recently. When editing them:
 Primary AI-related backend pieces:
 - `app/Services/OpenAIService.php`
 - `app/Services/DashboardAiService.php`
+- `app/Services/UsefulDigestService.php`
 - `app/Http/Controllers/Api/V1/ClientController.php`
 - `app/Http/Controllers/Api/V1/OrderController.php`
 - `app/Http/Controllers/Api/V1/AnalyticsController.php`
-- `app/Http/Controllers/Api/V1/TrendsController.php`
+- `app/Http/Controllers/Api/V1/UsefulController.php`
 
 Current responsibilities:
 - client recommendations and analytics
 - order recommendations and analytics
 - dashboard suggestions and daily tip
 - analytics insights/forecast
-- trend content assembly for the trends screen
+- useful content assembly and weekly digest delivery
 
 Paid-plan behavior matters:
 - many AI features are intended for Pro/Elite access
@@ -151,7 +157,7 @@ Most business APIs are user-scoped. Before changing responses:
 - preserve graceful fallback behavior
 
 ### Data sources reused across modules
-The new trends module reuses content tables originally created for learning. Do not assume “Learning*” models mean the feature is still learning-facing in product terms.
+The useful module reuses content tables originally created for learning. Do not assume `Learning*` models mean the feature is still learning-facing in product terms.
 
 ## Known Technical Risks
 - plan access checks are duplicated across controllers
@@ -174,6 +180,8 @@ When you update docs for this repo:
 - search files: `rg --files`
 
 ## Deprecated / Replaced
-- `learning` product module -> replaced by `trends`
-- old learning Blade/API flow -> removed from active routing
+- `learning` product module -> replaced by `useful`
+- `trends` product wording -> replaced by `useful` for the active UX
+- old learning/trends Blade flow -> removed from active routing
+- `/api/v1/trends/overview` survives only as a compatibility alias
 - subscription page no longer centers the UX around cancellation

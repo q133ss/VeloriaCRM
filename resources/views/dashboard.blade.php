@@ -1088,13 +1088,13 @@
         <div class="card dashboard-learning">
             <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
                 <div>
-                    <p class="dashboard-section-label">Сейчас в тренде</p>
-                    <h2 class="dashboard-section-title mb-2">Тренды и идеи для мастера</h2>
-                    <p class="mb-0">{{ $dailyTip['text'] ?? 'Следите за актуальными техниками, запросами клиенток и новыми форматами услуг.' }}</p>
+                    <p class="dashboard-section-label">Полезное на неделю</p>
+                    <h2 class="dashboard-section-title mb-2">Что важно для мастера</h2>
+                    <p class="mb-0">{{ $dailyTip['text'] ?? 'Открывайте спокойную подборку публикаций, сценариев и подсказок: что стоит проверить, что можно попробовать и что не пропустить на этой неделе.' }}</p>
                 </div>
                 <div class="text-lg-end">
-                    <a href="{{ route('trends') }}" class="btn btn-primary">
-                        Открыть тренды
+                    <a href="{{ route('useful') }}" class="btn btn-primary">
+                        Открыть полезное
                     </a>
                     <div class="small text-muted mt-2">
                         Источник: {{ $dailyTip['source'] ?? 'Подборка Veloria' }}

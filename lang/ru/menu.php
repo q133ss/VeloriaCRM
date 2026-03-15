@@ -14,7 +14,7 @@ return [
     'help' => 'Помощь',
     'marketing' => 'Маркетинг',
     'learning' => 'Обучение',
-    'veloryStudio' => 'Velory Studio',
+    'useful' => 'Полезное',
     'automations' => 'Автоматизации',
     'landings' => 'Лендинги',
     'loading' => 'Загрузка...',

@@ -22,8 +22,10 @@ use App\Http\Controllers\Api\V1\Admin\AdminUserController as ApiAdminUserControl
 use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\TrendsController;
+use App\Http\Controllers\Api\V1\UsefulController;
 use App\Http\Controllers\Api\V1\SubscriptionController as ApiSubscriptionController;
 use App\Http\Controllers\Api\V1\WaitlistController;
+use App\Http\Controllers\Api\V1\Admin\AdminUsefulPostController;
 
 Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
@@ -126,6 +128,9 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/service-categories/{category}', [ServiceCategoryController::class, 'update']);
         Route::delete('/service-categories/{category}', [ServiceCategoryController::class, 'destroy']);
 
+        Route::get('/useful/overview', [UsefulController::class, 'overview']);
+        Route::patch('/useful/preferences', [UsefulController::class, 'updatePreferences']);
+        Route::post('/useful/test-digest', [UsefulController::class, 'sendTestDigest']);
         Route::get('/trends/overview', [TrendsController::class, 'overview']);
 
         Route::get('/subscription', [ApiSubscriptionController::class, 'show']);
@@ -153,5 +158,11 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::get('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'show']);
             Route::patch('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'update']);
             Route::post('/support/tickets/{ticket}/reply', [AdminSupportTicketController::class, 'reply']);
+
+            Route::get('/useful/posts', [AdminUsefulPostController::class, 'index']);
+            Route::post('/useful/posts', [AdminUsefulPostController::class, 'store']);
+            Route::get('/useful/posts/{article}', [AdminUsefulPostController::class, 'show']);
+            Route::patch('/useful/posts/{article}', [AdminUsefulPostController::class, 'update']);
+            Route::delete('/useful/posts/{article}', [AdminUsefulPostController::class, 'destroy']);
         });
 });

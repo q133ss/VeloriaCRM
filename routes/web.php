@@ -44,8 +44,9 @@ Route::middleware('set.locale')->group(function () {
         Route::view('/integrations', 'integrations')->name('integrations');
         Route::view('/calendar', 'calendar.index')->name('calendar');
         Route::view('/analytics', 'analytics.index')->name('analytics');
-        Route::redirect('/learning', '/trends')->name('learning');
-        Route::view('/trends', 'trends.index')->name('trends');
+        Route::redirect('/learning', '/useful')->name('learning');
+        Route::redirect('/trends', '/useful')->name('trends');
+        Route::view('/useful', 'useful.index')->name('useful');
 
         Route::get('/clients', function () {
             return view('clients.index');
@@ -109,6 +110,7 @@ Route::middleware('set.locale')->group(function () {
                 Route::redirect('/', '/admin/overview');
                 Route::get('/overview', [AdminPageController::class, 'overview'])->name('admin.overview');
                 Route::get('/users', [AdminPageController::class, 'users'])->name('admin.users');
+                Route::get('/useful', [AdminPageController::class, 'useful'])->name('admin.useful');
                 Route::get('/support', [AdminPageController::class, 'support'])->name('admin.support');
                 Route::get('/audit', [AdminPageController::class, 'audit'])->name('admin.audit');
             });

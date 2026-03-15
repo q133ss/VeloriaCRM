@@ -471,15 +471,13 @@ document.addEventListener('DOMContentLoaded', function () {
         pro: [
             menuItem('landings', '/landings', 'ri-layout-4-line'),
             menuItem('marketing', '/marketing', 'ri-megaphone-line'),
-            { label: 'Тренды', href: '/trends', icon: 'ri-fire-line' },
-            menuItem('veloryStudio', '/velory', 'ri-robot-line')
+            menuItem('useful', '/useful', 'ri-compass-3-line')
         ],
         elite: [
             menuItem('landings', '/landings', 'ri-layout-4-line'),
             menuItem('marketing', '/marketing', 'ri-megaphone-line'),
-            { label: 'Тренды', href: '/trends', icon: 'ri-fire-line' },
-            menuItem('automations', '/automations', 'ri-magic-line'),
-            menuItem('veloryStudio', '/velory', 'ri-robot-line')
+            menuItem('useful', '/useful', 'ri-compass-3-line'),
+            menuItem('automations', '/automations', 'ri-magic-line')
         ]
     };
 

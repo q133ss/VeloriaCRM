@@ -54,7 +54,7 @@ VeloriaCRM is a CRM for solo pros and small beauty studios with **Velory Agents*
 - Profit-per-hour analytics and revenue trends
 - Flags “difficult” clients and high-risk appointments
 - Upsell and personalized offer recommendations
-- Built-in micro-learning with short, actionable summaries
+- Built-in useful content hub with weekly digest, practical posts, and short actionable summaries
 
 ## What it does (value)
 - Client reminders and fewer no-shows
@@ -62,12 +62,12 @@ VeloriaCRM is a CRM for solo pros and small beauty studios with **Velory Agents*
 - Profit-per-hour and visit analytics
 - Risk signals for clients and appointments
 - Upsell and personalized offer suggestions
-- Micro-learning and communication summaries
+- Weekly useful digest, practical posts, and communication summaries
 
 ## Velory Agents (AI module)
 Velory Agents:
 - generate client/order recommendations on the dashboard
-- produce analytics insights and concise learning summaries
+- produce analytics insights and weekly useful digests
 - powered by **OpenAI Chat Completions**
 
 Availability:
@@ -84,7 +84,26 @@ Availability:
 - Auth and user management
 - Clients, orders/appointments, scheduling
 - Dashboard and analytics
+- Useful content and weekly digest endpoints
 - AI endpoints (Pro/Elite only)
+
+## Useful section
+
+`Useful` is the curated content module for inexperienced beauty professionals. It is API-first and is rendered by Blade only as a shell.
+
+Current flow:
+- web route: `/useful`
+- legacy redirects: `/learning` -> `/useful`, `/trends` -> `/useful`
+- canonical API: `GET /api/v1/useful/overview`
+- user preferences API: `PATCH /api/v1/useful/preferences`
+- test digest API: `POST /api/v1/useful/test-digest`
+- admin CRUD API: `/api/v1/admin/useful/posts`
+
+What it includes:
+- weekly digest with important updates for the week
+- editorial useful posts from admin
+- practical business tips, taxes/rules notices, and marketing ideas
+- guides and ready-to-use scripts sourced from the legacy learning tables
 
 ## Notes
 - Designed for scale with a mobile client in mind

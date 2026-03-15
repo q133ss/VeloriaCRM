@@ -14,7 +14,7 @@ return [
     'help' => 'Help',
     'marketing' => 'Marketing',
     'learning' => 'Learning',
-    'veloryStudio' => 'Velory Studio',
+    'useful' => 'Useful',
     'automations' => 'Automations',
     'landings' => 'Landings',
     'loading' => 'Loading...',
