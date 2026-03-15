@@ -45,6 +45,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::get('/me', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'me']);
             Route::get('/service-categories', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'categories']);
             Route::get('/services', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'services']);
+            Route::get('/slots', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'genericSlots']);
             Route::get('/services/{service}/slots', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'slots']);
             Route::post('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'book']);
             Route::post('/waitlist', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'waitlist']);

@@ -21,16 +21,17 @@ class AvailabilityService
      */
     public function availableSlotsForDate(
         int $masterId,
-        Service $service,
+        ?Service $service,
         string $date,
         ?Setting $setting = null,
         ?string $timezone = null,
+        ?int $durationMinutes = null,
     ): array {
         $timezone = $timezone ?: config('app.timezone');
         $setting = $setting ?: Setting::query()->where('user_id', $masterId)->first();
 
         $day = Carbon::parse($date, $timezone)->startOfDay();
-        $serviceDuration = (int) ($service->duration_min ?? 60);
+        $serviceDuration = max(1, (int) ($durationMinutes ?? $service?->duration_min ?? 60));
 
         $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $day, $timezone));
 

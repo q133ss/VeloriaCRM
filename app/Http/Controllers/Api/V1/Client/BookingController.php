@@ -19,11 +19,16 @@ use App\Services\Booking\BookingConflictService;
 use App\Services\NotificationService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
+    private const DEFAULT_BOOKING_DURATION_MINUTES = 60;
+
+    private const UNSPECIFIED_SERVICE_LABEL = 'Услуга уточняется';
+
     public function __construct(
         private readonly AvailabilityService $availability,
         private readonly BookingConflictService $conflicts,
@@ -78,6 +83,34 @@ class BookingController extends Controller
         ]);
     }
 
+    public function genericSlots(ClientPortalSlotsRequest $request): JsonResponse
+    {
+        /** @var Client $client */
+        $client = $request->user();
+        $masterId = (int) $client->user_id;
+        $masterTimezone = $this->resolveMasterTimezone($masterId);
+        $date = (string) $request->validated()['date'];
+        $setting = Setting::query()->where('user_id', $masterId)->first();
+
+        $slots = $this->availability->availableSlotsForDate(
+            $masterId,
+            null,
+            $date,
+            $setting,
+            $masterTimezone,
+            self::DEFAULT_BOOKING_DURATION_MINUTES,
+        );
+
+        return response()->json([
+            'data' => [
+                'date' => $date,
+                'service_id' => null,
+                'duration_min' => self::DEFAULT_BOOKING_DURATION_MINUTES,
+                'slots' => $slots,
+            ],
+        ]);
+    }
+
     public function slots(Service $service, ClientPortalSlotsRequest $request): JsonResponse
     {
         /** @var Client $client */
@@ -115,23 +148,22 @@ class BookingController extends Controller
         $masterId = (int) $client->user_id;
         $masterTimezone = $this->resolveMasterTimezone($masterId);
         $validated = $request->validated();
-
-        $service = Service::query()->findOrFail((int) $validated['service_id']);
-
-        if ((int) $service->user_id !== $masterId) {
-            return response()->json([
-                'error' => [
-                    'code' => 'forbidden',
-                    'message' => __('client_portal.auth.unauthorized'),
-                ],
-            ], 403);
-        }
+        $service = $this->resolveBookingService($masterId, Arr::get($validated, 'service_id'));
+        $durationMinutes = (int) ($service?->duration_min ?? self::DEFAULT_BOOKING_DURATION_MINUTES);
+        $serviceLabel = $this->resolveServiceLabel($service);
 
         $date = (string) $validated['date'];
         $time = (string) $validated['time'];
         $setting = Setting::query()->where('user_id', $masterId)->first();
 
-        $available = $this->availability->availableSlotsForDate($masterId, $service, $date, $setting, $masterTimezone);
+        $available = $this->availability->availableSlotsForDate(
+            $masterId,
+            $service,
+            $date,
+            $setting,
+            $masterTimezone,
+            $durationMinutes,
+        );
         if (! in_array($time, $available, true)) {
             return response()->json([
                 'error' => [
@@ -143,9 +175,9 @@ class BookingController extends Controller
 
         $startsAtLocal = Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $time, $masterTimezone);
         $startsAt = $startsAtLocal->copy()->timezone(config('app.timezone'));
-        $endsAt = $startsAt->copy()->addMinutes((int) ($service->duration_min ?? 60));
+        $endsAt = $startsAt->copy()->addMinutes($durationMinutes);
 
-        $conflict = $this->conflicts->detectConflict($masterId, $startsAt, (int) ($service->duration_min ?? 60));
+        $conflict = $this->conflicts->detectConflict($masterId, $startsAt, $durationMinutes);
         if ($conflict !== null) {
             return response()->json([
                 'error' => [
@@ -161,15 +193,10 @@ class BookingController extends Controller
         $order = Order::query()->create([
             'master_id' => $masterId,
             'client_id' => $clientUser->id,
-            'services' => [[
-                'id' => $service->id,
-                'name' => $service->name,
-                'price' => (float) ($service->base_price ?? 0),
-                'duration' => (int) ($service->duration_min ?? 60),
-            ]],
+            'services' => $this->buildOrderServicePayload($service, $durationMinutes),
             'scheduled_at' => $startsAtLocal->copy()->timezone(config('app.timezone')),
-            'duration_forecast' => (int) ($service->duration_min ?? 60),
-            'total_price' => (float) ($service->base_price ?? 0),
+            'duration_forecast' => $durationMinutes,
+            'total_price' => $service ? (float) ($service->base_price ?? 0) : 0,
             'status' => 'new',
             'note' => $validated['note'] ?? null,
             'source' => 'client_portal',
@@ -180,7 +207,7 @@ class BookingController extends Controller
         $appointment = Appointment::query()->create([
             'user_id' => $masterId,
             'client_id' => $client->id,
-            'service_ids' => [$service->id],
+            'service_ids' => $service ? [$service->id] : [],
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
             'status' => 'scheduled',
@@ -188,10 +215,12 @@ class BookingController extends Controller
                 'source' => 'client_portal',
                 'note' => $validated['note'] ?? null,
                 'order_id' => $order->id,
+                'service_label' => $serviceLabel,
+                'service_specified' => $service !== null,
             ],
         ]);
 
-        $this->notifyMaster($masterId, $client, $service, $startsAtLocal);
+        $this->notifyMaster($masterId, $client, $serviceLabel, $startsAtLocal);
 
         return response()->json([
             'data' => [
@@ -312,7 +341,47 @@ class BookingController extends Controller
         return '+' . $digits;
     }
 
-    private function notifyMaster(int $masterId, Client $client, Service $service, Carbon $startsAtLocal): void
+    private function resolveBookingService(int $masterId, mixed $serviceId): ?Service
+    {
+        $serviceId = is_numeric($serviceId) ? (int) $serviceId : 0;
+
+        if ($serviceId <= 0) {
+            return null;
+        }
+
+        return Service::query()
+            ->where('user_id', $masterId)
+            ->findOrFail($serviceId);
+    }
+
+    /**
+     * @return array<int, array{id:int|null,name:string,price:float,duration:int}>
+     */
+    private function buildOrderServicePayload(?Service $service, int $durationMinutes): array
+    {
+        if ($service) {
+            return [[
+                'id' => $service->id,
+                'name' => $service->name,
+                'price' => (float) ($service->base_price ?? 0),
+                'duration' => $durationMinutes,
+            ]];
+        }
+
+        return [[
+            'id' => null,
+            'name' => self::UNSPECIFIED_SERVICE_LABEL,
+            'price' => 0.0,
+            'duration' => $durationMinutes,
+        ]];
+    }
+
+    private function resolveServiceLabel(?Service $service): string
+    {
+        return $service?->name ?: self::UNSPECIFIED_SERVICE_LABEL;
+    }
+
+    private function notifyMaster(int $masterId, Client $client, string $serviceLabel, Carbon $startsAtLocal): void
     {
         $datetime = $startsAtLocal->translatedFormat('d.m.Y H:i');
 
@@ -321,7 +390,7 @@ class BookingController extends Controller
             __('client_portal.booking.master_notification_title'),
             __('client_portal.booking.master_notification_message', [
                 'client' => $client->name ?: __('calendar.unnamed_client'),
-                'service' => $service->name,
+                'service' => $serviceLabel,
                 'datetime' => $datetime,
             ]),
             '/calendar',

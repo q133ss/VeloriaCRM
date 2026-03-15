@@ -378,18 +378,6 @@
                             </div>
 
                             <div class="row g-3 mb-4">
-                                <div class="col-md-7 d-none">
-                                    <div class="form-floating form-floating-outline">
-                                        <input
-                                            type="datetime-local"
-                                            class="form-control"
-                                            id="scheduled_at_legacy"
-                                            name="scheduled_at_legacy"
-                                            required
-                                        />
-                                        <label for="scheduled_at">Дата и время записи</label>
-                                    </div>
-                                </div>
                                 <div class="col-md-7">
                                     @include('components.veloria-datetime-field', [
                                         'id' => 'scheduled_at',

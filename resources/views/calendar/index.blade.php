@@ -780,19 +780,6 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-6 d-none">
-                                            <div class="form-floating form-floating-outline">
-                                                <input
-                                                    type="datetime-local"
-                                                    class="form-control"
-                                                    id="calendar-create-scheduled-at-legacy"
-                                                    name="scheduled_at_legacy"
-                                                    required
-                                                />
-                                                <label for="calendar-create-scheduled-at">Дата и время</label>
-                                            </div>
-                                        </div>
-
                                         <div class="col-md-6">
                                             @include('components.veloria-datetime-field', [
                                                 'id' => 'calendar-create-scheduled-at',

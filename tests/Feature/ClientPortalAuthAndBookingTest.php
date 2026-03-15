@@ -126,6 +126,60 @@ class ClientPortalAuthAndBookingTest extends TestCase
         $this->withHeader('Authorization', 'Bearer ' . $token)->getJson('/api/v1/services')->assertStatus(401);
     }
 
+    public function test_client_can_load_generic_slots_and_book_without_service(): void
+    {
+        $master = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+        ]);
+
+        $date = Carbon::now('Europe/Moscow')->addDay()->format('Y-m-d');
+        $dayKey = strtolower(Carbon::parse($date, 'Europe/Moscow')->format('D'));
+
+        Setting::create([
+            'user_id' => $master->id,
+            'work_hours' => [
+                $dayKey => ['10:00', '11:00'],
+            ],
+        ]);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Portal Client',
+            'phone' => '79990000002',
+            'email' => 'portal-noservice@example.com',
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $slots = $this->getJson('/api/v1/client/slots?date=' . $date);
+        $slots->assertOk()
+            ->assertJsonPath('data.service_id', null)
+            ->assertJsonPath('data.duration_min', 60)
+            ->assertJsonPath('data.slots.0', '10:00');
+
+        $book = $this->postJson('/api/v1/client/appointments', [
+            'date' => $date,
+            'time' => '10:00',
+            'note' => 'Подберу услугу на месте',
+        ]);
+
+        $book->assertCreated()
+            ->assertJsonPath('data.appointment.user_id', $master->id)
+            ->assertJsonPath('data.appointment.meta.service_specified', false)
+            ->assertJsonPath('data.appointment.meta.service_label', 'Услуга уточняется');
+
+        $appointment = \App\Models\Appointment::query()->latest('id')->first();
+        $this->assertNotNull($appointment);
+        $this->assertSame([], $appointment->service_ids ?? []);
+
+        $order = \App\Models\Order::query()->latest('id')->first();
+        $this->assertNotNull($order);
+        $this->assertSame('client_portal', $order->source);
+        $this->assertSame(60, $order->duration_forecast);
+        $this->assertSame('Услуга уточняется', data_get($order->services, '0.name'));
+        $this->assertSame(0.0, (float) data_get($order->services, '0.price'));
+    }
+
     public function test_client_can_login_via_email_code_when_client_exists(): void
     {
         $master = User::factory()->create();
@@ -190,6 +244,8 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
     public function test_client_slots_support_shift_cycle_schedule(): void
     {
+        Carbon::setTestNow(Carbon::parse('2026-03-09 08:00:00', 'Europe/Moscow'));
+
         $master = User::factory()->create([
             'timezone' => 'Europe/Moscow',
         ]);
@@ -224,14 +280,18 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
         Sanctum::actingAs($client);
 
-        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-10')
-            ->assertOk()
-            ->assertJsonPath('data.slots.0', '09:00')
-            ->assertJsonPath('data.slots.1', '19:00');
+        try {
+            $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-10')
+                ->assertOk()
+                ->assertJsonPath('data.slots.0', '09:00')
+                ->assertJsonPath('data.slots.1', '19:00');
 
-        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-12')
-            ->assertOk()
-            ->assertJsonPath('data.slots', []);
+            $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-12')
+                ->assertOk()
+                ->assertJsonPath('data.slots', []);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_client_slots_support_custom_month_schedule_with_half_hour_slots(): void
