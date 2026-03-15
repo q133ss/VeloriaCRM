@@ -6,6 +6,7 @@ use App\Models\LearningArticle;
 use App\Models\LearningLesson;
 use App\Models\Service;
 use App\Models\Setting;
+use App\Models\UsefulCategory;
 use App\Models\User;
 use App\Services\Telegram\TelegramBotApiService;
 use Illuminate\Support\Arr;
@@ -30,10 +31,11 @@ class UsefulDigestService
             ->orderByDesc('id')
             ->get();
 
-        $specialty = $this->resolveSpecialty($services);
+        $specialty = $this->resolveSpecialty($services, $locale);
         $keywords = $specialty['keywords'];
 
         $articles = LearningArticle::query()
+            ->with('usefulCategory')
             ->where('is_published', true)
             ->orderByDesc('is_featured')
             ->orderBy('sort_order')
@@ -47,10 +49,12 @@ class UsefulDigestService
             ->get();
 
         $sortedArticles = $this->sortBySpecialtyMatch($articles, $keywords, function (LearningArticle $article) use ($locale) {
+            $category = $this->resolveArticleCategory($article, $locale);
+
             return implode(' ', array_filter([
                 $article->getTranslationAsString('title', $locale, 'en'),
                 $article->getTranslationAsString('summary', $locale, 'en'),
-                $article->topic,
+                $category['label'],
             ]));
         });
 
@@ -79,8 +83,12 @@ class UsefulDigestService
 
         return [
             'meta' => [
-                'title' => 'Полезное',
-                'subtitle' => 'Короткие статьи, идеи и важные изменения для работы без лишнего шума.',
+                'title' => $this->copyForLocale($locale, 'Полезное', 'Useful'),
+                'subtitle' => $this->copyForLocale(
+                    $locale,
+                    'Короткие статьи, идеи и важные изменения для работы без лишнего шума.',
+                    'Short articles, ideas and important updates without extra noise.'
+                ),
                 'specialty' => [
                     'label' => $specialty['label'],
                     'hint' => $specialty['hint'],
@@ -89,7 +97,7 @@ class UsefulDigestService
             'digest' => $digest,
             'preferences' => $this->preferencesPayload($user, $setting),
             'featured_post' => $featuredPost,
-            'filters' => $this->buildTopicFilters($postCards),
+            'filters' => $this->buildTopicFilters($postCards, $locale),
             'posts' => $posts,
         ];
     }
@@ -227,7 +235,7 @@ class UsefulDigestService
             $this->notifications->send(
                 $user->id,
                 $digest['title'],
-                $message . "\n\nTelegram не был настроен, поэтому дайджест сохранён внутри CRM.",
+                $message . "\n\n" . $this->copyForLocale(app()->getLocale(), 'Telegram не был настроен, поэтому дайджест сохранён внутри CRM.', 'Telegram was not configured, so the digest was delivered inside the CRM.'),
                 '/useful'
             );
             $deliveredTo[] = 'platform_fallback';
@@ -257,8 +265,10 @@ class UsefulDigestService
 
         $items = collect()
             ->merge($articles->take(2)->map(function (LearningArticle $article) use ($locale) {
+                $category = $this->resolveArticleCategory($article, $locale);
+
                 return [
-                    'eyebrow' => $article->topic ?: 'Важно',
+                    'eyebrow' => $category['label'],
                     'title' => $article->getTranslationAsString('title', $locale, 'en'),
                     'summary' => $article->getTranslationAsString('summary', $locale, 'en'),
                     'action' => $this->extractArticleAction($article, $locale)['label'],
@@ -266,10 +276,10 @@ class UsefulDigestService
             }))
             ->merge($lessons->take(1)->map(function (LearningLesson $lesson) use ($locale) {
                 return [
-                    'eyebrow' => 'Попробовать',
+                    'eyebrow' => $this->copyForLocale($locale, 'Попробовать', 'Try next'),
                     'title' => $lesson->getTranslationAsString('title', $locale, 'en'),
                     'summary' => $lesson->getTranslationAsString('summary', $locale, 'en'),
-                    'action' => 'Открыть разбор',
+                    'action' => $this->copyForLocale($locale, 'Открыть разбор', 'Open guide'),
                 ];
             }))
             ->filter(fn (array $item) => $item['title'] !== '')
@@ -279,8 +289,8 @@ class UsefulDigestService
         $preferences = trim((string) ($setting->weekly_useful_digest_preferences ?? ''));
 
         return [
-            'badge' => 'Что важно на этой неделе',
-            'title' => 'Подборка спокойной недели',
+            'badge' => $this->copyForLocale($locale, 'Что важно на этой неделе', 'What matters this week'),
+            'title' => $this->copyForLocale($locale, 'Подборка спокойной недели', 'A calm weekly digest'),
             'summary' => $this->buildDigestSummary($user, $topArticle, $topLesson, $preferences, $locale),
             'week_label' => sprintf(
                 '%s - %s',
@@ -301,19 +311,23 @@ class UsefulDigestService
         $parts = [];
 
         if ($article) {
-            $parts[] = 'Важный материал недели: ' . $article->getTranslationAsString('title', $locale, 'en') . '.';
+            $parts[] = $this->copyForLocale($locale, 'Важный материал недели:', 'Top useful post this week:') . ' ' . $article->getTranslationAsString('title', $locale, 'en') . '.';
         }
 
         if ($lesson) {
-            $parts[] = 'Можно быстро внедрить: ' . $lesson->getTranslationAsString('title', $locale, 'en') . '.';
+            $parts[] = $this->copyForLocale($locale, 'Можно быстро внедрить:', 'Quick idea to apply:') . ' ' . $lesson->getTranslationAsString('title', $locale, 'en') . '.';
         }
 
         if ($preferences !== '') {
-            $parts[] = 'Учли ваш фокус: ' . Str::limit($preferences, 90);
+            $parts[] = $this->copyForLocale($locale, 'Учли ваш фокус:', 'Included your focus:') . ' ' . Str::limit($preferences, 90);
         }
 
         if (empty($parts)) {
-            $parts[] = 'Мы собрали короткую подборку материалов и идей, чтобы вам не приходилось искать важное вручную.';
+            $parts[] = $this->copyForLocale(
+                $locale,
+                'Мы собрали короткую подборку материалов и идей, чтобы вам не приходилось искать важное вручную.',
+                'We prepared a short list of posts and ideas, so you do not have to search everything manually.'
+            );
         }
 
         return implode(' ', $parts);
@@ -327,7 +341,7 @@ class UsefulDigestService
         ];
 
         foreach (Arr::get($digest, 'items', []) as $item) {
-            $lines[] = '• ' . trim(($item['title'] ?? '') . ': ' . ($item['action'] ?? 'Открыть'));
+            $lines[] = '* ' . trim(($item['title'] ?? '') . ': ' . ($item['action'] ?? 'Open'));
         }
 
         return trim(implode("\n", array_filter($lines)));
@@ -347,7 +361,7 @@ class UsefulDigestService
         ];
     }
 
-    protected function resolveSpecialty(Collection $services): array
+    protected function resolveSpecialty(Collection $services, string $locale): array
     {
         $category = $services
             ->filter(fn (Service $service) => $service->category)
@@ -359,17 +373,27 @@ class UsefulDigestService
         if ($category) {
             return [
                 'label' => $category->name,
-                'hint' => 'Подборка подстроена под ваши услуги и похожие запросы клиентов.',
+                'hint' => $this->copyForLocale(
+                    $locale,
+                    'Подборка подстроена под ваши услуги и похожие запросы клиентов.',
+                    'This feed is adapted to your services and similar client needs.'
+                ),
                 'keywords' => $this->keywordBag([$category->name]),
             ];
         }
 
         $serviceNames = $services->pluck('name')->filter()->take(3)->values()->all();
-        $label = ! empty($serviceNames) ? implode(', ', $serviceNames) : 'вашу специализацию';
+        $label = ! empty($serviceNames)
+            ? implode(', ', $serviceNames)
+            : $this->copyForLocale($locale, 'вашу специализацию', 'your speciality');
 
         return [
             'label' => $label,
-            'hint' => 'Показываем материалы, которые проще всего применить в работе уже сейчас.',
+            'hint' => $this->copyForLocale(
+                $locale,
+                'Показываем материалы, которые проще всего применить в работе уже сейчас.',
+                'Showing posts that are easiest to apply in your work right now.'
+            ),
             'keywords' => $this->keywordBag($serviceNames),
         ];
     }
@@ -408,15 +432,20 @@ class UsefulDigestService
     protected function transformArticle(LearningArticle $article, string $locale): array
     {
         $action = $this->extractArticleAction($article, $locale);
-        $rawTopic = $article->topic ?: 'general';
+        $category = $this->resolveArticleCategory($article, $locale);
 
         return [
             'id' => $article->id,
             'slug' => $article->slug,
             'title' => $article->getTranslationAsString('title', $locale, 'en'),
             'summary' => $article->getTranslationAsString('summary', $locale, 'en'),
-            'topic' => $this->humanizeTopic($rawTopic),
-            'topic_key' => Str::slug($rawTopic, '-'),
+            'topic' => $category['label'],
+            'topic_key' => $category['key'],
+            'category' => [
+                'id' => $category['id'],
+                'slug' => $category['key'],
+                'name' => $category['label'],
+            ],
             'reading_time_minutes' => $article->reading_time_minutes,
             'source_url' => $article->source_url,
             'published_at' => optional($article->published_at)->toIso8601String(),
@@ -429,23 +458,24 @@ class UsefulDigestService
     protected function extractArticleAction(LearningArticle $article, string $locale): array
     {
         $action = $article->getTranslation('action', $locale, 'en');
+        $defaultLabel = $this->copyForLocale($locale, 'Открыть материал', 'Open post');
 
         if (is_array($action)) {
             return [
-                'label' => (string) ($action['label'] ?? 'Открыть материал'),
+                'label' => (string) ($action['label'] ?? $defaultLabel),
                 'url' => $action['url'] ?? $article->source_url,
             ];
         }
 
         return [
-            'label' => is_string($action) && $action !== '' ? $action : 'Открыть материал',
+            'label' => is_string($action) && $action !== '' ? $action : $defaultLabel,
             'url' => $article->source_url,
         ];
     }
 
-    protected function buildTopicFilters(Collection $posts): array
+    protected function buildTopicFilters(Collection $posts, string $locale): array
     {
-        return $posts
+        $filters = $posts
             ->map(function (array $post) {
                 return [
                     'key' => $post['topic_key'],
@@ -454,29 +484,55 @@ class UsefulDigestService
             })
             ->unique('key')
             ->take(6)
-            ->values()
+            ->values();
+
+        return $filters
             ->prepend([
                 'key' => 'all',
-                'label' => 'Все',
+                'label' => $this->copyForLocale($locale, 'Все', 'All'),
             ])
             ->all();
     }
 
-    protected function humanizeTopic(string $topic): string
+    protected function resolveArticleCategory(LearningArticle $article, string $locale): array
+    {
+        $category = $article->usefulCategory;
+        if ($category instanceof UsefulCategory) {
+            return [
+                'id' => $category->id,
+                'key' => $category->slug,
+                'label' => $category->getTranslationAsString('name', $locale, 'en'),
+            ];
+        }
+
+        $fallbackKey = Str::slug((string) ($article->topic ?: 'general'));
+
+        return [
+            'id' => null,
+            'key' => $fallbackKey !== '' ? $fallbackKey : 'general',
+            'label' => $this->legacyTopicLabel((string) $article->topic, $locale),
+        ];
+    }
+
+    protected function legacyTopicLabel(string $topic, string $locale): string
     {
         $normalized = Str::of($topic)->trim()->lower()->replace('_', '-')->value();
 
         return match ($normalized) {
-            'legal', 'tax', 'taxes', 'compliance' => 'Налоги и право',
-            'loyalty' => 'Лояльность',
-            'retention' => 'Возврат клиентов',
-            'marketing', 'content', 'promotion' => 'Маркетинг',
-            'clients', 'client-care' => 'Клиенты',
-            'business', 'finance' => 'Бизнес',
-            'important', 'news', 'update' => 'Важно',
-            'general', '' => 'Полезное',
+            'legal', 'tax', 'taxes', 'compliance' => $this->copyForLocale($locale, 'Налоги и право', 'Taxes & legal'),
+            'loyalty' => $this->copyForLocale($locale, 'Лояльность', 'Loyalty'),
+            'retention' => $this->copyForLocale($locale, 'Возврат клиентов', 'Client retention'),
+            'marketing', 'content', 'promotion' => $this->copyForLocale($locale, 'Маркетинг', 'Marketing'),
+            'clients', 'client-care' => $this->copyForLocale($locale, 'Клиенты', 'Clients'),
+            'business', 'finance' => $this->copyForLocale($locale, 'Бизнес', 'Business'),
+            'general', '' => $this->copyForLocale($locale, 'Полезное', 'Useful'),
             default => Str::headline(str_replace(['_', '-'], ' ', $topic)),
         };
+    }
+
+    protected function copyForLocale(string $locale, string $ru, string $en): string
+    {
+        return Str::startsWith(Str::lower($locale), 'en') ? $en : $ru;
     }
 
     protected function userHasProAccess(User $user): bool

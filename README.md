@@ -100,8 +100,10 @@ Current flow:
 - admin CRUD API: `/api/v1/admin/useful/posts`
 
 What it includes:
-- weekly digest with important updates for the week
+- useful feed is visible to every logged-in plan, including free/lite users
+- weekly digest remains a Pro/Elite convenience layer
 - editorial useful posts from admin
+- useful posts are assigned to structured categories via `useful_categories`
 - practical business tips, taxes/rules notices, and marketing ideas
 - guides and ready-to-use scripts sourced from the legacy learning tables
 

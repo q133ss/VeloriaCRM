@@ -461,6 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
         menuItem('invoices', '/invoices', 'ri-bill-line'),
         menuItem('messages', '/messages', 'ri-message-3-line'),
         menuItem('analytics', '/analytics', 'ri-bar-chart-line'),
+        menuItem('useful', '/useful', 'ri-compass-3-line'),
         menuItem('integrations', '/integrations', 'ri-puzzle-line'),
         menuItem('settings', '/settings', 'ri-settings-3-line'),
         menuItem('help', '/help', 'ri-question-line')
@@ -470,13 +471,11 @@ document.addEventListener('DOMContentLoaded', function () {
         lite: [],
         pro: [
             menuItem('landings', '/landings', 'ri-layout-4-line'),
-            menuItem('marketing', '/marketing', 'ri-megaphone-line'),
-            menuItem('useful', '/useful', 'ri-compass-3-line')
+            menuItem('marketing', '/marketing', 'ri-megaphone-line')
         ],
         elite: [
             menuItem('landings', '/landings', 'ri-layout-4-line'),
             menuItem('marketing', '/marketing', 'ri-megaphone-line'),
-            menuItem('useful', '/useful', 'ri-compass-3-line'),
             menuItem('automations', '/automations', 'ri-magic-line')
         ]
     };

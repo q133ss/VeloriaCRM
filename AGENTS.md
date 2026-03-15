@@ -29,6 +29,8 @@ Current state:
 - user page: `resources/views/useful/index.blade.php`
 - admin page: `resources/views/admin/useful/index.blade.php`
 - learning data models still exist and are reused as the content source for useful posts, guides, scripts, and weekly digests
+- useful posts are grouped by `useful_categories`; avoid reintroducing free-form topic strings
+- the useful feed is visible to all plans, while weekly digest delivery stays gated for Pro/Elite
 
 If you touch docs, routes, menus, dashboard promos, or feature descriptions, keep this replacement consistent.
 

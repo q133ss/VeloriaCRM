@@ -8,6 +8,7 @@ use App\Models\LearningLesson;
 use App\Models\LearningRecommendation;
 use App\Models\LearningTask;
 use App\Models\LearningTemplate;
+use App\Models\UsefulCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
@@ -759,6 +760,73 @@ class LearningSeeder extends Seeder
             }
         }
 
+        $usefulCategoriesData = [
+            [
+                'slug' => 'general',
+                'name' => ['ru' => 'Полезное', 'en' => 'Useful'],
+                'description' => ['ru' => 'Общие полезные материалы для работы.', 'en' => 'General useful posts for day-to-day work.'],
+                'sort_order' => 10,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+            [
+                'slug' => 'marketing',
+                'name' => ['ru' => 'Маркетинг', 'en' => 'Marketing'],
+                'description' => ['ru' => 'Идеи для продвижения и контента.', 'en' => 'Ideas for promotion and content.'],
+                'sort_order' => 20,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+            [
+                'slug' => 'retention',
+                'name' => ['ru' => 'Возврат клиентов', 'en' => 'Client retention'],
+                'description' => ['ru' => 'Материалы по возврату и реактивации клиентов.', 'en' => 'Guides for bringing clients back.'],
+                'sort_order' => 30,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+            [
+                'slug' => 'loyalty',
+                'name' => ['ru' => 'Лояльность', 'en' => 'Loyalty'],
+                'description' => ['ru' => 'Как удерживать клиентов и повышать доверие.', 'en' => 'How to grow loyalty and trust.'],
+                'sort_order' => 40,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+            [
+                'slug' => 'legal',
+                'name' => ['ru' => 'Налоги и право', 'en' => 'Taxes & legal'],
+                'description' => ['ru' => 'Правила, налоги и важные юридические моменты.', 'en' => 'Rules, taxes and important legal details.'],
+                'sort_order' => 50,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+            [
+                'slug' => 'business',
+                'name' => ['ru' => 'Бизнес', 'en' => 'Business'],
+                'description' => ['ru' => 'Финансы, рост и организация работы.', 'en' => 'Finance, growth and business operations.'],
+                'sort_order' => 60,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+            [
+                'slug' => 'clients',
+                'name' => ['ru' => 'Клиенты', 'en' => 'Clients'],
+                'description' => ['ru' => 'Коммуникация и забота о клиентах.', 'en' => 'Communication and client care.'],
+                'sort_order' => 70,
+                'is_active' => true,
+                'is_public' => true,
+            ],
+        ];
+
+        $usefulCategories = [];
+        foreach ($usefulCategoriesData as $categoryData) {
+            $usefulCategories[$categoryData['slug']] = UsefulCategory::updateOrCreate(
+                ['slug' => $categoryData['slug']],
+                Arr::except($categoryData, ['slug'])
+            );
+        }
+
         $articlesData = [
             [
                 'slug' => 'first-post-guide',
@@ -771,7 +839,8 @@ class LearningSeeder extends Seeder
                     'en' => 'Step-by-step script to introduce yourself to clients.',
                 ],
                 'reading_time_minutes' => 4,
-                'topic' => 'marketing',
+                'topic' => $usefulCategories['marketing']->slug,
+                'useful_category_id' => $usefulCategories['marketing']->id,
                 'content' => [
                     'ru' => [
                         'structure' => [
@@ -812,7 +881,8 @@ class LearningSeeder extends Seeder
                     'en' => 'Set up referrals and activate client recommendations.',
                 ],
                 'reading_time_minutes' => 5,
-                'topic' => 'retention',
+                'topic' => $usefulCategories['retention']->slug,
+                'useful_category_id' => $usefulCategories['retention']->id,
                 'content' => [
                     'ru' => [
                         'steps' => [
@@ -851,7 +921,8 @@ class LearningSeeder extends Seeder
                     'en' => 'A list of ideas to keep clients coming back.',
                 ],
                 'reading_time_minutes' => 6,
-                'topic' => 'loyalty',
+                'topic' => $usefulCategories['loyalty']->slug,
+                'useful_category_id' => $usefulCategories['loyalty']->id,
                 'content' => [
                     'ru' => [
                         'ideas' => [
@@ -890,7 +961,8 @@ class LearningSeeder extends Seeder
                     'en' => 'What documents to keep and how to accept payments legally.',
                 ],
                 'reading_time_minutes' => 7,
-                'topic' => 'legal',
+                'topic' => $usefulCategories['legal']->slug,
+                'useful_category_id' => $usefulCategories['legal']->id,
                 'content' => [
                     'ru' => [
                         'sections' => [

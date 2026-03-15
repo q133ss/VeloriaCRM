@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasTranslatableAttributes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LearningArticle extends Model
 {
@@ -17,6 +18,7 @@ class LearningArticle extends Model
         'summary',
         'reading_time_minutes',
         'topic',
+        'useful_category_id',
         'content',
         'action',
         'is_published',
@@ -33,10 +35,16 @@ class LearningArticle extends Model
             'summary' => 'array',
             'content' => 'array',
             'action' => 'array',
+            'useful_category_id' => 'integer',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
             'sort_order' => 'integer',
             'published_at' => 'datetime',
         ];
+    }
+
+    public function usefulCategory(): BelongsTo
+    {
+        return $this->belongsTo(UsefulCategory::class, 'useful_category_id');
     }
 }

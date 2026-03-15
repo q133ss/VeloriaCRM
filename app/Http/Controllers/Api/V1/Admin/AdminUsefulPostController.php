@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\LearningArticle;
+use App\Models\UsefulCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -18,12 +19,18 @@ class AdminUsefulPostController extends Controller
         $status = (string) $request->query('status', 'all');
 
         $articles = LearningArticle::query()
+            ->with('usefulCategory')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($builder) use ($search) {
                     $builder->where('slug', 'like', '%' . $search . '%')
-                        ->orWhere('topic', 'like', '%' . $search . '%')
                         ->orWhere('title->ru', 'like', '%' . $search . '%')
-                        ->orWhere('title->en', 'like', '%' . $search . '%');
+                        ->orWhere('title->en', 'like', '%' . $search . '%')
+                        ->orWhereHas('usefulCategory', function ($categoryQuery) use ($search) {
+                            $categoryQuery
+                                ->where('slug', 'like', '%' . $search . '%')
+                                ->orWhere('name->ru', 'like', '%' . $search . '%')
+                                ->orWhere('name->en', 'like', '%' . $search . '%');
+                        });
                 });
             })
             ->when($status === 'published', fn ($query) => $query->where('is_published', true))
@@ -39,11 +46,16 @@ class AdminUsefulPostController extends Controller
 
         return response()->json([
             'data' => $articles,
+            'meta' => [
+                'categories' => $this->categoryOptions(),
+            ],
         ]);
     }
 
     public function show(LearningArticle $article): JsonResponse
     {
+        $article->load('usefulCategory');
+
         return response()->json([
             'data' => $this->transformDetail($article),
         ]);
@@ -54,6 +66,7 @@ class AdminUsefulPostController extends Controller
         $validated = $this->validatePayload($request);
 
         $article = LearningArticle::create($validated);
+        $article->load('usefulCategory');
 
         return response()->json([
             'data' => $this->transformDetail($article),
@@ -66,7 +79,7 @@ class AdminUsefulPostController extends Controller
         $article->update($validated);
 
         return response()->json([
-            'data' => $this->transformDetail($article->fresh()),
+            'data' => $this->transformDetail($article->fresh()->load('usefulCategory')),
         ]);
     }
 
@@ -88,7 +101,7 @@ class AdminUsefulPostController extends Controller
 
         $validated = $request->validate([
             'slug' => ['nullable', 'string', 'max:255', $slugRule],
-            'topic' => ['nullable', 'string', 'max:100'],
+            'useful_category_id' => ['required', 'integer', Rule::exists('useful_categories', 'id')],
             'reading_time_minutes' => ['required', 'integer', 'min:1', 'max:120'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'source_url' => ['nullable', 'url', 'max:2048'],
@@ -113,6 +126,7 @@ class AdminUsefulPostController extends Controller
             'action.en.url' => ['nullable', 'url', 'max:2048'],
         ]);
 
+        $category = UsefulCategory::query()->findOrFail($validated['useful_category_id']);
         $title = $this->normalizeTranslation($validated['title'] ?? []);
         $summary = $this->normalizeTranslation($validated['summary'] ?? []);
         $content = $this->normalizeTranslationContent($validated['content'] ?? []);
@@ -120,7 +134,8 @@ class AdminUsefulPostController extends Controller
 
         return [
             'slug' => $validated['slug'] ?: Str::slug($title['ru'] ?? Str::random(8)),
-            'topic' => $validated['topic'] ?? null,
+            'topic' => $category->slug,
+            'useful_category_id' => $category->id,
             'reading_time_minutes' => (int) $validated['reading_time_minutes'],
             'sort_order' => (int) ($validated['sort_order'] ?? 0),
             'source_url' => $validated['source_url'] ?? null,
@@ -186,7 +201,7 @@ class AdminUsefulPostController extends Controller
                 'url' => $ru['url'] ?? null,
             ],
             'en' => [
-                'label' => trim((string) ($en['label'] ?? ($ru['label'] ?? 'Open material'))),
+                'label' => trim((string) ($en['label'] ?? ($ru['label'] ?? 'Open post'))),
                 'url' => $en['url'] ?? ($ru['url'] ?? null),
             ],
         ];
@@ -194,11 +209,15 @@ class AdminUsefulPostController extends Controller
 
     protected function transformSummary(LearningArticle $article): array
     {
+        $category = $this->transformCategory($article->usefulCategory);
+
         return [
             'id' => $article->id,
             'slug' => $article->slug,
             'title' => $article->getTranslationAsString('title', 'ru', 'en'),
-            'topic' => $article->topic,
+            'topic' => $category['name'] ?? null,
+            'category' => $category,
+            'useful_category_id' => $article->useful_category_id,
             'is_published' => (bool) $article->is_published,
             'is_featured' => (bool) $article->is_featured,
             'published_at' => optional($article->published_at)->toIso8601String(),
@@ -209,10 +228,14 @@ class AdminUsefulPostController extends Controller
 
     protected function transformDetail(LearningArticle $article): array
     {
+        $category = $this->transformCategory($article->usefulCategory);
+
         return [
             'id' => $article->id,
             'slug' => $article->slug,
-            'topic' => $article->topic,
+            'topic' => $category['name'] ?? null,
+            'category' => $category,
+            'useful_category_id' => $article->useful_category_id,
             'reading_time_minutes' => (int) $article->reading_time_minutes,
             'sort_order' => (int) $article->sort_order,
             'source_url' => $article->source_url,
@@ -224,8 +247,34 @@ class AdminUsefulPostController extends Controller
             'content' => $article->content ?? ['ru' => null, 'en' => null],
             'action' => $article->action ?? [
                 'ru' => ['label' => 'Открыть материал', 'url' => null],
-                'en' => ['label' => 'Open material', 'url' => null],
+                'en' => ['label' => 'Open post', 'url' => null],
             ],
+        ];
+    }
+
+    protected function categoryOptions(): array
+    {
+        return UsefulCategory::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (UsefulCategory $category) => $this->transformCategory($category))
+            ->all();
+    }
+
+    protected function transformCategory(?UsefulCategory $category): ?array
+    {
+        if (! $category) {
+            return null;
+        }
+
+        return [
+            'id' => $category->id,
+            'slug' => $category->slug,
+            'name' => $category->getTranslationAsString('name', 'ru', 'en'),
+            'description' => $category->getTranslationAsString('description', 'ru', 'en'),
+            'is_public' => (bool) $category->is_public,
         ];
     }
 }
