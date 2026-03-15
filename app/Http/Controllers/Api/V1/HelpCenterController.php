@@ -12,26 +12,6 @@ class HelpCenterController extends Controller
     {
         $config = config('help');
 
-        $knowledgeBase = collect(Arr::get($config, 'knowledge_base_links', []))
-            ->map(function (array $item): array {
-                return [
-                    'title' => __($item['title']),
-                    'description' => __($item['description']),
-                    'url' => $item['url'],
-                    'icon' => $item['icon'] ?? 'ri-book-2-line',
-                ];
-            })
-            ->values()
-            ->all();
-
-        $faqs = collect(Arr::get($config, 'faqs', []))
-            ->map(fn (array $item): array => [
-                'question' => __($item['question']),
-                'answer' => __($item['answer']),
-            ])
-            ->values()
-            ->all();
-
         $supportConfig = Arr::get($config, 'support', []);
         $tips = collect(Arr::get($supportConfig, 'tips', []))
             ->map(fn ($tip) => __($tip))
@@ -42,8 +22,6 @@ class HelpCenterController extends Controller
 
         return response()->json([
             'data' => [
-                'knowledge_base' => $knowledgeBase,
-                'faqs' => $faqs,
                 'support' => [
                     'contact_email' => $supportConfig['contact_email'] ?? null,
                     'response_time_hours' => $responseTime,

@@ -4,34 +4,126 @@
 
 @section('content')
     <style>
+        .help-page {
+            max-width: 1120px;
+            margin: 0 auto;
+            --help-border: rgba(var(--bs-primary-rgb), 0.12);
+            --help-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
+
         .help-hero {
-            border: 1px solid rgba(var(--bs-primary-rgb), 0.16);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--help-border);
+            border-radius: 1.5rem;
+            box-shadow: var(--help-shadow);
             background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 28%),
-                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.14), transparent 34%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb), 0.12));
+        }
+
+        .help-hero::after {
+            content: '';
+            position: absolute;
+            right: -3rem;
+            bottom: -4rem;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb), 0.08);
+            filter: blur(12px);
+        }
+
+        .help-hero > * {
+            position: relative;
+            z-index: 1;
         }
 
         .help-section-card {
             border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            border-radius: 1.25rem;
+            background: rgba(var(--bs-body-bg-rgb), 0.98);
+            box-shadow: none;
         }
 
-        .help-knowledge-card {
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
-            border-radius: 1rem;
-            background: rgba(var(--bs-body-bg-rgb), 0.16);
-            height: 100%;
-        }
-
-        .help-meta-chip {
+        .help-eyebrow {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            padding: 0.45rem 0.75rem;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
             border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb), 0.08);
-            color: var(--bs-body-color);
-            font-size: 0.8125rem;
-            font-weight: 600;
+            background: rgba(var(--bs-body-bg-rgb), 0.72);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .help-intro {
+            max-width: 44rem;
+        }
+
+        .help-hero-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .help-support-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-color-rgb), 0.06);
+            color: rgba(var(--bs-body-color-rgb), 0.78);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .help-support-note i {
+            color: rgba(var(--bs-body-color-rgb), 0.55);
+        }
+
+        .help-form-hint {
+            border-radius: 1rem;
+            background: rgba(var(--bs-body-color-rgb), 0.04);
+        }
+
+        .help-form-hint p:last-child {
+            margin-bottom: 0;
+        }
+
+        .help-topic-chip {
+            border-radius: 999px;
+            border-color: rgba(var(--bs-body-color-rgb), 0.12);
+            color: rgba(var(--bs-body-color-rgb), 0.7);
+        }
+
+        .help-support-form .form-control,
+        .help-support-form .form-select {
+            border-radius: 0.95rem;
+        }
+
+        .help-support-form textarea.form-control {
+            min-height: 8rem;
+        }
+
+        .help-support-tips {
+            display: grid;
+            gap: 0.5rem;
+            padding-top: 0.25rem;
+        }
+
+        .help-support-tips li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            color: rgba(var(--bs-body-color-rgb), 0.62);
+        }
+
+        .help-support-tips i {
+            margin-top: 0.1rem;
+            color: rgba(var(--bs-body-color-rgb), 0.45);
         }
 
         .help-side-card {
@@ -39,116 +131,173 @@
             top: 1.5rem;
         }
 
+        .help-ticket-card .btn-icon {
+            border-radius: 0.85rem;
+        }
+
         .help-ticket-list .list-group-item {
             border-radius: 0.9rem;
             margin-bottom: 0.75rem;
             border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            padding: 0.9rem 1rem;
+            background: transparent;
+        }
+
+        .help-empty-card {
+            padding: 0.25rem 0;
+            border: 0;
+            background: transparent;
+        }
+
+        .help-empty-icon {
+            display: none;
+        }
+
+        .help-ticket-bubble {
+            max-width: min(100%, 34rem);
+            border-radius: 1rem;
+        }
+
+        .help-ticket-bubble--support {
+            background: rgba(var(--bs-body-color-rgb), 0.06);
+            color: var(--bs-body-color);
+        }
+
+        .help-ticket-bubble--user {
+            background: rgba(var(--bs-primary-rgb), 0.92);
+            color: #fff;
+        }
+
+        html[data-bs-theme="dark"] .help-section-card {
+            background: rgba(18, 24, 38, 0.92);
+        }
+
+        html[data-bs-theme="dark"] .help-eyebrow,
+        html[data-bs-theme="dark"] .help-support-note,
+        html[data-bs-theme="dark"] .help-form-hint {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        html[data-bs-theme="dark"] .help-ticket-bubble--support {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        @media (max-width: 767.98px) {
+            .help-hero-meta {
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 1199.98px) {
+            .help-side-card {
+                position: static;
+            }
         }
     </style>
 
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm help-hero">
-                <div class="card-body p-5 p-lg-6">
-                    <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-4">
-                        <div class="mw-lg-50">
-                            <span class="badge bg-label-primary mb-3">Veloria Help</span>
-                            <h3 class="mb-2">{{ __('help.title') }}</h3>
-                            <p class="text-muted mb-0">Сначала попробуйте найти готовый ответ. Если не помогло, ниже можно быстро написать в поддержку и отследить свои обращения.</p>
+    <div class="help-page">
+        <section class="help-hero mb-4">
+            <div class="card-body p-4 p-lg-5">
+                <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-4">
+                    <div class="d-flex flex-column gap-3 help-intro">
+                        <span class="help-eyebrow">
+                            <i class="ri ri-lifebuoy-line text-primary"></i>
+                            Veloria Help
+                        </span>
+                        <div>
+                            <h4 class="mb-1">{{ __('help.title') }}</h4>
+                            <p class="text-muted mb-0">Опишите ситуацию, и мы ответим здесь. Ничего искать не нужно.</p>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="help-meta-chip"><i class="ri ri-book-open-line"></i> База знаний</span>
-                            <span class="help-meta-chip"><i class="ri ri-question-line"></i> FAQ</span>
-                            <span class="help-meta-chip" id="help-support-response-time"></span>
+                    </div>
+
+                    <div class="help-hero-meta">
+                        <div class="help-support-note" id="help-support-response-time">
+                            <i class="ri ri-time-line"></i>
+                            <span id="help-support-response-time-text">Обычно отвечаем в рабочие часы</span>
+                        </div>
+                        <div class="help-support-note">
+                            <i class="ri ri-mail-send-line"></i>
+                            <span>Ответим в приложении и на почту</span>
+                        </div>
+                        <div class="help-support-note">
+                            <i class="ri ri-calendar-schedule-line"></i>
+                            <span id="help-support-working-hours-chip">Будни с 09:00 до 21:00</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="col-12 col-xl-8">
-            <div class="d-flex flex-column gap-4">
-                <div class="card help-section-card">
-                    <div class="card-body p-5">
-                        <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3 mb-4">
+        <div class="row g-4 align-items-start">
+            <div class="col-12 col-xl-8">
+                <div class="card help-section-card" id="help-support-panel">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="mb-4">
+                            <h4 class="mb-2">{{ __('help.support.title') }}</h4>
+                            <p class="text-muted mb-0">{{ __('help.support.subtitle') }}</p>
+                        </div>
+
+                        <div class="help-form-hint p-3 mb-4">
+                            <div class="small text-muted">
+                                Коротко опишите, что случилось, чего вы ожидали и, если нужно, приложите скриншот.
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary help-topic-chip" data-help-subject="Проблема с напоминаниями">Напоминания</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary help-topic-chip" data-help-subject="Вопрос по календарю">Календарь</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary help-topic-chip" data-help-subject="Не понимаю тариф">Тариф</button>
+                        </div>
+
+                        <div id="help-support-alert" class="alert alert-success d-none" role="alert"></div>
+                        <form id="help-support-form" class="d-flex flex-column gap-3 help-support-form" enctype="multipart/form-data">
                             <div>
-                                <h4 class="mb-1">{{ __('help.knowledge_base.title') }}</h4>
-                                <p class="text-muted mb-0">Начните с поиска по материалам и частым вопросам.</p>
+                                <label for="help-subject" class="form-label">{{ __('help.support.form.subject_label') }}</label>
+                                <input type="text" class="form-control" id="help-subject" name="subject" placeholder="{{ __('help.support.form.subject_placeholder') }}" required />
                             </div>
-                            <div class="w-100 w-lg-auto" style="min-width: min(100%, 320px);">
-                                <div class="form-floating form-floating-outline">
-                                    <input type="text" class="form-control" id="help-search" placeholder="Поиск по помощи" />
-                                    <label for="help-search">Поиск по помощи</label>
-                                </div>
+                            <div>
+                                <label for="help-message" class="form-label">{{ __('help.support.form.message_label') }}</label>
+                                <textarea class="form-control" id="help-message" name="message" rows="5" placeholder="{{ __('help.support.form.message_placeholder') }}" required></textarea>
                             </div>
-                        </div>
-                        <div id="help-knowledge-alert" class="alert alert-danger d-none" role="alert"></div>
-                        <div id="knowledge-base-list" class="row g-3"></div>
-                    </div>
-                </div>
-
-                <div class="card help-section-card">
-                    <div class="card-body p-5">
-                        <h4 class="mb-1">{{ __('help.faq.title') }}</h4>
-                        <p class="text-muted mb-3">{{ __('help.faq.subtitle') }}</p>
-                        <div id="help-faq" class="accordion"></div>
+                            <div>
+                                <label for="help-attachment" class="form-label">{{ __('help.support.form.attachment_label') }}</label>
+                                <input type="file" class="form-control" id="help-attachment" name="attachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.csv" />
+                                <div class="form-text" id="help-support-working-hours"></div>
+                            </div>
+                            <ul id="help-support-tips" class="list-unstyled small text-muted mb-0 help-support-tips"></ul>
+                            <div class="pt-2">
+                                <button type="submit" class="btn btn-primary px-4" id="help-support-submit">
+                                    <span class="spinner-border spinner-border-sm align-middle me-2 d-none" role="status" id="help-support-spinner"></span>
+                                    Отправить сообщение
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-12 col-xl-4">
-            <div class="d-flex flex-column gap-4 help-side-card">
-                <div class="card help-section-card">
-                    <div class="card-body p-5">
-                        <h4 class="mb-1">{{ __('help.tickets.title') }}</h4>
-                        <p class="text-muted mb-3" id="help-tickets-subtitle"></p>
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <span class="small text-muted">История ответов и текущий статус</span>
-                            <button class="btn btn-icon btn-outline-secondary" type="button" id="help-refresh-tickets" title="Refresh">
-                                <i class="ri ri-refresh-line"></i>
-                            </button>
-                        </div>
-                        <div id="help-tickets-alert" class="alert alert-danger d-none" role="alert"></div>
-                        <div id="help-tickets-empty" class="text-muted small d-none">{{ __('help.tickets.empty') }}</div>
-                        <div id="help-tickets-list" class="list-group list-group-flush help-ticket-list"></div>
-                    </div>
-                </div>
-
-                <div class="card help-section-card">
-                    <div class="card-body p-5">
-                        <details open>
-                            <summary class="d-flex align-items-center justify-content-between cursor-pointer list-unstyled">
+            <div class="col-12 col-xl-4">
+                <div class="d-flex flex-column gap-4 help-side-card">
+                    <div class="card help-section-card help-ticket-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
                                 <div>
-                                    <h4 class="mb-1">{{ __('help.support.title') }}</h4>
-                                    <p class="text-muted mb-0">{{ __('help.support.subtitle') }}</p>
+                                    <h5 class="mb-2">{{ __('help.tickets.title') }}</h5>
+                                    <p class="text-muted small mb-0">Здесь появятся ваши сообщения и ответы команды.</p>
                                 </div>
-                                <i class="ri ri-add-line"></i>
-                            </summary>
-                            <div class="pt-4">
-                                <div id="help-support-alert" class="alert alert-success d-none" role="alert"></div>
-                                <form id="help-support-form" class="d-flex flex-column gap-3" enctype="multipart/form-data">
-                                    <div>
-                                        <label for="help-subject" class="form-label">{{ __('help.support.form.subject_label') }}</label>
-                                        <input type="text" class="form-control" id="help-subject" name="subject" placeholder="{{ __('help.support.form.subject_placeholder') }}" required />
-                                    </div>
-                                    <div>
-                                        <label for="help-message" class="form-label">{{ __('help.support.form.message_label') }}</label>
-                                        <textarea class="form-control" id="help-message" name="message" rows="5" placeholder="{{ __('help.support.form.message_placeholder') }}" required></textarea>
-                                    </div>
-                                    <div>
-                                        <label for="help-attachment" class="form-label">{{ __('help.support.form.attachment_label') }}</label>
-                                        <input type="file" class="form-control" id="help-attachment" name="attachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.csv" />
-                                        <div class="form-text" id="help-support-working-hours"></div>
-                                    </div>
-                                    <ul id="help-support-tips" class="list-unstyled small text-muted mb-0"></ul>
-                                    <button type="submit" class="btn btn-primary" id="help-support-submit">
-                                        <span class="spinner-border spinner-border-sm align-middle me-2 d-none" role="status" id="help-support-spinner"></span>
-                                        {{ __('help.support.form.submit') }}
-                                    </button>
-                                </form>
+                                <button class="btn btn-icon btn-outline-secondary" type="button" id="help-refresh-tickets" title="Обновить список">
+                                    <i class="ri ri-refresh-line"></i>
+                                </button>
                             </div>
-                        </details>
+
+                            <div id="help-tickets-alert" class="alert alert-danger d-none" role="alert"></div>
+                            <div id="help-tickets-empty" class="help-empty-card d-none">
+                                <div class="text-muted small">
+                                    Пока обращений нет. Когда вы напишете в поддержку, переписка появится здесь.
+                                </div>
+                            </div>
+                            <div id="help-tickets-list" class="list-group list-group-flush help-ticket-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,7 +331,7 @@
                             <div class="col-md-6 d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary ms-auto" id="help-reply-submit">
                                     <span class="spinner-border spinner-border-sm align-middle me-2 d-none" role="status" id="help-reply-spinner"></span>
-                                    {{ __('help.support.form.submit') }}
+                                    Отправить ответ
                                 </button>
                             </div>
                         </div>
@@ -197,23 +346,23 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const locale = document.documentElement.lang || 'ru';
-            const knowledgeContainer = document.getElementById('knowledge-base-list');
-            const knowledgeAlert = document.getElementById('help-knowledge-alert');
-            const faqContainer = document.getElementById('help-faq');
-            const helpSearch = document.getElementById('help-search');
             const responseTimeBadge = document.getElementById('help-support-response-time');
+            const responseTimeText = document.getElementById('help-support-response-time-text');
             const workingHoursHint = document.getElementById('help-support-working-hours');
+            const workingHoursChip = document.getElementById('help-support-working-hours-chip');
             const supportTipsList = document.getElementById('help-support-tips');
             const supportForm = document.getElementById('help-support-form');
             const supportAlert = document.getElementById('help-support-alert');
             const supportSubmit = document.getElementById('help-support-submit');
             const supportSpinner = document.getElementById('help-support-spinner');
             const supportAttachmentInput = document.getElementById('help-attachment');
+            const supportSubjectInput = document.getElementById('help-subject');
+            const supportMessageInput = document.getElementById('help-message');
+            const supportTopicButtons = document.querySelectorAll('[data-help-subject]');
             const ticketsList = document.getElementById('help-tickets-list');
             const ticketsEmpty = document.getElementById('help-tickets-empty');
             const ticketsAlert = document.getElementById('help-tickets-alert');
             const refreshTicketsButton = document.getElementById('help-refresh-tickets');
-            const ticketsSubtitle = document.getElementById('help-tickets-subtitle');
             const ticketModalEl = document.getElementById('helpTicketModal');
             const ticketModal = new bootstrap.Modal(ticketModalEl);
             const ticketModalLabel = document.getElementById('helpTicketModalLabel');
@@ -224,8 +373,6 @@
             const ticketReplySubmit = document.getElementById('help-reply-submit');
             const ticketReplyAttachment = document.getElementById('help-reply-attachment');
             const ticketReplyMessage = document.getElementById('help-reply-message');
-            let knowledgeItems = [];
-            let faqItems = [];
 
             const translations = {
                 alerts: {
@@ -235,13 +382,8 @@
                     attachmentTooLarge: @json(__('help.alerts.attachment_too_large')),
                     attachmentType: @json(__('help.alerts.attachment_type')),
                 },
-                knowledgeCta: @json(__('help.knowledge_base.cta')),
-                ticketView: @json(__('help.tickets.view')),
-                ticketsSubtitle: @json(__('help.subtitle')),
                 messages: {
                     none: @json(__('help.tickets.messages.no_messages')),
-                    fromSupport: @json(__('help.tickets.messages.from_support')),
-                    fromYou: @json(__('help.tickets.messages.from_you')),
                 },
                 statuses: {
                     open: @json(__('help.tickets.statuses.open')),
@@ -257,8 +399,6 @@
                 responded: 'badge bg-label-success',
                 closed: 'badge bg-label-secondary',
             };
-
-            ticketsSubtitle.textContent = translations.ticketsSubtitle;
 
             function getCookie(name) {
                 const value = `; ${document.cookie}`;
@@ -302,99 +442,35 @@
                 }
             }
 
-            function renderKnowledgeBase(items) {
-                knowledgeContainer.innerHTML = '';
-                if (!items.length) {
-                    knowledgeAlert.classList.remove('d-none');
-                    knowledgeAlert.textContent = helpSearch && helpSearch.value.trim() !== ''
-                        ? 'Ничего не найдено. Попробуйте другой запрос или откройте поддержку.'
-                        : translations.alerts.loadError;
-                    return;
-                }
-                knowledgeAlert.classList.add('d-none');
-                items.forEach(function (item) {
-                    const col = document.createElement('div');
-                    col.className = 'col-12 col-md-6';
-                    col.innerHTML = `
-                        <div class="help-knowledge-card p-3">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="avatar flex-shrink-0 bg-label-primary rounded"><i class="ri ${escapeHtml(item.icon)} icon-base p-2"></i></div>
-                                <div>
-                                    <h6 class="mb-1">${escapeHtml(item.title)}</h6>
-                                    <p class="text-muted small mb-2">${escapeHtml(item.description)}</p>
-                                    <a class="btn btn-sm btn-outline-primary" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(translations.knowledgeCta)}</a>
-                                </div>
-                            </div>
-                        </div>`;
-                    knowledgeContainer.appendChild(col);
-                });
-            }
-
-            function renderFaq(items) {
-                faqContainer.innerHTML = '';
-                if (!items.length) {
-                    faqContainer.innerHTML = `<div class="text-muted small">${escapeHtml(helpSearch && helpSearch.value.trim() !== '' ? 'По этому запросу вопросы не найдены.' : translations.alerts.loadError)}</div>`;
-                    return;
-                }
-                items.forEach(function (item, index) {
-                    const id = `faq-item-${index}`;
-                    const element = document.createElement('div');
-                    element.className = 'accordion-item';
-                    element.innerHTML = `
-                        <h2 class="accordion-header" id="${id}-header">
-                            <button class="accordion-button ${index !== 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#${id}-body" aria-expanded="${index === 0}">
-                                ${escapeHtml(item.question)}
-                            </button>
-                        </h2>
-                        <div id="${id}-body" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" aria-labelledby="${id}-header" data-bs-parent="#help-faq">
-                            <div class="accordion-body">${escapeHtml(item.answer)}</div>
-                        </div>`;
-                    faqContainer.appendChild(element);
-                });
-            }
-
-            function applyHelpSearch() {
-                const query = (helpSearch && helpSearch.value || '').trim().toLowerCase();
-                if (!query) {
-                    renderKnowledgeBase(knowledgeItems);
-                    renderFaq(faqItems);
-                    return;
-                }
-
-                const filteredKnowledge = knowledgeItems.filter(function (item) {
-                    return [item.title, item.description].some(function (value) {
-                        return String(value || '').toLowerCase().includes(query);
-                    });
-                });
-
-                const filteredFaq = faqItems.filter(function (item) {
-                    return [item.question, item.answer].some(function (value) {
-                        return String(value || '').toLowerCase().includes(query);
-                    });
-                });
-
-                renderKnowledgeBase(filteredKnowledge);
-                renderFaq(filteredFaq);
-            }
-
             function setSupportInfo(data) {
-                responseTimeBadge.textContent = data.response_time_text || '';
+                if (responseTimeText || responseTimeBadge) {
+                    (responseTimeText || responseTimeBadge).textContent = data.response_time_text || 'Обычно отвечаем в рабочие часы';
+                }
                 workingHoursHint.textContent = data.working_hours || '';
+                if (workingHoursChip) {
+                    workingHoursChip.textContent = data.working_hours || 'Будни с 09:00 до 21:00';
+                }
                 supportTipsList.innerHTML = '';
+
                 (data.tips || []).forEach(function (tip) {
                     const li = document.createElement('li');
-                    li.innerHTML = `<i class="ri ri-information-line me-2"></i>${escapeHtml(tip)}`;
+                    li.innerHTML = `<i class="ri ri-information-line"></i><span>${escapeHtml(tip)}</span>`;
                     supportTipsList.appendChild(li);
                 });
             }
 
             function renderTickets(tickets) {
                 ticketsList.innerHTML = '';
+
                 if (!tickets.length) {
+                    ticketsList.classList.add('d-none');
                     ticketsEmpty.classList.remove('d-none');
                     return;
                 }
+
+                ticketsList.classList.remove('d-none');
                 ticketsEmpty.classList.add('d-none');
+
                 tickets.forEach(function (ticket) {
                     const badgeClass = statusStyles[ticket.status] || 'badge bg-label-secondary';
                     const item = document.createElement('button');
@@ -421,7 +497,9 @@
                 ticketModalLabel.textContent = ticket.subject;
                 ticketModalMeta.textContent = `${escapeHtml(translations.statuses[ticket.status] || ticket.status)} · ${formatDate(ticket.updated_at)}`;
                 ticketMessagesContainer.innerHTML = '';
+
                 const messages = ticket.messages || [];
+
                 if (!messages.length) {
                     const emptyState = document.createElement('div');
                     emptyState.className = 'text-muted small';
@@ -432,7 +510,7 @@
                         const wrapper = document.createElement('div');
                         wrapper.className = `d-flex flex-column ${message.from_current_user ? 'align-items-end' : 'align-items-start'}`;
                         const bubble = document.createElement('div');
-                        bubble.className = `p-3 rounded-3 shadow-sm ${message.from_current_user ? 'bg-primary text-white' : 'bg-light'}`;
+                        bubble.className = `p-3 shadow-sm help-ticket-bubble ${message.from_current_user ? 'help-ticket-bubble--user' : 'help-ticket-bubble--support'}`;
                         bubble.innerHTML = `
                             <div class="small fw-semibold mb-1">${escapeHtml(message.sender_label)}</div>
                             <div class="mb-2">${message.body ? escapeHtml(message.body) : ''}</div>
@@ -444,6 +522,7 @@
                         ticketMessagesContainer.appendChild(wrapper);
                     });
                 }
+
                 ticketMessageForm.dataset.ticketId = ticket.id;
                 ticketReplyMessage.value = '';
                 ticketReplyAttachment.value = '';
@@ -462,22 +541,19 @@
                 supportAlert.classList.remove('d-none');
             }
 
-            function loadOverview() {
+            function loadSupportInfo() {
                 fetch('/api/v1/help/overview', { headers: authHeaders() })
                     .then(function (response) {
                         if (!response.ok) throw new Error('Failed');
                         return response.json();
                     })
                     .then(function (data) {
-                        const payload = data.data || {};
-                        knowledgeItems = payload.knowledge_base || [];
-                        faqItems = payload.faqs || [];
-                        applyHelpSearch();
-                        setSupportInfo(payload.support || {});
+                        setSupportInfo(data.data?.support || {});
                     })
                     .catch(function () {
-                        knowledgeAlert.classList.remove('d-none');
-                        knowledgeAlert.textContent = translations.alerts.loadError;
+                        if (responseTimeText || responseTimeBadge) {
+                            (responseTimeText || responseTimeBadge).textContent = 'Обычно отвечаем в рабочие часы';
+                        }
                     });
             }
 
@@ -498,7 +574,7 @@
             }
 
             function loadTicket(id) {
-                ticketMessagesContainer.innerHTML = '<div class="text-muted small">Loading…</div>';
+                ticketMessagesContainer.innerHTML = '<div class="text-muted small">Загрузка...</div>';
                 fetch('/api/v1/help/tickets/' + id, { headers: authHeaders() })
                     .then(function (response) {
                         if (!response.ok) throw new Error('Failed');
@@ -633,11 +709,19 @@
                 loadTickets();
             });
 
-            if (helpSearch) {
-                helpSearch.addEventListener('input', applyHelpSearch);
-            }
+            supportTopicButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    supportSubjectInput.value = button.dataset.helpSubject || '';
+                    if (supportMessageInput && !supportMessageInput.value.trim()) {
+                        supportMessageInput.focus();
+                    } else {
+                        supportSubjectInput.focus();
+                    }
+                    supportSubjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+            });
 
-            loadOverview();
+            loadSupportInfo();
             loadTickets();
         });
     </script>
