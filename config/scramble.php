@@ -18,7 +18,7 @@ return [
     /*
      * The path where your OpenAPI specification will be exported.
      */
-    'export_path' => 'api.json',
+    'export_path' => 'public/openapi.json',
 
     'info' => [
         /*
@@ -29,7 +29,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => '',
+        'description' => 'Veloria CRM REST API for beauty professionals. The API covers authentication, clients, orders, scheduling, useful content, subscriptions, admin modules, and the client booking portal.',
     ],
 
     /*
@@ -39,12 +39,12 @@ return [
         /*
          * Define the title of the documentation's website. App name is used when this config is `null`.
          */
-        'title' => null,
+        'title' => 'Veloria CRM API',
 
         /*
          * Define the theme of the documentation. Available options are `light`, `dark`, and `system`.
          */
-        'theme' => 'light',
+        'theme' => 'system',
 
         /*
          * Hide the `Try It` feature. Enabled by default.
