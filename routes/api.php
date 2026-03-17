@@ -36,8 +36,6 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'token.user'])->get('/auth/me', [AuthController::class, 'me'])->name('api.me');
 
     Route::prefix('client')->group(function () {
-        Route::post('/register', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'register']);
-        Route::post('/register/verify', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'verifyRegister']);
         Route::post('/login', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'login']);
         Route::post('/login/verify', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'verifyLogin']);
 

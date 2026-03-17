@@ -12,7 +12,6 @@ class ClientPortalLoginRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'master_id' => ['required', 'integer', 'exists:users,id'],
             'email' => ['required', 'string', 'email', 'max:255'],
         ];
     }

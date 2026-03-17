@@ -18,7 +18,7 @@ class ClientPortalAuthAndBookingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_client_can_register_via_email_code_and_book_appointment(): void
+    public function test_existing_client_can_login_via_email_code_and_book_appointment(): void
     {
         $master = User::factory()->create();
 
@@ -46,19 +46,23 @@ class ClientPortalAuthAndBookingTest extends TestCase
             ],
         ]);
 
-        Mail::fake();
-
-        $registerResponse = $this->postJson('/api/v1/client/register', [
-            'master_id' => $master->id,
+        Client::create([
+            'user_id' => $master->id,
             'name' => 'Client',
             'email' => 'client@example.com',
             'phone' => '79518677099',
         ]);
 
-        $registerResponse->assertOk()
+        Mail::fake();
+
+        $loginResponse = $this->postJson('/api/v1/client/login', [
+            'email' => 'client@example.com',
+        ]);
+
+        $loginResponse->assertOk()
             ->assertJsonPath('data.expires_in', 600);
 
-        $verificationId = $registerResponse->json('data.verification_id');
+        $verificationId = $loginResponse->json('data.verification_id');
         $this->assertNotEmpty($verificationId);
 
         $code = null;
@@ -68,22 +72,17 @@ class ClientPortalAuthAndBookingTest extends TestCase
         });
         $this->assertNotEmpty($code);
 
-        $verifyResponse = $this->postJson('/api/v1/client/register/verify', [
+        $verifyResponse = $this->postJson('/api/v1/client/login/verify', [
             'verification_id' => $verificationId,
             'code' => $code,
         ]);
 
         $verifyResponse->assertOk()
-            ->assertJsonPath('data.client.email', 'client@example.com');
+            ->assertJsonPath('data.client.email', 'client@example.com')
+            ->assertJsonPath('data.master.id', $master->id);
 
         $token = $verifyResponse->json('data.token');
         $this->assertNotEmpty($token);
-
-        $this->assertDatabaseHas('clients', [
-            'user_id' => $master->id,
-            'email' => 'client@example.com',
-            'phone' => '79518677099',
-        ]);
 
         $me = $this->withHeader('Authorization', 'Bearer ' . $token)->getJson('/api/v1/client/me');
         $me->assertOk()->assertJsonPath('data.client.email', 'client@example.com');
@@ -122,7 +121,6 @@ class ClientPortalAuthAndBookingTest extends TestCase
             'user_id' => $master->id,
         ]);
 
-        // Client token must not access master endpoints.
         $this->withHeader('Authorization', 'Bearer ' . $token)->getJson('/api/v1/services')->assertStatus(401);
     }
 
@@ -194,7 +192,6 @@ class ClientPortalAuthAndBookingTest extends TestCase
         Mail::fake();
 
         $loginResponse = $this->postJson('/api/v1/client/login', [
-            'master_id' => $master->id,
             'email' => 'client@example.com',
         ]);
 
@@ -215,31 +212,78 @@ class ClientPortalAuthAndBookingTest extends TestCase
         ]);
 
         $verify->assertOk()
-            ->assertJsonPath('data.client.email', 'client@example.com');
+            ->assertJsonPath('data.client.email', 'client@example.com')
+            ->assertJsonPath('data.master.id', $master->id);
     }
 
-    public function test_register_returns_conflict_when_client_already_exists_for_master_and_email(): void
+    public function test_login_returns_master_selection_when_email_belongs_to_multiple_masters(): void
     {
-        $master = User::factory()->create();
+        $firstMaster = User::factory()->create([
+            'name' => 'Mira',
+        ]);
+        $secondMaster = User::factory()->create([
+            'name' => 'Olga',
+        ]);
 
         Client::create([
-            'user_id' => $master->id,
+            'user_id' => $firstMaster->id,
             'name' => 'Existing',
             'email' => 'client@example.com',
             'phone' => '79518677099',
         ]);
 
-        Mail::fake();
-
-        $register = $this->postJson('/api/v1/client/register', [
-            'master_id' => $master->id,
-            'name' => 'Client',
+        Client::create([
+            'user_id' => $secondMaster->id,
+            'name' => 'Existing',
             'email' => 'client@example.com',
-            'phone' => '79518677099',
+            'phone' => '79518677100',
         ]);
 
-        $register->assertStatus(409)
-            ->assertJsonPath('error.code', 'already_registered');
+        Mail::fake();
+
+        $login = $this->postJson('/api/v1/client/login', [
+            'email' => 'client@example.com',
+        ]);
+
+        $login->assertOk();
+
+        $verificationId = $login->json('data.verification_id');
+        $this->assertNotEmpty($verificationId);
+
+        $code = null;
+        Mail::assertSent(ClientOtpCodeMail::class, function (ClientOtpCodeMail $mail) use (&$code) {
+            $code = $mail->code;
+            return true;
+        });
+        $this->assertNotEmpty($code);
+
+        $verify = $this->postJson('/api/v1/client/login/verify', [
+            'verification_id' => $verificationId,
+            'code' => $code,
+        ]);
+
+        $verify->assertOk()
+            ->assertJsonPath('data.requires_master_selection', true)
+            ->assertJsonCount(2, 'data.masters');
+
+        $selectionToken = $verify->json('data.selection_token');
+        $this->assertNotEmpty($selectionToken);
+
+        $chooseMaster = $this->postJson('/api/v1/client/login/verify', [
+            'selection_token' => $selectionToken,
+            'master_id' => $secondMaster->id,
+        ]);
+
+        $chooseMaster->assertOk()
+            ->assertJsonPath('data.client.email', 'client@example.com')
+            ->assertJsonPath('data.master.id', $secondMaster->id)
+            ->assertJsonPath('data.master.name', 'Olga');
+    }
+
+    public function test_client_register_routes_are_not_available(): void
+    {
+        $this->postJson('/api/v1/client/register', [])->assertNotFound();
+        $this->postJson('/api/v1/client/register/verify', [])->assertNotFound();
     }
 
     public function test_client_slots_support_shift_cycle_schedule(): void
