@@ -59,6 +59,7 @@ return [
             'over' => 'Running longer than planned',
             'finished' => 'Booking finished',
             'confirm' => 'Finish the booking and stop the timer?',
+            'stop' => 'Stop',
         ],
         'gaps_title' => 'Gap between bookings',
         'gap_hours' => '{1} :count hour|[2,*] :count hours',

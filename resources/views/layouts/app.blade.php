@@ -99,12 +99,58 @@
         }
 
         .active-timer__finish {
-            border: 1px solid var(--bs-border-color);
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.85rem;
+            height: 1.85rem;
+            padding: 0;
+            border: 1px solid rgba(var(--bs-danger-rgb, 255, 62, 29), 0.45);
             border-radius: 999px;
-            background: transparent;
-            color: var(--bs-body-color);
-            font-size: 0.8rem;
-            padding: 0.25rem 0.7rem;
+            background: rgba(var(--bs-danger-rgb, 255, 62, 29), 0.12);
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .active-timer__finish:hover:not(:disabled),
+        .active-timer__finish:focus-visible {
+            background: rgba(var(--bs-danger-rgb, 255, 62, 29), 0.22);
+            border-color: rgb(var(--bs-danger-rgb, 255, 62, 29));
+        }
+
+        .active-timer__finish:disabled {
+            opacity: 0.5;
+        }
+
+        .active-timer__stop {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 1px;
+            background: rgb(var(--bs-danger-rgb, 255, 62, 29));
+        }
+
+        /* Native title waits a second; this button needs to name itself at once. */
+        .active-timer__finish::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.35rem;
+            background: var(--bs-body-color);
+            color: var(--bs-body-bg);
+            font-size: 0.72rem;
+            line-height: 1.3;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.12s ease;
+        }
+
+        .active-timer__finish:hover::after,
+        .active-timer__finish:focus-visible::after {
+            opacity: 1;
         }
 
         .active-timer.is-over .active-timer__link {
@@ -127,7 +173,6 @@
         /* On a phone the header has no room for a name alongside the clock. */
         @media (max-width: 575.98px) {
             .active-timer__client { display: none; }
-            .active-timer__finish { display: none; }
         }
 
         .navbar .navbar-notifications-badge {

@@ -14,7 +14,13 @@
             <span class="active-timer__client" data-active-timer-client></span>
         </span>
     </a>
-    <button type="button" class="btn btn-sm active-timer__finish" data-active-timer-finish>
-        {{ __('calendar.day.actions.complete') }}
+    <button
+        type="button"
+        class="active-timer__finish"
+        data-active-timer-finish
+        data-tooltip="{{ __('calendar.day.timer.stop') }}"
+        aria-label="{{ __('calendar.day.timer.stop') }}"
+    >
+        <span class="active-timer__stop" aria-hidden="true"></span>
     </button>
 </li>

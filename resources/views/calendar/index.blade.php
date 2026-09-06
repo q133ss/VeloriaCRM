@@ -1985,6 +1985,12 @@
                         if (selectedDate) {
                             loadDayDetails(selectedDate, { force: true });
                         }
+
+                        // Starting or finishing a visit changes what the header
+                        // timer should show, and it polls only once a minute.
+                        if (window.veloriaActiveTimer) {
+                            window.veloriaActiveTimer.refresh();
+                        }
                     } catch (error) {
                         showPageFeedback('danger', translations.alerts.day_load_failed);
                         button.disabled = false;
@@ -2613,6 +2619,14 @@
                     }
                 });
             }
+
+            window.veloriaCalendarRefresh = function () {
+                calendar.refetchEvents();
+
+                if (selectedDate) {
+                    loadDayDetails(selectedDate, { force: true });
+                }
+            };
 
             updateSelectedDatePreview(new Date().toISOString().slice(0, 10));
         });
