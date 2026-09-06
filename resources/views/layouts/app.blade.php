@@ -59,6 +59,18 @@
             box-shadow: 0 0 0 2px rgba(var(--bs-body-bg-rgb, 255, 255, 255), 1);
             pointer-events: none;
         }
+
+        /*
+         * The Sneat theme capitalises every word inside buttons and tabs (core.css).
+         * That is fine for English, but in Russian it produces "Заполнить График"
+         * and "Перейти В Elite", capitalising nouns and prepositions that must stay
+         * lowercase. Labels are already written with the right casing, so let them be.
+         */
+        .btn,
+        .nav-tabs .nav-link,
+        .nav-pills .nav-link {
+            text-transform: none;
+        }
     </style>
 
     <!-- Vendors CSS -->

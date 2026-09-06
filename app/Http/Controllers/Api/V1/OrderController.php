@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Booking\BookingConflictService;
 use App\Services\OpenAIService;
+use App\Services\ClientIdentityService;
 use App\Services\OrderService;
 use App\Services\WaitlistMatchService;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +40,7 @@ class OrderController extends Controller
         private readonly OrderService $orderService,
         private readonly BookingConflictService $conflicts,
         private readonly WaitlistMatchService $waitlistMatches,
+        private readonly ClientIdentityService $clientIdentity,
     ) {
     }
     public function index(OrderFilterRequest $request): JsonResponse
@@ -550,7 +552,7 @@ class OrderController extends Controller
             ], 404);
         }
 
-        $clientProfile = Client::where('user_id', $order->client_id)->first();
+        $clientProfile = $this->clientIdentity->cardFor($order->master_id, $order->client_id, $order->client?->phone);
 
         $history = Order::where('master_id', $order->master_id)
             ->where('client_id', $order->client_id)
@@ -621,7 +623,7 @@ class OrderController extends Controller
         }
 
         if ($client) {
-            $clientProfile = Client::where('user_id', $client->id)->first();
+            $clientProfile = $this->clientIdentity->cardFor($this->currentUserId(), $client->id, $client->phone);
         }
 
         $recommended = $this->buildRecommendedServices($client, $services);
@@ -924,45 +926,16 @@ class OrderController extends Controller
         return $query->get();
     }
 
+    /**
+     * This used to key the client card on `user_id => $user->id`, which reads
+     * `clients.user_id` as the client. Everywhere else in the app that column is
+     * the master who owns the card, so the row it wrote was invisible to the
+     * master and collided with her real cards. The pairing now lives in one
+     * place, and the card is linked to the account rather than impersonating it.
+     */
     protected function resolveClient(string $phone, ?string $name = null, ?string $email = null): User
     {
-        $normalizedPhone = $this->normalizePhone($phone);
-        $email = $email !== null ? trim($email) : null;
-        if ($email === '') {
-            $email = null;
-        }
-
-        $user = User::where('phone', $normalizedPhone)->first();
-
-        if (! $user && $email) {
-            $user = User::where('email', $email)->first();
-        }
-
-        if (! $user) {
-            $user = User::create([
-                'name' => $name ?: 'Клиент ' . Str::substr($normalizedPhone, -4),
-                'phone' => $normalizedPhone,
-                'email' => $email,
-                'password' => Str::random(16),
-            ]);
-        } else {
-            $user->forceFill([
-                'name' => $name ?: $user->name,
-                'email' => $email ?: $user->email,
-                'phone' => $normalizedPhone,
-            ])->save();
-        }
-
-        Client::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'name' => $name ?: $user->name,
-                'phone' => $normalizedPhone,
-                'email' => $email ?: $user->email,
-            ]
-        );
-
-        return $user;
+        return $this->clientIdentity->resolve($this->currentUserId(), $phone, $name, $email)['user'];
     }
 
     protected function normalizePhone(string $phone): string
@@ -996,7 +969,9 @@ class OrderController extends Controller
     protected function buildRecommendedServices(?User $client, $services)
     {
         $serviceCollection = $services instanceof Collection ? $services : collect($services);
-        $clientProfile = $client ? Client::where('user_id', $client->id)->first() : null;
+        $clientProfile = $client
+            ? $this->clientIdentity->cardFor($this->currentUserId(), $client->id, $client->phone)
+            : null;
         $history = $this->fetchClientHistory($client, 10);
 
         if (! $client || $history->isEmpty() || ! $this->aiAvailable()) {

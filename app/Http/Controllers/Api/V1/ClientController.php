@@ -9,6 +9,8 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
+use App\Services\ClientIdentityService;
+use App\Services\ClientOutreachService;
 use App\Services\OpenAIService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
@@ -24,6 +26,7 @@ class ClientController extends Controller
 {
     public function __construct(
         private readonly OpenAIService $openAI,
+        private readonly ClientIdentityService $clientIdentity,
     ) {
     }
 
@@ -104,19 +107,50 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * A card added here used to exist on its own, with no account behind it.
+     * The booking form can only offer people who have one, so such a client was
+     * unbookable, and the moment she was finally booked by phone a second card
+     * appeared, leaving the notes and allergies on the abandoned first one.
+     * Card and account are now created together.
+     */
     public function store(ClientFormRequest $request): JsonResponse
     {
         $validated = $this->normalizePayload($request->validated());
-        $userId = $this->currentUserId();
 
-        $client = Client::create(array_merge($validated, [
-            'user_id' => $userId,
-        ]));
+        $client = $this->clientIdentity->resolve(
+            $this->currentUserId(),
+            (string) $validated['phone'],
+            $validated['name'] ?? null,
+            $validated['email'] ?? null,
+            $validated,
+        )['card'];
 
         return response()->json([
             'data' => $this->transformClient($client->refresh()),
             'message' => 'Клиент успешно создан.',
         ], 201);
+    }
+
+    /**
+     * Drafts the message asking a client to come back.
+     *
+     * Deliberately a POST triggered by a click rather than something generated
+     * with the page: tokens are only spent when a master has actually decided to
+     * write to someone.
+     */
+    public function outreachMessage(Client $client, ClientOutreachService $outreach): JsonResponse
+    {
+        $this->ensureClientBelongsToCurrentUser($client);
+
+        $master = Auth::guard('sanctum')->user();
+        $context = request()->validate([
+            'free_day' => ['nullable', 'string', 'max:40'],
+            'free_slots' => ['nullable', 'array', 'max:5'],
+            'free_slots.*' => ['nullable', 'string', 'regex:/^\d{2}:\d{2}$/'],
+        ]);
+
+        return response()->json(['data' => $outreach->draft($master, $client, $context)]);
     }
 
     public function show(Client $client): JsonResponse

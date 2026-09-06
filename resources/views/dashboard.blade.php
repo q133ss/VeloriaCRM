@@ -5,1206 +5,973 @@
 @section('meta')
     @include('components.veloria-datetime-picker-styles')
     <style>
-        .dashboard-shell {
+        /*
+         * The dashboard is a day sheet: who is coming today, who is slipping away,
+         * and where the gaps are.
+         *
+         * It uses the same shell as the rest of the app - full container width, a
+         * hero, and cards - so moving between Clients, Orders and here does not
+         * feel like changing products. Inside each card the day keeps its own
+         * grammar: time in a gutter set in tabular figures, hairline rows rather
+         * than nested boxes, and brand colour reserved for the primary action and
+         * the dot marking a visit worth a second look.
+         */
+        .day {
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
         }
 
-        .dashboard-hero {
-            position: relative;
-            overflow: hidden;
-            border: 0;
-            border-radius: 1.75rem;
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.32), transparent 35%),
-                linear-gradient(135deg, rgba(18, 24, 57, 0.96), rgba(41, 47, 94, 0.92));
-            color: #fff;
-            box-shadow: 0 1.25rem 3rem -2rem rgba(17, 24, 39, 0.7);
+        /* The card shell the other pages use: soft, borderless, gently raised. */
+        .day-surface {
+            border: none;
+            border-radius: 1.35rem;
+            box-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+            background: color-mix(in srgb, var(--bs-card-bg) 96%, transparent);
         }
 
-        .dashboard-hero::after {
-            content: '';
-            position: absolute;
-            inset: auto -10% -45% auto;
-            width: 18rem;
-            height: 18rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            filter: blur(8px);
+        .day-surface > .card-body {
+            padding: 1.35rem 1.5rem;
         }
 
-        .dashboard-hero .card-body {
-            position: relative;
-            z-index: 1;
-            padding: 1.75rem;
-        }
-
-        .dashboard-kicker {
-            margin-bottom: 0.5rem;
-            font-size: 0.78rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.72);
-        }
-
-        .dashboard-hero-title {
-            margin-bottom: 0.5rem;
-            font-size: clamp(1.75rem, 2vw, 2.35rem);
-            line-height: 1.05;
-            color: #fff;
-        }
-
-        .dashboard-hero-text {
-            max-width: 42rem;
-            margin-bottom: 1.25rem;
-            color: rgba(255, 255, 255, 0.76);
-        }
-
-        .dashboard-hero .small,
-        .dashboard-hero .dashboard-meta-pill span,
-        .dashboard-hero .dashboard-meta-pill strong {
-            color: inherit;
-        }
-
-        .dashboard-hero-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .dashboard-meta-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.65rem 0.9rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            color: #fff;
-            font-size: 0.92rem;
-        }
-
-        .dashboard-meta-pill strong {
-            font-size: 1rem;
-        }
-
-        .dashboard-hero-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-
-        .dashboard-secondary-button {
-            border-color: rgba(255, 255, 255, 0.16);
-            background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.82);
-            box-shadow: none;
-        }
-
-        .dashboard-secondary-button:hover,
-        .dashboard-secondary-button:focus,
-        .dashboard-secondary-button:active {
-            border-color: rgba(255, 255, 255, 0.28);
-            background: rgba(255, 255, 255, 0.09);
-            color: #fff;
-        }
-
-        .dashboard-panel,
-        .dashboard-soft-card {
-            border: 0;
-            border-radius: 1.5rem;
-            box-shadow: 0 1.25rem 2.5rem -2rem rgba(17, 24, 39, 0.35);
-        }
-
-        .dashboard-panel .card-body,
-        .dashboard-soft-card .card-body {
-            padding: 1.5rem;
-        }
-
-        .dashboard-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .dashboard-panel-header p {
-            margin-bottom: 0.2rem;
-        }
-
-        .dashboard-section-label {
-            font-size: 0.78rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--bs-secondary-color);
-        }
-
-        .dashboard-section-title {
-            margin-bottom: 0;
-            font-size: 1.2rem;
-        }
-
-        .dashboard-priority-card {
-            height: 100%;
-            background:
-                linear-gradient(180deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.03)),
-                var(--bs-card-bg);
-        }
-
-        .dashboard-priority-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.4rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-
-        .dashboard-priority-badge[data-priority="urgent"] {
-            background: rgba(220, 53, 69, 0.16);
-            color: #dc3545;
-        }
-
-        .dashboard-priority-badge[data-priority="high"] {
-            background: rgba(var(--bs-primary-rgb), 0.16);
-            color: var(--bs-primary);
-        }
-
-        .dashboard-priority-badge[data-priority="normal"] {
-            background: rgba(var(--bs-secondary-rgb), 0.12);
-            color: var(--bs-secondary-color);
-        }
-
-        .dashboard-secondary-list {
+        /*
+         * The width is spent on a second column rather than on stretching rows:
+         * the day on the left, what to do about the rest of the week on the
+         * right. Both sides are actionable, so this is not a widget rail.
+         */
+        .day-split {
             display: grid;
-            gap: 0.75rem;
-            margin-top: 1.25rem;
-        }
-
-        .dashboard-secondary-item {
-            display: flex;
-            gap: 0.75rem;
-            align-items: flex-start;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgba(var(--bs-border-color-rgb), 0.7);
-        }
-
-        .dashboard-secondary-dot {
-            flex: 0 0 auto;
-            width: 0.55rem;
-            height: 0.55rem;
-            margin-top: 0.45rem;
-            border-radius: 999px;
-            background: var(--bs-primary);
-        }
-
-        .dashboard-agenda {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .dashboard-agenda-item {
-            display: grid;
-            grid-template-columns: 4.75rem minmax(0, 1fr);
-            gap: 1rem;
-            padding: 1rem;
-            border-radius: 1.25rem;
-            background: rgba(var(--bs-body-color-rgb), 0.025);
-        }
-
-        .dashboard-agenda-time {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 4.5rem;
-            border-radius: 1rem;
-            background: rgba(var(--bs-primary-rgb), 0.1);
-            color: var(--bs-primary);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .dashboard-agenda-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-        }
-
-        .dashboard-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.35rem 0.65rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-secondary-rgb), 0.08);
-            color: var(--bs-body-color);
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .dashboard-chip[data-type="green"] {
-            color: #146c43;
-            background: rgba(25, 135, 84, 0.14);
-        }
-
-        .dashboard-chip[data-type="yellow"] {
-            color: #997404;
-            background: rgba(255, 193, 7, 0.18);
-        }
-
-        .dashboard-chip[data-type="red"] {
-            color: #b02a37;
-            background: rgba(220, 53, 69, 0.16);
-        }
-
-        .dashboard-agenda-note {
-            margin-top: 0.4rem;
-            color: var(--bs-secondary-color);
-        }
-
-        .dashboard-agenda-empty {
-            padding: 2rem 1.25rem;
-            border-radius: 1.25rem;
-            text-align: center;
-            background: rgba(var(--bs-body-color-rgb), 0.025);
-            color: var(--bs-secondary-color);
-        }
-
-        .dashboard-stat-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.9rem;
-        }
-
-        .dashboard-stat-card {
-            padding: 1rem;
-            border-radius: 1.2rem;
-            background: rgba(var(--bs-body-color-rgb), 0.025);
-        }
-
-        .dashboard-stat-card p {
-            margin-bottom: 0.35rem;
-            color: var(--bs-secondary-color);
-            font-size: 0.84rem;
-        }
-
-        .dashboard-stat-card h3 {
-            margin-bottom: 0;
-            font-size: 1.35rem;
-        }
-
-        .dashboard-insight-stack {
-            display: grid;
-            gap: 0.9rem;
-        }
-
-        .dashboard-revenue-list,
-        .dashboard-top-list {
-            display: grid;
-            gap: 0.8rem;
-        }
-
-        .dashboard-revenue-row,
-        .dashboard-top-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 0.9rem 1rem;
-            border-radius: 1rem;
-            background: rgba(var(--bs-body-color-rgb), 0.025);
-        }
-
-        .dashboard-trend {
-            font-size: 0.82rem;
-            color: var(--bs-secondary-color);
-        }
-
-        .dashboard-mini-note {
-            padding: 1rem;
-            border-radius: 1rem;
-            background: rgba(var(--bs-primary-rgb), 0.08);
-        }
-
-        .dashboard-learning {
-            border: 0;
-            border-radius: 1.5rem;
-            background:
-                linear-gradient(135deg, rgba(255, 0, 153, 0.12), rgba(255, 255, 255, 0)),
-                var(--bs-card-bg);
-        }
-
-        .dashboard-onboarding-card {
-            border: 0;
-            border-radius: 1.5rem;
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 36%),
-                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
-            box-shadow: 0 1.25rem 2.5rem -2rem rgba(17, 24, 39, 0.28);
-        }
-
-        .dashboard-onboarding-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
-            gap: 1rem;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 1.5rem;
             align-items: start;
         }
 
-        .dashboard-onboarding-copy {
-            display: grid;
-            gap: 0.9rem;
+        @media (min-width: 1200px) {
+            .day-split {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 23rem);
+            }
         }
 
-        .dashboard-onboarding-copy h2 {
-            margin-bottom: 0;
-            font-size: 1.35rem;
+        .day-primary,
+        .day-aside {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        .dashboard-onboarding-copy p {
-            margin-bottom: 0;
-            color: var(--bs-secondary-color);
+        /* Setup strip ------------------------------------------------------- */
+
+        .day-setup {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 1.25rem;
+            padding: 0.85rem 1.1rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.625rem;
+            background: var(--bs-body-bg);
         }
 
-        .dashboard-onboarding-progress {
-            display: grid;
-            gap: 0.45rem;
+        .day-setup-label {
+            font-weight: 600;
+            color: var(--bs-heading-color);
         }
 
-        .dashboard-onboarding-progress-bar {
-            width: 100%;
-            height: 0.65rem;
+        .day-setup-track {
+            display: flex;
+            gap: 0.25rem;
+            flex: 1 1 8rem;
+            min-width: 6rem;
+            max-width: 14rem;
+        }
+
+        .day-setup-track span {
+            flex: 1;
+            height: 0.25rem;
             border-radius: 999px;
-            background: rgba(var(--bs-body-color-rgb), 0.08);
-            overflow: hidden;
+            background: var(--bs-border-color);
         }
 
-        .dashboard-onboarding-progress-bar span {
-            display: block;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, rgba(var(--bs-primary-rgb), 0.62), rgba(var(--bs-primary-rgb), 1));
+        .day-setup-track span[data-done="true"] {
+            background: var(--bs-primary);
         }
 
-        .dashboard-onboarding-progress-label {
-            font-size: 0.9rem;
+        .day-setup-count {
+            color: var(--bs-secondary-color);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .day-setup .btn {
+            margin-inline-start: auto;
+        }
+
+        /* Hero -------------------------------------------------------------- */
+
+        /*
+         * Matches the hero on Clients, Orders and Analytics so the app reads as
+         * one product: same radius, same soft brand tint, same eyebrow pill.
+         * The decorative blurred circle those pages carry is left out, since it
+         * says nothing and the day sheet below is already the point of interest.
+         */
+        .day-hero {
+            border: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+            border-radius: 1.6rem;
+            padding: 1.6rem;
+            background:
+                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.12), transparent 36%),
+                linear-gradient(140deg, rgba(var(--bs-primary-rgb), 0.06), rgba(var(--bs-info-rgb, 0, 207, 232), 0.05) 58%, rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.12));
+            box-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
+        }
+
+        .day-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
+            color: var(--bs-body-color);
+            font-size: 0.8125rem;
             font-weight: 600;
         }
 
-        .dashboard-onboarding-list {
-            display: grid;
-            gap: 0.75rem;
+        .day-title {
+            margin: 0 0 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--bs-heading-color);
         }
 
-        .dashboard-onboarding-item {
+        .day-summary {
+            margin: 0;
+            color: var(--bs-secondary-color);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* The day list ------------------------------------------------------ */
+
+        .day-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .day-row {
             display: grid;
-            grid-template-columns: auto minmax(0, 1fr) auto;
-            gap: 0.9rem;
+            grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+            align-items: start;
+            gap: 0 1.25rem;
+            padding: 1.1rem 0;
+            border-top: 1px solid var(--bs-border-color);
+        }
+
+        .day-row:last-child {
+            border-bottom: 1px solid var(--bs-border-color);
+        }
+
+        /*
+         * The hairline through the time gutter is the one piece of decoration on the
+         * page, and it earns its place: it turns a list of rows into a sequence of
+         * hours. It stops short at the first and last row so the day has a beginning
+         * and an end rather than running off the screen.
+         */
+        .day-row-time {
+            position: relative;
+            padding-inline-start: 0.9rem;
+            font-size: 1.0625rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--bs-heading-color);
+            white-space: nowrap;
+        }
+
+        .day-row-time::before {
+            content: '';
+            position: absolute;
+            inset-block: -1.1rem;
+            inset-inline-start: 0.185rem;
+            width: 1px;
+            background: var(--bs-border-color);
+        }
+
+        .day-row:first-child .day-row-time::before {
+            inset-block-start: 0.55rem;
+        }
+
+        .day-row:last-child .day-row-time::before {
+            inset-block-end: 0.55rem;
+        }
+
+        .day-row-time::after {
+            content: '';
+            position: absolute;
+            inset-inline-start: 0;
+            inset-block-start: 0.4rem;
+            width: 0.4375rem;
+            height: 0.4375rem;
+            border-radius: 999px;
+            background: var(--bs-border-color);
+        }
+
+        .day-row[data-attention="true"] .day-row-time::after {
+            background: var(--bs-primary);
+        }
+
+        .day-row-client {
+            display: inline-block;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--bs-heading-color);
+            text-decoration: none;
+        }
+
+        .day-row-client:hover,
+        .day-row-client:focus-visible {
+            color: var(--bs-primary);
+            text-decoration: underline;
+            text-underline-offset: 0.2em;
+        }
+
+        .day-row-service,
+        .day-row-note {
+            margin: 0.15rem 0 0;
+            color: var(--bs-secondary-color);
+        }
+
+        .day-row-note {
+            font-size: 0.8125rem;
+        }
+
+        .day-row-side {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.2rem;
+            text-align: end;
+        }
+
+        .day-row-price {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--bs-heading-color);
+            white-space: nowrap;
+        }
+
+        .day-row-status {
+            font-size: 0.8125rem;
+            color: var(--bs-secondary-color);
+            white-space: nowrap;
+        }
+
+        /* Empty state ------------------------------------------------------- */
+
+        .day-empty {
+            padding: 2.5rem 0;
+            border-top: 1px solid var(--bs-border-color);
+            border-bottom: 1px solid var(--bs-border-color);
+        }
+
+        .day-empty-title {
+            margin: 0 0 0.35rem;
+            font-size: 1.0625rem;
+            font-weight: 600;
+            color: var(--bs-heading-color);
+        }
+
+        .day-empty-text {
+            margin: 0 0 1.1rem;
+            max-width: 34rem;
+            color: var(--bs-secondary-color);
+        }
+
+        /* Secondary blocks -------------------------------------------------- */
+
+        /*
+         * Everything below the day sheet follows the same grammar: a quiet title,
+         * hairline-separated rows, the claim on the left and the action on the
+         * right. No cards, so the eye keeps reading down instead of hopping
+         * between boxes.
+         */
+        .day-block-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .day-block-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--bs-heading-color);
+        }
+
+        .day-block-link {
+            color: var(--bs-secondary-color);
+            font-size: 0.8125rem;
+            text-decoration: none;
+        }
+
+        .day-block-link:hover,
+        .day-block-link:focus-visible {
+            color: var(--bs-primary);
+            text-decoration: underline;
+            text-underline-offset: 0.2em;
+        }
+
+        .day-due,
+        .day-free {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        /*
+         * A grid rather than a wrapping flex row: in a 23rem column some names fit
+         * beside the button and some do not, and with flex-wrap the button jumped
+         * between the right edge and the next line from row to row.
+         */
+        .day-due-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            padding: 0.95rem 1rem;
-            border-radius: 1.1rem;
-            background: rgba(var(--bs-body-color-rgb), 0.04);
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+            gap: 0.5rem 0.75rem;
+            padding: 0.85rem 0;
+            border-top: 1px solid var(--bs-border-color);
         }
 
-        .dashboard-onboarding-item[data-completed="true"] {
-            background: rgba(25, 135, 84, 0.08);
-            border-color: rgba(25, 135, 84, 0.16);
+        .day-due-row:first-child {
+            border-top: none;
+            padding-top: 0.35rem;
         }
 
-        .dashboard-onboarding-marker {
+        .day-due-action {
+            white-space: nowrap;
+        }
+
+        .day-due-name {
+            font-weight: 600;
+            color: var(--bs-heading-color);
+            text-decoration: none;
+        }
+
+        .day-due-name:hover,
+        .day-due-name:focus-visible {
+            color: var(--bs-primary);
+            text-decoration: underline;
+            text-underline-offset: 0.2em;
+        }
+
+        .day-due-reason {
+            margin: 0.1rem 0 0;
+            color: var(--bs-secondary-color);
+            font-size: 0.875rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .day-free-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.7rem 0;
+            border-top: 1px solid var(--bs-border-color);
+        }
+
+        .day-free-row:first-child {
+            border-top: none;
+            padding-top: 0.35rem;
+        }
+
+        .day-free-day {
+            font-weight: 600;
+            color: var(--bs-heading-color);
+        }
+
+        .day-free-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .day-free-slot {
+            padding: 0.15rem 0.5rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.375rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--bs-heading-color);
+        }
+
+        .day-free-more,
+        .day-free-hint {
+            color: var(--bs-secondary-color);
+            font-size: 0.875rem;
+        }
+
+        .day-free-more {
+            align-self: center;
+        }
+
+        .day-free-hint {
+            margin: 0.75rem 0 0;
+        }
+
+        /* Week strip -------------------------------------------------------- */
+
+        .day-week {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem 2.5rem;
+            align-items: baseline;
+        }
+
+        .day-week-label {
+            color: var(--bs-secondary-color);
+            font-size: 0.8125rem;
+        }
+
+        .day-week-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .day-week-value {
+            font-size: 1.0625rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--bs-heading-color);
+        }
+
+        .day-week-item--chart .day-week-value {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        /*
+         * Deliberately unlabelled and unscaled. The number beside it carries the
+         * value; the line carries only the shape of the last two months, which is
+         * the part a glance can actually use.
+         */
+        .day-spark {
+            width: 5.5rem;
+            height: 1.625rem;
+            overflow: visible;
+        }
+
+        .day-spark polyline {
+            fill: none;
+            stroke: var(--bs-primary);
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        /* Outreach modal ---------------------------------------------------- */
+
+        .outreach-modal .modal-content {
+            border: 0;
+            border-radius: 0.875rem;
+        }
+
+        .outreach-modal .modal-header {
+            align-items: flex-start;
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .outreach-modal .modal-body {
+            padding-top: 1rem;
+        }
+
+        .outreach-title {
+            margin: 0 0 0.2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--bs-heading-color);
+        }
+
+        .outreach-subtitle {
+            color: var(--bs-secondary-color);
+            font-size: 0.875rem;
+        }
+
+        .outreach-text {
+            min-height: 8rem;
+            line-height: 1.5;
+        }
+
+        .outreach-note,
+        .outreach-error {
+            margin: 0.75rem 0 0;
+            font-size: 0.8125rem;
+        }
+
+        .outreach-note {
+            color: var(--bs-secondary-color);
+        }
+
+        .outreach-error {
+            color: var(--bs-danger);
+        }
+
+        .outreach-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 1.25rem;
+        }
+
+        .outreach-actions .btn:last-child {
+            margin-inline-start: auto;
+        }
+
+        /* Setup wizard ------------------------------------------------------ */
+
+        .setup-modal .modal-content {
+            border: 0;
+            border-radius: 0.875rem;
+        }
+
+        .setup-modal .modal-body {
+            padding: 1.75rem;
+        }
+
+        .setup-step-of {
+            margin: 0 0 0.35rem;
+            font-size: 0.8125rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .setup-title {
+            margin: 0 0 0.4rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--bs-heading-color);
+        }
+
+        .setup-text {
+            margin: 0 0 1.5rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .setup-days {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /*
+         * Day toggles are checkboxes wearing a different coat: real inputs, so the
+         * keyboard and screen readers keep working, with the box itself hidden and
+         * the label carrying the visible state.
+         */
+        .setup-day input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .setup-day span {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 2.25rem;
-            height: 2.25rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb), 0.12);
-            color: var(--bs-primary);
-            font-weight: 700;
-            flex: 0 0 auto;
+            min-width: 3rem;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.5rem;
+            color: var(--bs-body-color);
+            cursor: pointer;
+            transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
         }
 
-        .dashboard-onboarding-item[data-completed="true"] .dashboard-onboarding-marker {
-            background: rgba(25, 135, 84, 0.16);
-            color: #146c43;
+        .setup-day:hover span {
+            border-color: var(--bs-primary);
         }
 
-        .dashboard-onboarding-item-title {
-            margin-bottom: 0.2rem;
-            font-size: 0.98rem;
-            font-weight: 700;
+        .setup-day input:checked + span {
+            border-color: var(--bs-primary);
+            background: var(--bs-primary);
+            color: #fff;
         }
 
-        .dashboard-onboarding-item-text {
-            margin-bottom: 0;
-            color: var(--bs-secondary-color);
-            font-size: 0.9rem;
+        .setup-day input:focus-visible + span {
+            outline: 2px solid var(--bs-primary);
+            outline-offset: 2px;
         }
 
-        .onboarding-modal .modal-content {
-            border: 0;
-            border-radius: 1.75rem;
-            overflow: hidden;
-            box-shadow: 0 2rem 4rem -2rem rgba(17, 24, 39, 0.42);
+        /* Aligned to the bottom so the inputs line up even when one label wraps. */
+        .setup-field-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+            align-items: end;
+            gap: 1rem;
         }
 
-        .onboarding-modal .modal-header,
-        .onboarding-modal .modal-body,
-        .onboarding-modal .modal-footer {
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
+        .setup-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.75rem;
         }
 
-        .onboarding-modal .modal-header {
-            padding-top: 1.5rem;
-            padding-bottom: 0;
-            border-bottom: 0;
+        .setup-actions .setup-actions-primary {
+            margin-inline-start: auto;
         }
 
-        .onboarding-modal .modal-body {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
+        .setup-error {
+            margin-top: 1rem;
+            color: var(--bs-danger);
         }
 
-        .onboarding-modal .modal-footer {
-            padding-top: 0;
-            padding-bottom: 1.5rem;
-            border-top: 0;
-        }
-
-        .onboarding-kicker {
+        .setup-done-mark {
             display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
-            margin-bottom: 0.75rem;
-            padding: 0.45rem 0.75rem;
+            justify-content: center;
+            width: 2.75rem;
+            height: 2.75rem;
+            margin-bottom: 1rem;
             border-radius: 999px;
             background: rgba(var(--bs-primary-rgb), 0.1);
             color: var(--bs-primary);
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .onboarding-title {
-            margin-bottom: 0.75rem;
-            font-size: clamp(1.6rem, 2.5vw, 2.2rem);
-            line-height: 1.08;
-        }
-
-        .onboarding-text {
-            max-width: 38rem;
-            margin-bottom: 1.25rem;
-            color: var(--bs-secondary-color);
-        }
-
-        .onboarding-progress {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            align-items: center;
-            margin-bottom: 1.25rem;
-        }
-
-        .onboarding-progress-bar {
-            flex: 1 1 14rem;
-            height: 0.6rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-body-color-rgb), 0.08);
-            overflow: hidden;
-        }
-
-        .onboarding-progress-bar span {
-            display: block;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, rgba(var(--bs-primary-rgb), 0.62), rgba(var(--bs-primary-rgb), 1));
-        }
-
-        .onboarding-progress-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .onboarding-step-list {
-            display: grid;
-            gap: 0.9rem;
-        }
-
-        .onboarding-step {
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr) auto;
-            gap: 1rem;
-            align-items: center;
-            padding: 1rem 1.1rem;
-            border-radius: 1.25rem;
-            background: rgba(var(--bs-body-color-rgb), 0.035);
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
-        }
-
-        .onboarding-step[data-completed="true"] {
-            background: rgba(25, 135, 84, 0.08);
-            border-color: rgba(25, 135, 84, 0.18);
-        }
-
-        .onboarding-step-marker {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb), 0.12);
-            color: var(--bs-primary);
-            font-weight: 700;
-            flex: 0 0 auto;
-        }
-
-        .onboarding-step[data-completed="true"] .onboarding-step-marker {
-            background: rgba(25, 135, 84, 0.16);
-            color: #146c43;
-        }
-
-        .onboarding-step-title {
-            margin-bottom: 0.25rem;
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .onboarding-step-text {
-            margin-bottom: 0;
-            color: var(--bs-secondary-color);
-        }
-
-        .onboarding-step-action {
-            min-width: 11rem;
-            justify-content: center;
-        }
-
-        .onboarding-note {
-            margin-top: 1rem;
-            margin-bottom: 0;
-            color: var(--bs-secondary-color);
-            font-size: 0.9rem;
-        }
-
-        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button,
-        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button {
-            border-color: rgba(168, 139, 250, 0.24);
-            background: rgba(168, 139, 250, 0.08);
-            color: #d8ccff;
-        }
-
-        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button:hover,
-        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button:hover,
-        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button:focus,
-        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button:focus,
-        [data-bs-theme="dark"] .dashboard-soft-card .dashboard-secondary-button:active,
-        [data-bs-theme="dark"] .dashboard-panel .dashboard-secondary-button:active {
-            border-color: rgba(244, 114, 182, 0.36);
-            background: rgba(244, 114, 182, 0.12);
-            color: #fff;
-        }
-
-        [data-bs-theme="light"] .dashboard-hero {
-            background:
-                radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 28%),
-                linear-gradient(135deg, #1e2a63, #4d238a 55%, #7f2dbd);
-            box-shadow: 0 1.5rem 3rem -2rem rgba(49, 46, 129, 0.45);
-        }
-
-        [data-bs-theme="light"] .dashboard-hero::after {
-            background: rgba(255, 255, 255, 0.14);
-        }
-
-        [data-bs-theme="light"] .dashboard-hero .dashboard-meta-pill {
-            background: rgba(255, 255, 255, 0.16);
-        }
-
-        [data-bs-theme="light"] .dashboard-hero .btn-outline-light {
-            border-color: rgba(255, 255, 255, 0.36);
-            background: rgba(255, 255, 255, 0.06);
-            color: #fff;
-        }
-
-        [data-bs-theme="light"] .dashboard-hero .btn-outline-light:hover {
-            border-color: rgba(255, 255, 255, 0.56);
-            background: rgba(255, 255, 255, 0.14);
-            color: #fff;
-        }
-
-        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button,
-        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button {
-            border-color: rgba(99, 102, 241, 0.22);
-            background: rgba(99, 102, 241, 0.04);
-            color: #5b5fc7;
-        }
-
-        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button:hover,
-        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button:hover,
-        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button:focus,
-        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button:focus,
-        [data-bs-theme="light"] .dashboard-soft-card .dashboard-secondary-button:active,
-        [data-bs-theme="light"] .dashboard-panel .dashboard-secondary-button:active {
-            border-color: rgba(236, 72, 153, 0.28);
-            background: rgba(236, 72, 153, 0.06);
-            color: #8b2c6d;
-        }
-
-        [data-bs-theme="dark"] .onboarding-modal .modal-content {
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.18), transparent 30%),
-                #1f2433;
-            color: #f6f7fb;
-        }
-
-        [data-bs-theme="dark"] .dashboard-onboarding-item {
-            background: rgba(255, 255, 255, 0.035);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        [data-bs-theme="dark"] .dashboard-onboarding-item[data-completed="true"] {
-            background: rgba(25, 135, 84, 0.12);
-            border-color: rgba(25, 135, 84, 0.24);
-        }
-
-        [data-bs-theme="dark"] .dashboard-onboarding-progress-bar {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        [data-bs-theme="dark"] .onboarding-step {
-            background: rgba(255, 255, 255, 0.035);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        [data-bs-theme="dark"] .onboarding-step[data-completed="true"] {
-            background: rgba(25, 135, 84, 0.12);
-            border-color: rgba(25, 135, 84, 0.24);
-        }
-
-        [data-bs-theme="dark"] .onboarding-progress-bar {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        @media (max-width: 991.98px) {
-            .dashboard-hero .card-body,
-            .dashboard-panel .card-body,
-            .dashboard-soft-card .card-body {
-                padding: 1.25rem;
-            }
-
-            .dashboard-onboarding-grid {
-                grid-template-columns: 1fr;
-            }
+            font-size: 1.35rem;
         }
 
         @media (max-width: 575.98px) {
-            .dashboard-agenda-item {
-                grid-template-columns: 1fr;
+            .day {
+                gap: 1.5rem;
             }
 
-            .dashboard-stat-grid {
-                grid-template-columns: 1fr;
+            .day-row {
+                grid-template-columns: 3.75rem minmax(0, 1fr);
+                gap: 0.35rem 0.9rem;
             }
 
-            .dashboard-panel-header {
-                flex-direction: column;
+            .day-row-side {
+                grid-column: 2;
+                flex-direction: row;
+                align-items: baseline;
+                justify-content: flex-start;
+                gap: 0.6rem;
+                text-align: start;
             }
 
-            .dashboard-onboarding-item {
-                grid-template-columns: auto minmax(0, 1fr);
-            }
-
-            .dashboard-onboarding-item .btn {
-                grid-column: 1 / -1;
+            .day-setup .btn {
+                margin-inline-start: 0;
                 width: 100%;
             }
-
-            .onboarding-step {
-                grid-template-columns: auto minmax(0, 1fr);
-            }
-
-            .onboarding-step-action {
-                grid-column: 1 / -1;
-                width: 100%;
-            }
-
         }
     </style>
 @endsection
 
 @section('content')
     @php
-        $formatServices = static fn (array $services): string => collect($services)->filter()->implode(', ');
-        $priorityLabels = trans('dashboard.sections.focus.ai.priority');
-        $primarySuggestion = collect($aiSuggestions)->first();
-        $secondarySuggestions = collect($aiSuggestions)->slice(1, 2);
-        $todayCount = count($schedule);
-        $topService = $topServices->first();
-        $trendPreview = collect($revenueTrend)->take(3);
-        $aiAvailable = data_get($aiAccess, 'available', false);
-        $greetingText = $todayCount > 0
-            ? __('dashboard.sections.focus.schedule.subtitle')
-            : __('dashboard.sections.focus.schedule.empty');
         $onboardingSteps = collect($onboarding['steps'] ?? []);
+        $onboardingTotal = max($onboardingSteps->count(), 1);
         $onboardingCompleted = (int) ($onboarding['completed_steps'] ?? 0);
-        $onboardingProgress = $onboardingSteps->count() > 0
-            ? (int) round(($onboardingCompleted / $onboardingSteps->count()) * 100)
-            : 0;
+        $setupPending = $onboardingCompleted < $onboardingSteps->count();
+        $formatServices = static fn (array $services): string => collect($services)->filter()->implode(', ');
     @endphp
 
-    <div class="dashboard-shell">
-        @if ($onboardingCompleted < $onboardingSteps->count())
-            <div class="card dashboard-onboarding-card">
-                <div class="card-body">
-                    <div class="dashboard-onboarding-grid">
-                        <div class="dashboard-onboarding-copy">
-                            <div>
-                                <p class="dashboard-section-label">Первые шаги</p>
-                                <h2>Подготовим кабинет к первым записям</h2>
-                            </div>
-                            <p>Начните с базовой настройки. Остальное можно доделывать по ходу работы, без спешки.</p>
-                            <div class="dashboard-onboarding-progress">
-                                <div class="dashboard-onboarding-progress-bar" aria-hidden="true">
-                                    <span style="width: {{ $onboardingProgress }}%;"></span>
-                                </div>
-                                <div class="dashboard-onboarding-progress-label">{{ $onboardingCompleted }} из {{ $onboardingSteps->count() }} шагов готово</div>
-                            </div>
-                            <div class="dashboard-hero-actions">
-                                <a href="{{ data_get($onboardingSteps->firstWhere('completed', false), 'href', data_get($onboardingSteps->first(), 'href', route('settings'))) }}" class="btn btn-primary">
-                                    {{ data_get($onboardingSteps->firstWhere('completed', false), 'cta', 'Продолжить') }}
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="dashboard-onboarding-list">
-                            @foreach ($onboardingSteps as $index => $step)
-                                <div class="dashboard-onboarding-item" data-completed="{{ ! empty($step['completed']) ? 'true' : 'false' }}">
-                                    <div class="dashboard-onboarding-marker">
-                                        @if (! empty($step['completed']))
-                                            <i class="icon-base ri ri-check-line"></i>
-                                        @else
-                                            {{ $index + 1 }}
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <div class="dashboard-onboarding-item-title">{{ $step['title'] }}</div>
-                                        <p class="dashboard-onboarding-item-text">{{ $step['description'] }}</p>
-                                    </div>
-                                    <a href="{{ $step['href'] }}" class="btn {{ ! empty($step['completed']) ? 'btn-outline-success' : 'btn-outline-primary' }} btn-sm">
-                                        {{ ! empty($step['completed']) ? 'Открыть' : $step['cta'] }}
-                                    </a>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
+    <div class="day">
+        @if ($setupPending)
+            <div class="day-setup">
+                <span class="day-setup-label">{{ __('dashboard.setup.title') }}</span>
+                <span class="day-setup-track" aria-hidden="true">
+                    @foreach ($onboardingSteps as $step)
+                        <span data-done="{{ ! empty($step['completed']) ? 'true' : 'false' }}"></span>
+                    @endforeach
+                </span>
+                <span class="day-setup-count">
+                    {{ __('dashboard.setup.progress', ['done' => $onboardingCompleted, 'total' => $onboardingTotal]) }}
+                </span>
+                <button type="button" class="btn btn-primary btn-sm" data-setup-open>
+                    {{ __('dashboard.setup.continue') }}
+                </button>
             </div>
         @endif
 
-        <div class="row g-4">
-            <div class="col-12 col-xl-8">
-                <div class="card dashboard-hero h-100">
-                    <div class="card-body d-flex flex-column justify-content-between h-100">
-                        <div>
-                            <p class="dashboard-kicker">{{ __('dashboard.sections.focus.label') }}</p>
-                            <h1 class="dashboard-hero-title">{{ __('dashboard.sections.focus.title') }}</h1>
-                            <p class="dashboard-hero-text">{{ $greetingText }}</p>
-                        </div>
-
-                        <div class="dashboard-hero-meta">
-                            <span class="dashboard-meta-pill">
-                                <span>{{ __('dashboard.sections.focus.metrics.clients.label') }}</span>
-                                <strong>{{ $metrics['clients_summary'] }}</strong>
-                            </span>
-                            <span class="dashboard-meta-pill">
-                                <span>{{ __('dashboard.sections.focus.metrics.revenue.label') }}</span>
-                                <strong>{{ $metrics['revenue_formatted'] }}</strong>
-                            </span>
-                            <span class="dashboard-meta-pill">
-                                <span>{{ __('dashboard.sections.focus.metrics.forecast_pill', ['amount' => $metrics['forecast_profit_formatted']]) }}</span>
-                            </span>
-                        </div>
-
-                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
-                            <div class="small text-white-50">
-                                {{ __('dashboard.sections.focus.updated', ['time' => $updated_at->copy()->locale(app()->getLocale())->diffForHumans()]) }}
-                            </div>
-                            <div class="dashboard-hero-actions">
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
-                                    {{ __('dashboard.sections.focus.schedule.quick_book') }}
-                                </button>
-                                <a href="{{ route('calendar') }}" class="btn dashboard-secondary-button">
-                                    {{ __('dashboard.sections.focus.schedule.title') }}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-xl-4">
-                <div class="card dashboard-panel dashboard-priority-card h-100">
-                    <div class="card-body">
-                        <div class="dashboard-panel-header">
-                            <div>
-                                <p class="dashboard-section-label">{{ __('dashboard.sections.focus.ai.badge') }}</p>
-                                <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.ai.title') }}</h2>
-                            </div>
-                            @if ($aiAvailable && $primarySuggestion)
-                                @php $priority = $primarySuggestion['priority'] ?? 'normal'; @endphp
-                                <span class="dashboard-priority-badge" data-priority="{{ $priority }}">
-                                    {{ $priorityLabels[$priority] ?? \Illuminate\Support\Str::title($priority) }}
-                                </span>
+        <section class="day-hero">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-start">
+                <div class="d-flex flex-column gap-3">
+                    <span class="day-eyebrow">
+                        <i class="ri ri-calendar-check-line text-primary"></i>
+                        {{ __('dashboard.hero.eyebrow') }}
+                    </span>
+                    <div>
+                        <h1 class="day-title">{{ $today['date_label'] }}</h1>
+                        <p class="day-summary">
+                            @if ($today['count'] > 0)
+                                {{ $today['count'] }} {{ trans_choice('dashboard.day.appointments', $today['count']) }}
+                                @if ($today['expected_revenue'] > 0)
+                                    &middot; {{ __('dashboard.day.expected', ['amount' => $today['expected_revenue_formatted']]) }}
+                                @endif
+                            @else
+                                {{ __('dashboard.day.empty.title') }}
                             @endif
-                        </div>
-
-                        @if (! $aiAvailable)
-                            @include('components.elite-lock-card', [
-                                'href' => data_get($aiAccess, 'upgrade_url', url('/subscription')),
-                            ])
-                        @elseif ($primarySuggestion)
-                            <h3 class="h5 mb-2">{{ $primarySuggestion['title'] }}</h3>
-                            <p class="text-muted mb-0">{{ $primarySuggestion['description'] }}</p>
-                        @else
-                            <h3 class="h5 mb-2">{{ __('dashboard.sections.focus.ai.title') }}</h3>
-                            <p class="text-muted mb-0">{{ __('dashboard.sections.focus.ai.empty') }}</p>
-                        @endif
-
-                        @if ($aiAvailable)
-                            <div class="dashboard-hero-actions mt-4">
-                                <a href="{{ route('clients.index') }}" class="btn btn-primary">
-                                    {{ __('dashboard.sections.focus.ai.fallback_action') }}
-                                </a>
-                                <a href="{{ route('analytics') }}" class="btn dashboard-secondary-button">
-                                    {{ __('dashboard.sections.finance.cta') }}
-                                </a>
-                            </div>
-                        @endif
-
-                        @if ($aiAvailable && $secondarySuggestions->isNotEmpty())
-                            <div class="dashboard-secondary-list">
-                                @foreach ($secondarySuggestions as $suggestion)
-                                    <div class="dashboard-secondary-item">
-                                        <span class="dashboard-secondary-dot"></span>
-                                        <div>
-                                            <div class="fw-semibold">{{ $suggestion['title'] }}</div>
-                                            <div class="small text-muted">{{ $suggestion['description'] }}</div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
+                        </p>
                     </div>
                 </div>
+                {{--
+                    One primary action per screen. Until the account is set up, that
+                    action is finishing setup, so booking steps back to a quieter button.
+                --}}
+                <div class="d-flex flex-column flex-sm-row gap-2 align-self-start">
+                    <a href="{{ route('calendar') }}" class="btn btn-outline-secondary">
+                        <i class="ri ri-calendar-line me-1"></i>
+                        {{ __('dashboard.free.open_calendar') }}
+                    </a>
+                    <button
+                        type="button"
+                        class="btn {{ $setupPending ? 'btn-outline-primary' : 'btn-primary' }}"
+                        data-bs-toggle="modal"
+                        data-bs-target="#quickCreateModal">
+                        <i class="ri ri-add-line me-1"></i>
+                        {{ __('dashboard.day.new_appointment') }}
+                    </button>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="row g-4">
-            <div class="col-12 col-xl-7">
-                <div class="card dashboard-panel h-100">
+        <div class="day-split">
+            <div class="day-primary">
+                <section class="card day-surface">
                     <div class="card-body">
-                        <div class="dashboard-panel-header">
-                            <div>
-                                <p class="dashboard-section-label">{{ __('dashboard.sections.focus.schedule.subtitle') }}</p>
-                                <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.schedule.title') }}</h2>
-                            </div>
-                            <a href="{{ route('calendar') }}" class="btn dashboard-secondary-button btn-sm">
-                                {{ __('dashboard.sections.focus.schedule.title') }}
-                            </a>
+                        <div class="day-block-head">
+                            <h2 class="day-block-title">{{ __('dashboard.day.title') }}</h2>
+                            <a class="day-block-link" href="{{ route('orders.index') }}">{{ __('dashboard.day.all_appointments') }}</a>
                         </div>
 
-                        <div class="dashboard-agenda">
-                            @forelse ($schedule as $appointment)
-                                <div class="dashboard-agenda-item">
-                                    <div class="dashboard-agenda-time">{{ $appointment['time'] }}</div>
-                                    <div>
-                                        <div class="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-start">
-                                            <div>
-                                                <div class="h5 mb-1">{{ $appointment['client'] }}</div>
-                                                <div class="text-muted">{{ $formatServices($appointment['services']) ?: '-' }}</div>
-                                            </div>
-                                            <span class="dashboard-chip" data-type="{{ $appointment['indicator']['type'] }}">
-                                                {{ $appointment['indicator']['label'] }}
-                                            </span>
-                                        </div>
-
-                                        @if (! empty($appointment['note']))
-                                            <div class="dashboard-agenda-note small">
-                                                {{ \Illuminate\Support\Str::limit($appointment['note'], 110) }}
-                                            </div>
-                                        @endif
-
-                                        <div class="dashboard-agenda-meta">
-                                            <span class="dashboard-chip">
-                                                {{ __('dashboard.sections.focus.metrics.clients.description') }}: {{ $appointment['history']['total_visits'] }}
-                                            </span>
-                                            @if (($appointment['history']['cancellations'] ?? 0) > 0)
-                                                <span class="dashboard-chip">
-                                                    Cancelled: {{ $appointment['history']['cancellations'] }}
-                                                </span>
+                        @if ($schedule->isNotEmpty())
+                            <ol class="day-list">
+                                @foreach ($schedule as $appointment)
+                                    <li class="day-row" data-attention="{{ $appointment['indicator']['type'] !== 'green' ? 'true' : 'false' }}">
+                                        <time class="day-row-time">{{ $appointment['time'] }}</time>
+                                        <div class="day-row-body">
+                                            @if ($appointment['client_url'])
+                                                <a class="day-row-client" href="{{ $appointment['client_url'] }}">{{ $appointment['client'] }}</a>
+                                            @else
+                                                <span class="day-row-client">{{ $appointment['client'] }}</span>
                                             @endif
-                                            <a href="{{ route('clients.index') }}" class="dashboard-chip text-decoration-none">
-                                                {{ __('dashboard.sections.focus.ai.fallback_action') }}
-                                            </a>
+                                            <p class="day-row-service">
+                                                {{ $formatServices($appointment['services']) ?: __('dashboard.day.no_service') }}
+                                            </p>
+                                            @if (! empty($appointment['note']))
+                                                <p class="day-row-note">{{ \Illuminate\Support\Str::limit($appointment['note'], 90) }}</p>
+                                            @endif
                                         </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="dashboard-agenda-empty">
-                                    {{ __('dashboard.sections.focus.schedule.empty') }}
-                                </div>
-                            @endforelse
-                        </div>
+                                        <div class="day-row-side">
+                                            @if ($appointment['price_formatted'])
+                                                <span class="day-row-price">{{ $appointment['price_formatted'] }}</span>
+                                            @endif
+                                            <span class="day-row-status">{{ $appointment['indicator']['label'] }}</span>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @else
+                            <div class="day-empty">
+                                @if ($setupPending)
+                                    {{-- No button here: the setup strip above already carries that action. --}}
+                                    <p class="day-empty-title">{{ __('dashboard.day.setup_empty.title') }}</p>
+                                    <p class="day-empty-text mb-0">{{ __('dashboard.day.setup_empty.text') }}</p>
+                                @else
+                                    <p class="day-empty-title">{{ __('dashboard.day.empty.title') }}</p>
+                                    <p class="day-empty-text mb-0">{{ __('dashboard.day.empty.text') }}</p>
+                                @endif
+                            </div>
+                        @endif
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="col-12 col-xl-5">
-                <div class="d-flex flex-column gap-4 h-100">
-                    <div class="card dashboard-soft-card">
+                @if ($week['has_data'] || ! empty($occupancy['has_data']))
+                    {{--
+                        Money figures appear only once money has actually come in. A row
+                        of "0 ₽" is not information, it is discouragement, and the week a
+                        master sees their first client is the worst week to serve it.
+                    --}}
+                    <section class="card day-surface">
                         <div class="card-body">
-                            <div class="dashboard-panel-header">
-                                <div>
-                                    <p class="dashboard-section-label">{{ __('dashboard.sections.focus.metrics.title') }}</p>
-                                    <h2 class="dashboard-section-title">{{ __('dashboard.sections.focus.metrics.title') }}</h2>
-                                </div>
+                            <div class="day-block-head">
+                                <h2 class="day-block-title">{{ __('dashboard.week.title') }}</h2>
+                                <a class="day-block-link" href="{{ route('analytics') }}">{{ __('dashboard.week.all_analytics') }}</a>
                             </div>
+                            <div class="day-week">
+                                @if (! empty($occupancy['has_data']))
+                                    @php
+                                        // A sparkline, not a chart: eight points, no axes, no legend.
+                                        // Occupancy leads revenue by a couple of weeks, so a sagging
+                                        // line is a warning while there is still time to act.
+                                        $points = collect($occupancy['weeks'])->filter(fn ($w) => $w['share'] !== null)->values();
+                                        $shares = $points->pluck('share');
 
-                            <div class="dashboard-stat-grid">
-                                <div class="dashboard-stat-card">
-                                    <p>{{ __('dashboard.sections.focus.metrics.revenue.label') }}</p>
-                                    <h3>{{ $metrics['revenue_formatted'] }}</h3>
-                                </div>
-                                <div class="dashboard-stat-card">
-                                    <p>{{ __('dashboard.sections.focus.metrics.clients.label') }}</p>
-                                    <h3>{{ $metrics['clients_summary'] }}</h3>
-                                </div>
-                                <div class="dashboard-stat-card">
-                                    <p>{{ __('dashboard.sections.focus.metrics.avg_ticket.label') }}</p>
-                                    <h3>{{ $metrics['average_ticket_formatted'] }}</h3>
-                                </div>
-                                <div class="dashboard-stat-card">
-                                    <p>{{ __('dashboard.sections.focus.metrics.retention.label') }}</p>
-                                    <h3>{{ $metrics['retention_rate_formatted'] }}</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card dashboard-soft-card flex-grow-1">
-                        <div class="card-body">
-                            <div class="dashboard-panel-header">
-                                <div>
-                                    <p class="dashboard-section-label">{{ __('dashboard.sections.finance.label') }}</p>
-                                    <h2 class="dashboard-section-title">{{ __('dashboard.sections.finance.title') }}</h2>
-                                </div>
-                                <a href="{{ route('analytics') }}" class="btn dashboard-secondary-button btn-sm">
-                                    {{ __('dashboard.sections.finance.cta') }}
-                                </a>
-                            </div>
-
-                            <div class="dashboard-insight-stack">
-                                <div class="dashboard-mini-note">
-                                    <div class="small text-muted mb-1">{{ __('dashboard.sections.finance.margin.title') }}</div>
-                                    <div class="fw-semibold">
-                                        @if ($marginInsight)
-                                            {{ __('dashboard.sections.finance.margin.best_day', ['day' => $marginInsight['label'], 'value' => $marginInsight['display']]) }}
-                                        @else
-                                            {{ __('dashboard.messages.not_enough_data') }}
-                                        @endif
+                                        // Scaled to its own range, not to 0-100. A master working at
+                                        // 60-70% would otherwise get a flat line across the middle and
+                                        // learn nothing from it. The number beside it carries the level;
+                                        // the line only has to carry the shape.
+                                        $low = (int) $shares->min();
+                                        $high = (int) $shares->max();
+                                        $span = max(1, $high - $low);
+                                        $stepX = $points->count() > 1 ? 104 / ($points->count() - 1) : 0;
+                                        $path = $points
+                                            ->map(fn ($w, $i) => round(2 + $i * $stepX, 1) . ',' . round(21 - (($w['share'] - $low) / $span) * 16, 1))
+                                            ->implode(' ');
+                                    @endphp
+                                    <div class="day-week-item day-week-item--chart">
+                                        <span class="day-week-value">
+                                            <svg class="day-spark" viewBox="0 0 108 26" preserveAspectRatio="none" aria-hidden="true">
+                                                <polyline points="{{ $path }}" />
+                                            </svg>
+                                            {{ __('dashboard.occupancy.value', ['value' => $occupancy['current']]) }}
+                                        </span>
+                                        <span class="day-week-label">
+                                            {{ __('dashboard.occupancy.title') }}@if ($occupancy['previous'] !== null),
+                                                @if ($occupancy['current'] > $occupancy['previous'])
+                                                    {{ __('dashboard.occupancy.up', ['value' => $occupancy['previous']]) }}
+                                                @elseif ($occupancy['current'] < $occupancy['previous'])
+                                                    {{ __('dashboard.occupancy.down', ['value' => $occupancy['previous']]) }}
+                                                @else
+                                                    {{ __('dashboard.occupancy.same') }}
+                                                @endif
+                                            @endif
+                                        </span>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <div class="small text-muted mb-2">{{ __('dashboard.sections.finance.services.title') }}</div>
-                                    <div class="dashboard-top-list">
-                                        @forelse ($topServices->take(3) as $service)
-                                            <div class="dashboard-top-row">
-                                                <div>
-                                                    <div class="fw-semibold">{{ $service['name'] }}</div>
-                                                    <div class="small text-muted">
-                                                        {{ __('dashboard.sections.finance.services.avg_duration', ['value' => $service['avg_duration']]) }}
-                                                    </div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <div class="fw-semibold">{{ $service['margin_per_hour_formatted'] }}</div>
-                                                    <div class="small text-muted">{{ __('dashboard.sections.finance.services.per_hour') }}</div>
-                                                </div>
-                                            </div>
-                                        @empty
-                                            <div class="text-muted">{{ __('dashboard.sections.finance.services.empty') }}</div>
-                                        @endforelse
+                                @endif
+                                @if ($week['revenue'] > 0)
+                                    <div class="day-week-item">
+                                        <span class="day-week-value">{{ $week['revenue_formatted'] }}</span>
+                                        <span class="day-week-label">{{ __('dashboard.week.revenue') }}</span>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <div class="small text-muted mb-2">{{ __('dashboard.sections.finance.revenue.title') }}</div>
-                                    <div class="dashboard-revenue-list">
-                                        @forelse ($trendPreview as $item)
-                                            @php
-                                                $delta = $item['previous'] > 0 ? (($item['current'] - $item['previous']) / max($item['previous'], 1)) * 100 : null;
-                                            @endphp
-                                            <div class="dashboard-revenue-row">
-                                                <div>
-                                                    <div class="fw-semibold">{{ $item['label'] }}</div>
-                                                    <div class="dashboard-trend">
-                                                        @if ($delta === null)
-                                                            {{ __('dashboard.messages.no_comparison') }}
-                                                        @elseif ($delta >= 0)
-                                                            {{ __('dashboard.sections.finance.revenue.growth', ['value' => number_format(abs($delta), 1, '.', '')]) }}
-                                                        @else
-                                                            {{ __('dashboard.sections.finance.revenue.decline', ['value' => number_format(abs($delta), 1, '.', '')]) }}
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                <div class="fw-semibold">{{ number_format($item['current'], 0, '.', ' ') }} ₽</div>
-                                            </div>
-                                        @empty
-                                            <div class="text-muted">{{ __('dashboard.messages.not_enough_data') }}</div>
-                                        @endforelse
+                                @endif
+                                @if ($week['clients'] > 0)
+                                    <div class="day-week-item">
+                                        <span class="day-week-value">{{ $week['clients'] }}</span>
+                                        <span class="day-week-label">{{ __('dashboard.week.clients') }}</span>
                                     </div>
-                                </div>
-
-                                @if ($topService || $servicesInsight)
-                                    <div class="small text-muted">
-                                        {{ $servicesInsight ?? __('dashboard.sections.finance.services.empty_insight') }}
+                                @endif
+                                @if ($week['revenue'] > 0)
+                                    <div class="day-week-item">
+                                        <span class="day-week-value">{{ $week['average_ticket_formatted'] }}</span>
+                                        <span class="day-week-label">{{ __('dashboard.week.average_ticket') }}</span>
                                     </div>
                                 @endif
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
+                @endif
             </div>
-        </div>
 
-        <div class="card dashboard-learning">
-            <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-                <div>
-                    <p class="dashboard-section-label">Полезное на неделю</p>
-                    <h2 class="dashboard-section-title mb-2">Что важно для мастера</h2>
-                    <p class="mb-0">{{ $dailyTip['text'] ?? 'Открывайте спокойную подборку публикаций, сценариев и подсказок: что стоит проверить, что можно попробовать и что не пропустить на этой неделе.' }}</p>
-                </div>
-                <div class="text-lg-end">
-                    <a href="{{ route('useful') }}" class="btn btn-primary">
-                        Открыть полезное
-                    </a>
-                    <div class="small text-muted mt-2">
-                        Источник: {{ $dailyTip['source'] ?? 'Подборка Veloria' }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div
-        class="modal fade onboarding-modal"
-        id="newUserOnboardingModal"
-        tabindex="-1"
-        aria-labelledby="newUserOnboardingTitle"
-        aria-hidden="true"
-        data-onboarding-user-id="{{ $onboarding['user_id'] ?? '' }}"
-        data-onboarding-completed="{{ $onboardingCompleted }}">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div>
-                        <div class="onboarding-kicker">Первые шаги</div>
-                        <h2 class="onboarding-title" id="newUserOnboardingTitle">Подготовим Veloria к первой записи</h2>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="onboarding-text">
-                        Это займёт пару минут. Начните с самого важного, остальное можно сделать позже.
-                    </p>
-
-                    <div class="onboarding-progress">
-                        <div class="onboarding-progress-bar" aria-hidden="true">
-                            <span style="width: {{ $onboardingProgress }}%;"></span>
-                        </div>
-                        <div class="onboarding-progress-label">{{ $onboardingCompleted }} из {{ max($onboardingSteps->count(), 1) }} шагов готово</div>
-                    </div>
-
-                    <div class="onboarding-step-list">
-                        @foreach ($onboardingSteps as $index => $step)
-                            <div class="onboarding-step" data-completed="{{ ! empty($step['completed']) ? 'true' : 'false' }}">
-                                <div class="onboarding-step-marker">
-                                    @if (! empty($step['completed']))
-                                        <i class="icon-base ri ri-check-line"></i>
-                                    @else
-                                        {{ $index + 1 }}
-                                    @endif
-                                </div>
-                                <div>
-                                    <div class="onboarding-step-title">{{ $step['title'] }}</div>
-                                    <p class="onboarding-step-text">{{ $step['description'] }}</p>
-                                </div>
-                                <a href="{{ $step['href'] }}" class="btn {{ $index === 0 ? 'btn-primary' : 'btn-outline-primary' }} onboarding-step-action">
-                                    {{ ! empty($step['completed']) ? 'Открыть' : $step['cta'] }}
-                                </a>
+            <aside class="day-aside">
+                {{--
+                    Clients who have slipped past their own rhythm. Each row is a name,
+                    the arithmetic behind the claim, and the one action worth taking.
+                --}}
+                @if ($dueClients->isNotEmpty())
+                    <section class="card day-surface">
+                        <div class="card-body">
+                            <div class="day-block-head">
+                                <h2 class="day-block-title">{{ __('dashboard.due.title') }}</h2>
+                                <a class="day-block-link" href="{{ route('clients.index') }}">{{ __('dashboard.due.all_clients') }}</a>
                             </div>
-                        @endforeach
-                    </div>
+                            <ul class="day-due">
+                                @foreach ($dueClients as $due)
+                                    <li class="day-due-row">
+                                        <div class="day-due-body">
+                                            <a class="day-due-name" href="{{ $due['url'] }}">{{ $due['name'] }}</a>
+                                            <p class="day-due-reason">
+                                                @if ($due['interval_days'])
+                                                    {{ __('dashboard.due.rhythm', [
+                                                        'interval' => $due['interval_days'] . ' ' . trans_choice('dashboard.due.days', $due['interval_days']),
+                                                        'passed' => $due['days_since'] . ' ' . trans_choice('dashboard.due.days', $due['days_since']),
+                                                    ]) }}
+                                                @else
+                                                    {{ __('dashboard.due.once', [
+                                                        'passed' => $due['days_since'] . ' ' . trans_choice('dashboard.due.days', $due['days_since']),
+                                                    ]) }}
+                                                @endif
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-primary btn-sm day-due-action"
+                                            data-outreach-open
+                                            data-client-id="{{ $due['client_id'] }}"
+                                            data-client-name="{{ $due['name'] }}"
+                                            data-client-phone="{{ $due['phone'] }}">
+                                            {{ __('dashboard.due.write') }}
+                                        </button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </section>
+                @endif
 
-                    <p class="onboarding-note">Вы сможете вернуться к этим шагам позже на главной странице.</p>
-                </div>
-                <div class="modal-footer justify-content-between flex-column flex-md-row gap-2">
-                    <button type="button" class="btn btn-outline-secondary w-100 w-md-auto" data-bs-dismiss="modal">
-                        Пропустить пока
-                    </button>
-                    <a href="{{ data_get($onboardingSteps->first(), 'href', route('settings')) }}" class="btn btn-primary w-100 w-md-auto">
-                        {{ data_get($onboardingSteps->first(), 'cta', 'Продолжить') }}
-                    </a>
-                </div>
-            </div>
+                {{--
+                    Open slots are only worth showing next to the people who could fill
+                    them, so the two blocks are deliberately adjacent.
+                --}}
+                @if (! empty($freeSlots))
+                    <section class="card day-surface">
+                        <div class="card-body">
+                            <div class="day-block-head">
+                                <h2 class="day-block-title">{{ __('dashboard.free.title') }}</h2>
+                            </div>
+                            <ul class="day-free">
+                                @foreach ($freeSlots as $day)
+                                    <li class="day-free-row">
+                                        <span class="day-free-day">{{ \Illuminate\Support\Str::ucfirst($day['label']) }}</span>
+                                        <span class="day-free-slots">
+                                            @foreach ($day['free'] as $slot)
+                                                <span class="day-free-slot">{{ $slot }}</span>
+                                            @endforeach
+                                            @if ($day['free_count'] > count($day['free']))
+                                                <span class="day-free-more">
+                                                    {{ __('dashboard.free.more', ['count' => $day['free_count'] - count($day['free'])]) }}
+                                                </span>
+                                            @endif
+                                        </span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            @if ($dueClients->isNotEmpty())
+                                <p class="day-free-hint">
+                                    {{ __('dashboard.free.hint', ['names' => $dueClients->pluck('name')->take(2)->implode(', ')]) }}
+                                </p>
+                            @endif
+                        </div>
+                    </section>
+                @endif
+            </aside>
         </div>
-        <div id="quick-create-alerts" class="mt-4"></div>
     </div>
+
+    @if ($setupPending)
+        @include('dashboard.setup-wizard', ['onboarding' => $onboarding])
+    @endif
+
+    @if ($dueClients->isNotEmpty())
+        @include('dashboard.outreach-modal')
+    @endif
+
+    <div id="quick-create-alerts" class="mt-4"></div>
 @endsection
 
 @section('scripts')
     @include('components.phone-mask-script')
     @include('components.veloria-datetime-picker-script')
     @include('components.order-quick-create-modal')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var modalElement = document.getElementById('newUserOnboardingModal');
-            if (!modalElement || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
-                return;
-            }
-
-            var completedSteps = Number(modalElement.dataset.onboardingCompleted || '0');
-            var storageKey = 'veloria:onboarding:pending';
-            if (completedSteps >= 3) {
-                try {
-                    window.localStorage.removeItem(storageKey);
-                } catch (error) {}
-                return;
-            }
-
-            var marker = null;
-
-            try {
-                marker = window.localStorage.getItem(storageKey);
-            } catch (error) {
-                marker = null;
-            }
-
-            if (!marker) {
-                return;
-            }
-
-            var modal = new bootstrap.Modal(modalElement);
-            modal.show();
-        });
-    </script>
+    @if ($setupPending)
+        @include('dashboard.setup-wizard-script')
+    @endif
+    @if ($dueClients->isNotEmpty())
+        @include('dashboard.outreach-script')
+    @endif
     @include('components.order-quick-create-script')
 @endsection

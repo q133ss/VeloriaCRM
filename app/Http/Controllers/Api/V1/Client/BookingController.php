@@ -313,6 +313,12 @@ class BookingController extends Controller
             ])->save();
         }
 
+        // Record which account this card belongs to, so the master's dashboard
+        // and analytics can join her cards to the orders booked against them.
+        if ($client->client_user_id !== $user->id) {
+            $client->forceFill(['client_user_id' => $user->id])->save();
+        }
+
         return $user;
     }
 
