@@ -16,6 +16,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Booking\BookingConflictService;
+use App\Services\Booking\OrderDurationResolver;
 use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\OpenAIService;
 use App\Services\ClientIdentityService;
@@ -384,7 +385,10 @@ class OrderController extends Controller
         $duration = null;
 
         if ($order->actual_started_at) {
-            $duration = $order->actual_started_at->diffInMinutes($now);
+            // Carbon 3 returns a float here, and `duration` is an integer column:
+            // on Postgres the unrounded value made every finish fail with a 500,
+            // which is why no measured duration ever reached the database.
+            $duration = (int) round($order->actual_started_at->diffInMinutes($now));
         }
 
         $order->update([
@@ -398,6 +402,38 @@ class OrderController extends Controller
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись завершена.',
+        ]);
+    }
+
+    /**
+     * The visit currently being timed, if there is one.
+     *
+     * Kept deliberately small: every page polls it to keep the header timer
+     * running, so it returns one row and nothing else.
+     */
+    public function active(): JsonResponse
+    {
+        $order = Order::query()
+            ->with('client')
+            ->where('master_id', $this->currentUserId())
+            ->where('status', 'in_progress')
+            ->whereNotNull('actual_started_at')
+            ->latest('actual_started_at')
+            ->first();
+
+        if (! $order) {
+            return response()->json(['data' => null]);
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $order->id,
+                'client_name' => $order->client?->name ?: __('calendar.unnamed_client'),
+                'started_at' => $order->actual_started_at->toIso8601String(),
+                'elapsed_minutes' => (int) $order->actual_started_at->diffInMinutes(Carbon::now()),
+                'planned_minutes' => app(OrderDurationResolver::class)->resolve($order),
+                'url' => '/orders/' . $order->id,
+            ],
         ]);
     }
 

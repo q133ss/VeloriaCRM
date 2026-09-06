@@ -55,6 +55,11 @@ return [
         'duration_label' => 'Duration, min',
         'duration_apply' => 'Use it',
         'duration_hint' => 'This usually takes you :duration (based on :count bookings)',
+        'timer' => [
+            'over' => 'Running longer than planned',
+            'finished' => 'Booking finished',
+            'confirm' => 'Finish the booking and stop the timer?',
+        ],
         'gaps_title' => 'Gap between bookings',
         'gap_hours' => '{1} :count hour|[2,*] :count hours',
         'gap_minutes' => '{1} :count minute|[2,*] :count minutes',

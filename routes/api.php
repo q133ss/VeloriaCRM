@@ -73,6 +73,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/clients/{client}', [ApiClientController::class, 'update']);
         Route::delete('/clients/{client}', [ApiClientController::class, 'destroy']);
         Route::get('/orders/options', [ApiOrderController::class, 'options']);
+        Route::get('/orders/active', [ApiOrderController::class, 'active']);
         Route::get('/orders', [ApiOrderController::class, 'index']);
         Route::post('/orders', [ApiOrderController::class, 'store']);
         Route::get('/orders/{order}', [ApiOrderController::class, 'show']);

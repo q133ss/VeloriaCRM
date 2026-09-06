@@ -55,6 +55,11 @@ return [
         'duration_label' => 'Длительность, мин',
         'duration_apply' => 'Поставить',
         'duration_hint' => 'Обычно у вас это занимает :duration (по :count записям)',
+        'timer' => [
+            'over' => 'Идёт дольше запланированного',
+            'finished' => 'Запись завершена',
+            'confirm' => 'Завершить запись и остановить таймер?',
+        ],
         'gaps_title' => 'Окно между записями',
         'gap_hours' => '{1} :count час|[2,4] :count часа|[5,*] :count часов',
         'gap_minutes' => '{1} :count минута|[2,4] :count минуты|[5,*] :count минут',
