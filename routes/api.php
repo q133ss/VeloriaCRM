@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\OnboardingController;
 use App\Http\Controllers\Api\V1\ServiceCategoryController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
@@ -51,6 +52,8 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum', 'token.user', 'user.active'])->group(function () {
+        Route::get('/onboarding', [OnboardingController::class, 'status']);
+        Route::post('/onboarding/schedule', [OnboardingController::class, 'storeSchedule']);
         Route::get('/settings', [SettingController::class, 'index']);
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::get('/settings/integrations', [SettingController::class, 'integrations']);
@@ -64,6 +67,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::post('/clients', [ApiClientController::class, 'store']);
         Route::get('/clients/{client}', [ApiClientController::class, 'show']);
         Route::get('/clients/{client}/analytics', [ApiClientController::class, 'analytics']);
+        Route::post('/clients/{client}/outreach-message', [ApiClientController::class, 'outreachMessage']);
         Route::get('/clients/{client}/recommendations', [ApiClientController::class, 'recommendations']);
         Route::patch('/clients/{client}', [ApiClientController::class, 'update']);
         Route::delete('/clients/{client}', [ApiClientController::class, 'destroy']);

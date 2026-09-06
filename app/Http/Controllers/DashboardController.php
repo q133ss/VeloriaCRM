@@ -2,28 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Appointment;
 use App\Models\Client;
-use App\Models\Payment;
+use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
-use App\Models\User;
-use App\Services\DashboardAiService;
+use App\Services\ClientIdentityService;
 use App\Services\ScheduleService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
+/**
+ * The dashboard is a day sheet: who is coming today, who is slipping away, and
+ * where the gaps are.
+ *
+ * It reads `orders`, the same table the calendar, the bookings list and analytics
+ * read. It used to read `appointments`, which only the client self-booking portal
+ * ever writes, so a master who booked her own clients saw an empty screen.
+ * Revenue follows the analytics definition (order total, revenue statuses) rather
+ * than the `payments` table, which only holds online YooKassa charges and is
+ * empty for anyone taking cash.
+ */
 class DashboardController extends Controller
 {
+    /** Orders that count as money earned or promised. Matches AnalyticsController. */
+    private const REVENUE_STATUSES = ['completed', 'in_progress', 'confirmed'];
+
+    /** Orders that still occupy a slot in the day. */
+    private const ACTIVE_STATUSES = ['new', 'confirmed', 'in_progress', 'completed'];
+
+    /** How much past a client's own rhythm counts as overdue. */
+    private const OVERDUE_FACTOR = 1.3;
+
+    /** Days after a single visit before a client who never came back is flagged. */
+    private const SINGLE_VISIT_OVERDUE_DAYS = 60;
+
     public function __construct(
-        private readonly DashboardAiService $aiService,
         private readonly ScheduleService $scheduleService,
+        private readonly ClientIdentityService $clientIdentity,
     ) {
     }
 
@@ -39,191 +59,66 @@ class DashboardController extends Controller
         $now = Carbon::now($timezone);
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
-        $tomorrowStart = $todayStart->copy()->addDay();
-        $tomorrowEnd = $tomorrowStart->copy()->endOfDay();
-        $rangeStart = $todayStart->copy()->subDays(30);
-        $rangeEnd = $tomorrowEnd->copy()->addDays(6);
-
-        $appointments = Appointment::with('client')
-            ->where('user_id', $user->id)
-            ->whereBetween('starts_at', [$rangeStart, $rangeEnd])
-            ->orderBy('starts_at')
-            ->get();
-
-        $serviceIds = $appointments
-            ->flatMap(fn (Appointment $appointment) => $appointment->service_ids ?? [])
-            ->filter()
-            ->unique()
-            ->all();
-
-        $services = $serviceIds
-            ? Service::where('user_id', $user->id)->whereIn('id', $serviceIds)->get()->keyBy('id')
-            : collect();
 
         $setting = Setting::where('user_id', $user->id)->first();
         $clientCount = Client::where('user_id', $user->id)->count();
         $serviceCount = Service::where('user_id', $user->id)->count();
         $scheduleConfigured = $this->hasConfiguredSchedule($setting);
 
-        $appointmentsToday = $appointments->filter(fn (Appointment $appt) => $this->isWithinDay($appt->starts_at, $todayStart, $todayEnd));
-        $appointmentsTomorrow = $appointments->filter(fn (Appointment $appt) => $this->isWithinDay($appt->starts_at, $tomorrowStart, $tomorrowEnd));
-        $pastAppointments = $appointments->filter(fn (Appointment $appt) => $appt->starts_at && $appt->starts_at->lt($todayStart));
+        // Eight weeks back covers the occupancy trend; a week forward covers the
+        // free slots. Visit rhythms need far more history and are queried apart.
+        $windowStart = $todayStart->copy()->subWeeks(8)->startOfWeek(Carbon::MONDAY);
+        $windowEnd = $todayStart->copy()->addDays(7)->endOfDay();
 
-        $appointmentServices = $appointments
-            ->mapWithKeys(function (Appointment $appointment) use ($services) {
-                if (! $appointment->id) {
-                    return [];
-                }
+        $orders = Order::with('client')
+            ->where('master_id', $user->id)
+            ->whereBetween('scheduled_at', [$windowStart, $windowEnd])
+            ->orderBy('scheduled_at')
+            ->get();
 
-                return [
-                    $appointment->id => $this->resolveServiceData($services, $appointment->service_ids ?? []),
-                ];
-            });
+        $cards = $this->clientIdentity->cardsForOrders($user->id, $orders);
 
-        $todaySchedule = $appointmentsToday->map(function (Appointment $appointment) use ($timezone, $pastAppointments, $appointmentServices) {
-            $startsAt = $appointment->starts_at?->copy()->timezone($timezone);
-            $serviceData = $appointmentServices->get($appointment->id, $this->defaultServiceData());
-            $history = $pastAppointments->where('client_id', $appointment->client_id);
-            $cancellations = $history->whereIn('status', ['cancelled', 'no_show'])->count();
-            $indicator = $this->buildIndicator($appointment, $cancellations);
+        $todayOrders = $orders
+            ->filter(fn (Order $order) => $this->isWithinDay($order->scheduled_at, $todayStart, $todayEnd))
+            ->filter(fn (Order $order) => in_array($order->status, self::ACTIVE_STATUSES, true))
+            ->values();
+
+        $noShowCounts = $this->noShowCountsByClient($user->id);
+
+        $schedule = $todayOrders->map(function (Order $order) use ($timezone, $cards, $noShowCounts) {
+            $scheduledAt = $order->scheduled_at?->copy()->timezone($timezone);
+            $card = $order->client_id ? $cards->get($order->client_id) : null;
+            $services = collect($order->services ?? [])->pluck('name')->filter()->values();
 
             return [
-                'id' => $appointment->id,
-                'time' => $startsAt?->format('H:i') ?? '—',
-                'client' => $appointment->client?->name ?? '—',
-                'services' => $serviceData['names'],
-                'note' => $appointment->client?->notes,
-                'indicator' => $indicator,
-                'status' => $appointment->status,
-                'risk_score' => (float) ($appointment->risk_no_show ?? 0),
-                'fit_score' => (float) ($appointment->fit_score ?? 0),
-                'history' => [
-                    'total_visits' => $history->count(),
-                    'cancellations' => $cancellations,
-                ],
+                'id' => $order->id,
+                'time' => $scheduledAt?->format('H:i') ?? '—',
+                'client' => $card?->name ?: ($order->client?->name ?: '—'),
+                'services' => $services->all(),
+                'price' => (float) $order->total_price,
+                'price_formatted' => $order->total_price > 0 ? $this->formatCurrency((float) $order->total_price) : null,
+                'client_url' => $card ? route('clients.show', $card->id) : null,
+                'note' => $card?->notes ?: $order->note,
+                'indicator' => $this->buildIndicator($order, (int) ($noShowCounts[$order->client_id] ?? 0)),
             ];
         })->values();
 
-        $todayExpectedRevenue = $appointmentsToday->sum(fn (Appointment $appt) => $appointmentServices->get($appt->id, $this->defaultServiceData())['price']);
-        $todayExpectedProfit = $appointmentsToday->sum(fn (Appointment $appt) => $appointmentServices->get($appt->id, $this->defaultServiceData())['margin']);
-        $todayPayments = Payment::where('user_id', $user->id)
-            ->whereBetween('paid_at', [$todayStart, $todayEnd])
-            ->get();
-        $todayRevenue = $todayPayments->sum('amount');
-        $todayPaymentsCount = $todayPayments->count();
-
-        $bookedClients = $appointmentsToday->pluck('client_id')->filter()->unique()->count();
-        $capacity = $this->resolveCapacity($setting, $todayStart);
-
-        $avgTicket = $todayPaymentsCount > 0
-            ? $todayRevenue / $todayPaymentsCount
-            : ($bookedClients > 0 ? $todayExpectedRevenue / max(1, $bookedClients) : 0);
-
-        $retainedClients = $appointmentsToday
-            ->pluck('client_id')
-            ->filter()
-            ->unique()
-            ->filter(fn ($clientId) => $pastAppointments->where('client_id', $clientId)->where('status', 'completed')->isNotEmpty())
-            ->count();
-        $retentionRate = $bookedClients > 0 ? round(($retainedClients / $bookedClients) * 100, 1) : 0.0;
-
-        $revenueTarget = $todayExpectedRevenue > 0 ? $todayExpectedRevenue : $this->resolveAverageRevenue($user->id, $todayStart, $timezone);
-        $revenueTarget = $revenueTarget > 0 ? $revenueTarget : 0;
-        $progress = $revenueTarget > 0 ? min(100, round(($todayRevenue / $revenueTarget) * 100)) : 0;
-
-        $metrics = [
-            'forecast_profit' => $todayExpectedProfit,
-            'forecast_profit_formatted' => $this->formatCurrency($todayExpectedProfit),
-            'revenue_target' => $revenueTarget,
-            'revenue_target_formatted' => $this->formatCurrency($revenueTarget),
-            'revenue' => $todayRevenue,
-            'revenue_formatted' => $this->formatCurrency($todayRevenue),
-            'revenue_progress' => $progress,
-            'clients_summary' => $capacity > 0
-                ? __('dashboard.metrics.clients_summary.with_capacity', [
-                    'booked' => $appointmentsToday->count(),
-                    'capacity' => $capacity,
-                ])
-                : __('dashboard.metrics.clients_summary.without_capacity', [
-                    'booked' => $appointmentsToday->count(),
-                ]),
-            'average_ticket' => $avgTicket,
-            'average_ticket_formatted' => $this->formatCurrency($avgTicket),
-            'retention_rate' => $retentionRate,
-            'retention_rate_formatted' => number_format($retentionRate, 1, '.', '') . '%',
-        ];
-
-        $marginData = $this->buildMarginData($appointments, $appointmentServices, $todayStart, $timezone);
-        $revenueTrend = $this->buildRevenueTrend($user->id, $todayStart, $todayEnd, $timezone);
-        $revenueDelta = $this->percentChange(array_sum(Arr::pluck($revenueTrend, 'current')), array_sum(Arr::pluck($revenueTrend, 'previous')));
-
-        $serviceStats = $this->buildServiceStats($appointments, $services);
-        $topServices = $serviceStats->sortByDesc('margin_per_hour')->take(3)->values();
-        $servicesInsight = $this->buildServiceInsight($topServices);
-
-        $topClients = $this->resolveTopClients($user->id, $appointments, $timezone);
-
-        $aiContext = [
-            'date' => $todayStart->toDateString(),
-            'timezone' => $timezone,
-            'metrics' => [
-                'revenue_today' => round($todayRevenue, 2),
-                'goal' => round($revenueTarget, 2),
-                'forecast_profit' => round($todayExpectedProfit, 2),
-                'clients_booked' => $appointmentsToday->count(),
-                'clients_capacity' => $capacity,
-                'average_ticket' => round($avgTicket, 2),
-                'retention_rate' => $retentionRate,
-            ],
-            'appointments' => $todaySchedule->map(function (array $item) use ($appointments, $timezone) {
-                $clientId = $appointments
-                    ->firstWhere('id', $item['id'])
-                    ?->client_id;
-                $upcoming = $appointments
-                    ->filter(fn (Appointment $appt) => $appt->client_id === $clientId && $appt->starts_at && $appt->starts_at->isFuture())
-                    ->count();
-
-                return array_merge($item, [
-                    'upcoming_visits' => $upcoming,
-                ]);
-            })->all(),
-            'signals' => $this->buildSignals($user->id, $setting, $appointmentsTomorrow, $timezone, $appointments, $todayStart, $tomorrowStart),
-            'top_services' => $topServices->map(fn (array $service) => Arr::only($service, ['id', 'name', 'margin_per_hour']))->all(),
-        ];
-
-        $hasEliteAccess = $this->userHasEliteAccess($user);
-        $activePlan = $this->activePlanSlug($user);
-
-        $aiSuggestions = $hasEliteAccess
-            ? $this->aiService->suggestions($user->id, $todayStart, $aiContext)
-            : [];
-        $dailyTip = $this->aiService->dailyTip($user->id, $todayStart, [
-            'metrics' => $aiContext['metrics'],
-            'top_services' => $aiContext['top_services'],
-            'signals' => $aiContext['signals'],
-            'revenue_trend' => $revenueTrend,
-        ]);
+        $expectedToday = $todayOrders
+            ->filter(fn (Order $order) => in_array($order->status, self::REVENUE_STATUSES, true))
+            ->sum(fn (Order $order) => (float) $order->total_price);
 
         return view('dashboard', [
-            'updated_at' => $now,
-            'timezone' => $timezone,
-            'schedule' => $todaySchedule,
-            'metrics' => $metrics,
-            'aiSuggestions' => $aiSuggestions,
-            'marginData' => $marginData,
-            'marginInsight' => $marginData->isNotEmpty() ? $marginData->sortByDesc('value')->first() : null,
-            'revenueTrend' => $revenueTrend,
-            'revenueDelta' => $revenueDelta,
-            'topServices' => $topServices,
-            'servicesInsight' => $servicesInsight,
-            'topClients' => $topClients,
-            'dailyTip' => $dailyTip,
-            'aiAccess' => [
-                'available' => $hasEliteAccess,
-                'current_plan' => $activePlan,
-                'required_plan' => 'elite',
-                'upgrade_url' => url('/subscription'),
+            'today' => [
+                'date_label' => Str::ucfirst($todayStart->locale(app()->getLocale())->isoFormat('D MMMM, dddd')),
+                'count' => $todayOrders->count(),
+                'expected_revenue' => $expectedToday,
+                'expected_revenue_formatted' => $this->formatCurrency($expectedToday),
             ],
+            'schedule' => $schedule,
+            'dueClients' => $this->buildDueClients($user->id, $now, $timezone),
+            'freeSlots' => $this->buildFreeSlots($setting, $orders, $todayStart, $timezone),
+            'occupancy' => $this->buildOccupancy($setting, $orders, $todayStart, $timezone),
+            'week' => $this->buildWeekSummary($orders, $todayStart, $todayEnd),
             'onboarding' => [
                 'user_id' => $user->id,
                 'schedule_configured' => $scheduleConfigured,
@@ -264,421 +159,315 @@ class DashboardController extends Controller
         ]);
     }
 
-    protected function userHasEliteAccess(User $user): bool
+    /**
+     * Clients who have fallen out of their own rhythm.
+     *
+     * Every client has a personal cadence: lashes every three weeks, colour every
+     * eight. A single fixed threshold, which is what analytics uses today, is
+     * late for one and early for the other. The interval here is measured per
+     * client from her own visits, so the list is short and every name on it is
+     * genuinely overdue.
+     */
+    private function buildDueClients(int $masterId, CarbonInterface $now, string $timezone): Collection
     {
-        return $user->plans()
-            ->whereIn('plans.name', ['elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+        $history = Order::query()
+            ->where('master_id', $masterId)
+            ->whereNotNull('client_id')
+            ->whereIn('status', ['completed', 'in_progress', 'confirmed'])
+            ->where('scheduled_at', '>=', $now->copy()->subDays(365))
+            ->where('scheduled_at', '<=', $now)
+            ->orderBy('scheduled_at')
+            ->get(['id', 'client_id', 'scheduled_at', 'total_price']);
+
+        if ($history->isEmpty()) {
+            return collect();
+        }
+
+        // Anyone already on the books does not need chasing.
+        $booked = Order::query()
+            ->where('master_id', $masterId)
+            ->whereNotNull('client_id')
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->where('scheduled_at', '>', $now)
+            ->pluck('client_id')
+            ->unique()
+            ->flip();
+
+        $cards = Client::where('user_id', $masterId)
+            ->whereIn('client_user_id', $history->pluck('client_id')->unique()->all())
+            ->get()
+            ->keyBy('client_user_id');
+
+        return $history
+            ->groupBy('client_id')
+            ->reject(fn (Collection $visits, $clientId) => $booked->has($clientId))
+            ->map(function (Collection $visits, $clientId) use ($now, $timezone, $cards) {
+                $card = $cards->get($clientId);
+
+                // Without a card there is no name to show and no way to open her.
+                if (! $card) {
+                    return null;
+                }
+
+                $dates = $visits->pluck('scheduled_at')->filter()->values();
+                $lastVisit = $dates->last()?->copy()->timezone($timezone);
+
+                if (! $lastVisit) {
+                    return null;
+                }
+
+                $daysSince = (int) $lastVisit->copy()->startOfDay()->diffInDays($now->copy()->startOfDay());
+                $interval = $this->averageInterval($dates);
+
+                if ($interval === null) {
+                    // One visit only. She came once and did not come back.
+                    if ($daysSince < self::SINGLE_VISIT_OVERDUE_DAYS) {
+                        return null;
+                    }
+                } elseif ($daysSince <= $interval * self::OVERDUE_FACTOR) {
+                    return null;
+                }
+
+                $averageTicket = $visits->avg(fn (Order $order) => (float) $order->total_price) ?: 0.0;
+                $overdueBy = $interval === null ? $daysSince : $daysSince - (int) round($interval);
+
+                return [
+                    'client_id' => $card->id,
+                    'name' => $card->name,
+                    'url' => route('clients.show', $card->id),
+                    'phone' => $card->phone,
+                    'visits' => $visits->count(),
+                    'interval_days' => $interval === null ? null : (int) round($interval),
+                    'days_since' => $daysSince,
+                    'overdue_days' => max(0, $overdueBy),
+                    'average_ticket' => $averageTicket,
+                    // Rank by money at stake, not by lateness: losing a client with
+                    // a big cheque matters more than one who is a week later.
+                    'weight' => $averageTicket * max(1, $overdueBy),
+                ];
             })
-            ->exists();
+            ->filter()
+            ->sortByDesc('weight')
+            ->take(4)
+            ->values();
     }
 
-    protected function activePlanSlug(User $user): string
+    /**
+     * Mean gap between consecutive visits, or null when there is only one visit
+     * and no gap to measure.
+     *
+     * @param  Collection<int, CarbonInterface>  $dates
+     */
+    private function averageInterval(Collection $dates): ?float
     {
-        $plan = $user->plans()
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->orderByDesc('plan_user.created_at')
-            ->first();
+        if ($dates->count() < 2) {
+            return null;
+        }
 
-        return strtolower((string) ($plan?->slug ?: 'lite'));
+        $gaps = [];
+
+        for ($i = 1; $i < $dates->count(); $i++) {
+            $gaps[] = $dates[$i - 1]->diffInDays($dates[$i]);
+        }
+
+        $gaps = array_filter($gaps, fn (int $days) => $days > 0);
+
+        return $gaps === [] ? null : array_sum($gaps) / count($gaps);
     }
 
-    protected function resolveCapacity(?Setting $setting, CarbonInterface $day): int
+    /**
+     * Open slots over the next few days. An empty slot tomorrow is money that
+     * quietly does not arrive, and it is only useful next to the list of clients
+     * who are due, which is what the view puts beside it.
+     */
+    private function buildFreeSlots(?Setting $setting, Collection $orders, CarbonInterface $todayStart, string $timezone): array
     {
         if (! $setting) {
-            return 0;
+            return [];
         }
 
-        return count($this->scheduleService->resolveSlotsForDate($setting, $day));
+        $days = [];
+
+        for ($offset = 1; $offset <= 3; $offset++) {
+            $day = $todayStart->copy()->addDays($offset);
+            $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $day, $timezone));
+
+            if ($slots->isEmpty()) {
+                continue;
+            }
+
+            $taken = $orders
+                ->filter(fn (Order $order) => $this->isWithinDay($order->scheduled_at, $day->copy()->startOfDay(), $day->copy()->endOfDay()))
+                ->filter(fn (Order $order) => in_array($order->status, self::ACTIVE_STATUSES, true))
+                ->map(fn (Order $order) => $order->scheduled_at?->copy()->timezone($timezone)->format('H:i'))
+                ->filter();
+
+            $free = $slots->diff($taken)->values();
+
+            if ($free->isEmpty()) {
+                continue;
+            }
+
+            $days[] = [
+                'date' => $day->toDateString(),
+                'label' => $day->locale(app()->getLocale())->isoFormat($offset === 1 ? '[завтра]' : 'dddd'),
+                'free' => $free->take(3)->all(),
+                'free_count' => $free->count(),
+                'total' => $slots->count(),
+            ];
+        }
+
+        return $days;
     }
 
-    protected function hasConfiguredSchedule(?Setting $setting): bool
+    /**
+     * Share of the working day that is booked, week by week.
+     *
+     * Occupancy is deliberately not revenue. A master feels revenue in her purse
+     * anyway; what she cannot see is that she is drifting towards a thin month.
+     * Occupancy sags two or three weeks before the money does.
+     */
+    private function buildOccupancy(?Setting $setting, Collection $orders, CarbonInterface $todayStart, string $timezone): array
     {
         if (! $setting) {
-            return false;
+            return ['weeks' => [], 'current' => null, 'previous' => null];
         }
 
-        $payload = $this->scheduleService->buildSettingsPayload($setting);
-        $rules = $payload['schedule_rules'] ?? [];
-        $weekly = $rules['weekly'] ?? [];
-        $cycle = $rules['cycle'] ?? [];
-        $monthly = $rules['monthly'] ?? [];
+        $weeks = [];
+        $firstWeekStart = $todayStart->copy()->subWeeks(7)->startOfWeek(Carbon::MONDAY);
 
-        $hasWeeklySlots = collect($weekly)->contains(function ($dayRules) {
-            return ! empty($dayRules['enabled']) && ! empty($dayRules['slots']);
-        });
+        for ($index = 0; $index < 8; $index++) {
+            $weekStart = $firstWeekStart->copy()->addWeeks($index);
+            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
-        if ($hasWeeklySlots) {
-            return true;
+            $capacity = 0;
+
+            for ($day = 0; $day < 7; $day++) {
+                $date = $weekStart->copy()->addDays($day);
+
+                // The current week is only counted up to today, otherwise days
+                // that have not happened yet drag the last point down.
+                if ($date->greaterThan($todayStart)) {
+                    break;
+                }
+
+                $capacity += count($this->scheduleService->resolveSlotsForDate($setting, $date, $timezone));
+            }
+
+            $booked = $orders
+                ->filter(fn (Order $order) => $this->isWithinDay($order->scheduled_at, $weekStart->copy()->startOfDay(), $weekEnd))
+                ->filter(fn (Order $order) => $order->scheduled_at && $order->scheduled_at->lessThanOrEqualTo($todayStart->copy()->endOfDay()))
+                ->filter(fn (Order $order) => in_array($order->status, self::ACTIVE_STATUSES, true))
+                ->count();
+
+            $weeks[] = [
+                'start' => $weekStart->toDateString(),
+                'label' => $weekStart->locale(app()->getLocale())->isoFormat('D MMM'),
+                'booked' => $booked,
+                'capacity' => $capacity,
+                'share' => $capacity > 0 ? min(100, (int) round(($booked / $capacity) * 100)) : null,
+            ];
         }
 
-        if (! empty($cycle['slots'])) {
-            return true;
-        }
-
-        return ! empty($monthly['dates']);
-    }
-
-    protected function resolveAverageRevenue(int $userId, CarbonInterface $today, string $timezone): float
-    {
-        $rangeStart = $today->copy()->subDays(14);
-        $payments = Payment::where('user_id', $userId)
-            ->whereBetween('paid_at', [$rangeStart, $today])
-            ->get();
-
-        if ($payments->isEmpty()) {
-            return 0.0;
-        }
-
-        $daily = $payments
-            ->groupBy(fn (Payment $payment) => $payment->paid_at?->copy()->timezone($timezone)->toDateString())
-            ->map(fn (Collection $group) => $group->sum('amount'));
-
-        return round($daily->avg() ?? 0.0, 2);
-    }
-
-    protected function resolveServiceData(Collection $services, array $serviceIds): array
-    {
-        $selected = collect($serviceIds)
-            ->map(fn ($id) => $services->get($id))
-            ->filter();
-
-        $price = $selected->sum(fn ($service) => (float) ($service->base_price ?? 0));
-        $cost = $selected->sum(fn ($service) => (float) ($service->cost ?? 0));
-        $duration = $selected->sum(fn ($service) => (int) ($service->duration_min ?? 60));
+        $measured = collect($weeks)->filter(fn (array $week) => $week['share'] !== null)->values();
 
         return [
-            'names' => $selected->pluck('name')->values()->all(),
-            'price' => $price,
-            'cost' => $cost,
-            'duration' => $duration,
-            'margin' => $price - $cost,
+            'weeks' => $weeks,
+            'has_data' => $measured->count() >= 2,
+            'current' => $measured->last()['share'] ?? null,
+            'previous' => $measured->count() >= 2 ? $measured[$measured->count() - 2]['share'] : null,
         ];
     }
 
-    protected function defaultServiceData(): array
+    /**
+     * Money and people over the last seven days, on the same definition analytics
+     * uses. A week rather than a day, because one quiet day says nothing.
+     */
+    private function buildWeekSummary(Collection $orders, CarbonInterface $todayStart, CarbonInterface $todayEnd): array
     {
+        $weekStart = $todayStart->copy()->subDays(6);
+
+        $weekOrders = $orders
+            ->filter(fn (Order $order) => $this->isWithinDay($order->scheduled_at, $weekStart, $todayEnd))
+            ->filter(fn (Order $order) => in_array($order->status, self::REVENUE_STATUSES, true));
+
+        $revenue = (float) $weekOrders->sum(fn (Order $order) => (float) $order->total_price);
+        $visits = $weekOrders->count();
+        $clients = $weekOrders->pluck('client_id')->filter()->unique()->count();
+
         return [
-            'names' => [],
-            'price' => 0.0,
-            'cost' => 0.0,
-            'duration' => 0,
-            'margin' => 0.0,
+            'has_data' => $revenue > 0 || $visits > 0,
+            'revenue' => $revenue,
+            'revenue_formatted' => $this->formatCurrency($revenue),
+            'clients' => $clients,
+            'visits' => $visits,
+            'average_ticket_formatted' => $this->formatCurrency($visits > 0 ? $revenue / $visits : 0),
         ];
     }
 
-    protected function buildIndicator(Appointment $appointment, int $cancellations): array
+    /**
+     * How confident the master can be that this person turns up. Built from what
+     * the booking actually records: whether it is confirmed, whether it has been
+     * moved around, and whether she has failed to show before.
+     */
+    private function buildIndicator(Order $order, int $pastNoShows): array
     {
-        $risk = (float) ($appointment->risk_no_show ?? 0);
-        $fit = (float) ($appointment->fit_score ?? 0);
-
-        if ($cancellations >= 2 || $fit <= 0.5) {
+        if ($pastNoShows >= 2) {
             return ['type' => 'red', 'label' => __('dashboard.indicators.complex_visit')];
         }
 
-        if ($risk >= 0.3) {
+        if ($pastNoShows === 1 || (int) ($order->reschedule_count ?? 0) >= 2) {
             return ['type' => 'yellow', 'label' => __('dashboard.indicators.no_show_risk')];
+        }
+
+        if ($order->status === 'new') {
+            return ['type' => 'yellow', 'label' => __('dashboard.indicators.unconfirmed')];
         }
 
         return ['type' => 'green', 'label' => __('dashboard.indicators.high_attendance')];
     }
 
-    protected function buildMarginData(Collection $appointments, Collection $appointmentServices, CarbonInterface $todayStart, string $timezone): Collection
+    /**
+     * @return array<int, int>
+     */
+    private function noShowCountsByClient(int $masterId): array
     {
-        $start = $todayStart->copy()->subDays(6);
-        $days = collect();
+        return Order::query()
+            ->where('master_id', $masterId)
+            ->whereIn('status', ['no_show', 'cancelled'])
+            ->whereNotNull('client_id')
+            ->selectRaw('client_id, count(*) as total')
+            ->groupBy('client_id')
+            ->pluck('total', 'client_id')
+            ->all();
+    }
 
-        for ($i = 0; $i < 7; $i++) {
-            $day = $start->copy()->addDays($i);
-            $label = $day->locale(app()->getLocale())->isoFormat('D MMM, ddd');
-            $days->put($day->toDateString(), [
-                'label' => Str::ucfirst($label),
-                'margin' => 0.0,
-                'hours' => 0.0,
-            ]);
+    private function hasConfiguredSchedule(?Setting $setting): bool
+    {
+        if (! $setting) {
+            return false;
         }
 
-        $appointments
-            ->filter(fn (Appointment $appt) => $appt->starts_at && $appt->starts_at->between($start, $todayStart->copy()->endOfDay()))
-            ->each(function (Appointment $appointment) use (&$days, $appointmentServices, $timezone) {
-                $date = $appointment->starts_at?->copy()->timezone($timezone)->toDateString();
-                if (! $date || ! $days->has($date)) {
-                    return;
-                }
+        $rules = $this->scheduleService->buildSettingsPayload($setting)['schedule_rules'] ?? [];
 
-                $serviceData = $appointmentServices->get($appointment->id, $this->defaultServiceData());
-                $hours = max(0.5, $serviceData['duration'] / 60);
+        $hasWeeklySlots = collect($rules['weekly'] ?? [])->contains(
+            fn ($dayRules) => ! empty($dayRules['enabled']) && ! empty($dayRules['slots'])
+        );
 
-                $dayData = $days->get($date);
-                $dayData['margin'] += $serviceData['margin'];
-                $dayData['hours'] += $hours;
-
-                $days->put($date, $dayData);
-            });
-
-        return $days->map(function (array $item) {
-            $value = $item['hours'] > 0 ? $item['margin'] / $item['hours'] : 0.0;
-
-            return [
-                'label' => $item['label'],
-                'value' => round($value, 2),
-                'display' => $this->formatCurrency($value),
-                'hours_display' => $this->formatHours($item['hours']),
-            ];
-        })->values();
+        return $hasWeeklySlots
+            || ! empty($rules['cycle']['slots'] ?? [])
+            || ! empty($rules['monthly']['dates'] ?? []);
     }
 
-    protected function buildRevenueTrend(int $userId, CarbonInterface $todayStart, CarbonInterface $todayEnd, string $timezone): array
-    {
-        $periodDays = 7;
-        $currentStart = $todayStart->copy()->subDays($periodDays - 1);
-        $previousEnd = $currentStart->copy()->subDay();
-        $previousStart = $previousEnd->copy()->subDays($periodDays - 1);
-
-        $payments = Payment::where('user_id', $userId)
-            ->whereBetween('paid_at', [$previousStart, $todayEnd])
-            ->get();
-
-        $currentDays = collect();
-        $previousDays = collect();
-
-        for ($i = $periodDays - 1; $i >= 0; $i--) {
-            $day = $currentStart->copy()->addDays($i);
-            $label = Str::ucfirst($day->locale(app()->getLocale())->isoFormat('D MMM'));
-            $currentDays->push([
-                'date' => $day->toDateString(),
-                'label' => $label,
-                'current' => 0.0,
-                'previous' => 0.0,
-            ]);
-        }
-
-        $currentGrouped = $payments
-            ->filter(fn (Payment $payment) => $payment->paid_at && $payment->paid_at->between($currentStart, $todayEnd))
-            ->groupBy(fn (Payment $payment) => $payment->paid_at?->copy()->timezone($timezone)->toDateString());
-
-        $previousGrouped = $payments
-            ->filter(fn (Payment $payment) => $payment->paid_at && $payment->paid_at->between($previousStart, $previousEnd))
-            ->groupBy(fn (Payment $payment) => $payment->paid_at?->copy()->timezone($timezone)->toDateString());
-
-        $currentDays = $currentDays->map(function (array $item) use ($currentGrouped, $previousGrouped) {
-            $date = $item['date'];
-            $previousDate = Carbon::parse($date)->subDays(7)->toDateString();
-
-            return [
-                'label' => $item['label'],
-                'current' => round(($currentGrouped[$date] ?? collect())->sum('amount'), 2),
-                'previous' => round(($previousGrouped[$previousDate] ?? collect())->sum('amount'), 2),
-            ];
-        });
-
-        return $currentDays->values()->all();
-    }
-
-    protected function buildServiceStats(Collection $appointments, Collection $services): Collection
-    {
-        $stats = collect();
-
-        $appointments->each(function (Appointment $appointment) use (&$stats, $services) {
-            $serviceIds = $appointment->service_ids ?? [];
-            foreach ($serviceIds as $serviceId) {
-                $service = $services->get($serviceId);
-                if (! $service) {
-                    continue;
-                }
-
-                $entry = $stats->get($serviceId, [
-                    'id' => $serviceId,
-                    'name' => $service->name,
-                    'total_margin' => 0.0,
-                    'total_duration' => 0,
-                    'count' => 0,
-                ]);
-
-                $entry['total_margin'] += (float) ($service->base_price ?? 0) - (float) ($service->cost ?? 0);
-                $entry['total_duration'] += (int) ($service->duration_min ?? 60);
-                $entry['count']++;
-
-                $stats->put($serviceId, $entry);
-            }
-        });
-
-        return $stats->map(function (array $item) {
-            $hours = max(0.5, $item['total_duration'] / 60);
-            $marginPerHour = $hours > 0 ? $item['total_margin'] / $hours : 0;
-
-            return [
-                'id' => $item['id'],
-                'name' => $item['name'],
-                'margin_per_hour' => round($marginPerHour, 2),
-                'margin_per_hour_formatted' => $this->formatCurrency($marginPerHour),
-                'avg_duration' => $this->formatHours($item['total_duration'] / max(1, $item['count'])),
-            ];
-        });
-    }
-
-    protected function buildServiceInsight(Collection $services): ?string
-    {
-        if ($services->isEmpty()) {
-            return null;
-        }
-
-        $top = $services->take(2)->values();
-        $first = $top[0];
-        $second = $top[1] ?? null;
-
-        if ($second) {
-            return __('dashboard.finance.services.insight.multi', [
-                'first_service' => $first['name'],
-                'first_margin' => $first['margin_per_hour_formatted'],
-                'second_service' => $second['name'],
-                'second_margin' => $second['margin_per_hour_formatted'],
-            ]);
-        }
-
-        return __('dashboard.finance.services.insight.single', [
-            'service' => $first['name'],
-            'margin' => $first['margin_per_hour_formatted'],
-        ]);
-    }
-
-    protected function resolveTopClients(int $userId, Collection $appointments, string $timezone): Collection
-    {
-        $clients = Client::where('user_id', $userId)->get()->keyBy('id');
-        $payments = Payment::where('user_id', $userId)->get();
-
-        $scores = collect();
-
-        $clients->each(function (Client $client) use (&$scores, $payments, $appointments, $timezone) {
-            $clientPayments = $payments->where('client_id', $client->id);
-            $totalSpent = $clientPayments->sum('amount');
-            $visits = $appointments->where('client_id', $client->id);
-            $loyalty = $client->loyalty_level ?? 'new';
-            $loyaltyWeight = match ($loyalty) {
-                'ambassador' => 4.5,
-                'vip' => 4.0,
-                'platinum' => 3.5,
-                'gold' => 3.0,
-                'silver' => 2.0,
-                'bronze' => 1.5,
-                default => 1.2,
-            };
-
-            $score = ($totalSpent * $loyaltyWeight) + ($visits->count() * 50);
-            $lastVisit = $visits->sortByDesc(fn (Appointment $appt) => $appt->starts_at)->first()?->starts_at
-                ?->copy()->timezone($timezone)
-                ->locale(app()->getLocale())
-                ->isoFormat('D MMMM');
-
-            $scores->push([
-                'name' => $client->name,
-                'loyalty_level' => $client->loyalty_level,
-                'total_spent' => $totalSpent,
-                'total_spent_formatted' => $this->formatCurrency($totalSpent),
-                'last_visit' => $lastVisit ?? '—',
-                'score' => $score,
-            ]);
-        });
-
-        return $scores->sortByDesc('score')->take(5)->values();
-    }
-
-    protected function buildSignals(int $userId, ?Setting $setting, Collection $appointmentsTomorrow, string $timezone, Collection $allAppointments, CarbonInterface $todayStart, CarbonInterface $tomorrowStart): array
-    {
-        $freeSlots = collect();
-        if ($setting) {
-            $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $tomorrowStart, $timezone));
-            $booked = $appointmentsTomorrow
-                ->map(fn (Appointment $appt) => $appt->starts_at?->copy()->timezone($timezone)->format('H:i'))
-                ->filter();
-            $freeSlots = $slots->diff($booked)->values();
-        }
-
-        $riskClients = $allAppointments
-            ->filter(fn (Appointment $appt) => $appt->starts_at && $this->isWithinDay($appt->starts_at, $todayStart, $todayStart->copy()->endOfDay()))
-            ->filter(fn (Appointment $appt) => (float) ($appt->risk_no_show ?? 0) >= 0.3)
-            ->map(fn (Appointment $appt) => [
-                'id' => $appt->client_id,
-                'name' => $appt->client?->name,
-            ])
-            ->unique('id')
-            ->values();
-
-        $complexVisits = $allAppointments
-            ->filter(fn (Appointment $appt) => $appt->starts_at && $this->isWithinDay($appt->starts_at, $todayStart, $todayStart->copy()->endOfDay()))
-            ->filter(fn (Appointment $appt) => $this->buildIndicator($appt, 0)['type'] === 'red')
-            ->map(fn (Appointment $appt) => [
-                'client' => $appt->client?->name,
-                'time' => $appt->starts_at?->copy()->timezone($timezone)->format('H:i'),
-            ])
-            ->values();
-
-        $birthdays = Client::where('user_id', $userId)
-            ->whereNotNull('birthday')
-            ->get()
-            ->filter(function (Client $client) use ($tomorrowStart) {
-                return $client->birthday?->isSameAs('m-d', $tomorrowStart);
-            })
-            ->map(fn (Client $client) => [
-                'id' => $client->id,
-                'name' => $client->name,
-            ])
-            ->values();
-
-        return [
-            'free_slots_tomorrow' => $freeSlots->all(),
-            'high_risk_clients' => $riskClients->all(),
-            'complex_visits' => $complexVisits->all(),
-            'birthdays_tomorrow' => $birthdays->all(),
-        ];
-    }
-
-    protected function formatCurrency(float $value): string
+    private function formatCurrency(float $value): string
     {
         return __('dashboard.currency', [
             'amount' => number_format(max(0, $value), 0, '.', ' '),
         ]);
     }
 
-    protected function formatHours(float $hours): string
+    private function isWithinDay(?CarbonInterface $date, CarbonInterface $start, CarbonInterface $end): bool
     {
-        $totalMinutes = (int) round($hours * 60);
-        $h = intdiv($totalMinutes, 60);
-        $m = $totalMinutes % 60;
-
-        if ($h > 0 && $m > 0) {
-            return __('dashboard.time.hours_minutes', ['hours' => $h, 'minutes' => $m]);
-        }
-
-        if ($h > 0) {
-            return __('dashboard.time.hours_only', ['hours' => $h]);
-        }
-
-        return __('dashboard.time.minutes_only', ['minutes' => $m]);
-    }
-
-    protected function percentChange(float $current, float $previous): ?float
-    {
-        if ($previous <= 0) {
-            return null;
-        }
-
-        return round((($current - $previous) / $previous) * 100, 1);
-    }
-
-    protected function isWithinDay(?CarbonInterface $date, CarbonInterface $start, CarbonInterface $end): bool
-    {
-        if (! $date) {
-            return false;
-        }
-
-        return $date->betweenIncluded($start, $end);
+        return $date !== null && $date->betweenIncluded($start, $end);
     }
 }

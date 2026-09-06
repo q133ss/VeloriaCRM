@@ -18,6 +18,7 @@
             align-items: center;
             padding: 1.15rem;
             border-radius: 1.2rem;
+            container-type: inline-size;
             border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
             background:
                 radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), transparent 34%),
@@ -26,7 +27,7 @@
 
         .elite-lock-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
             gap: 1rem;
         }
 
@@ -65,9 +66,27 @@
             background: rgba(255, 255, 255, 0.03);
         }
 
-        @media (max-width: 991.98px) {
+        /*
+         * The card also lives inside narrow sidebars, where the viewport is wide but
+         * the container is not. A viewport media query cannot see that, so the text
+         * column used to collapse to ~60px and break words mid-syllable. Ask the
+         * container instead, and drop the decorative preview when there is no room.
+         */
+        @container (max-width: 27rem) {
             .elite-lock-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .elite-lock-preview {
+                display: none;
+            }
+        }
+
+        @supports not (container-type: inline-size) {
+            @media (max-width: 991.98px) {
+                .elite-lock-grid {
+                    grid-template-columns: minmax(0, 1fr);
+                }
             }
         }
     </style>
