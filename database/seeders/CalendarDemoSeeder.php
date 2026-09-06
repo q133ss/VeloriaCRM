@@ -163,7 +163,25 @@ class CalendarDemoSeeder extends Seeder
             [18, '12:00', 'Марина Белова', ['Коррекция бровей'], 'new', null],
 
             [2, '13:00', 'Ольга Ким', ['Стрижка женская'], 'cancelled', 'Отменила накануне, перенос на следующую неделю.'],
+
+            // A day built to show a dead gap: 10:00, then nothing until 16:00.
+            [5, '10:00', 'Анна Лебедева', ['Стрижка женская'], 'confirmed', null],
+            [5, '16:00', 'Ирина Кравцова', ['Укладка'], 'confirmed', null],
+
+            // Two no-shows for the same person, so the attendance line has something
+            // to say about her next booking.
+            [-14, '11:00', 'Юлия Титова', ['Маникюр с покрытием'], 'no_show', null],
+            [-21, '15:00', 'Юлия Титова', ['Коррекция бровей'], 'no_show', null],
+            [7, '12:00', 'Юлия Титова', ['Маникюр с покрытием'], 'confirmed', null],
         ];
+
+        // Measured durations, so the booking form can say what a haircut really
+        // takes. Below three samples the hint stays silent by design.
+        // Eight of them: enough for the duration hint, and enough completed work
+        // overall for the gap cards to price an idle window.
+        foreach ([-40, -37, -34, -31, -28, -25, -22, -19] as $offset) {
+            $plan[] = [$offset, '10:00', 'Ольга Ким', ['Стрижка женская'], 'completed', null];
+        }
 
         foreach ($plan as [$offset, $time, $clientName, $serviceNames, $status, $note]) {
             $client = $clients[$clientName]['user'];
@@ -189,6 +207,8 @@ class CalendarDemoSeeder extends Seeder
                     'duration' => collect($payload)->sum('duration'),
                     'duration_forecast' => collect($payload)->sum('duration'),
                     'total_price' => collect($payload)->sum('price'),
+                    // A real haircut runs well over the hour the price list claims.
+                    'duration' => $status === 'completed' ? collect($payload)->sum('duration') + 80 : null,
                     'confirmed_at' => in_array($status, ['confirmed', 'in_progress', 'completed'], true) ? $scheduledAt->copy()->subDay() : null,
                     'cancelled_at' => $status === 'cancelled' ? $scheduledAt->copy()->subDay() : null,
                 ]

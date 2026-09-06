@@ -13,6 +13,7 @@ class AvailabilityService
 {
     public function __construct(
         private readonly ScheduleService $scheduleService,
+        private readonly OrderDurationResolver $durations,
     ) {
     }
 
@@ -63,22 +64,14 @@ class AvailabilityService
             ->where('master_id', $masterId)
             ->whereBetween('scheduled_at', [$startDb, $endDb])
             ->whereNotIn('status', ['cancelled', 'no_show'])
-            ->get(['scheduled_at', 'services']);
+            ->get(['id', 'scheduled_at', 'services', 'duration_forecast', 'duration']);
 
         foreach ($orders as $order) {
-            $start = $order->scheduled_at?->copy()->timezone($timezone);
-            if (! $start) {
-                continue;
+            $interval = $this->durations->interval($order, $timezone);
+
+            if ($interval) {
+                $busy->push($interval);
             }
-
-            $duration = collect($order->services ?? [])
-                ->sum(fn ($item) => (int) data_get($item, 'duration', 0));
-            $duration = $duration > 0 ? $duration : 60;
-
-            $busy->push([
-                'start' => $start,
-                'end' => $start->copy()->addMinutes($duration),
-            ]);
         }
 
         $now = Carbon::now($timezone);

@@ -52,4 +52,8 @@ return [
         'status' => 'Status',
         'source' => 'Source',
     ],
+    'start_prompt' => [
+        'title' => 'Starting soon',
+        'message' => ':client at :time. Start the timer when you begin?',
+    ],
 ];

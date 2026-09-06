@@ -4,11 +4,15 @@ namespace App\Services\Booking;
 
 use App\Models\Appointment;
 use App\Models\Order;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 
 class BookingConflictService
 {
+    public function __construct(
+        private readonly OrderDurationResolver $durations,
+    ) {
+    }
+
     public function detectConflict(
         int $masterId,
         Carbon $startsAt,
@@ -73,11 +77,9 @@ class BookingConflictService
         return null;
     }
 
+    /** Kept as the public entry point; the rule itself lives in the resolver. */
     public function resolveOrderDuration(Order $order): int
     {
-        $servicesDuration = collect($order->services ?? [])
-            ->sum(fn ($item) => (int) Arr::get($item, 'duration', 0));
-
-        return max(1, $servicesDuration ?: (int) ($order->duration_forecast ?: $order->duration ?: 60));
+        return max(1, $this->durations->resolve($order));
     }
 }

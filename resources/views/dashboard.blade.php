@@ -903,7 +903,12 @@
                                             data-outreach-open
                                             data-client-id="{{ $due['client_id'] }}"
                                             data-client-name="{{ $due['name'] }}"
-                                            data-client-phone="{{ $due['phone'] }}">
+                                            data-client-phone="{{ $due['phone'] }}"
+                                            @if (! empty($freeSlots))
+                                                data-free-day="{{ \Illuminate\Support\Str::ucfirst($freeSlots[0]['label']) }}"
+                                                data-free-slots="{{ implode(',', $freeSlots[0]['free']) }}"
+                                            @endif
+                                        >
                                             {{ __('dashboard.due.write') }}
                                         </button>
                                     </li>
@@ -957,7 +962,7 @@
     @endif
 
     @if ($dueClients->isNotEmpty())
-        @include('dashboard.outreach-modal')
+        @include('components.message-sheet')
     @endif
 
     <div id="quick-create-alerts" class="mt-4"></div>
@@ -971,7 +976,7 @@
         @include('dashboard.setup-wizard-script')
     @endif
     @if ($dueClients->isNotEmpty())
-        @include('dashboard.outreach-script')
+        @include('components.message-sheet-script')
     @endif
     @include('components.order-quick-create-script')
 @endsection

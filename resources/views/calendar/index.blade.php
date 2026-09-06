@@ -304,6 +304,53 @@
             color: var(--bs-secondary-color);
         }
 
+        .calendar-gap-card {
+            border: 1px solid var(--cal-border);
+            border-left: 2px solid var(--cal-accent);
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.85rem;
+        }
+
+        .calendar-gap-meta {
+            color: var(--bs-secondary-color);
+            font-size: 0.85rem;
+        }
+
+        .calendar-gap-candidate {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem 0.75rem;
+            margin-top: 0.65rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid var(--cal-border);
+        }
+
+        .calendar-gap-candidate > div:first-child {
+            flex: 1 1 9rem;
+            min-width: 0;
+        }
+
+        .calendar-duration-hint {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.5rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.85rem;
+        }
+
+        .calendar-order-attention {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.85rem;
+        }
+
         .calendar-slot-pill {
             display: inline-flex;
             align-items: center;
@@ -532,6 +579,11 @@
                             </button>
                         </div>
 
+                        <section id="calendar-day-gaps-section" class="calendar-day__block d-none">
+                            <h3>{{ __('calendar.day.gaps_title') }} <span id="calendar-day-gaps-badge" class="fw-normal"></span></h3>
+                            <div id="calendar-day-gaps" class="d-flex flex-column gap-2"></div>
+                        </section>
+
                         <section id="calendar-day-slots-section" class="calendar-day__block d-none">
                             <h3>{{ __('calendar.day.free_slots_title') }} <span id="calendar-day-slots-badge" class="fw-normal"></span></h3>
                             <div id="calendar-day-slots" class="d-flex flex-wrap gap-2"></div>
@@ -649,14 +701,31 @@
 
                                 <div class="col-lg-5">
                                     <div class="calendar-modal-summary mb-3">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
                                             <span class="text-muted">Предварительная сумма</span>
                                             <strong id="calendar-create-summary-price">0 ₽</strong>
                                         </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="text-muted">Прогноз времени</span>
-                                            <strong id="calendar-create-summary-duration">0 мин</strong>
-                                        </div>
+                                    </div>
+
+                                    <div class="form-floating form-floating-outline mb-1">
+                                        <input
+                                            type="number"
+                                            min="5"
+                                            max="720"
+                                            step="5"
+                                            class="form-control"
+                                            id="calendar-create-duration"
+                                            name="duration_forecast"
+                                        />
+                                        <label for="calendar-create-duration">{{ __('calendar.day.duration_label') }}</label>
+                                    </div>
+
+                                    {{-- Appears only when the measured time really differs from the price list. --}}
+                                    <div id="calendar-create-duration-hint" class="calendar-duration-hint d-none mb-3">
+                                        <span id="calendar-create-duration-hint-text"></span>
+                                        <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" id="calendar-create-duration-apply">
+                                            {{ __('calendar.day.duration_apply') }}
+                                        </button>
                                     </div>
 
                                     <div class="form-floating form-floating-outline mb-3">
@@ -778,11 +847,13 @@
             </div>
         </div>
 
+        @include('components.message-sheet')
 @endsection
 
 @section('scripts')
     @include('components.phone-mask-script')
     @include('components.veloria-datetime-picker-script')
+    @include('components.message-sheet-script')
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
     <script>
@@ -814,6 +885,48 @@
                 ? translations.labels.all_day
                 : 'All day';
 
+            const gapValueLabel = @json(__('calendar.day.gap_value'));
+            const gapBookLabel = @json(__('calendar.day.gap_book'));
+            const gapWriteLabel = @json(__('calendar.day.gap_write'));
+            const attentionConfirmLabel = @json(__('calendar.day.attention.confirm'));
+            const reminderTemplate = @json(__('calendar.day.attention.reminder_text'));
+            const startConfirmTemplate = @json(__('calendar.day.actions.start_confirm'));
+            const durationHintTemplate = @json(__('calendar.day.duration_hint'));
+            const orderActionLabels = {
+                start: @json(__('calendar.day.actions.start')),
+                complete: @json(__('calendar.day.actions.complete')),
+                noShow: @json(__('calendar.day.actions.no_show')),
+            };
+            const moneyFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+
+            /**
+             * "понедельник, 7 сентября" — a date to read inside a sentence, not
+             * the panel heading with a year and a trailing "г.".
+             */
+            function formatGapDay(dateStr) {
+                if (!dateStr) return '';
+
+                const date = new Date(dateStr + 'T00:00:00');
+
+                if (Number.isNaN(date.getTime())) return dateStr;
+
+                return new Intl.DateTimeFormat(locale, {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                }).format(date);
+            }
+
+            function currentTimeLabel() {
+                const now = new Date();
+
+                return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            }
+
+            function formatMoney(value) {
+                return moneyFormatter.format(Number(value) || 0);
+            }
+
             const pluralRules = new Intl.PluralRules(locale);
             const eventsErrorEl = document.getElementById('calendar-events-error');
             const rangeLabelEl = document.getElementById('calendar-range-label');
@@ -829,6 +942,9 @@
             const dayNoticeEl = document.getElementById('calendar-day-notice');
             const dayNoticeTextEl = document.getElementById('calendar-day-notice-text');
             const dayNoticeActionEl = document.getElementById('calendar-day-notice-action');
+            const dayGapsSectionEl = document.getElementById('calendar-day-gaps-section');
+            const dayGapsEl = document.getElementById('calendar-day-gaps');
+            const dayGapsBadgeEl = document.getElementById('calendar-day-gaps-badge');
             const daySlotsSectionEl = document.getElementById('calendar-day-slots-section');
             const daySlotsBadgeEl = document.getElementById('calendar-day-slots-badge');
             const daySlotsEl = document.getElementById('calendar-day-slots');
@@ -857,7 +973,11 @@
             const createOrderServicesEl = document.getElementById('calendar-create-services');
             const createOrderServicesCountEl = document.getElementById('calendar-create-services-count');
             const createOrderSummaryPriceEl = document.getElementById('calendar-create-summary-price');
-            const createOrderSummaryDurationEl = document.getElementById('calendar-create-summary-duration');
+            const createOrderDurationEl = document.getElementById('calendar-create-duration');
+            const createOrderDurationHintEl = document.getElementById('calendar-create-duration-hint');
+            const createOrderDurationHintTextEl = document.getElementById('calendar-create-duration-hint-text');
+            const createOrderDurationApplyEl = document.getElementById('calendar-create-duration-apply');
+            let durationEstimates = [];
             const createOrderSubmitEl = document.getElementById('calendar-create-submit');
             const waitlistModalEl = document.getElementById('calendar-waitlist-modal');
             const waitlistForm = document.getElementById('calendar-waitlist-form');
@@ -885,6 +1005,7 @@
                 : null;
 
             let selectedDate = null;
+            let dayHasGaps = false;
             let lastDayAvailableSlots = [];
             let waitlistOptionsLoaded = false;
 
@@ -1100,9 +1221,11 @@
                     createOrderSummaryPriceEl.textContent = totalPrice.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' ₽';
                 }
 
-                if (createOrderSummaryDurationEl) {
-                    createOrderSummaryDurationEl.textContent = totalDuration + ' мин';
+                if (createOrderDurationEl && !createOrderDurationEl.dataset.userEdited) {
+                    createOrderDurationEl.value = totalDuration || '';
                 }
+
+                updateDurationHint(totalDuration);
 
                 if (createOrderServicesCountEl) {
                     createOrderServicesCountEl.textContent = String(selectedServices);
@@ -1111,6 +1234,44 @@
                 if (createOrderTotalPriceEl && !createOrderTotalPriceEl.dataset.userEdited) {
                     createOrderTotalPriceEl.value = totalPrice ? totalPrice.toFixed(2) : '';
                 }
+            }
+
+            /**
+             * Say what this set of services really takes, when the measured time
+             * disagrees with the price list. The field is never changed on its own:
+             * the master decides, the button just saves her the arithmetic.
+             */
+            function updateDurationHint(plannedDuration) {
+                if (!createOrderDurationHintEl) return;
+
+                const selected = Array.from(document.querySelectorAll('.calendar-create-service-checkbox:checked'))
+                    .map(function (checkbox) { return Number(checkbox.value); })
+                    .sort(function (a, b) { return a - b; })
+                    .join('-');
+
+                const estimate = durationEstimates.find(function (item) {
+                    return (item.service_ids || []).slice().sort(function (a, b) { return a - b; }).join('-') === selected;
+                });
+
+                if (!selected || !estimate || estimate.minutes === plannedDuration) {
+                    toggle(createOrderDurationHintEl, false);
+                    return;
+                }
+
+                createOrderDurationHintTextEl.textContent = durationHintTemplate
+                    .replace(':duration', humanMinutes(estimate.minutes))
+                    .replace(':count', estimate.samples);
+                createOrderDurationApplyEl.dataset.minutes = String(estimate.minutes);
+                toggle(createOrderDurationHintEl, true);
+            }
+
+            function humanMinutes(minutes) {
+                const hours = Math.floor(minutes / 60);
+                const rest = minutes % 60;
+
+                if (!hours) return rest + ' мин';
+
+                return rest ? hours + ' ч ' + rest + ' мин' : hours + ' ч';
             }
 
             function renderCreateServices(services) {
@@ -1373,6 +1534,7 @@
 
                 const data = await response.json();
                 createOrderRecentClients = Array.isArray(data.recent_clients) ? data.recent_clients : [];
+                durationEstimates = Array.isArray(data.duration_estimates) ? data.duration_estimates : [];
                 renderCreateServices(data.services || []);
                 renderCreateStatuses(data.status_options || {});
                 renderCreateClientResults(createOrderRecentClients, 'Недавние клиентки');
@@ -1390,6 +1552,11 @@
 
                 if (createOrderTotalPriceEl) {
                     delete createOrderTotalPriceEl.dataset.userEdited;
+                }
+
+                if (createOrderDurationEl) {
+                    createOrderDurationEl.value = '';
+                    delete createOrderDurationEl.dataset.userEdited;
                 }
 
                 if (createOrderWaitlistEntryIdEl) {
@@ -1464,6 +1631,60 @@
                 }
             }
 
+            /**
+             * Open the create form pre-filled from a waiting-list entry.
+             * `preferredTime` lets a gap card offer its own window instead of the
+             * first free anchor of the day.
+             */
+            async function bookWaitlistMatch(match, preferredTime) {
+                const targetDate = selectedDate || new Date().toISOString().slice(0, 10);
+                await openCreateOrderModal(targetDate);
+
+                if (createOrderWaitlistEntryIdEl) {
+                    createOrderWaitlistEntryIdEl.value = match.id;
+                }
+
+                if (createOrderClientIdEl) {
+                    createOrderClientIdEl.value = '';
+                }
+
+                if (createOrderClientSearchEl) {
+                    createOrderClientSearchEl.value = '';
+                }
+
+                if (createOrderClientNameEl) {
+                    createOrderClientNameEl.value = match.client && match.client.name ? match.client.name : '';
+                }
+
+                if (createOrderClientPhoneEl) {
+                    createOrderClientPhoneEl.value = match.client && match.client.phone ? match.client.phone : '';
+                }
+
+                if (createOrderNoteEl && match.notes) {
+                    createOrderNoteEl.value = match.notes;
+                }
+
+                if (createOrderScheduledAtEl) {
+                    const windowStart = match.preferred_time_windows && match.preferred_time_windows[0]
+                        ? match.preferred_time_windows[0].start
+                        : null;
+                    const time = preferredTime || lastDayAvailableSlots[0] || windowStart || '10:00';
+
+                    if (window.VeloriaDateTimePicker) {
+                        window.VeloriaDateTimePicker.setValue(createOrderScheduledAtEl, targetDate + 'T' + time);
+                    } else {
+                        createOrderScheduledAtEl.value = targetDate + 'T' + time;
+                    }
+                }
+
+                if (match.service && match.service.id) {
+                    document.querySelectorAll('.calendar-create-service-checkbox').forEach(function (checkbox) {
+                        checkbox.checked = Number(checkbox.value) === Number(match.service.id);
+                    });
+                    updateCreateSummary();
+                }
+            }
+
             function renderWaitlistMatches(matches) {
                 if (!dayWaitlistEl) return;
 
@@ -1474,7 +1695,9 @@
                     dayWaitlistBadgeEl.textContent = String(items.length);
                 }
 
-                toggle(dayWaitlistSectionEl, items.length > 0);
+                // The gap cards already name these people next to the window they
+                // fit. Listing them again below is the same client twice.
+                toggle(dayWaitlistSectionEl, items.length > 0 && !dayHasGaps);
 
                 items.forEach(function (match) {
                     const card = document.createElement('div');
@@ -1518,49 +1741,8 @@
                     bookBtn.type = 'button';
                     bookBtn.className = 'btn btn-sm btn-outline-primary';
                     bookBtn.textContent = 'Записать';
-                    bookBtn.addEventListener('click', async function () {
-                        const targetDate = selectedDate || new Date().toISOString().slice(0, 10);
-                        await openCreateOrderModal(targetDate);
-
-                        if (createOrderWaitlistEntryIdEl) {
-                            createOrderWaitlistEntryIdEl.value = match.id;
-                        }
-
-                        if (createOrderClientIdEl) {
-                            createOrderClientIdEl.value = '';
-                        }
-
-                        if (createOrderClientSearchEl) {
-                            createOrderClientSearchEl.value = '';
-                        }
-
-                        if (createOrderClientNameEl) {
-                            createOrderClientNameEl.value = match.client && match.client.name ? match.client.name : '';
-                        }
-
-                        if (createOrderClientPhoneEl) {
-                            createOrderClientPhoneEl.value = match.client && match.client.phone ? match.client.phone : '';
-                        }
-
-                        if (createOrderNoteEl && match.notes) {
-                            createOrderNoteEl.value = match.notes;
-                        }
-
-                        if (createOrderScheduledAtEl) {
-                            const time = lastDayAvailableSlots[0] || (match.preferred_time_windows && match.preferred_time_windows[0] ? match.preferred_time_windows[0].start : '10:00');
-                            if (window.VeloriaDateTimePicker) {
-                                window.VeloriaDateTimePicker.setValue(createOrderScheduledAtEl, targetDate + 'T' + (time || '10:00'));
-                            } else {
-                                createOrderScheduledAtEl.value = targetDate + 'T' + (time || '10:00');
-                            }
-                        }
-
-                        if (match.service && match.service.id) {
-                            document.querySelectorAll('.calendar-create-service-checkbox').forEach(function (checkbox) {
-                                checkbox.checked = Number(checkbox.value) === Number(match.service.id);
-                            });
-                            updateCreateSummary();
-                        }
+                    bookBtn.addEventListener('click', function () {
+                        bookWaitlistMatch(match);
                     });
                     actionRow.appendChild(bookBtn);
                     card.appendChild(actionRow);
@@ -1607,6 +1789,7 @@
                 toggle(dayContentEl, !isLoading);
                 if (isLoading) {
                     setDayNotice('', false);
+                    toggle(dayGapsSectionEl, false);
                 }
             }
 
@@ -1665,6 +1848,26 @@
 
                 wrapper.appendChild(header);
 
+                if (order.attention && order.attention.text) {
+                    const attention = document.createElement('div');
+                    attention.className = 'calendar-order-attention';
+
+                    const text = document.createElement('span');
+                    text.textContent = order.attention.text;
+                    attention.appendChild(text);
+
+                    const confirmBtn = document.createElement('button');
+                    confirmBtn.type = 'button';
+                    confirmBtn.className = 'btn btn-sm btn-link p-0 text-decoration-none';
+                    confirmBtn.textContent = (order.attention.action && order.attention.action.label) || attentionConfirmLabel;
+                    confirmBtn.addEventListener('click', function () {
+                        openReminderSheet(order);
+                    });
+                    attention.appendChild(confirmBtn);
+
+                    wrapper.appendChild(attention);
+                }
+
                 if (order.client && (order.client.phone || order.client.email)) {
                     const contacts = document.createElement('div');
                     contacts.className = 'calendar-order-meta small mt-2';
@@ -1714,7 +1917,30 @@
                 }
 
                 const footer = document.createElement('div');
-                footer.className = 'd-flex justify-content-end mt-3';
+                footer.className = 'd-flex flex-wrap justify-content-end gap-2 mt-3';
+
+                // Start and finish are what produce a measured duration; until now
+                // they lived only on the order page, so almost nobody pressed them.
+                if (order.can_start) {
+                    const startBtn = orderActionButton(order, 'start', orderActionLabels.start, 'calendar-ghost-btn');
+                    // Starting far from the booked time records a duration that never
+                    // happened, so that case asks first. Around the appointed minute
+                    // a confirmation would only be in the way.
+                    startBtn.dataset.confirm = order.start_needs_confirm
+                        ? startConfirmTemplate
+                            .replace(':time', order.scheduled_at_formatted || '')
+                            .replace(':now', currentTimeLabel())
+                        : '';
+                    footer.appendChild(startBtn);
+                }
+
+                if (order.can_complete) {
+                    footer.appendChild(orderActionButton(order, 'complete', orderActionLabels.complete, 'calendar-ghost-btn'));
+                }
+
+                if (order.can_mark_no_show) {
+                    footer.appendChild(orderActionButton(order, 'no-show', orderActionLabels.noShow, 'calendar-ghost-btn'));
+                }
 
                 const openBtn = document.createElement('a');
                 openBtn.className = 'btn btn-sm btn-outline-primary';
@@ -1725,6 +1951,188 @@
                 wrapper.appendChild(footer);
 
                 return wrapper;
+            }
+
+            function orderActionButton(order, action, label, styleClass) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn btn-sm ' + styleClass;
+                button.textContent = label;
+
+                button.addEventListener('click', async function () {
+                    if (button.dataset.confirm && !window.confirm(button.dataset.confirm)) {
+                        return;
+                    }
+
+                    button.disabled = true;
+
+                    try {
+                        const response = await fetch('/api/v1/orders/' + order.id + '/' + action, {
+                            method: 'POST',
+                            headers: Object.assign({}, authHeaders, { 'Content-Type': 'application/json' }),
+                        });
+
+                        const json = await response.json().catch(function () { return {}; });
+
+                        if (!response.ok) {
+                            showPageFeedback('danger', (json.error && json.error.message) || translations.alerts.day_load_failed);
+                            button.disabled = false;
+                            return;
+                        }
+
+                        showPageFeedback('success', json.message || '');
+                        calendar.refetchEvents();
+                        if (selectedDate) {
+                            loadDayDetails(selectedDate, { force: true });
+                        }
+                    } catch (error) {
+                        showPageFeedback('danger', translations.alerts.day_load_failed);
+                        button.disabled = false;
+                    }
+                });
+
+                return button;
+            }
+
+            // An unsold stretch between two bookings, with the people who fit it.
+            /**
+             * Ask a client who has missed appointments before to confirm.
+             * Deterministic text, no generation, no quota — it says one thing and
+             * the master can edit it before it goes anywhere.
+             */
+            function openReminderSheet(order) {
+                if (!window.veloriaMessage || !order.client || !order.client.id) return;
+
+                const name = order.client.name || translations.unnamedClient;
+                const when = formatDateLabel(selectedDate);
+                const time = order.scheduled_at_formatted || '';
+
+                const text = reminderTemplate.replace(':name', name)
+                    .replace(':date', when.toLowerCase())
+                    .replace(':time', time);
+
+                window.veloriaMessage.open({
+                    clientId: order.client.card_id || order.client.id,
+                    clientName: name,
+                    clientPhone: order.client.phone || '',
+                    channels: order.client.channels || [],
+                    text: text,
+                });
+            }
+
+            function renderGapCard(gap) {
+                const card = document.createElement('div');
+                card.className = 'calendar-gap-card';
+
+                const head = document.createElement('div');
+                head.className = 'd-flex flex-wrap align-items-baseline justify-content-between gap-2';
+
+                const when = document.createElement('strong');
+                when.textContent = gap.start + ' – ' + gap.end;
+                head.appendChild(when);
+
+                const meta = document.createElement('span');
+                meta.className = 'calendar-gap-meta';
+                meta.textContent = gap.label || '';
+                if (gap.estimated_value) {
+                    meta.textContent += ' · ' + gapValueLabel.replace(':sum', formatMoney(gap.estimated_value));
+                }
+                head.appendChild(meta);
+                card.appendChild(head);
+
+                const candidates = Array.isArray(gap.candidates) ? gap.candidates : [];
+
+                candidates.forEach(function (match) {
+                    const row = document.createElement('div');
+                    row.className = 'calendar-gap-candidate';
+
+                    const who = document.createElement('div');
+                    const name = document.createElement('span');
+                    name.className = 'fw-semibold';
+                    name.textContent = (match.client && match.client.name) || translations.unnamedClient;
+                    who.appendChild(name);
+
+                    const reason = (match.match_reasons || [])[0];
+                    const service = match.service && match.service.name;
+                    const detail = [service, reason].filter(Boolean).join(' · ');
+
+                    if (detail) {
+                        const sub = document.createElement('div');
+                        sub.className = 'calendar-order-meta small';
+                        sub.textContent = detail;
+                        who.appendChild(sub);
+                    }
+
+                    row.appendChild(who);
+
+                    const buttons = document.createElement('div');
+                    buttons.className = 'd-flex gap-2';
+
+                    const writeBtn = document.createElement('button');
+                    writeBtn.type = 'button';
+                    writeBtn.className = 'btn btn-sm btn-link p-0 text-decoration-none';
+                    writeBtn.textContent = gapWriteLabel;
+                    writeBtn.addEventListener('click', function () {
+                        openGapOffer(match, gap);
+                    });
+                    buttons.appendChild(writeBtn);
+
+                    const bookBtn = document.createElement('button');
+                    bookBtn.type = 'button';
+                    bookBtn.className = 'btn btn-sm calendar-ghost-btn';
+                    bookBtn.textContent = gapBookLabel;
+                    bookBtn.addEventListener('click', function () {
+                        bookWaitlistMatch(match, gap.slots && gap.slots.length ? gap.slots[0] : gap.start);
+                    });
+                    buttons.appendChild(bookBtn);
+
+                    row.appendChild(buttons);
+                    card.appendChild(row);
+                });
+
+                return card;
+            }
+
+            /**
+             * Offer this window to this client. The wording is the one thing here
+             * a model does better than a template, so it is the one thing it does.
+             */
+            function openGapOffer(match, gap) {
+                if (!window.veloriaMessage || !match.client || !match.client.id) return;
+
+                window.veloriaMessage.open({
+                    clientId: match.client.id,
+                    clientName: match.client.name || translations.unnamedClient,
+                    clientPhone: match.client.phone || '',
+                    channels: match.client.channels || [],
+                    draft: {
+                        intent: 'gap_offer',
+                        free_day: formatGapDay(selectedDate),
+                        free_slots: (gap.slots || []).slice(0, 3),
+                        gap_start: gap.start,
+                        gap_end: gap.end,
+                        waitlist_entry_id: match.id,
+                    },
+                });
+            }
+
+            function renderGaps(gaps) {
+                const items = Array.isArray(gaps) ? gaps : [];
+                dayHasGaps = items.length > 0;
+
+                if (!dayGapsEl) return;
+
+                dayGapsEl.innerHTML = '';
+
+                items.forEach(function (gap) {
+                    dayGapsEl.appendChild(renderGapCard(gap));
+                });
+
+                if (dayGapsBadgeEl) {
+                    dayGapsBadgeEl.textContent = items.length ? String(items.length) : '';
+                }
+
+                toggle(dayGapsSectionEl, items.length > 0);
             }
 
             function renderDayDetails(payload, meta) {
@@ -1756,6 +2164,8 @@
                 if (daySlotsBadgeEl) {
                     daySlotsBadgeEl.textContent = availableSlots.length ? String(availableSlots.length) : '';
                 }
+
+                renderGaps(payload.gaps);
 
                 // Free time only makes sense once a schedule exists and something is left.
                 toggle(daySlotsSectionEl, !settingsNotice && availableSlots.length > 0);
@@ -1959,6 +2369,21 @@
                 });
             }
 
+            if (createOrderDurationEl) {
+                createOrderDurationEl.addEventListener('input', function () {
+                    this.dataset.userEdited = this.value ? '1' : '';
+                });
+            }
+
+            if (createOrderDurationApplyEl) {
+                createOrderDurationApplyEl.addEventListener('click', function () {
+                    if (!createOrderDurationEl) return;
+                    createOrderDurationEl.value = this.dataset.minutes || '';
+                    createOrderDurationEl.dataset.userEdited = '1';
+                    toggle(createOrderDurationHintEl, false);
+                });
+            }
+
             if (createOrderClientPhoneEl) {
                 createOrderClientPhoneEl.addEventListener('input', function () {
                     if (createOrderClientIdEl && createOrderClientIdEl.value) {
@@ -2043,6 +2468,7 @@
                         }),
                         note: createOrderNoteEl ? createOrderNoteEl.value : '',
                         total_price: createOrderTotalPriceEl && createOrderTotalPriceEl.value ? Number(createOrderTotalPriceEl.value) : null,
+                        duration_forecast: createOrderDurationEl && createOrderDurationEl.value ? Number(createOrderDurationEl.value) : null,
                         status: createOrderStatusEl && createOrderStatusEl.value ? createOrderStatusEl.value : 'new',
                     };
 

@@ -16,8 +16,10 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Booking\BookingConflictService;
+use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\OpenAIService;
 use App\Services\ClientIdentityService;
+use App\Services\Orders\OrderActionPolicy;
 use App\Services\OrderService;
 use App\Services\WaitlistMatchService;
 use Illuminate\Http\JsonResponse;
@@ -112,7 +114,10 @@ class OrderController extends Controller
             }
 
             $scheduledAt = Carbon::parse($validated['scheduled_at']);
-            $durationForecast = (int) ($services->sum('duration_min') ?: 60);
+            // A duration the master typed beats the price-list sum; she has just
+            // been told what this actually takes and decided to trust it.
+            $durationForecast = (int) (Arr::get($validated, 'duration_forecast')
+                ?: ($services->sum('duration_min') ?: 60));
             $this->ensureNoBookingConflict($masterId, $scheduledAt, $durationForecast);
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
@@ -190,7 +195,8 @@ class OrderController extends Controller
 
             $newScheduledAt = Carbon::parse($validated['scheduled_at']);
             $scheduledChanged = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
-            $durationForecast = (int) ($services->sum('duration_min') ?: $order->duration_forecast ?: 60);
+            $durationForecast = (int) (Arr::get($validated, 'duration_forecast')
+            ?: ($services->sum('duration_min') ?: $order->duration_forecast ?: 60));
             $this->ensureNoBookingConflict($masterId, $newScheduledAt, $durationForecast, $order->id);
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
@@ -392,6 +398,36 @@ class OrderController extends Controller
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись завершена.',
+        ]);
+    }
+
+    /**
+     * Record that the client did not turn up.
+     *
+     * The status existed but nothing could set it except the full edit form,
+     * which is why almost no master ever recorded a no-show. update() is not a
+     * substitute here: it demands the whole payload and re-runs conflict
+     * detection for a booking that is already in the past.
+     */
+    public function markNoShow(Order $order): JsonResponse
+    {
+        $this->ensureOrderBelongsToCurrentUser($order);
+
+        if (! app(OrderActionPolicy::class)->for($order)['can_mark_no_show']) {
+            return response()->json([
+                'error' => [
+                    'code' => 'no_show_unavailable',
+                    'message' => 'Отметить неявку можно только для прошедшей неотменённой записи.',
+                ],
+            ], 422);
+        }
+
+        $order->update(['status' => 'no_show']);
+        $order->refresh();
+
+        return response()->json([
+            'data' => $this->decorateOrder($order),
+            'message' => 'Отмечено: клиент не пришёл.',
         ]);
     }
 
@@ -646,6 +682,11 @@ class OrderController extends Controller
             ] : null,
             'recent_clients' => $recentClients->values(),
             'suggestions' => $suggestions->values(),
+            // Measured durations per service set, so the form can say what this
+            // actually takes instead of repeating the price list back.
+            'duration_estimates' => array_values(
+                app(ServiceDurationEstimator::class)->estimatesFor($this->currentUserId()),
+            ),
         ]);
     }
 
@@ -2069,19 +2110,7 @@ PROMPT;
 
     protected function buildActionAvailability(Order $order): array
     {
-        $now = Carbon::now();
-        $scheduledAt = $order->scheduled_at;
-        $isToday = $scheduledAt ? $scheduledAt->isSameDay($now) : false;
-        $startsSoon = $scheduledAt ? $scheduledAt->greaterThan($now) : false;
-        $hoursDiff = $scheduledAt ? $now->diffInHours($scheduledAt, false) : null;
-
-        return [
-            'can_start_now' => $isToday,
-            'start_warning' => $startsSoon && $hoursDiff !== null && $hoursDiff > 1,
-            'can_complete' => in_array($order->status, ['in_progress', 'confirmed']),
-            'can_reschedule' => !in_array($order->status, ['completed', 'cancelled']),
-            'can_cancel' => !in_array($order->status, ['completed', 'cancelled']),
-        ];
+        return app(OrderActionPolicy::class)->for($order);
     }
 
     protected function decorateOrder(Order $order): array

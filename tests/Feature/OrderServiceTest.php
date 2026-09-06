@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendOrderStartPromptJob;
 use App\Jobs\SendOrderStartReminderJob;
 use App\Models\Client;
 use App\Models\Order;
@@ -158,6 +159,93 @@ class OrderServiceTest extends TestCase
         $this->assertStringContainsString('Анна Клиент', $notification->message);
         $this->assertStringContainsString('Латекс, Цитрусы', $notification->message);
         $this->assertNotNull($order->fresh()->allergy_reminder_sent_at);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_schedule_start_reminder_also_queues_a_prompt_before_the_booking(): void
+    {
+        Carbon::setTestNow('2025-01-01 12:00:00');
+        Queue::fake();
+
+        $master = User::factory()->create();
+        $client = User::factory()->create();
+
+        $order = Order::query()->create([
+            'master_id' => $master->id,
+            'client_id' => $client->id,
+            'services' => [['id' => 1, 'name' => 'Стрижка', 'price' => 1500, 'duration' => 60]],
+            'scheduled_at' => Carbon::now()->addMinutes(30),
+            'total_price' => 1500,
+            'status' => 'new',
+            'source' => 'manual',
+        ]);
+
+        app(OrderService::class)->scheduleStartReminder($order->fresh());
+
+        // Ten minutes before a booking that is thirty minutes out.
+        Queue::assertPushed(SendOrderStartPromptJob::class, function (SendOrderStartPromptJob $job) use ($order) {
+            return $job->orderId === $order->id && $job->delay === 1200;
+        });
+
+        Carbon::setTestNow();
+    }
+
+    public function test_start_prompt_job_notifies_once_and_only_before_the_visit_began(): void
+    {
+        Carbon::setTestNow('2025-01-01 12:00:00');
+
+        $master = User::factory()->create();
+        $client = User::factory()->create(['name' => 'Ирина']);
+
+        $order = Order::query()->create([
+            'master_id' => $master->id,
+            'client_id' => $client->id,
+            'services' => [['id' => 1, 'name' => 'Стрижка', 'price' => 1500, 'duration' => 60]],
+            'scheduled_at' => Carbon::now()->addMinutes(10),
+            'total_price' => 1500,
+            'status' => 'confirmed',
+            'source' => 'manual',
+        ]);
+
+        $job = new SendOrderStartPromptJob($order->id, $order->scheduled_at->getTimestamp());
+        $job->handle(app(NotificationService::class));
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $master->id,
+            'title' => __('orders.start_prompt.title'),
+        ]);
+        $this->assertNotNull($order->fresh()->start_prompt_notified_at);
+
+        // Running again must not produce a second nudge.
+        $job->handle(app(NotificationService::class));
+        $this->assertSame(1, \App\Models\Notification::where('user_id', $master->id)->count());
+
+        Carbon::setTestNow();
+    }
+
+    public function test_start_prompt_is_skipped_once_the_visit_has_started(): void
+    {
+        Carbon::setTestNow('2025-01-01 12:00:00');
+
+        $master = User::factory()->create();
+        $client = User::factory()->create();
+
+        $order = Order::query()->create([
+            'master_id' => $master->id,
+            'client_id' => $client->id,
+            'services' => [['id' => 1, 'name' => 'Стрижка', 'price' => 1500, 'duration' => 60]],
+            'scheduled_at' => Carbon::now()->addMinutes(10),
+            'actual_started_at' => Carbon::now(),
+            'total_price' => 1500,
+            'status' => 'confirmed',
+            'source' => 'manual',
+        ]);
+
+        (new SendOrderStartPromptJob($order->id, $order->scheduled_at->getTimestamp()))
+            ->handle(app(NotificationService::class));
+
+        $this->assertSame(0, \App\Models\Notification::where('user_id', $master->id)->count());
 
         Carbon::setTestNow();
     }

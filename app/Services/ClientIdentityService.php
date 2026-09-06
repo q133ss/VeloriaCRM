@@ -181,8 +181,16 @@ class ClientIdentityService
             return null;
         }
 
+        // regexp_replace is Postgres-only and the test suite runs on SQLite, so the
+        // digits are compared with a driver-neutral chain of REPLACE calls.
+        $expression = 'phone';
+
+        foreach ([' ', '(', ')', '-', '+', '.'] as $character) {
+            $expression = "REPLACE({$expression}, '{$character}', '')";
+        }
+
         return Client::where('user_id', $masterId)
-            ->whereRaw("regexp_replace(phone, '\\D', '', 'g') = ?", [$digits])
+            ->whereRaw("{$expression} = ?", [$digits])
             ->first();
     }
 

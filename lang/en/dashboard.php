@@ -69,6 +69,8 @@ return [
         'regenerate' => 'Another version',
         'open_whatsapp' => 'Open WhatsApp',
         'close' => 'Close',
+        'send' => 'Send via :channel',
+        'sending' => 'Sending…',
         'error' => 'Could not draft the text. Try again.',
         'template_note' => 'This is a template. Adjust it before sending.',
         'limit_note' => 'No free drafts left this month. Send the template as is, or edit it.',

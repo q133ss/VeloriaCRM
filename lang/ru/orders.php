@@ -53,4 +53,8 @@ return [
         'status' => 'Статус',
         'source' => 'Источник',
     ],
+    'start_prompt' => [
+        'title' => 'Скоро начало',
+        'message' => ':client в :time. Запустить таймер, когда начнёте?',
+    ],
 ];

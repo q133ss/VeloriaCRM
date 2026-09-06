@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
+use App\Services\ClientAttendanceService;
 use App\Services\ClientIdentityService;
 use App\Services\ScheduleService;
 use Carbon\Carbon;
@@ -430,16 +431,24 @@ class DashboardController extends Controller
     /**
      * @return array<int, int>
      */
+    /**
+     * Only actual no-shows. A cancellation is a client who warned you, and
+     * counting it here marked considerate people as unreliable.
+     *
+     * @return array<int, int>
+     */
     private function noShowCountsByClient(int $masterId): array
     {
-        return Order::query()
-            ->where('master_id', $masterId)
-            ->whereIn('status', ['no_show', 'cancelled'])
-            ->whereNotNull('client_id')
-            ->selectRaw('client_id, count(*) as total')
-            ->groupBy('client_id')
-            ->pluck('total', 'client_id')
-            ->all();
+        return app(ClientAttendanceService::class)->noShowCountsFor(
+            $masterId,
+            Order::query()
+                ->where('master_id', $masterId)
+                ->whereNotNull('client_id')
+                ->distinct()
+                ->pluck('client_id')
+                ->map(fn ($id) => (int) $id)
+                ->all(),
+        );
     }
 
     private function hasConfiguredSchedule(?Setting $setting): bool

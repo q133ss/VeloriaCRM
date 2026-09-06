@@ -340,6 +340,11 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
     public function test_client_slots_support_custom_month_schedule_with_half_hour_slots(): void
     {
+        // The schedule under test is pinned to a fixed date, so the clock has to be
+        // pinned too: past slots are filtered out, and this test used to start
+        // failing on its own once real time passed 2026-03-20.
+        Carbon::setTestNow('2026-03-19 08:00:00');
+
         $master = User::factory()->create([
             'timezone' => 'Europe/Moscow',
         ]);
@@ -373,8 +378,12 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
         Sanctum::actingAs($client);
 
-        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-20')
-            ->assertOk()
-            ->assertJsonPath('data.slots.1', '15:30');
+        try {
+            $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-20')
+                ->assertOk()
+                ->assertJsonPath('data.slots.1', '15:30');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }

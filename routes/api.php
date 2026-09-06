@@ -68,6 +68,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::get('/clients/{client}', [ApiClientController::class, 'show']);
         Route::get('/clients/{client}/analytics', [ApiClientController::class, 'analytics']);
         Route::post('/clients/{client}/outreach-message', [ApiClientController::class, 'outreachMessage']);
+        Route::post('/clients/{client}/message', [ApiClientController::class, 'sendMessage']);
         Route::get('/clients/{client}/recommendations', [ApiClientController::class, 'recommendations']);
         Route::patch('/clients/{client}', [ApiClientController::class, 'update']);
         Route::delete('/clients/{client}', [ApiClientController::class, 'destroy']);
@@ -81,6 +82,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::post('/orders/quick-create', [ApiOrderController::class, 'quickStore']);
         Route::post('/orders/{order}/complete', [ApiOrderController::class, 'complete']);
         Route::post('/orders/{order}/start', [ApiOrderController::class, 'start']);
+        Route::post('/orders/{order}/no-show', [ApiOrderController::class, 'markNoShow']);
         Route::post('/orders/{order}/remind', [ApiOrderController::class, 'remind']);
         Route::post('/orders/{order}/cancel', [ApiOrderController::class, 'cancel']);
         Route::post('/orders/{order}/reschedule', [ApiOrderController::class, 'reschedule']);
