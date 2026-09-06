@@ -56,4 +56,8 @@ return [
         'title' => 'Starting soon',
         'message' => ':client at :time. Start the timer when you begin?',
     ],
+    'start_reminder' => [
+        'title' => 'The timer is not running',
+        'message' => ':client was booked for :time. If the visit is under way, start the timer.',
+    ],
 ];

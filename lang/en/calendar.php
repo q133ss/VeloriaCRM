@@ -41,7 +41,7 @@ return [
             'reminder_text' => 'Hi :name! A reminder about your appointment on :date at :time. Could you confirm it still works?',
         ],
         'actions' => [
-            'start' => 'Start',
+            'start' => 'Start timer',
             'complete' => 'Finish',
             'no_show' => 'Did not come',
             'start_confirm' => 'The appointment is at :time and it is now :now. Start it anyway?',

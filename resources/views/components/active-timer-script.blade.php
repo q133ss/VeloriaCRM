@@ -131,10 +131,8 @@
 
                     hide();
 
-                    // The calendar shows the same booking; let it catch up.
-                    if (typeof window.veloriaCalendarRefresh === 'function') {
-                        window.veloriaCalendarRefresh();
-                    }
+                    // Whatever page is open is showing this same booking.
+                    document.dispatchEvent(new CustomEvent('veloria:order-changed'));
                 })
                 .catch(function () { finishEl.disabled = false; });
         });

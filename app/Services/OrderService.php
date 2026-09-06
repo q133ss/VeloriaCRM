@@ -13,7 +13,7 @@ class OrderService
     private const START_PROMPT_LEAD_SECONDS = 600;
 
     /** How long after it she is asked whether the visit began at all. */
-    private const START_REMINDER_DELAY_SECONDS = 600;
+    private const START_REMINDER_DELAY_SECONDS = 300;
 
     public function scheduleStartReminder(Order $order): void
     {

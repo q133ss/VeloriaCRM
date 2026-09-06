@@ -268,7 +268,7 @@ class CalendarController extends Controller
                 'channels' => $card ? $this->channels->availableChannels($settings, $card, $order->client) : [],
             ],
             'attention' => $this->buildAttention($order, $noShowCounts),
-            'can_start' => $actions['can_start_now'] && in_array($order->status, ['new', 'confirmed'], true),
+            'can_start' => $actions['can_start'],
             'start_needs_confirm' => $actions['start_needs_confirm'],
             'can_complete' => $actions['can_complete'],
             'can_mark_no_show' => $actions['can_mark_no_show'],

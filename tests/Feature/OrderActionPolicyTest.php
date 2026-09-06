@@ -76,4 +76,20 @@ class OrderActionPolicyTest extends TestCase
         $this->assertTrue($policy->for($this->bookingAt('2026-05-05 10:00'))['can_mark_no_show']);
         $this->assertFalse($policy->for($this->bookingAt('2026-05-05 18:00'))['can_mark_no_show']);
     }
+
+    public function test_a_finished_booking_offers_no_start_button(): void
+    {
+        Carbon::setTestNow('2026-05-05 15:00:00');
+        $policy = app(OrderActionPolicy::class);
+
+        $open = $this->bookingAt('2026-05-05 14:00');
+        $done = $this->bookingAt('2026-05-05 10:00');
+        $done->update(['status' => 'completed']);
+
+        $this->assertTrue($policy->for($open)['can_start']);
+        $this->assertFalse($policy->for($done->fresh())['can_start']);
+
+        // can_start_now still answers the narrower question it always did.
+        $this->assertTrue($policy->for($done->fresh())['can_start_now']);
+    }
 }

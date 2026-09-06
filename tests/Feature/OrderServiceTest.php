@@ -48,7 +48,7 @@ class OrderServiceTest extends TestCase
         Queue::assertPushed(SendOrderStartReminderJob::class, function (SendOrderStartReminderJob $job) use ($order) {
             return $job->orderId === $order->id
                 && $job->scheduledAtTimestamp === $order->scheduled_at->getTimestamp()
-                && $job->delay === 900;
+                && $job->delay === 600;
         });
 
         Carbon::setTestNow();
@@ -80,8 +80,7 @@ class OrderServiceTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $master->id,
-            'title' => 'Подтвердите начало процедуры',
-            'message' => 'Пожалуйста, подтвердите, что процедура началась!',
+            'title' => __('orders.start_reminder.title'),
             'action_url' => '/orders/1/start-confirmation',
         ]);
 

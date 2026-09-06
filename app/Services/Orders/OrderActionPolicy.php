@@ -36,6 +36,9 @@ class OrderActionPolicy
 
         return [
             'can_start_now' => $isToday,
+            // can_start_now only answers "is it today"; a finished or cancelled
+            // booking is still today and must not offer a Start button.
+            'can_start' => $isToday && in_array($order->status, ['new', 'confirmed'], true),
             'start_warning' => $startsSoon && $hoursDiff !== null && $hoursDiff > 1,
             'start_needs_confirm' => $this->startNeedsConfirm($order, $now),
             'can_complete' => in_array($order->status, ['in_progress', 'confirmed'], true),

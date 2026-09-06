@@ -332,6 +332,59 @@
             min-width: 0;
         }
 
+        /* Start is not an ordinary action: it puts a clock in the header and the
+           measured duration depends on it being pressed at the right moment. */
+        .calendar-timer-btn,
+        .calendar-stop-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.35rem 0.8rem;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .calendar-timer-btn {
+            border: 1px solid rgba(var(--bs-success-rgb, 40, 199, 111), 0.5);
+            background: rgba(var(--bs-success-rgb, 40, 199, 111), 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .calendar-timer-btn:hover {
+            border-color: rgb(var(--bs-success-rgb, 40, 199, 111));
+            background: rgba(var(--bs-success-rgb, 40, 199, 111), 0.2);
+            color: var(--bs-body-color);
+        }
+
+        .calendar-stop-btn {
+            border: 1px solid rgba(var(--bs-danger-rgb, 255, 62, 29), 0.45);
+            background: rgba(var(--bs-danger-rgb, 255, 62, 29), 0.1);
+            color: var(--bs-body-color);
+        }
+
+        .calendar-stop-btn:hover {
+            border-color: rgb(var(--bs-danger-rgb, 255, 62, 29));
+            background: rgba(var(--bs-danger-rgb, 255, 62, 29), 0.18);
+            color: var(--bs-body-color);
+        }
+
+        .calendar-action-icon {
+            flex: 0 0 auto;
+            width: 0.6rem;
+            height: 0.6rem;
+        }
+
+        .calendar-action-icon--play {
+            background: rgb(var(--bs-success-rgb, 40, 199, 111));
+            clip-path: polygon(0 0, 100% 50%, 0 100%);
+        }
+
+        .calendar-action-icon--stop {
+            background: rgb(var(--bs-danger-rgb, 255, 62, 29));
+            border-radius: 1px;
+        }
+
         .calendar-duration-hint {
             display: flex;
             flex-wrap: wrap;
@@ -1922,7 +1975,8 @@
                 // Start and finish are what produce a measured duration; until now
                 // they lived only on the order page, so almost nobody pressed them.
                 if (order.can_start) {
-                    const startBtn = orderActionButton(order, 'start', orderActionLabels.start, 'calendar-ghost-btn');
+                    const startBtn = orderActionButton(order, 'start', orderActionLabels.start, 'calendar-timer-btn');
+                    startBtn.prepend(actionIcon('play'));
                     // Starting far from the booked time records a duration that never
                     // happened, so that case asks first. Around the appointed minute
                     // a confirmation would only be in the way.
@@ -1935,7 +1989,21 @@
                 }
 
                 if (order.can_complete) {
-                    footer.appendChild(orderActionButton(order, 'complete', orderActionLabels.complete, 'calendar-ghost-btn'));
+                    // The stop square belongs to a timer that is actually running.
+                    // On a booking nobody started, Finish is just bookkeeping.
+                    const running = order.status === 'in_progress';
+                    const completeBtn = orderActionButton(
+                        order,
+                        'complete',
+                        orderActionLabels.complete,
+                        running ? 'calendar-stop-btn' : 'calendar-ghost-btn',
+                    );
+
+                    if (running) {
+                        completeBtn.prepend(actionIcon('stop'));
+                    }
+
+                    footer.appendChild(completeBtn);
                 }
 
                 if (order.can_mark_no_show) {
@@ -1951,6 +2019,16 @@
                 wrapper.appendChild(footer);
 
                 return wrapper;
+            }
+
+            // The same play/stop marks the header timer uses, so the two read as
+            // one control rather than as two unrelated buttons.
+            function actionIcon(kind) {
+                const icon = document.createElement('span');
+                icon.className = 'calendar-action-icon calendar-action-icon--' + kind;
+                icon.setAttribute('aria-hidden', 'true');
+
+                return icon;
             }
 
             function orderActionButton(order, action, label, styleClass) {
@@ -2620,13 +2698,14 @@
                 });
             }
 
-            window.veloriaCalendarRefresh = function () {
+            // Something changed a booking elsewhere — the header timer, most likely.
+            document.addEventListener('veloria:order-changed', function () {
                 calendar.refetchEvents();
 
                 if (selectedDate) {
                     loadDayDetails(selectedDate, { force: true });
                 }
-            };
+            });
 
             updateSelectedDatePreview(new Date().toISOString().slice(0, 10));
         });
