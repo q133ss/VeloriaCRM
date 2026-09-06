@@ -27,392 +27,350 @@
     @include('components.veloria-datetime-picker-styles')
     <style>
         .calendar-page {
-            --calendar-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
-            --calendar-success-soft: rgba(var(--bs-success-rgb, 40, 199, 111), 0.12);
-            --calendar-card-shadow: 0 20px 48px -34px rgba(37, 26, 84, 0.5);
+            --cal-border: rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.42);
+            --cal-accent: rgba(var(--bs-primary-rgb, 255, 0, 252), 1);
+            --cal-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.1);
+            --cal-quiet: rgba(var(--bs-body-color-rgb, 88, 96, 116), 0.045);
+            --cal-radius: 0.65rem;
         }
 
-        .calendar-hero {
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.16), transparent 36%),
-                linear-gradient(135deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.02) 52%, rgba(var(--bs-success-rgb, 40, 199, 111), 0.06));
-            box-shadow: var(--calendar-card-shadow);
+        .calendar-panel {
+            border: 1px solid var(--cal-border);
+            border-radius: var(--cal-radius);
+            background: var(--bs-card-bg);
         }
 
-        .calendar-hero::after {
-            content: '';
-            position: absolute;
-            right: -3rem;
-            bottom: -4rem;
-            width: 12rem;
-            height: 12rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-            filter: blur(8px);
-        }
+        /* --- Toolbar: month, navigation, one primary action --- */
 
-        .calendar-hero__content,
-        .calendar-hero__actions {
-            position: relative;
-            z-index: 1;
-        }
-
-        .calendar-eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.45rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
-            color: var(--bs-body-color);
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .calendar-eyebrow i {
-            color: var(--bs-primary);
-        }
-
-        .calendar-hero__title {
-            font-size: clamp(1.85rem, 2.6vw, 2.65rem);
-            line-height: 1.05;
-            letter-spacing: -0.03em;
-        }
-
-        .calendar-overview {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.9rem;
-        }
-
-        .calendar-overview-card {
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-            border-radius: 1.05rem;
-            padding: 1rem 1.05rem;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.76);
-            backdrop-filter: blur(6px);
-        }
-
-        .calendar-overview-card span {
-            display: block;
-            color: var(--bs-secondary-color);
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.45rem;
-        }
-
-        .calendar-overview-card strong {
-            display: block;
-            font-size: 1rem;
-            line-height: 1.3;
-        }
-
-        .calendar-surface {
-            border: none;
-            border-radius: 1.4rem;
-            background: color-mix(in srgb, var(--bs-card-bg) 92%, transparent);
-            box-shadow: var(--calendar-card-shadow);
-        }
-
-        .calendar-panel-header {
-            padding: 1.15rem 1.25rem 0;
-        }
-
-        .calendar-card-body {
+        .calendar-toolbar {
             display: flex;
-            padding: 0 1.1rem 1.1rem;
-        }
-
-        .calendar-toolbar-note {
-            color: var(--bs-secondary-color);
-            font-size: 0.9rem;
-        }
-
-        .calendar-segmented {
-            display: inline-flex;
             flex-wrap: wrap;
-            gap: 0.25rem;
-            padding: 0.35rem;
-            border: 1px solid var(--bs-border-color);
-            border-radius: 999px;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
         }
 
-        .calendar-segmented .btn {
-            border: none;
-            border-radius: 999px;
-            color: var(--bs-secondary-color);
+        .calendar-toolbar__month {
+            margin: 0;
+            font-size: 1.4rem;
             font-weight: 700;
-            padding-inline: 1rem;
-            box-shadow: none !important;
+            letter-spacing: -0.02em;
         }
 
-        .calendar-segmented .btn.btn-primary {
-            color: #fff;
+        .calendar-toolbar__nav {
+            display: inline-flex;
+            gap: 0.35rem;
         }
 
-        .calendar-soft-btn {
-            border: 1px solid var(--bs-border-color);
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.7);
-            color: var(--bs-body-color);
-        }
-
-        .calendar-soft-btn:hover,
-        .calendar-soft-btn:focus {
-            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.28);
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
-            color: var(--bs-primary);
-        }
-
-        #crm-calendar {
+        .calendar-toolbar__spacer {
             flex: 1 1 auto;
-            min-height: 680px;
-            height: 100%;
         }
 
-        #crm-calendar .fc {
-            height: 100%;
-        }
-
-        #crm-calendar .fc .fc-view-harness {
-            min-height: 600px;
-            height: 100%;
-        }
-
-        #crm-calendar .fc .fc-highlight {
-            background-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
-        }
-
-        #crm-calendar .fc .fc-daygrid-day.fc-day-today {
-            background: linear-gradient(180deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.1), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.03));
-        }
-
-        #crm-calendar .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-            width: 2rem;
-            height: 2rem;
+        .calendar-icon-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
-            color: var(--bs-primary);
-            font-weight: 700;
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            border: 1px solid var(--cal-border);
+            border-radius: 0.5rem;
+            background: transparent;
+            color: var(--bs-body-color);
+            font-size: 1.15rem;
+            line-height: 1;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
         }
 
-        #crm-calendar .fc-theme-standard td,
-        #crm-calendar .fc-theme-standard th {
-            border-color: rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.55);
+        .calendar-icon-btn:hover {
+            background: var(--cal-quiet);
+            color: var(--bs-body-color);
         }
 
-        #crm-calendar .fc .fc-scrollgrid,
-        #crm-calendar .fc-theme-standard .fc-scrollgrid {
-            border-color: rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.55);
-            border-radius: 1rem;
+        .calendar-icon-btn:focus-visible,
+        .calendar-ghost-btn:focus-visible,
+        .calendar-views button:focus-visible {
+            outline: 2px solid var(--cal-accent);
+            outline-offset: 2px;
+        }
+
+        .calendar-ghost-btn {
+            border: 1px solid var(--cal-border);
+            border-radius: 0.5rem;
+            background: transparent;
+            color: var(--bs-body-color);
+            font-weight: 600;
+            padding: 0.4rem 0.85rem;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .calendar-ghost-btn:hover {
+            background: var(--cal-quiet);
+            color: var(--bs-body-color);
+        }
+
+        /* --- View tabs --- */
+
+        .calendar-views {
+            display: inline-flex;
+            gap: 0.15rem;
+            padding: 0.25rem;
+            margin: 0.85rem 0.85rem 0;
+            border-radius: 0.5rem;
+            background: var(--cal-quiet);
+        }
+
+        .calendar-views button {
+            border: none;
+            border-radius: 0.4rem;
+            background: transparent;
+            color: var(--bs-body-color);
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.35rem 0.9rem;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .calendar-views button:hover {
+            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.7);
+        }
+
+        .calendar-views button.is-active {
+            background: var(--bs-card-bg);
+            color: var(--cal-accent);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        /* --- FullCalendar --- */
+
+        #crm-calendar {
+            --fc-today-bg-color: transparent;
+            --fc-highlight-color: var(--cal-accent-soft);
+            --fc-border-color: var(--cal-border);
+            /* FullCalendar hardcodes these to white/grey, which breaks the dark theme. */
+            --fc-page-bg-color: var(--bs-card-bg);
+            --fc-neutral-bg-color: var(--cal-quiet);
+            --fc-list-event-hover-bg-color: var(--cal-quiet);
+            padding: 0.85rem;
+        }
+
+        #crm-calendar td,
+        #crm-calendar th,
+        #crm-calendar .fc-scrollgrid {
+            border-color: var(--cal-border);
+        }
+
+        #crm-calendar .fc-scrollgrid {
+            border-radius: 0.5rem;
             overflow: hidden;
         }
 
-        #crm-calendar .fc .fc-col-header,
-        #crm-calendar .fc .fc-col-header-cell,
-        #crm-calendar .fc .fc-timegrid-axis,
-        #crm-calendar .fc .fc-list-table thead tr {
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
-        }
-
-        #crm-calendar .fc .fc-col-header-cell-cushion,
-        #crm-calendar .fc .fc-timegrid-axis-cushion {
+        #crm-calendar .fc-col-header-cell-cushion,
+        #crm-calendar .fc-timegrid-axis-cushion {
             color: var(--bs-secondary-color);
-            font-size: 0.8rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 600;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            padding-block: 0.75rem;
+            padding-block: 0.6rem;
         }
 
-        #crm-calendar .fc .fc-daygrid-day-frame {
-            min-height: 8rem;
-            padding: 0.35rem;
+        #crm-calendar .fc-daygrid-day-frame {
+            min-height: 5.5rem;
+            padding: 0.3rem;
         }
 
-        #crm-calendar .fc .fc-daygrid-day-top {
-            justify-content: flex-end;
-            padding: 0.15rem 0.2rem 0;
+        /* The dot eats width the client name needs in a ~100px month cell. */
+        #crm-calendar .fc-daygrid-event-dot {
+            display: none;
         }
 
-        #crm-calendar .fc .fc-daygrid-day-number {
+        #crm-calendar .fc-daygrid-day-number {
             color: var(--bs-secondary-color);
             font-weight: 600;
-            padding: 0.2rem;
+            padding: 0.2rem 0.3rem;
         }
 
-        #crm-calendar .fc .fc-daygrid-event,
-        #crm-calendar .fc .fc-timegrid-event {
+        /* Today is a quiet marker; the day you picked is the loud one. */
+        #crm-calendar .fc-daygrid-day.fc-day-today {
+            background: transparent;
+        }
+
+        #crm-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.7rem;
+            height: 1.7rem;
+            padding: 0;
+            border: 1px solid var(--cal-accent);
+            border-radius: 999px;
+            color: var(--cal-accent);
+        }
+
+        #crm-calendar .fc-daygrid-day:has(.fc-highlight),
+        #crm-calendar .fc-timegrid-col:has(.fc-highlight) {
+            box-shadow: inset 0 0 0 2px var(--cal-accent);
+        }
+
+        #crm-calendar .fc-highlight {
+            background: var(--cal-accent-soft);
+        }
+
+        #crm-calendar .fc-daygrid-event,
+        #crm-calendar .fc-timegrid-event {
             border: none;
-            border-radius: 0.85rem;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
+            border-radius: 0.35rem;
+            background: var(--cal-accent-soft);
             color: var(--bs-body-color);
             box-shadow: none;
-            padding: 0.15rem 0.25rem;
+            padding: 0.1rem 0.3rem;
+            font-size: 0.75rem;
         }
 
-        #crm-calendar .fc .fc-daygrid-event:hover,
-        #crm-calendar .fc .fc-timegrid-event:hover {
+        #crm-calendar .fc-daygrid-event:hover,
+        #crm-calendar .fc-timegrid-event:hover {
             background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.18);
         }
 
-        #crm-calendar .fc .fc-event-main {
-            font-weight: 600;
+        #crm-calendar .fc-event-title,
+        #crm-calendar .fc-event-time {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        #crm-calendar .fc .fc-event-time {
-            color: var(--bs-primary);
+        #crm-calendar .fc-event-time {
+            flex: 0 0 auto;
+            color: var(--cal-accent);
             font-weight: 700;
         }
 
-        .calendar-day-card {
+        /* --- Day panel --- */
+
+        .calendar-day {
             position: sticky;
             top: 5.75rem;
+            padding: 1.25rem;
         }
 
-        .calendar-day-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.75rem;
-        }
-
-        .calendar-day-metric {
-            border-radius: 1rem;
-            padding: 0.9rem;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-        }
-
-        .calendar-day-metric span {
-            display: block;
-            color: var(--bs-secondary-color);
-            font-size: 0.74rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .calendar-day-metric strong {
-            display: block;
-            font-size: 1.1rem;
-            line-height: 1.15;
-        }
-
-        .calendar-day-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            border-radius: 999px;
-            padding: 0.45rem 0.8rem;
-            font-size: 0.82rem;
+        .calendar-day__title {
+            font-size: 1.15rem;
             font-weight: 700;
-            background: rgba(var(--bs-secondary-color-rgb, 130, 134, 158), 0.12);
+            margin: 0 0 0.15rem;
+        }
+
+        .calendar-day__summary {
             color: var(--bs-secondary-color);
+            font-size: 0.875rem;
+            margin: 0;
         }
 
-        .calendar-day-status.is-primary {
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.09);
-            color: var(--bs-primary);
+        .calendar-day__block {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--cal-border);
         }
 
-        .calendar-day-status.is-success {
-            background: rgba(var(--bs-success-rgb, 40, 199, 111), 0.12);
-            color: var(--bs-success);
+        .calendar-day__block h3 {
+            display: flex;
+            align-items: baseline;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--bs-secondary-color);
+            margin-bottom: 0.75rem;
         }
 
-        .calendar-section-card {
-            border: 1px solid rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.55);
-            border-radius: 1.1rem;
-            padding: 1rem;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.52);
+        .calendar-notice {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.5rem;
+            border: 1px solid var(--cal-border);
+            border-left: 2px solid var(--bs-secondary-color);
+            border-radius: 0.4rem;
+            padding: 0.7rem 0.85rem;
+            background: var(--cal-quiet);
+            color: var(--bs-secondary-color);
+            font-size: 0.875rem;
+        }
+
+        .calendar-empty {
+            padding: 1.5rem 0;
+            text-align: center;
+            color: var(--bs-secondary-color);
         }
 
         .calendar-slot-pill {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            padding: 0.45rem 0.8rem;
-            border-radius: 999px;
-            background: var(--calendar-success-soft);
-            color: var(--bs-success);
-            font-weight: 700;
-            font-size: 0.82rem;
+            padding: 0.3rem 0.6rem;
+            border: 1px solid var(--cal-border);
+            border-radius: 0.35rem;
+            background: transparent;
+            color: var(--bs-body-color);
+            font-size: 0.85rem;
+            font-variant-numeric: tabular-nums;
         }
 
         .calendar-order-card {
-            border: 1px solid rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.55);
-            border-radius: 1rem;
-            padding: 1rem 1.05rem;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.78);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            border: 1px solid var(--cal-border);
+            border-radius: 0.5rem;
+            padding: 0.85rem;
+            background: transparent;
+            transition: border-color 0.15s ease;
         }
 
         .calendar-order-card:hover {
-            transform: translateY(-1px);
-            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.22);
-            box-shadow: 0 18px 35px -30px rgba(37, 26, 84, 0.58);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
         }
 
         .calendar-order-card .calendar-order-meta {
             color: var(--bs-secondary-color);
-        }
-
-        .calendar-match-card {
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
-            border-radius: 1rem;
-            padding: 1rem;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.04);
-        }
-
-        .calendar-match-reasons span {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            padding: 0.3rem 0.6rem;
-            background: rgba(var(--bs-body-color-rgb, 88, 96, 116), 0.08);
-            color: var(--bs-secondary-color);
-            font-size: 0.74rem;
-            font-weight: 600;
+            font-size: 0.85rem;
         }
 
         .calendar-order-card .calendar-order-services span {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            padding: 0.35rem 0.65rem;
-            border-radius: 999px;
-            background-color: var(--calendar-accent-soft);
-            color: var(--bs-primary-color);
+            gap: 0.3rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            background: var(--cal-quiet);
+            color: var(--bs-body-color);
             font-size: 0.75rem;
-            font-weight: 600;
         }
 
         .calendar-order-card .calendar-order-services span i {
             font-size: 0.85rem;
         }
 
+        .calendar-match-card {
+            border: 1px solid var(--cal-border);
+            border-radius: 0.5rem;
+            padding: 0.85rem;
+        }
+
+        .calendar-match-reasons span {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 0.3rem;
+            padding: 0.2rem 0.45rem;
+            background: var(--cal-quiet);
+            color: var(--bs-secondary-color);
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        /* --- Modals --- */
 
         .calendar-create-modal .modal-content {
-            border: none;
-            border-radius: 1.4rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.75rem;
             overflow: hidden;
-            box-shadow: 0 30px 80px -45px rgba(37, 26, 84, 0.65);
-        }
-
-        .calendar-create-modal .modal-header,
-        .calendar-create-modal .modal-footer {
-            border-color: rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.5);
-        }
-
-        .calendar-create-modal .modal-body {
-            background: color-mix(in srgb, var(--bs-card-bg) 94%, transparent);
         }
 
         .calendar-modal-search-layer {
@@ -428,10 +386,9 @@
             max-height: 260px;
             overflow-y: auto;
             margin: 0;
-            border: 1px solid rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.55);
-            border-radius: 1rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.5rem;
             background: var(--bs-body-bg);
-            box-shadow: 0 20px 40px -30px rgba(37, 26, 84, 0.4);
         }
 
         .calendar-modal-services {
@@ -441,17 +398,14 @@
         }
 
         .calendar-modal-service {
-            border: 1px solid rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.55);
-            border-radius: 1rem;
-            padding: 0.9rem 1rem;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.78);
-            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.9rem;
+            transition: border-color 0.15s ease;
         }
 
         .calendar-modal-service:hover {
-            transform: translateY(-1px);
-            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.2);
-            box-shadow: 0 16px 32px -28px rgba(37, 26, 84, 0.45);
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
         }
 
         .calendar-modal-service input {
@@ -459,71 +413,55 @@
         }
 
         .calendar-modal-summary {
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
-            border-radius: 1rem;
-            padding: 1rem;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.5rem;
+            padding: 0.85rem;
         }
 
-        .calendar-modal-summary strong {
-            font-size: 1.05rem;
-        }
+        /* --- Responsive --- */
 
         @media (max-width: 1199.98px) {
-            .calendar-day-card {
+            .calendar-day {
                 position: static;
             }
         }
 
         @media (max-width: 991.98px) {
-            .calendar-hero,
-            .calendar-surface {
-                border-radius: 1.2rem;
-            }
-
-            .calendar-overview,
-            .calendar-day-summary-grid {
-                grid-template-columns: 1fr;
-            }
-
-            #crm-calendar {
-                min-height: 560px;
-            }
-
-            #crm-calendar .fc .fc-view-harness {
-                min-height: 520px;
-            }
-
-            #crm-calendar .fc .fc-daygrid-day-frame {
-                min-height: 6.5rem;
+            #crm-calendar .fc-daygrid-day-frame {
+                min-height: 5rem;
             }
         }
 
         @media (max-width: 575.98px) {
-            .calendar-hero {
-                padding: 1.15rem;
-            }
-
-            .calendar-panel-header {
-                padding: 1rem 1rem 0;
-            }
-
-            .calendar-card-body {
-                padding: 0 0.75rem 0.75rem;
-            }
-
-            .calendar-segmented {
+            .calendar-toolbar__month {
+                font-size: 1.2rem;
                 width: 100%;
-                justify-content: space-between;
+                order: -1;
             }
 
-            .calendar-segmented .btn {
-                flex: 1 1 calc(50% - 0.25rem);
-                padding-inline: 0.75rem;
+            .calendar-toolbar__spacer {
+                display: none;
+            }
+
+            .calendar-toolbar .btn-primary {
+                width: 100%;
+            }
+
+            /* Week and agenda views are unreadable at 390px — month and day only. */
+            .calendar-views__wide {
+                display: none;
             }
 
             #crm-calendar {
-                min-height: 520px;
+                padding: 0.5rem;
+            }
+
+            #crm-calendar .fc-daygrid-day-frame {
+                min-height: 3.4rem;
+            }
+
+            .calendar-day {
+                padding: 1rem;
             }
         }
     </style>
@@ -531,184 +469,86 @@
 
 @section('content')
     <div class="calendar-page">
-        <section class="calendar-hero mb-4">
-            <div class="row g-4 align-items-center">
-                <div class="col-12 col-xl-7">
-                    <div class="calendar-hero__content">
-                        <div class="calendar-eyebrow mb-3">
-                            <i class="ri ri-sparkling-2-line"></i>
-                            {{ __('calendar.page.title') }}
-                        </div>
-                        <h1 class="calendar-hero__title mb-2">{{ __('calendar.page.title') }}</h1>
-                        <p class="text-muted mb-4 fs-5">{{ __('calendar.page.subtitle') }}</p>
-
-                        <div class="calendar-overview">
-                            <div class="calendar-overview-card">
-                                <span>Период</span>
-                                <strong id="calendar-range-label">-</strong>
-                            </div>
-                            <div class="calendar-overview-card">
-                                <span>Выбранный день</span>
-                                <strong id="calendar-selected-date-label">-</strong>
-                            </div>
-                            <div class="calendar-overview-card">
-                                <span>Записей в периоде</span>
-                                <strong id="calendar-visible-events-count">0</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-xl-5">
-                    <div class="calendar-hero__actions d-flex flex-column gap-3">
-                        <div class="d-flex flex-wrap justify-content-xl-end gap-2">
-                            <button type="button" class="btn calendar-soft-btn" data-calendar-nav="prev" aria-label="{{ __('calendar.actions.previous') }}">
-                                <i class="ri ri-arrow-left-s-line"></i>
-                            </button>
-                            <button type="button" class="btn calendar-soft-btn" data-calendar-nav="next" aria-label="{{ __('calendar.actions.next') }}">
-                                <i class="ri ri-arrow-right-s-line"></i>
-                            </button>
-                            <button type="button" class="btn calendar-soft-btn" id="calendar-refresh" aria-label="{{ __('calendar.actions.refresh') }}">
-                                <i class="ri ri-refresh-line"></i>
-                            </button>
-                            <button type="button" class="btn btn-primary" id="calendar-today">
-                                <i class="ri ri-calendar-event-line me-1"></i>
-                                {{ __('calendar.actions.today') }}
-                            </button>
-                        </div>
-                        <div class="d-flex flex-wrap justify-content-xl-end gap-2">
-                            <span class="badge rounded-pill bg-label-primary px-3 py-2" id="calendar-active-view-label">{{ __('calendar.views.month') }}</span>
-                            <span class="badge rounded-pill bg-label-secondary px-3 py-2">Нажмите на день, чтобы увидеть детали</span>
-                        </div>
-                    </div>
-                </div>
+        <div class="calendar-toolbar">
+            <h1 class="calendar-toolbar__month" id="calendar-range-label">-</h1>
+            <div class="calendar-toolbar__nav">
+                <button type="button" class="calendar-icon-btn" data-calendar-nav="prev" aria-label="{{ __('calendar.actions.previous') }}">
+                    <i class="ri ri-arrow-left-s-line"></i>
+                </button>
+                <button type="button" class="calendar-icon-btn" data-calendar-nav="next" aria-label="{{ __('calendar.actions.next') }}">
+                    <i class="ri ri-arrow-right-s-line"></i>
+                </button>
             </div>
-        </section>
+            <button type="button" class="btn calendar-ghost-btn" id="calendar-today">{{ __('calendar.actions.today') }}</button>
+            <div class="calendar-toolbar__spacer"></div>
+            <button type="button" class="btn btn-primary" id="calendar-create-order" disabled>
+                <i class="ri ri-add-line me-1"></i>{{ __('calendar.actions.create_order') }}
+            </button>
+        </div>
 
         <div id="calendar-events-error" class="alert alert-danger d-none mb-4" role="alert">
             {{ __('calendar.alerts.events_load_failed') }}
         </div>
 
-        <div class="row g-4 align-items-start">
+        <div class="row g-3 align-items-start">
             <div class="col-12 col-xl-8">
-                <div class="card calendar-surface h-100">
-                    <div class="calendar-panel-header d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-                        <div class="calendar-segmented mb-2" role="group" aria-label="{{ __('calendar.views.month') }}">
-                            <button type="button" class="btn btn-outline-secondary" data-calendar-view="dayGridMonth">
-                                {{ __('calendar.views.month') }}
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" data-calendar-view="timeGridWeek">
-                                {{ __('calendar.views.week') }}
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" data-calendar-view="timeGridDay">
-                                {{ __('calendar.views.day') }}
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" data-calendar-view="listWeek">
-                                {{ __('calendar.views.list') }}
-                            </button>
-                        </div>
+                <div class="calendar-panel">
+                    <div class="calendar-views" role="group" aria-label="{{ __('calendar.page.title') }}">
+                        <button type="button" data-calendar-view="dayGridMonth">{{ __('calendar.views.month') }}</button>
+                        <button type="button" class="calendar-views__wide" data-calendar-view="timeGridWeek">{{ __('calendar.views.week') }}</button>
+                        <button type="button" data-calendar-view="timeGridDay">{{ __('calendar.views.day') }}</button>
+                        <button type="button" class="calendar-views__wide" data-calendar-view="listWeek">{{ __('calendar.views.list') }}</button>
                     </div>
-                    <div class="calendar-card-body">
-                        <div id="crm-calendar"></div>
-                    </div>
+                    <div id="crm-calendar"></div>
                 </div>
             </div>
 
             <div class="col-12 col-xl-4">
-                <div class="card calendar-surface calendar-day-card">
-                    <div class="card-body p-4">
-                        <div class="d-flex flex-column gap-3">
-                            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
-                                <div>
-                                    <div class="text-uppercase text-muted small fw-semibold mb-2">{{ __('calendar.day.panel_title') }}</div>
-                                    <h4 class="mb-1" id="calendar-day-title">-</h4>
-                                    <p class="text-muted mb-0" id="calendar-day-summary">{{ $calendarDayTranslations['subtitle']['zero'] }}</p>
-                                </div>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <button type="button" class="btn btn-outline-primary" id="calendar-open-waitlist" disabled>
-                                        <i class="ri ri-timer-flash-line me-1"></i>
-                                        Умный waitlist
-                                    </button>
-                                    <button type="button" class="btn btn-primary" id="calendar-create-order" disabled>
-                                        <i class="ri ri-add-line me-1"></i>
-                                        {{ __('calendar.actions.create_order') }}
-                                    </button>
-                                </div>
-                            </div>
+                <aside class="calendar-panel calendar-day">
+                    <h2 class="calendar-day__title" id="calendar-day-title">-</h2>
+                    <p class="calendar-day__summary mb-3" id="calendar-day-summary">{{ $calendarDayTranslations['subtitle']['zero'] }}</p>
 
-                            <div class="calendar-day-summary-grid">
-                                <div class="calendar-day-metric">
-                                    <span>Записи</span>
-                                    <strong id="calendar-day-orders-count">0</strong>
-                                </div>
-                                <div class="calendar-day-metric">
-                                    <span>Свободно</span>
-                                    <strong id="calendar-day-slots-count">0</strong>
-                                </div>
-                                <div class="calendar-day-metric">
-                                    <span>Статус</span>
-                                    <strong id="calendar-day-status-text">-</strong>
-                                </div>
-                            </div>
-
-                            <div class="calendar-day-status" id="calendar-day-status-badge">
-                                <i class="ri ri-time-line"></i>
-                                <span id="calendar-day-status-label">Выберите день в календаре</span>
-                            </div>
-
-                            <div id="calendar-day-loading" class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">{{ $calendarDayTranslations['loading'] }}</span>
-                                </div>
-                            </div>
-                            <div id="calendar-day-error" class="alert alert-danger d-none mb-0" role="alert">
-                                {{ __('calendar.alerts.day_load_failed') }}
-                            </div>
-                            <div id="calendar-day-settings" class="alert alert-warning d-none mb-0" role="alert"></div>
-                            <div id="calendar-day-non-working" class="alert alert-info d-none mb-0" role="alert">
-                                <div class="fw-semibold mb-1">{{ __('calendar.day.non_working_day') }}</div>
-                                <div class="mb-0">{{ __('calendar.day.non_working_day_description') }}</div>
-                            </div>
-
-                            <div id="calendar-day-content" class="d-none">
-                                <div class="calendar-section-card mb-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <h6 class="mb-0">{{ __('calendar.day.free_slots_title') }}</h6>
-                                        <span class="badge bg-label-primary" id="calendar-day-slots-badge">0</span>
-                                    </div>
-                                    <p class="text-muted small mb-3" id="calendar-day-slots-hint">{{ __('calendar.day.free_slots_hint') }}</p>
-                                    <div id="calendar-day-slots" class="d-flex flex-wrap gap-2"></div>
-                                    <div id="calendar-day-slots-empty" class="text-muted small d-none">
-                                        {{ __('calendar.day.free_slots_empty') }}
-                                    </div>
-                                </div>
-
-                                <div class="calendar-section-card">
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <h6 class="mb-0">{{ __('calendar.day.orders_title') }}</h6>
-                                        <span class="badge bg-label-secondary" id="calendar-day-orders-badge">0</span>
-                                    </div>
-                                    <div id="calendar-day-orders" class="d-flex flex-column gap-3"></div>
-                                    <div id="calendar-day-orders-empty" class="text-muted small d-none">
-                                        {{ __('calendar.day.orders_empty') }}
-                                    </div>
-                                </div>
-
-                                <div class="calendar-section-card mt-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <h6 class="mb-0">Умный лист ожидания</h6>
-                                        <span class="badge bg-label-warning" id="calendar-day-waitlist-badge">0</span>
-                                    </div>
-                                    <p class="text-muted small mb-3">Клиенты, которым выбранный день подходит лучше всего.</p>
-                                    <div id="calendar-day-waitlist" class="d-flex flex-column gap-3"></div>
-                                    <div id="calendar-day-waitlist-empty" class="text-muted small d-none">
-                                        Пока нет подходящих клиентов в листе ожидания.
-                                    </div>
-                                </div>
-                            </div>
+                    <div id="calendar-day-loading" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">{{ $calendarDayTranslations['loading'] }}</span>
                         </div>
                     </div>
-                </div>
+
+                    <div id="calendar-day-error" class="alert alert-danger d-none mb-0" role="alert">
+                        {{ __('calendar.alerts.day_load_failed') }}
+                    </div>
+
+                    <div id="calendar-day-notice" class="calendar-notice d-none mb-3">
+                        <span id="calendar-day-notice-text"></span>
+                        <a href="{{ url('/settings') }}" id="calendar-day-notice-action" class="fw-semibold d-none">{{ __('calendar.actions.setup_schedule') }}</a>
+                    </div>
+
+                    <div id="calendar-day-content" class="d-none">
+                        <div id="calendar-day-orders" class="calendar-day__orders d-flex flex-column gap-2"></div>
+
+                        <div id="calendar-day-orders-empty" class="calendar-empty d-none">
+                            <button type="button" class="btn btn-sm calendar-ghost-btn" data-calendar-create>
+                                {{ __('calendar.actions.create_order') }}
+                            </button>
+                        </div>
+
+                        <section id="calendar-day-slots-section" class="calendar-day__block d-none">
+                            <h3>{{ __('calendar.day.free_slots_title') }} <span id="calendar-day-slots-badge" class="fw-normal"></span></h3>
+                            <div id="calendar-day-slots" class="d-flex flex-wrap gap-2"></div>
+                        </section>
+
+                        <section id="calendar-day-waitlist-section" class="calendar-day__block d-none">
+                            <h3>{{ __('calendar.day.waitlist_title') }} <span id="calendar-day-waitlist-badge" class="fw-normal">0</span></h3>
+                            <div id="calendar-day-waitlist" class="d-flex flex-column gap-2"></div>
+                        </section>
+
+                        <div class="calendar-day__block">
+                            <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" id="calendar-open-waitlist" disabled>
+                                {{ __('calendar.actions.add_to_waitlist') }}
+                            </button>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </div>
@@ -719,7 +559,7 @@
                     <div class="modal-header px-4 py-3">
                         <div>
                             <h5 class="modal-title mb-1">Новая запись</h5>
-                            <p class="text-muted mb-0 small">Создайте запись, не покидая календарь.</p>
+                            <p class="text-muted mb-0 small">Календарь остаётся открытым — заполните и вернётесь на место.</p>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -858,8 +698,8 @@
                 <div class="modal-content">
                     <div class="modal-header px-4 py-3">
                         <div>
-                            <h5 class="modal-title mb-1">Умный лист ожидания</h5>
-                            <p class="text-muted mb-0 small">Добавьте клиента, чтобы быстро закрывать отмены и свободные окна.</p>
+                            <h5 class="modal-title mb-1">Лист ожидания</h5>
+                            <p class="text-muted mb-0 small">Если день занят, запишите клиента сюда — предложим ему освободившееся время.</p>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -986,23 +826,17 @@
             const dayLoadingEl = document.getElementById('calendar-day-loading');
             const dayErrorEl = document.getElementById('calendar-day-error');
             const dayContentEl = document.getElementById('calendar-day-content');
-            const daySettingsEl = document.getElementById('calendar-day-settings');
-            const dayNonWorkingEl = document.getElementById('calendar-day-non-working');
-            const daySlotsCountEl = document.getElementById('calendar-day-slots-count');
+            const dayNoticeEl = document.getElementById('calendar-day-notice');
+            const dayNoticeTextEl = document.getElementById('calendar-day-notice-text');
+            const dayNoticeActionEl = document.getElementById('calendar-day-notice-action');
+            const daySlotsSectionEl = document.getElementById('calendar-day-slots-section');
             const daySlotsBadgeEl = document.getElementById('calendar-day-slots-badge');
             const daySlotsEl = document.getElementById('calendar-day-slots');
-            const daySlotsHintEl = document.getElementById('calendar-day-slots-hint');
-            const daySlotsEmptyEl = document.getElementById('calendar-day-slots-empty');
             const dayOrdersEl = document.getElementById('calendar-day-orders');
             const dayOrdersEmptyEl = document.getElementById('calendar-day-orders-empty');
-            const dayOrdersCountEl = document.getElementById('calendar-day-orders-count');
-            const dayOrdersBadgeEl = document.getElementById('calendar-day-orders-badge');
+            const dayWaitlistSectionEl = document.getElementById('calendar-day-waitlist-section');
             const dayWaitlistEl = document.getElementById('calendar-day-waitlist');
-            const dayWaitlistEmptyEl = document.getElementById('calendar-day-waitlist-empty');
             const dayWaitlistBadgeEl = document.getElementById('calendar-day-waitlist-badge');
-            const dayStatusTextEl = document.getElementById('calendar-day-status-text');
-            const dayStatusBadgeEl = document.getElementById('calendar-day-status-badge');
-            const dayStatusLabelEl = document.getElementById('calendar-day-status-label');
             const createOrderBtn = document.getElementById('calendar-create-order');
             const openWaitlistBtn = document.getElementById('calendar-open-waitlist');
             const createOrderModalEl = document.getElementById('calendar-create-modal');
@@ -1071,15 +905,31 @@
                 activeViewLabelEl.textContent = viewLabel(viewName);
             }
 
+            // Month/agenda size to their content; the hour grids would otherwise render
+            // all 24 hours as one 1200px-tall page section instead of scrolling.
+            let viewSizing = null;
+            function applyViewSizing(viewName) {
+                const timed = viewName === 'timeGridWeek' || viewName === 'timeGridDay';
+                const mode = timed ? 'timed' : 'auto';
+                if (mode === viewSizing || typeof calendar === 'undefined') return;
+                viewSizing = mode;
+                calendar.setOption('expandRows', timed);
+                calendar.setOption('height', timed ? 700 : 'auto');
+                if (timed) {
+                    // Resizing resets the scroller, so land on working hours, not midnight.
+                    requestAnimationFrame(function () { calendar.scrollToTime('08:00:00'); });
+                }
+            }
+
             function setActiveViewButton(viewName) {
                 viewButtons.forEach(function (btn) {
                     const matches = btn.getAttribute('data-calendar-view') === viewName;
-                    btn.classList.toggle('btn-primary', matches);
-                    btn.classList.toggle('text-white', matches);
-                    btn.classList.toggle('btn-outline-secondary', !matches);
+                    btn.classList.toggle('is-active', matches);
+                    btn.setAttribute('aria-pressed', matches ? 'true' : 'false');
                 });
 
                 updateActiveViewLabel(viewName);
+                applyViewSizing(viewName);
             }
 
             function getCookie(name) {
@@ -1579,7 +1429,7 @@
                 });
 
                 if (!response.ok) {
-                    showWaitlistAlert('danger', 'Не удалось загрузить данные для waitlist.');
+                    showWaitlistAlert('danger', 'Не удалось загрузить данные листа ожидания.');
                     return;
                 }
 
@@ -1624,7 +1474,7 @@
                     dayWaitlistBadgeEl.textContent = String(items.length);
                 }
 
-                toggle(dayWaitlistEmptyEl, items.length === 0);
+                toggle(dayWaitlistSectionEl, items.length > 0);
 
                 items.forEach(function (match) {
                     const card = document.createElement('div');
@@ -1640,7 +1490,6 @@
                                 <div class="small text-muted">${formatCreatePhone(match.client && match.client.phone ? match.client.phone : '') || 'Без телефона'}</div>
                                 <div class="small mt-2">${serviceName}</div>
                             </div>
-                            <span class="badge bg-label-primary">Score ${match.match_score || 0}</span>
                         </div>
                     `;
 
@@ -1742,32 +1591,22 @@
             }
 
 
-            function updateDayStatus(state, label) {
-                if (dayStatusTextEl) {
-                    dayStatusTextEl.textContent = label || '-';
+            // A single notice line. The old panel rendered the same message in three
+            // places at once (metric, pill and alert), so it is deliberately one node now.
+            function setDayNotice(text, withAction) {
+                if (!dayNoticeEl) return;
+                if (dayNoticeTextEl) {
+                    dayNoticeTextEl.textContent = text || '';
                 }
-
-                if (dayStatusLabelEl) {
-                    dayStatusLabelEl.textContent = label || 'Выберите день в календаре';
-                }
-
-                if (dayStatusBadgeEl) {
-                    dayStatusBadgeEl.classList.remove('is-primary', 'is-success');
-                    if (state === 'primary') {
-                        dayStatusBadgeEl.classList.add('is-primary');
-                    } else if (state === 'success') {
-                        dayStatusBadgeEl.classList.add('is-success');
-                    }
-                }
+                toggle(dayNoticeActionEl, Boolean(text) && Boolean(withAction));
+                toggle(dayNoticeEl, Boolean(text));
             }
 
             function setDayLoading(isLoading) {
                 toggle(dayLoadingEl, isLoading);
                 toggle(dayContentEl, !isLoading);
                 if (isLoading) {
-                    toggle(daySettingsEl, false);
-                    toggle(dayNonWorkingEl, false);
-                    updateDayStatus('primary', translations.day.loading || 'Загружаем данные дня...');
+                    setDayNotice('', false);
                 }
             }
 
@@ -1776,9 +1615,7 @@
                 if (hasError) {
                     setDayLoading(false);
                     toggle(dayContentEl, false);
-                    toggle(daySettingsEl, false);
-                    toggle(dayNonWorkingEl, false);
-                    updateDayStatus(null, translations.alerts.day_load_failed || 'Не удалось получить данные по дню.');
+                    setDayNotice('', false);
                     if (daySummaryEl && translations.alerts && translations.alerts.day_load_failed) {
                         daySummaryEl.textContent = translations.alerts.day_load_failed;
                     }
@@ -1915,32 +1752,13 @@
                 }
 
                 const settingsNotice = meta && meta.settings_notice ? meta.settings_notice : null;
-                if (daySettingsEl) {
-                    daySettingsEl.textContent = settingsNotice || '';
-                    toggle(daySettingsEl, Boolean(settingsNotice));
-                }
 
-                if (daySlotsHintEl) {
-                    toggle(daySlotsHintEl, !settingsNotice);
-                }
-
-                const slotsText = settingsNotice ? '-' : String(availableSlots.length);
-                if (daySlotsCountEl) {
-                    daySlotsCountEl.textContent = slotsText;
-                }
                 if (daySlotsBadgeEl) {
-                    daySlotsBadgeEl.textContent = slotsText;
+                    daySlotsBadgeEl.textContent = availableSlots.length ? String(availableSlots.length) : '';
                 }
 
-                if (dayOrdersCountEl) {
-                    dayOrdersCountEl.textContent = String(orders.length);
-                }
-                if (dayOrdersBadgeEl) {
-                    dayOrdersBadgeEl.textContent = String(orders.length);
-                }
-
-                toggle(daySlotsEmptyEl, !settingsNotice && availableSlots.length === 0);
-                toggle(dayNonWorkingEl, payload.is_working_day === false);
+                // Free time only makes sense once a schedule exists and something is left.
+                toggle(daySlotsSectionEl, !settingsNotice && availableSlots.length > 0);
 
                 dayOrdersEl.innerHTML = '';
                 if (orders.length) {
@@ -1951,13 +1769,13 @@
                 toggle(dayOrdersEmptyEl, orders.length === 0);
 
                 if (settingsNotice) {
-                    updateDayStatus('primary', settingsNotice);
-                } else if (payload.is_working_day === false) {
-                    updateDayStatus(null, translations.day.non_working_day || 'Выходной день');
-                } else if (orders.length > 0) {
-                    updateDayStatus('success', pluralize(translations.day.subtitle, orders.length));
+                    setDayNotice(settingsNotice, true);
+                } else if (payload.is_working_day === false && orders.length === 0) {
+                    // is_working_day is derived from the schedule alone, so a booked day can
+                    // still come back false. Never call a day with bookings a day off.
+                    setDayNotice(translations.day.non_working_day_description || '', false);
                 } else {
-                    updateDayStatus('primary', translations.day.free_slots_title || 'Свободные слоты');
+                    setDayNotice('', false);
                 }
 
                 loadWaitlistMatches(dateStr, availableSlots[0] || null);
@@ -2010,9 +1828,10 @@
                 firstDay: 1,
                 selectable: true,
                 selectMirror: true,
-                expandRows: true,
+                expandRows: false,
                 dayMaxEvents: 3,
-                height: '100%',
+                height: 'auto',
+                scrollTime: '08:00:00',
                 allDayText: allDayText,
                 buttonText: buttonText,
                 noEventsContent: function () {
@@ -2058,7 +1877,8 @@
                 },
                 datesSet: function () {
                     if (rangeLabelEl) {
-                        rangeLabelEl.textContent = calendar.view.title;
+                        const title = calendar.view.title || '';
+                        rangeLabelEl.textContent = title.charAt(0).toUpperCase() + title.slice(1);
                     }
                     setActiveViewButton(calendar.view.type);
                 },
@@ -2084,6 +1904,18 @@
                     }
                     if (parts.length) {
                         info.el.setAttribute('title', parts.join(' • '));
+                    }
+
+                    // A month cell is ~100px wide: "Ирина Кравцова" truncates to "Ири…".
+                    // Show the first name only; the tooltip above keeps the full record.
+                    if (info.view.type === 'dayGridMonth') {
+                        const titleEl = info.el.querySelector('.fc-event-title');
+                        if (titleEl) {
+                            const firstName = titleEl.textContent.trim().split(/\s+/)[0];
+                            if (firstName) {
+                                titleEl.textContent = firstName;
+                            }
+                        }
                     }
                 }
             });
@@ -2284,6 +2116,13 @@
                 });
             }
 
+            document.querySelectorAll('[data-calendar-create]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    if (!selectedDate) return;
+                    openCreateOrderModal(selectedDate);
+                });
+            });
+
             if (openWaitlistBtn) {
                 openWaitlistBtn.addEventListener('click', function () {
                     const date = openWaitlistBtn.dataset.date;
@@ -2327,7 +2166,7 @@
                     });
 
                     if (!response.ok) {
-                        showWaitlistAlert('danger', (result.error && result.error.message) || 'Не удалось добавить клиента в waitlist.');
+                        showWaitlistAlert('danger', (result.error && result.error.message) || 'Не удалось добавить клиента в лист ожидания.');
                         if (waitlistSubmitEl) {
                             waitlistSubmitEl.disabled = false;
                         }
@@ -2338,7 +2177,7 @@
                         waitlistModal.hide();
                     }
 
-                    showPageFeedback('success', result.message || 'Клиент добавлен в waitlist.');
+                    showPageFeedback('success', result.message || 'Клиент добавлен в лист ожидания.');
                     if (selectedDate) {
                         loadWaitlistMatches(selectedDate, lastDayAvailableSlots[0] || null);
                     }
@@ -2350,7 +2189,6 @@
             }
 
             updateSelectedDatePreview(new Date().toISOString().slice(0, 10));
-            updateDayStatus(null, 'Выберите день в календаре');
         });
     </script>
 @endsection

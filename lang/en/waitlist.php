@@ -2,7 +2,7 @@
 
 return [
     'messages' => [
-        'created' => 'The client was added to the smart waitlist.',
+        'created' => 'The client was added to the waiting list.',
         'updated' => 'The waitlist entry was updated.',
         'deleted' => 'The waitlist entry was removed.',
     ],
