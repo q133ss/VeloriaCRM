@@ -58,6 +58,8 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/settings', [SettingController::class, 'update']);
         Route::get('/settings/integrations', [SettingController::class, 'integrations']);
         Route::patch('/settings/integrations', [SettingController::class, 'updateIntegrations']);
+        Route::post('/settings/integrations/{provider}/check', [SettingController::class, 'checkIntegration']);
+        Route::delete('/settings/integrations/{provider}', [SettingController::class, 'disconnectIntegration']);
         Route::post('/user/avatar', [UserController::class, 'updateAvatar']);
         Route::delete('/user/avatar', [UserController::class, 'deleteAvatar']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);

@@ -7,6 +7,8 @@ use App\Http\Requests\UpdateIntegrationsRequest;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
 use App\Services\AllergyReminderService;
+use App\Services\Integrations\IntegrationCatalog;
+use App\Services\Integrations\IntegrationChecker;
 use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,6 +20,7 @@ class SettingController extends Controller
     public function __construct(
         private readonly AllergyReminderService $allergyReminderService,
         private readonly ScheduleService $scheduleService,
+        private readonly IntegrationChecker $integrationChecker,
     ) {
     }
 
@@ -165,35 +168,132 @@ class SettingController extends Controller
         ]);
     }
 
+    /**
+     * Secrets are never sent back to the browser: the page used to refill the
+     * token, the API keys and the secret key into visible text inputs, while
+     * promising in its own header that they are not shown to anyone.
+     */
     protected function integrationPayload(?Setting $settings): array
     {
-        return [
-            'smsaero' => [
-                'email' => $settings?->smsaero_email,
-                'api_key' => $settings?->smsaero_api_key,
-            ],
-            'smtp' => [
-                'host' => $settings?->smtp_host,
-                'port' => $settings?->smtp_port,
-                'username' => $settings?->smtp_username,
-                'password' => $settings?->smtp_password,
-                'encryption' => $settings?->smtp_encryption,
-                'from_address' => $settings?->smtp_from_address,
-                'from_name' => $settings?->smtp_from_name,
-            ],
-            'whatsapp' => [
-                'api_key' => $settings?->whatsapp_api_key,
-                'sender' => $settings?->whatsapp_sender,
-            ],
-            'telegram' => [
-                'bot_token' => $settings?->telegram_bot_token,
-                'sender' => $settings?->telegram_sender,
-            ],
-            'yookassa' => [
-                'shop_id' => $settings?->yookassa_shop_id,
-                'secret_key' => $settings?->yookassa_secret_key,
-            ],
+        $payload = [];
+
+        foreach (IntegrationCatalog::providers() as $provider) {
+            $values = IntegrationCatalog::values($settings, $provider);
+            $fields = [];
+
+            foreach (IntegrationCatalog::fields($provider) as $field => $definition) {
+                $secret = (bool) ($definition['secret'] ?? false);
+
+                $fields[$field] = [
+                    'value' => $secret ? null : $values[$field],
+                    'filled' => $values[$field] !== null,
+                    'secret' => $secret,
+                    'required' => (bool) ($definition['required'] ?? false),
+                    'preview' => $secret ? IntegrationCatalog::preview($values[$field]) : null,
+                ];
+            }
+
+            $payload[$provider] = [
+                'fields' => $fields,
+                'status' => $this->integrationStatus($settings, $provider),
+            ];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * «Подключено» used to mean «the fields are not empty», so the word
+     * «ляляля» in a token field produced a green badge. It now means that the
+     * service answered, and it stops meaning it the moment a field changes.
+     *
+     * @return array{state: string, missing: array<int, string>, checked_at: ?string, message: ?string}
+     */
+    protected function integrationStatus(?Setting $settings, string $provider): array
+    {
+        $missing = IntegrationCatalog::missing($settings, $provider);
+
+        $status = [
+            'state' => 'empty',
+            'missing' => $missing,
+            'checked_at' => null,
+            'message' => null,
         ];
+
+        if (! IntegrationCatalog::hasAnyValue($settings, $provider)) {
+            return $status;
+        }
+
+        if ($missing !== []) {
+            $status['state'] = 'partial';
+
+            return $status;
+        }
+
+        $check = ($settings?->integration_checks ?? [])[$provider] ?? null;
+        $status['state'] = 'filled';
+
+        if (! is_array($check) || ($check['fingerprint'] ?? null) !== IntegrationCatalog::fingerprint($settings, $provider)) {
+            return $status;
+        }
+
+        $status['state'] = ($check['ok'] ?? false) ? 'verified' : 'failed';
+        $status['checked_at'] = $check['checked_at'] ?? null;
+        $status['message'] = $check['message'] ?? null;
+
+        return $status;
+    }
+
+    /**
+     * Asks the service itself and remembers the answer.
+     */
+    public function checkIntegration(Request $request, string $provider)
+    {
+        abort_unless(IntegrationCatalog::has($provider), 404);
+
+        $settings = Setting::firstOrNew(['user_id' => $request->user()->id]);
+        $result = $this->integrationChecker->check($settings, $provider);
+
+        $checks = $settings->integration_checks ?? [];
+        $checks[$provider] = [
+            'ok' => $result['ok'],
+            'message' => $result['message'],
+            'checked_at' => Carbon::now()->toIso8601String(),
+            'fingerprint' => IntegrationCatalog::fingerprint($settings, $provider),
+        ];
+
+        $settings->integration_checks = $checks;
+        $settings->save();
+
+        return response()->json([
+            'result' => $result,
+            'integrations' => $this->integrationPayload($settings),
+        ]);
+    }
+
+    /**
+     * Turning a channel off is an action of its own: it used to be «clear
+     * every field by hand and press save», with nothing asking whether that
+     * was meant.
+     */
+    public function disconnectIntegration(Request $request, string $provider)
+    {
+        abort_unless(IntegrationCatalog::has($provider), 404);
+
+        $settings = Setting::firstOrNew(['user_id' => $request->user()->id]);
+
+        foreach (IntegrationCatalog::columns($provider) as $column) {
+            $settings->{$column} = null;
+        }
+
+        $checks = $settings->integration_checks ?? [];
+        unset($checks[$provider]);
+        $settings->integration_checks = $checks;
+        $settings->save();
+
+        return response()->json([
+            'integrations' => $this->integrationPayload($settings),
+        ]);
     }
 
     protected function integrationAttributes(array $data): array
