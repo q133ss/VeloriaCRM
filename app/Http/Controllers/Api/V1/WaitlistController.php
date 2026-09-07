@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class WaitlistController extends Controller
@@ -59,8 +60,13 @@ class WaitlistController extends Controller
         $clients = Client::query()->where('user_id', $masterId);
         if ($query !== '') {
             $digits = preg_replace('/[^0-9]+/', '', $query);
-            $clients->where(function ($builder) use ($query, $digits) {
+            // `like` is case sensitive on Postgres and a name is typed lowercase
+            // as often as not, so «марина» has to reach «Марина».
+            $capitalised = Str::ucfirst($query);
+
+            $clients->where(function ($builder) use ($query, $capitalised, $digits) {
                 $builder->where('name', 'like', '%' . $query . '%')
+                    ->orWhere('name', 'like', '%' . $capitalised . '%')
                     ->orWhere('phone', 'like', '%' . $query . '%');
 
                 if ($digits !== '') {

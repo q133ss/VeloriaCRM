@@ -572,6 +572,39 @@
             font-size: 0.85rem;
         }
 
+        .calendar-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.75rem;
+        }
+
+        .calendar-chip {
+            padding: 0.35rem 0.75rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 2rem;
+            background: transparent;
+            color: var(--bs-body-color);
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
+
+        .calendar-chip:hover {
+            border-color: var(--bs-primary);
+        }
+
+        .calendar-chip.is-active {
+            border-color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb), 0.12);
+            color: var(--bs-primary);
+            font-weight: 600;
+        }
+
+        .calendar-modal-service.is-chosen {
+            border-color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb), 0.08);
+        }
+
         .calendar-create-footer {
             gap: 0.75rem;
         }
@@ -991,70 +1024,140 @@
                     <form id="calendar-waitlist-form" novalidate>
                         <div class="modal-body p-4">
                             <div id="calendar-waitlist-alerts" class="mb-3"></div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
+                            <input type="hidden" id="calendar-waitlist-client-id" />
+                            <input type="hidden" id="calendar-waitlist-service" />
+                            <input type="hidden" id="calendar-waitlist-flexibility" value="0" />
+                            <input type="hidden" id="calendar-waitlist-priority" value="0" />
+
+                            <section class="calendar-step">
+                                <h6 class="calendar-step__title"><span class="calendar-step__num">1</span>Кто</h6>
+
+                                <div class="calendar-modal-search-layer">
                                     <div class="form-floating form-floating-outline">
-                                        <input type="text" class="form-control" id="calendar-waitlist-client-name" placeholder="Имя" />
-                                        <label for="calendar-waitlist-client-name">Имя клиентки</label>
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            id="calendar-waitlist-client-search"
+                                            placeholder="Анна или +7..."
+                                            autocomplete="off"
+                                        />
+                                        <label for="calendar-waitlist-client-search">Имя или телефон</label>
+                                    </div>
+                                    <div id="calendar-waitlist-client-results" class="calendar-modal-results list-group d-none"></div>
+                                </div>
+
+                                <div id="calendar-waitlist-selected-client" class="calendar-chosen-client d-none"></div>
+
+                                <div id="calendar-waitlist-new-client" class="row g-3 mt-0 d-none">
+                                    <div class="col-md-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="text" class="form-control" id="calendar-waitlist-client-phone" placeholder="+7(999)999-99-99" data-phone-mask />
+                                            <label for="calendar-waitlist-client-phone">Телефон</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="text" class="form-control" id="calendar-waitlist-client-name" placeholder="Имя клиентки" />
+                                            <label for="calendar-waitlist-client-name">Имя клиентки</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="text" class="form-control" id="calendar-waitlist-client-phone" placeholder="+7..." data-phone-mask required />
-                                        <label for="calendar-waitlist-client-phone">Телефон</label>
+                            </section>
+
+                            <section class="calendar-step">
+                                <h6 class="calendar-step__title"><span class="calendar-step__num">2</span>На что</h6>
+                                <div id="calendar-waitlist-services" class="calendar-modal-services d-flex flex-column gap-2">
+                                    <p class="text-muted mb-0">Загрузка услуг...</p>
+                                </div>
+                            </section>
+
+                            <section class="calendar-step">
+                                <h6 class="calendar-step__title"><span class="calendar-step__num">3</span>Когда</h6>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="date" class="form-control" id="calendar-waitlist-date" />
+                                            <label for="calendar-waitlist-date">Нужный день</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="email" class="form-control" id="calendar-waitlist-client-email" placeholder="email@example.com" />
-                                        <label for="calendar-waitlist-client-email">Email, если есть</label>
+
+                                {{-- «Гибкость по дням» and «Ручной приоритет» were the column
+                                     names flexibility_days and priority_manual shown to a person
+                                     as number spinners. She picks how she actually thinks; the
+                                     numbers are written into the hidden fields above. --}}
+                                <div class="calendar-chip-row" data-waitlist-flex>
+                                    <button type="button" class="calendar-chip is-active" data-flex="0">Только этот день</button>
+                                    <button type="button" class="calendar-chip" data-flex="3">± 3 дня</button>
+                                    <button type="button" class="calendar-chip" data-flex="7">± неделя</button>
+                                </div>
+
+                                <div class="calendar-chip-row mt-2" data-waitlist-window>
+                                    <button type="button" class="calendar-chip is-active" data-window="">Любое время</button>
+                                    <button type="button" class="calendar-chip" data-window="09:00-12:00">Утро</button>
+                                    <button type="button" class="calendar-chip" data-window="12:00-17:00">День</button>
+                                    <button type="button" class="calendar-chip" data-window="17:00-21:00">Вечер</button>
+                                    <button type="button" class="calendar-chip" data-window="custom">Точное окно</button>
+                                </div>
+
+                                <div class="row g-3 mt-0 d-none" id="calendar-waitlist-custom-window">
+                                    <div class="col-6 col-md-3">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="time" class="form-control" id="calendar-waitlist-time-start" />
+                                            <label for="calendar-waitlist-time-start">С</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="time" class="form-control" id="calendar-waitlist-time-end" />
+                                            <label for="calendar-waitlist-time-end">До</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <select class="form-select" id="calendar-waitlist-service" required></select>
-                                        <label for="calendar-waitlist-service">Услуга</label>
+                            </section>
+
+                            <button
+                                type="button"
+                                class="btn btn-link p-0 text-decoration-none calendar-more-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#calendar-waitlist-more"
+                                aria-expanded="false"
+                                aria-controls="calendar-waitlist-more"
+                            >
+                                Ещё: почта, комментарий, позвать раньше других
+                            </button>
+
+                            <div class="collapse" id="calendar-waitlist-more">
+                                <div class="row g-3 pt-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="email" class="form-control" id="calendar-waitlist-client-email" placeholder="email@example.com" />
+                                            <label for="calendar-waitlist-client-email">Email, если есть</label>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="date" class="form-control" id="calendar-waitlist-date" required />
-                                        <label for="calendar-waitlist-date">Нужная дата</label>
+                                    <div class="col-md-6 d-flex align-items-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="calendar-waitlist-priority-toggle" />
+                                            <label class="form-check-label" for="calendar-waitlist-priority-toggle">
+                                                Позвать раньше других
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="time" class="form-control" id="calendar-waitlist-time-start" />
-                                        <label for="calendar-waitlist-time-start">С</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="time" class="form-control" id="calendar-waitlist-time-end" />
-                                        <label for="calendar-waitlist-time-end">До</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="number" min="0" max="14" class="form-control" id="calendar-waitlist-flexibility" value="0" />
-                                        <label for="calendar-waitlist-flexibility">Гибкость по дням</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="number" min="0" max="5" class="form-control" id="calendar-waitlist-priority" value="0" />
-                                        <label for="calendar-waitlist-priority">Ручной приоритет</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-floating form-floating-outline">
-                                        <textarea class="form-control" id="calendar-waitlist-notes" style="height: 110px"></textarea>
-                                        <label for="calendar-waitlist-notes">Комментарий</label>
+                                    <div class="col-12">
+                                        <div class="form-floating form-floating-outline">
+                                            <textarea class="form-control" id="calendar-waitlist-notes" style="height: 110px"></textarea>
+                                            <label for="calendar-waitlist-notes">Комментарий</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer px-4 py-3">
+
+                        <div class="modal-footer calendar-create-footer px-4 py-3">
+                            <div class="calendar-create-total me-auto">
+                                <span id="calendar-waitlist-summary" class="text-muted"></span>
+                            </div>
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
                             <button type="submit" class="btn btn-primary" id="calendar-waitlist-submit">Добавить</button>
                         </div>
@@ -1211,6 +1314,18 @@
             const waitlistPriorityEl = document.getElementById('calendar-waitlist-priority');
             const waitlistNotesEl = document.getElementById('calendar-waitlist-notes');
             const waitlistSubmitEl = document.getElementById('calendar-waitlist-submit');
+            const waitlistClientIdEl = document.getElementById('calendar-waitlist-client-id');
+            const waitlistClientSearchEl = document.getElementById('calendar-waitlist-client-search');
+            const waitlistClientResultsEl = document.getElementById('calendar-waitlist-client-results');
+            const waitlistSelectedClientEl = document.getElementById('calendar-waitlist-selected-client');
+            const waitlistNewClientEl = document.getElementById('calendar-waitlist-new-client');
+            const waitlistServicesEl = document.getElementById('calendar-waitlist-services');
+            const waitlistCustomWindowEl = document.getElementById('calendar-waitlist-custom-window');
+            const waitlistPriorityToggleEl = document.getElementById('calendar-waitlist-priority-toggle');
+            const waitlistSummaryEl = document.getElementById('calendar-waitlist-summary');
+            let waitlistRecentClients = [];
+            let waitlistServices = [];
+            let waitlistLookupTimer = null;
             const refreshBtn = document.getElementById('calendar-refresh');
             const todayBtn = document.getElementById('calendar-today');
             const navButtons = document.querySelectorAll('[data-calendar-nav]');
@@ -1529,25 +1644,271 @@
                 });
             }
 
+            /**
+             * Cards, one of which is chosen — and none of them to begin with. The
+             * select used to pick whatever service came first alphabetically, so a
+             * form sent without looking put the client down for something nobody
+             * had chosen.
+             */
             function renderWaitlistServices(services) {
-                if (!waitlistServiceEl) return;
-                waitlistServiceEl.innerHTML = '';
+                if (!waitlistServicesEl) return;
 
-                // Empty first: the list used to pick whatever service came first
-                // alphabetically, so a form sent without looking put the client
-                // down for something nobody chose.
-                const empty = document.createElement('option');
-                empty.value = '';
-                empty.textContent = 'Выберите услугу';
-                empty.selected = true;
-                waitlistServiceEl.appendChild(empty);
+                waitlistServices = Array.isArray(services) ? services : [];
+                waitlistServicesEl.innerHTML = '';
 
-                (services || []).forEach(function (service) {
-                    const option = document.createElement('option');
-                    option.value = String(service.id);
-                    option.textContent = service.name + ' · ' + (service.duration || 0) + ' мин';
-                    waitlistServiceEl.appendChild(option);
+                if (!waitlistServices.length) {
+                    waitlistServicesEl.innerHTML = '<p class="text-muted mb-0">Услуги ещё не добавлены.</p>';
+                    return;
+                }
+
+                waitlistServices.forEach(function (service) {
+                    const card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'calendar-modal-service d-flex align-items-start gap-3 text-start';
+                    card.dataset.serviceId = String(service.id);
+                    card.innerHTML = `
+                        <span class="flex-grow-1">
+                            <span class="fw-semibold d-block">${service.name}</span>
+                            <span class="small text-muted">~ ${service.duration || 0} мин</span>
+                        </span>
+                        <span class="badge bg-label-primary">${Number(service.price || 0).toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₽</span>
+                    `;
+                    card.addEventListener('click', function () {
+                        setWaitlistService(service.id);
+                    });
+                    waitlistServicesEl.appendChild(card);
                 });
+            }
+
+            function setWaitlistService(serviceId) {
+                if (waitlistServiceEl) {
+                    waitlistServiceEl.value = serviceId ? String(serviceId) : '';
+                }
+
+                waitlistServicesEl.querySelectorAll('.calendar-modal-service').forEach(function (card) {
+                    card.classList.toggle('is-chosen', card.dataset.serviceId === String(serviceId));
+                });
+
+                updateWaitlistSummary();
+            }
+
+            function setWaitlistClient(client) {
+                const hasClient = Boolean(client && client.id);
+
+                if (waitlistClientIdEl) {
+                    waitlistClientIdEl.value = hasClient ? client.id : '';
+                }
+
+                if (waitlistSelectedClientEl) {
+                    if (hasClient) {
+                        waitlistSelectedClientEl.innerHTML = `
+                            <div class="calendar-chosen-client__body">
+                                <div class="fw-semibold text-truncate">${client.name || 'Без имени'}</div>
+                                <div class="calendar-chosen-client__phone">${formatCreatePhone(client.phone || '') || 'Без телефона'}</div>
+                            </div>
+                            <button type="button" class="calendar-chosen-client__clear" aria-label="Выбрать другую клиентку">
+                                <i class="ri ri-close-line"></i>
+                            </button>
+                        `;
+                        waitlistSelectedClientEl.querySelector('.calendar-chosen-client__clear')
+                            .addEventListener('click', function () {
+                                setWaitlistClient(null);
+                                if (waitlistClientSearchEl) {
+                                    waitlistClientSearchEl.value = '';
+                                    waitlistClientSearchEl.focus();
+                                }
+                            });
+                        waitlistSelectedClientEl.classList.remove('d-none');
+                    } else {
+                        waitlistSelectedClientEl.innerHTML = '';
+                        waitlistSelectedClientEl.classList.add('d-none');
+                    }
+                }
+
+                if (waitlistClientPhoneEl) {
+                    waitlistClientPhoneEl.value = hasClient ? (client.phone || '') : '';
+                }
+
+                if (waitlistClientNameEl) {
+                    waitlistClientNameEl.value = hasClient ? (client.name || '') : '';
+                }
+
+                if (waitlistNewClientEl) {
+                    waitlistNewClientEl.classList.toggle('d-none', hasClient);
+                }
+
+                updateWaitlistSummary();
+            }
+
+            function clearWaitlistClientResults() {
+                if (!waitlistClientResultsEl) return;
+                waitlistClientResultsEl.innerHTML = '';
+                waitlistClientResultsEl.classList.add('d-none');
+            }
+
+            function renderWaitlistClientResults(items, title) {
+                if (!waitlistClientResultsEl) return;
+
+                items = Array.isArray(items) ? items : [];
+                waitlistClientResultsEl.innerHTML = '';
+
+                const header = document.createElement('div');
+                header.className = 'list-group-item small text-muted';
+                header.textContent = items.length ? title : 'Никого не нашли';
+                waitlistClientResultsEl.appendChild(header);
+
+                items.forEach(function (item) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'list-group-item list-group-item-action d-flex flex-column text-start';
+                    button.innerHTML = `
+                        <span class="fw-medium">${item.name || 'Без имени'}</span>
+                        <span class="small text-muted">${formatCreatePhone(item.phone || '') || 'Без телефона'}</span>
+                    `;
+                    button.addEventListener('click', function () {
+                        setWaitlistClient(item);
+                        if (waitlistClientSearchEl) {
+                            waitlistClientSearchEl.value = item.name || item.phone || '';
+                        }
+                        clearWaitlistClientResults();
+                    });
+                    waitlistClientResultsEl.appendChild(button);
+                });
+
+                const createButton = document.createElement('button');
+                createButton.type = 'button';
+                createButton.className = 'list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-2 text-primary';
+                createButton.innerHTML = `
+                    <span class="fw-medium">Записать новую клиентку</span>
+                    <i class="ri ri-user-add-line"></i>
+                `;
+                createButton.addEventListener('click', function () {
+                    const typed = waitlistClientSearchEl ? waitlistClientSearchEl.value.trim() : '';
+                    const digits = typed.replace(/\D/g, '');
+
+                    setWaitlistClient(null);
+                    clearWaitlistClientResults();
+
+                    if (waitlistNewClientEl) {
+                        waitlistNewClientEl.classList.remove('d-none');
+                    }
+
+                    if (waitlistClientSearchEl) {
+                        waitlistClientSearchEl.value = '';
+                    }
+
+                    if (digits.length >= 10 && waitlistClientPhoneEl) {
+                        waitlistClientPhoneEl.value = typed;
+                        waitlistClientPhoneEl.dispatchEvent(new Event('input', { bubbles: true }));
+                        if (waitlistClientNameEl) waitlistClientNameEl.focus();
+                    } else {
+                        if (typed && waitlistClientNameEl) waitlistClientNameEl.value = typed;
+                        if (waitlistClientPhoneEl) waitlistClientPhoneEl.focus();
+                    }
+
+                    updateWaitlistSummary();
+                });
+                waitlistClientResultsEl.appendChild(createButton);
+
+                waitlistClientResultsEl.classList.remove('d-none');
+            }
+
+            async function lookupWaitlistClient(query) {
+                const value = (query || '').trim();
+
+                if (value.length < 2) {
+                    renderWaitlistClientResults(waitlistRecentClients, 'Недавние клиентки');
+                    return;
+                }
+
+                const response = await fetch('/api/v1/waitlist/options?client_search=' + encodeURIComponent(value), {
+                    headers: authHeaders,
+                }).catch(function () { return null; });
+
+                if (!response || !response.ok) return;
+
+                const data = await response.json();
+                renderWaitlistClientResults(data.suggestions || [], 'Найденные клиентки');
+            }
+
+            function setWaitlistFlex(days) {
+                if (waitlistFlexibilityEl) {
+                    waitlistFlexibilityEl.value = String(days);
+                }
+
+                document.querySelectorAll('[data-waitlist-flex] .calendar-chip').forEach(function (chip) {
+                    chip.classList.toggle('is-active', chip.dataset.flex === String(days));
+                });
+
+                updateWaitlistSummary();
+            }
+
+            function setWaitlistWindow(value) {
+                document.querySelectorAll('[data-waitlist-window] .calendar-chip').forEach(function (chip) {
+                    chip.classList.toggle('is-active', chip.dataset.window === value);
+                });
+
+                const custom = value === 'custom';
+
+                if (waitlistCustomWindowEl) {
+                    waitlistCustomWindowEl.classList.toggle('d-none', !custom);
+                }
+
+                if (!custom && waitlistTimeStartEl && waitlistTimeEndEl) {
+                    const parts = value ? value.split('-') : ['', ''];
+                    waitlistTimeStartEl.value = parts[0] || '';
+                    waitlistTimeEndEl.value = parts[1] || '';
+                }
+
+                updateWaitlistSummary();
+            }
+
+            function waitlistWindowLabel() {
+                const active = document.querySelector('[data-waitlist-window] .calendar-chip.is-active');
+                const value = active ? active.dataset.window : '';
+
+                if (value === 'custom') {
+                    const from = waitlistTimeStartEl ? waitlistTimeStartEl.value : '';
+                    const to = waitlistTimeEndEl ? waitlistTimeEndEl.value : '';
+                    return from && to ? from + '–' + to : '';
+                }
+
+                return value ? (active.textContent || '').trim().toLowerCase() : '';
+            }
+
+            /**
+             * The footer says what is about to be written down, so the master does
+             * not have to read four controls back to check.
+             */
+            function updateWaitlistSummary() {
+                if (!waitlistSummaryEl) return;
+
+                const parts = [];
+                const chosenName = waitlistClientNameEl ? waitlistClientNameEl.value.trim() : '';
+
+                if (chosenName) {
+                    parts.push(chosenName);
+                }
+
+                const serviceId = waitlistServiceEl ? waitlistServiceEl.value : '';
+                const service = waitlistServices.find(function (item) { return String(item.id) === String(serviceId); });
+
+                if (service) {
+                    parts.push(service.name);
+                }
+
+                if (waitlistDateEl && waitlistDateEl.value) {
+                    const days = Number(waitlistFlexibilityEl ? waitlistFlexibilityEl.value : 0);
+                    const day = waitlistDateEl.value.split('-').reverse().join('.');
+                    parts.push(days ? day + ' ± ' + days + ' дн.' : day);
+                }
+
+                const windowLabel = waitlistWindowLabel();
+                if (windowLabel) {
+                    parts.push(windowLabel);
+                }
+
+                waitlistSummaryEl.textContent = parts.join(' · ');
             }
 
             function updateCreateSummary() {
@@ -2160,6 +2521,7 @@
                 }
 
                 const data = await response.json();
+                waitlistRecentClients = Array.isArray(data.recent_clients) ? data.recent_clients : [];
                 renderWaitlistServices(data.services || []);
                 waitlistOptionsLoaded = true;
             }
@@ -2168,18 +2530,34 @@
                 if (!waitlistForm) return;
                 waitlistForm.reset();
                 clearWaitlistAlerts();
+                clearWaitlistClientResults();
+                setWaitlistClient(null);
+                setWaitlistService('');
+                setWaitlistFlex(0);
+                setWaitlistWindow('');
 
                 if (waitlistDateEl) {
                     waitlistDateEl.value = dateStr || new Date().toISOString().slice(0, 10);
                 }
 
-                if (waitlistFlexibilityEl) {
-                    waitlistFlexibilityEl.value = '0';
-                }
-
                 if (waitlistPriorityEl) {
                     waitlistPriorityEl.value = '0';
                 }
+
+                if (waitlistPriorityToggleEl) {
+                    waitlistPriorityToggleEl.checked = false;
+                }
+
+                if (waitlistNewClientEl) {
+                    waitlistNewClientEl.classList.add('d-none');
+                }
+
+                const more = document.getElementById('calendar-waitlist-more');
+                if (more) {
+                    more.classList.remove('show');
+                }
+
+                updateWaitlistSummary();
             }
 
             async function openWaitlistModal(dateStr) {
@@ -3185,6 +3563,64 @@
                 });
             }
 
+            if (waitlistClientSearchEl) {
+                waitlistClientSearchEl.addEventListener('input', function () {
+                    const value = this.value.trim();
+
+                    if (waitlistClientIdEl && waitlistClientIdEl.value) {
+                        setWaitlistClient(null);
+                    }
+
+                    clearTimeout(waitlistLookupTimer);
+                    waitlistLookupTimer = setTimeout(function () {
+                        lookupWaitlistClient(value);
+                    }, 250);
+                });
+
+                waitlistClientSearchEl.addEventListener('focus', function () {
+                    if (!this.value.trim()) {
+                        renderWaitlistClientResults(waitlistRecentClients, 'Недавние клиентки');
+                    }
+                });
+            }
+
+            document.querySelectorAll('[data-waitlist-flex] .calendar-chip').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    setWaitlistFlex(Number(this.dataset.flex || 0));
+                });
+            });
+
+            document.querySelectorAll('[data-waitlist-window] .calendar-chip').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    setWaitlistWindow(this.dataset.window || '');
+                });
+            });
+
+            [waitlistDateEl, waitlistTimeStartEl, waitlistTimeEndEl, waitlistClientNameEl].forEach(function (el) {
+                if (el) el.addEventListener('input', updateWaitlistSummary);
+            });
+
+            if (waitlistPriorityToggleEl) {
+                // Priority 0-5 was the priority_manual column with a spinner on it.
+                // A master either wants this client called first or she does not.
+                waitlistPriorityToggleEl.addEventListener('change', function () {
+                    if (waitlistPriorityEl) {
+                        waitlistPriorityEl.value = this.checked ? '5' : '0';
+                    }
+                });
+            }
+
+            document.addEventListener('click', function (event) {
+                if (
+                    waitlistClientResultsEl &&
+                    !waitlistClientResultsEl.classList.contains('d-none') &&
+                    event.target !== waitlistClientSearchEl &&
+                    !waitlistClientResultsEl.contains(event.target)
+                ) {
+                    clearWaitlistClientResults();
+                }
+            });
+
             if (waitlistForm) {
                 waitlistForm.addEventListener('submit', async function (event) {
                     event.preventDefault();
@@ -3195,6 +3631,7 @@
                     }
 
                     const payload = {
+                        client_id: waitlistClientIdEl && waitlistClientIdEl.value ? Number(waitlistClientIdEl.value) : null,
                         client_name: waitlistClientNameEl ? waitlistClientNameEl.value.trim() : '',
                         client_phone: waitlistClientPhoneEl ? waitlistClientPhoneEl.value.trim() : '',
                         client_email: waitlistClientEmailEl ? waitlistClientEmailEl.value.trim() : '',
