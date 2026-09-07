@@ -199,8 +199,15 @@ class OrderController extends Controller
 
             $newScheduledAt = Carbon::parse($validated['scheduled_at']);
             $scheduledChanged = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
+            // What she typed wins. Otherwise, if the services were part of this
+            // edit, the length follows them — clearing them off a two-hour
+            // booking used to leave it blocking two hours forever, because the
+            // edit form does not send a forecast of its own. An edit that never
+            // mentioned services leaves the length alone.
             $durationForecast = (int) (Arr::get($validated, 'duration_forecast')
-            ?: ($services->sum('duration_min') ?: $order->duration_forecast ?: 60));
+                ?: (array_key_exists('services', $validated)
+                    ? ($services->sum('duration_min') ?: 60)
+                    : ($order->duration_forecast ?: 60)));
             $this->ensureNoBookingConflict($masterId, $newScheduledAt, $durationForecast, $order->id);
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
@@ -384,6 +391,19 @@ class OrderController extends Controller
     public function complete(Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        // A visit closed with nothing in it is a hole in the takings and in the
+        // history the recommendations are built from. The sum is not checked —
+        // a free visit is a real thing.
+        if (! $order->hasServices()) {
+            return response()->json([
+                'error' => [
+                    'code' => 'service_required',
+                    'message' => 'Отметьте услугу и сумму — без них визит не закрыть.',
+                ],
+            ], 422);
+        }
+
         $now = Carbon::now();
         $duration = null;
 
@@ -1015,7 +1035,11 @@ class OrderController extends Controller
         ]));
     }
 
-    protected function collectServices(array $serviceIds)
+    /**
+     * Nullable on purpose: «services»: null is the natural shape for a booking
+     * made before the client has decided, and validated() keeps the key.
+     */
+    protected function collectServices(?array $serviceIds)
     {
         if (empty($serviceIds)) {
             return collect();

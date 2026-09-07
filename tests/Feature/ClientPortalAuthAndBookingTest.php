@@ -174,8 +174,12 @@ class ClientPortalAuthAndBookingTest extends TestCase
         $this->assertNotNull($order);
         $this->assertSame('client_portal', $order->source);
         $this->assertSame(60, $order->duration_forecast);
-        $this->assertSame('Услуга уточняется', data_get($order->services, '0.name'));
-        $this->assertSame(0.0, (float) data_get($order->services, '0.price'));
+        // Empty, like a booking the master makes by hand for a client who has
+        // not decided. The stand-in service that used to live here was read as
+        // a real one by everything counting a client's history — including the
+        // return-message draft, which wrote its name back to the client.
+        $this->assertSame([], $order->services);
+        $this->assertSame(0.0, (float) $order->total_price);
     }
 
     public function test_client_can_login_via_email_code_when_client_exists(): void

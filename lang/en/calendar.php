@@ -40,9 +40,11 @@ return [
             'confirm' => 'Ask to confirm',
             'reminder_text' => 'Hi :name! A reminder about your appointment on :date at :time. Could you confirm it still works?',
         ],
+        'no_service' => 'No service set',
         'actions' => [
             'start' => 'Start timer',
             'complete' => 'Finish',
+            'add_service' => 'Add the service',
             'no_show' => 'Did not come',
             'start_confirm' => 'The appointment is at :time and it is now :now. Start it anyway?',
         ],

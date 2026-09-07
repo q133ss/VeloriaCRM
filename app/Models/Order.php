@@ -208,4 +208,14 @@ class Order extends Model
     {
         return self::statusBadgeClasses()[$this->status] ?? 'bg-label-secondary';
     }
+
+    /**
+     * A booking may be made before the client has decided what she wants, and
+     * then the services snapshot is simply empty — not a placeholder service,
+     * which would lie to everything that reads a client's service history.
+     */
+    public function hasServices(): bool
+    {
+        return collect($this->services ?? [])->isNotEmpty();
+    }
 }

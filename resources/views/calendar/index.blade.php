@@ -600,6 +600,12 @@
             font-weight: 600;
         }
 
+        .calendar-order-card .calendar-order-services span.is-undecided {
+            border: 1px dashed var(--cal-border);
+            background: transparent;
+            color: var(--bs-secondary-color);
+        }
+
         .calendar-modal-service.is-chosen {
             border-color: var(--bs-primary);
             background: rgba(var(--bs-primary-rgb), 0.08);
@@ -914,6 +920,8 @@
                                 <div id="calendar-create-services" class="calendar-modal-services d-flex flex-column gap-2">
                                     <p class="text-muted mb-0">Загрузка услуг...</p>
                                 </div>
+                                {{-- Otherwise nobody finds out it is allowed. --}}
+                                <div class="form-text mt-2">Можно не выбирать — уточните на месте.</div>
                             </section>
 
                             <section class="calendar-step">
@@ -2832,10 +2840,12 @@
                     wrapper.appendChild(contacts);
                 }
 
-                if (order.services && Array.isArray(order.services) && order.services.length) {
-                    const servicesWrap = document.createElement('div');
-                    servicesWrap.className = 'calendar-order-services d-flex flex-wrap gap-2 mt-3';
-                    order.services.forEach(function (service) {
+                const orderServices = Array.isArray(order.services) ? order.services : [];
+                const servicesWrap = document.createElement('div');
+                servicesWrap.className = 'calendar-order-services d-flex flex-wrap gap-2 mt-3';
+
+                if (orderServices.length) {
+                    orderServices.forEach(function (service) {
                         if (!service || !service.name) return;
                         const pill = document.createElement('span');
                         const icon = document.createElement('i');
@@ -2846,8 +2856,21 @@
                         pill.appendChild(text);
                         servicesWrap.appendChild(pill);
                     });
-                    wrapper.appendChild(servicesWrap);
+                } else {
+                    // Saying nothing looked like a rendering glitch. A booking
+                    // made before the client decided has to say so.
+                    const pill = document.createElement('span');
+                    pill.className = 'is-undecided';
+                    const icon = document.createElement('i');
+                    icon.className = 'ri ri-question-line';
+                    pill.appendChild(icon);
+                    const text = document.createElement('span');
+                    text.textContent = translations.day.no_service;
+                    pill.appendChild(text);
+                    servicesWrap.appendChild(pill);
                 }
+
+                wrapper.appendChild(servicesWrap);
 
                 if (order.note) {
                     const note = document.createElement('div');
@@ -2882,7 +2905,16 @@
                     footer.appendChild(startBtn);
                 }
 
-                if (order.can_complete) {
+                if (order.can_complete && !orderServices.length) {
+                    // The visit cannot be closed until somebody says what it was,
+                    // so offer the thing that unblocks it rather than a button
+                    // that would only come back with an error.
+                    const fixBtn = document.createElement('a');
+                    fixBtn.className = 'btn btn-sm btn-primary';
+                    fixBtn.href = '/orders/' + order.id + '/edit';
+                    fixBtn.textContent = translations.day.actions.add_service;
+                    footer.appendChild(fixBtn);
+                } else if (order.can_complete) {
                     // The stop square belongs to a timer that is actually running.
                     // On a booking nobody started, Finish is just bookkeeping.
                     const running = order.status === 'in_progress';
@@ -3287,8 +3319,10 @@
                     if (info.event.extendedProps && info.event.extendedProps.client && info.event.extendedProps.client.name) {
                         parts.push(info.event.extendedProps.client.name);
                     }
-                    if (info.event.extendedProps && Array.isArray(info.event.extendedProps.services) && info.event.extendedProps.services.length) {
-                        parts.push(info.event.extendedProps.services.join(', '));
+                    if (info.event.extendedProps && Array.isArray(info.event.extendedProps.services)) {
+                        parts.push(info.event.extendedProps.services.length
+                            ? info.event.extendedProps.services.join(', ')
+                            : translations.day.no_service);
                     }
                     if (parts.length) {
                         info.el.setAttribute('title', parts.join(' • '));
