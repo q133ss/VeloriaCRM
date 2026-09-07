@@ -81,8 +81,7 @@ return [
             'link_url' => 'https://smsaero.ru/cabinet/',
             'steps' => [
                 'Sign in to SmsAero with the email the account is registered to.',
-                'Open the “API” section and copy the API key.',
-                'Paste the email and the key into the fields below.',
+                'Open the “API” section and copy the key.',
             ],
             'fields' => [
                 'email' => [
@@ -167,8 +166,7 @@ return [
             'link_url' => 'https://developers.facebook.com/apps',
             'steps' => [
                 'Access is issued by a WhatsApp Business API provider or Meta for Developers.',
-                'Take the permanent access token of the application.',
-                'Take the sender’s Phone number ID — a number, not the phone itself.',
+                'You need two things from there: the permanent application token and the Phone number ID. The second one is a number, not the phone itself.',
             ],
             'fields' => [
                 'api_key' => [

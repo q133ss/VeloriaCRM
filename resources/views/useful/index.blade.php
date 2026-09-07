@@ -621,7 +621,7 @@
                 var total = counts.total || 0;
 
                 if (!total) {
-                    leadEl.textContent = 'Материалов пока нет — они появятся здесь и в подборке.';
+                    leadEl.textContent = 'Материалов пока нет. Появятся здесь и в подборке.';
                     return;
                 }
 
@@ -712,7 +712,7 @@
                     } else if (state.payload.featured_post) {
                         box.textContent = 'Это пока единственный материал.';
                     } else {
-                        box.textContent = 'Материалов пока нет — они появятся здесь и в подборке.';
+                        box.textContent = 'Материалов пока нет. Появятся здесь и в подборке.';
                     }
 
                     listEl.innerHTML = '';

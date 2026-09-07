@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Help and support',
-    'subtitle' => 'Start with the common questions below — most situations are answered there. If they are not, write to us.',
+    'subtitle' => 'Start with the common questions below. If the answer is not there, write to us.',
 
     'faq' => [
         'title' => 'Common questions',
@@ -42,13 +42,13 @@ return [
 
     'support' => [
         'title' => 'Write to support',
-        'subtitle' => 'If the answers above did not help, describe the situation and we will look into it.',
+        'subtitle' => 'Tell us what happened. The answer arrives by email and appears here.',
         'response_time' => 'We answer within :hours h on average.',
         'working_hours' => 'Weekdays 09:00–21:00 (GMT+3).',
         'contact_email' => 'If the form does not send, write to :email.',
         'tips' => [
             'context' => 'Add links or booking IDs so we can reproduce the problem faster.',
-            'attachments' => 'Attach a screenshot — it shows more than a description does.',
+            'attachments' => 'Attach a screenshot if you have one.',
             'updates' => 'We will notify you by email and in the app when there is an update.',
         ],
         'form' => [
@@ -56,7 +56,7 @@ return [
             'subject_placeholder' => 'For example, “Reminders are duplicated”',
             'message_label' => 'Message',
             'message_placeholder' => 'Tell us what happened, what you expected and how we can help.',
-            'message_hint' => 'At least :min characters — so we understand the situation the first time.',
+            'message_hint' => 'At least :min characters.',
             'attachment_label' => 'Attachment (optional)',
             'attachment_hint' => 'Up to :size MB. Formats: :formats.',
             'attachment_choose' => 'Choose a file',
@@ -97,6 +97,6 @@ return [
         'ticket_load_error' => 'Could not load your tickets. Please try again later.',
         'ticket_submit_error' => 'Could not send the message. Check the fields and try again.',
         'attachment_too_large' => 'The file is too large. Maximum size — :size MB.',
-        'attachment_type' => 'We cannot accept this format. These will do: :formats.',
+        'attachment_type' => 'Wrong format. These will do: :formats.',
     ],
 ];

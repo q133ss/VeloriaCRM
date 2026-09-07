@@ -352,7 +352,7 @@
                         <div class="mw-lg-50">
                             {{-- The three chips here repeated the tabs below under different names. --}}
                             <h3 class="mb-2">{{ __('menu.settings') }}</h3>
-                            <p class="text-muted mb-0">Профиль, уведомления, график и адрес. Изменения сохраняются кнопкой внизу — она едет вместе со страницей.</p>
+                            <p class="text-muted mb-0">Профиль, уведомления, график и адрес. Кнопка сохранения всегда внизу экрана.</p>
                         </div>
                     </div>
                 </div>
