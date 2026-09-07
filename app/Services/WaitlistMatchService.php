@@ -96,7 +96,7 @@ class WaitlistMatchService
         app(NotificationService::class)->send(
             $masterId,
             __('waitlist.notifications.slot_opened_title'),
-            __('waitlist.notifications.slot_opened_message', [
+            trans_choice('waitlist.notifications.slot_opened_message', $matches->count(), [
                 'count' => $matches->count(),
                 'time' => $slotStart->format('d.m.Y H:i'),
                 'client' => Arr::get($top, 'client.name', __('calendar.unnamed_client')),
@@ -184,13 +184,15 @@ class WaitlistMatchService
             $reasons[] = __('waitlist.reasons.manual_priority');
         }
 
+        // Two thresholds, one sentence: which side of them she falls on decides
+        // the ranking, and is nobody's business on screen.
         $ltv = $history['ltv'];
         if ($ltv >= 20000) {
             $score += 18;
-            $reasons[] = __('waitlist.reasons.high_ltv');
+            $reasons[] = __('waitlist.reasons.valuable_client');
         } elseif ($ltv >= 8000) {
             $score += 10;
-            $reasons[] = __('waitlist.reasons.good_ltv');
+            $reasons[] = __('waitlist.reasons.valuable_client');
         }
 
         $recentVisits = $history['recent_visits'];
@@ -199,16 +201,20 @@ class WaitlistMatchService
             $reasons[] = __('waitlist.reasons.regular_client');
         }
 
+        // Kept out of the reasons: those say why she is being offered the slot,
+        // and a history of not turning up is an argument the other way.
+        $warnings = [];
         $noShows = $history['no_shows'];
         if ($noShows > 0) {
             $score -= min(18, $noShows * 6);
-            $reasons[] = __('waitlist.reasons.no_show_risk');
+            $warnings[] = __('waitlist.warnings.no_show_risk');
         }
 
         return [
             'id' => $entry->id,
             'match_score' => round($score, 1),
             'match_reasons' => array_values(array_unique($reasons)),
+            'match_warnings' => $warnings,
             'matched_slot' => $slotStart->toIso8601String(),
             'slot_duration' => $slotDuration,
             'client' => [

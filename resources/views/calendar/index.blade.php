@@ -466,6 +466,11 @@
             font-weight: 600;
         }
 
+        .calendar-match-reasons span.is-warning {
+            background: rgba(var(--bs-warning-rgb), 0.16);
+            color: var(--bs-warning-text-emphasis, var(--bs-body-color));
+        }
+
         /* --- Modals --- */
 
         .calendar-create-modal .modal-content {
@@ -979,7 +984,7 @@
                     <div class="modal-header px-4 py-3">
                         <div>
                             <h5 class="modal-title mb-1">Лист ожидания</h5>
-                            <p class="text-muted mb-0 small">Если день занят, запишите клиента сюда — предложим ему освободившееся время.</p>
+                            <p class="text-muted mb-0 small">Если время занято, запишите клиентку сюда — позовём её, когда оно освободится.</p>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -2270,12 +2275,22 @@
                         </div>
                     `;
 
-                    if (reasons.length) {
+                    const warnings = Array.isArray(match.match_warnings) ? match.match_warnings : [];
+
+                    if (reasons.length || warnings.length) {
                         const reasonsWrap = document.createElement('div');
                         reasonsWrap.className = 'calendar-match-reasons d-flex flex-wrap gap-2 mt-3';
                         reasons.forEach(function (reason) {
                             const pill = document.createElement('span');
                             pill.textContent = reason;
+                            reasonsWrap.appendChild(pill);
+                        });
+                        // A caution reads as a recommendation when it sits in the
+                        // same grey row as the reasons to offer her the slot.
+                        warnings.forEach(function (warning) {
+                            const pill = document.createElement('span');
+                            pill.className = 'is-warning';
+                            pill.textContent = warning;
                             reasonsWrap.appendChild(pill);
                         });
                         card.appendChild(reasonsWrap);
