@@ -470,30 +470,63 @@
         .calendar-create-modal .modal-content {
             border: 1px solid var(--bs-border-color);
             border-radius: 0.75rem;
+        }
+
+        /* Bootstrap's scrollable modal expects header, body and footer to be
+           direct children of .modal-content. Here a <form> wraps body and footer,
+           and being a plain block it grows to its content: the body never gets a
+           height to scroll inside, so on a phone half the form and the create
+           button used to sit below the edge of the screen with nothing to scroll. */
+        .calendar-create-modal .modal-content > form {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
             overflow: hidden;
         }
 
+        .calendar-create-modal .modal-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .calendar-create-modal .modal-footer {
+            position: sticky;
+            bottom: 0;
+            z-index: 3;
+            background: var(--bs-modal-bg, var(--bs-body-bg));
+            border-top: 1px solid var(--bs-border-color);
+        }
+
         .calendar-modal-search-layer {
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
         }
 
+        /* Floating, not in the flow: a list of recent clients that pushes the
+           form down also pushes the submit button out of the window. */
         .calendar-modal-results,
         .calendar-modal-suggestions {
-            position: static;
-            z-index: 1;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            margin-top: 0.35rem;
             max-height: 260px;
             overflow-y: auto;
-            margin: 0;
             border: 1px solid var(--bs-border-color);
             border-radius: 0.5rem;
             background: var(--bs-body-bg);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
         }
 
+        /* No inner scroll: the list used to clip a service in half behind an
+           invisible scrollbar. The modal body scrolls for it now. */
         .calendar-modal-services {
-            max-height: 320px;
-            overflow-y: auto;
             padding-right: 0.15rem;
         }
 
@@ -668,7 +701,9 @@
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form id="calendar-create-form">
+                    {{-- Browser-native validation speaks English in a Russian UI;
+                         the server's messages are already written for the master. --}}
+                    <form id="calendar-create-form" novalidate>
                         <div class="modal-body p-4">
                             <div id="calendar-create-alerts" class="mb-3"></div>
                             <input type="hidden" id="calendar-create-client-id" name="client_id" />
@@ -1190,6 +1225,69 @@
                 createOrderAlertsEl.appendChild(alert);
             }
 
+            // Where a field named by the API lives on screen. Anything the server
+            // can complain about needs an entry, or the master gets the summary
+            // line and no idea which control to fix.
+            const createFieldAnchors = {
+                client_id: 'calendar-create-client-search',
+                client_phone: 'calendar-create-client-phone',
+                client_name: 'calendar-create-client-name',
+                client_email: 'calendar-create-client-name',
+                scheduled_at: 'calendar-create-scheduled-at_display',
+                services: 'calendar-create-services',
+                note: 'calendar-create-note',
+                total_price: 'calendar-create-total-price',
+                duration_forecast: 'calendar-create-duration',
+                status: 'calendar-create-status',
+            };
+
+            function clearCreateFieldErrors() {
+                document.querySelectorAll('#calendar-create-modal .is-invalid').forEach(function (el) {
+                    el.classList.remove('is-invalid');
+                });
+                document.querySelectorAll('[data-create-field-error]').forEach(function (el) {
+                    el.remove();
+                });
+            }
+
+            function showCreateFieldErrors(fields) {
+                clearCreateFieldErrors();
+
+                let first = null;
+
+                Object.keys(fields || {}).forEach(function (key) {
+                    // Laravel reports item failures as `services.0`; the master
+                    // only cares that it was the services block.
+                    const anchorId = createFieldAnchors[key] || createFieldAnchors[key.split('.')[0]];
+                    const anchor = anchorId ? document.getElementById(anchorId) : null;
+                    if (!anchor) return;
+
+                    const messages = Array.isArray(fields[key]) ? fields[key] : [fields[key]];
+                    const text = messages.filter(Boolean).join(' ');
+                    if (!text) return;
+
+                    anchor.classList.add('is-invalid');
+
+                    const note = document.createElement('div');
+                    note.className = 'invalid-feedback d-block';
+                    note.setAttribute('data-create-field-error', '');
+                    note.textContent = text;
+
+                    const holder = anchor.closest('.form-floating, .veloria-datetime-field') || anchor;
+                    holder.insertAdjacentElement('afterend', note);
+
+                    if (!first) {
+                        first = anchor;
+                    }
+                });
+
+                if (first) {
+                    first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+
+                return Boolean(first);
+            }
+
             function clearWaitlistAlerts() {
                 if (!waitlistAlertsEl) return;
                 waitlistAlertsEl.innerHTML = '';
@@ -1590,7 +1688,6 @@
                 durationEstimates = Array.isArray(data.duration_estimates) ? data.duration_estimates : [];
                 renderCreateServices(data.services || []);
                 renderCreateStatuses(data.status_options || {});
-                renderCreateClientResults(createOrderRecentClients, 'Недавние клиентки');
                 createOrderOptionsLoaded = true;
             }
 
@@ -1599,6 +1696,7 @@
 
                 createOrderForm.reset();
                 clearCreateAlerts();
+                clearCreateFieldErrors();
                 clearCreateClientResults();
                 clearCreateClientSuggestions();
                 setCreateClientSelection(null);
@@ -1629,7 +1727,9 @@
                     checkbox.checked = false;
                 });
 
-                renderCreateClientResults(createOrderRecentClients, 'Недавние клиентки');
+                // Recent clients wait for the search field to be focused. Opened
+                // with the form, the list only hides the fields underneath it.
+                clearCreateClientResults();
                 updateCreateSummary();
             }
 
@@ -2536,6 +2636,7 @@
                 createOrderForm.addEventListener('submit', async function (event) {
                     event.preventDefault();
                     clearCreateAlerts();
+                    clearCreateFieldErrors();
 
                     if (createOrderSubmitEl) {
                         createOrderSubmitEl.disabled = true;
@@ -2567,7 +2668,21 @@
                     });
 
                     if (!response.ok) {
-                        showCreateAlert('danger', (result.error && result.error.message) || 'Не удалось создать запись.');
+                        // Two envelopes reach us from the same endpoint: BaseRequest
+                        // wraps its failures as error.fields, while the ones thrown
+                        // inside the controller — the booking conflict above all —
+                        // arrive as Laravel's plain errors bag.
+                        const fields = (result.error && result.error.fields) || result.errors || {};
+                        const message = (result.error && result.error.message)
+                            || result.message
+                            || 'Не удалось создать запись.';
+
+                        // A message under the field it belongs to says everything
+                        // the banner would, so the banner is for what has no field.
+                        if (!showCreateFieldErrors(fields)) {
+                            showCreateAlert('danger', message);
+                        }
+
                         if (createOrderSubmitEl) {
                             createOrderSubmitEl.disabled = false;
                         }
