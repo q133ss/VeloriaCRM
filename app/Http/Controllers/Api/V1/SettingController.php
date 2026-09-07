@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateIntegrationsRequest;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
 use App\Services\AllergyReminderService;
+use App\Services\ClientIdentityService;
 use App\Services\Integrations\IntegrationCatalog;
 use App\Services\Integrations\IntegrationChecker;
 use App\Services\ScheduleService;
@@ -21,6 +22,7 @@ class SettingController extends Controller
         private readonly AllergyReminderService $allergyReminderService,
         private readonly ScheduleService $scheduleService,
         private readonly IntegrationChecker $integrationChecker,
+        private readonly ClientIdentityService $clientIdentityService,
     ) {
     }
 
@@ -96,7 +98,9 @@ class SettingController extends Controller
         $user->fill([
             'name' => $data['name'],
             'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
+            // The form sends what its mask drew — «+7(999)000-55-44» — and that
+            // string was stored and then handed to the SMS gateway.
+            'phone' => $this->normalizePhone($data['phone'] ?? null),
             'timezone' => $data['timezone'],
             'time_format' => $data['time_format'],
         ])->save();
@@ -119,7 +123,9 @@ class SettingController extends Controller
             'work_hours' => $legacySchedule['work_hours'],
             'schedule_rules' => $normalizedScheduleRules,
             'address' => $data['address'] ?? null,
-            'map_point' => $data['map_point'] ?? null,
+            // Empty coordinates were stored as ['lat' => null, 'lng' => null],
+            // which every «if the point is set» check reads as a point.
+            'map_point' => $this->normalizeMapPoint($data['map_point'] ?? null),
             'reminder_message' => $data['reminder_message'] ?? null,
         ];
 
@@ -340,6 +346,33 @@ class SettingController extends Controller
         }
 
         return true;
+    }
+
+    protected function normalizePhone(?string $phone): ?string
+    {
+        $phone = $phone !== null ? trim($phone) : null;
+
+        if ($phone === null || $phone === '') {
+            return null;
+        }
+
+        return $this->clientIdentityService->normalisePhone($phone);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $point
+     * @return array{lat: float, lng: float}|null
+     */
+    protected function normalizeMapPoint(?array $point): ?array
+    {
+        $lat = $point['lat'] ?? null;
+        $lng = $point['lng'] ?? null;
+
+        if ($lat === null || $lat === '' || $lng === null || $lng === '') {
+            return null;
+        }
+
+        return ['lat' => (float) $lat, 'lng' => (float) $lng];
     }
 
     protected function userHasEliteAccess(User $user): bool

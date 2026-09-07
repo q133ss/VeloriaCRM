@@ -1,4 +1,25 @@
 @extends('layouts.app')
+
+@php
+    $commonTimezones = [
+        'Europe/Kaliningrad' => 'Калининград (MSK−1)',
+        'Europe/Moscow' => 'Москва (MSK)',
+        'Europe/Samara' => 'Самара (MSK+1)',
+        'Asia/Yekaterinburg' => 'Екатеринбург (MSK+2)',
+        'Asia/Omsk' => 'Омск (MSK+3)',
+        'Asia/Krasnoyarsk' => 'Красноярск (MSK+4)',
+        'Asia/Irkutsk' => 'Иркутск (MSK+5)',
+        'Asia/Yakutsk' => 'Якутск (MSK+6)',
+        'Asia/Vladivostok' => 'Владивосток (MSK+7)',
+        'Asia/Magadan' => 'Магадан (MSK+8)',
+        'Asia/Kamchatka' => 'Камчатка (MSK+9)',
+        'Europe/Minsk' => 'Минск',
+        'Europe/Kyiv' => 'Киев',
+        'Asia/Almaty' => 'Алматы',
+        'Asia/Tbilisi' => 'Тбилиси',
+    ];
+@endphp
+
 @section('content')
     <style>
         .settings-hero {
@@ -10,6 +31,96 @@
 
         .settings-anchor-nav .nav-link {
             border-radius: 999px;
+        }
+
+        .settings-page {
+            --settings-text: color-mix(in srgb, var(--bs-heading-color) 82%, transparent);
+            --settings-faint: color-mix(in srgb, var(--bs-heading-color) 74%, transparent);
+        }
+
+        /* The label of a field used to run at 2.3:1 — the palest text on a page
+           made of fields. */
+        .settings-page .form-floating > label,
+        .settings-page .form-label {
+            color: var(--settings-text);
+        }
+
+        /* A switch that cannot be switched should not offer a hand cursor. */
+        .settings-page .form-check-input:disabled,
+        .settings-page .form-check-input:disabled ~ .form-check-label {
+            cursor: not-allowed;
+        }
+
+        /* The locked Pro and Elite cards used to take half of the notifications
+           block with decorative skeleton bars. */
+        .settings-feature-lock .elite-lock-preview {
+            display: none;
+        }
+
+        .settings-feature-lock .elite-lock-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        /* The only button of a six-screen form now travels with the reader,
+           and answers where it stands. */
+        .settings-actionbar {
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0;
+            padding: 0.85rem 1.1rem;
+            border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 -10px 26px -22px rgba(0, 0, 0, 0.75);
+        }
+
+        /* On a phone the four sections took four full rows of their own. */
+        @media (max-width: 767.98px) {
+            .settings-anchor-nav .nav {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 0.5rem;
+            }
+
+            .settings-anchor-nav .nav-link {
+                white-space: nowrap;
+            }
+        }
+
+        .settings-actionbar__state {
+            flex: 1 1 12rem;
+            min-width: 0;
+            font-size: 0.9rem;
+            color: var(--settings-faint);
+        }
+
+        .settings-actionbar__state.is-dirty {
+            color: var(--bs-warning-text-emphasis, #8a5a00);
+            font-weight: 600;
+        }
+
+        .settings-actionbar__state.is-ok {
+            color: var(--bs-success-text-emphasis, var(--bs-success));
+            font-weight: 600;
+        }
+
+        .settings-actionbar__state.is-bad {
+            color: var(--bs-danger-text-emphasis, var(--bs-danger));
+            font-weight: 600;
+        }
+
+        .settings-slot-error {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            color: var(--bs-danger-text-emphasis, var(--bs-danger));
         }
 
         .settings-card {
@@ -222,20 +333,15 @@
         }
     </style>
 
-    <div class="row g-6">
+    <div class="row g-6 settings-page">
         <div class="col-12">
             <div class="card border-0 shadow-sm settings-hero">
                 <div class="card-body p-6 p-lg-8">
                     <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-5">
                         <div class="mw-lg-50">
-                            <span class="badge bg-label-primary mb-3">Veloria Profile</span>
+                            {{-- The three chips here repeated the tabs below under different names. --}}
                             <h3 class="mb-2">{{ __('menu.settings') }}</h3>
-                            <p class="text-muted mb-0">Собрали настройки в короткие блоки: профиль, уведомления, график и безопасность. Лишние технические поля вынесены из первого экрана.</p>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="settings-meta-chip"><i class="icon-base ri ri-user-line"></i> Профиль</span>
-                            <span class="settings-meta-chip"><i class="icon-base ri ri-notification-4-line"></i> Уведомления</span>
-                            <span class="settings-meta-chip"><i class="icon-base ri ri-time-line"></i> График</span>
+                            <p class="text-muted mb-0">Профиль, уведомления, график и адрес. Изменения сохраняются кнопкой внизу — она едет вместе со страницей.</p>
                         </div>
                     </div>
                 </div>
@@ -244,7 +350,8 @@
 
         <div class="col-12">
             <div class="nav-align-top settings-anchor-nav">
-                <ul class="nav nav-pills flex-column flex-md-row mb-0 gap-2 gap-lg-0">
+                {{-- Four full-width rows on a phone; a scrolling row instead. --}}
+                <ul class="nav nav-pills flex-row flex-nowrap overflow-auto mb-0 gap-2 gap-lg-0">
                     <li class="nav-item">
                         <a class="nav-link active" href="#settings-account"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}</a>
                     </li>
@@ -287,8 +394,8 @@
                                     <input type="file" id="upload" class="account-file-input" hidden accept="image/png, image/jpeg" />
                                 </label>
                                 <button type="button" class="btn btn-outline-danger account-image-reset mb-3">
-                                    <i class="icon-base ri ri-refresh-line d-block d-sm-none"></i>
-                                    <span class="d-none d-sm-block">{{ __('settings.reset') }}</span>
+                                    <i class="icon-base ri ri-delete-bin-line d-block d-sm-none"></i>
+                                    <span class="d-none d-sm-block">Удалить фото</span>
                                 </button>
                                 <div class="text-muted small">{{ __('settings.allowed_formats') }}</div>
                             </div>
@@ -315,10 +422,18 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-floating form-floating-outline">
+                                    {{-- 419 zones in one flat list; the eleven Russian ones come first. --}}
                                     <select id="timezone" name="timezone" class="form-select">
-                                        @foreach(timezone_identifiers_list() as $tz)
-                                            <option value="{{ $tz }}">{{ $tz }}</option>
-                                        @endforeach
+                                        <optgroup label="Россия и соседние страны">
+                                            @foreach($commonTimezones as $tz => $label)
+                                                <option value="{{ $tz }}">{{ $label }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                        <optgroup label="Все часовые пояса">
+                                            @foreach(timezone_identifiers_list() as $tz)
+                                                <option value="{{ $tz }}">{{ $tz }}</option>
+                                            @endforeach
+                                        </optgroup>
                                     </select>
                                     <label for="timezone">{{ __('settings.timezone') }}</label>
                                 </div>
@@ -603,7 +718,8 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="text" class="form-control weekly-day-slots" data-day="{{ $day }}" placeholder="09:00, 10:00, 15:30, 19:00" />
+                                                <input type="text" class="form-control weekly-day-slots" data-day="{{ $day }}" placeholder="Укажите время через запятую" />
+                                                <span class="settings-slot-error" data-slot-error="{{ $day }}" hidden>Включённый день без часов не сохранится — укажите время.</span>
                                             </td>
                                         </tr>
                                         @endforeach
@@ -705,13 +821,13 @@
                                         <div class="col-md-6">
                                             <div class="form-floating form-floating-outline">
                                                 <input type="text" class="form-control" id="map_lat" name="map_point[lat]" />
-                                                <label for="map_lat">lat</label>
+                                                <label for="map_lat">Широта</label>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-floating form-floating-outline">
                                                 <input type="text" class="form-control" id="map_lng" name="map_point[lng]" />
-                                                <label for="map_lng">lng</label>
+                                                <label for="map_lng">Долгота</label>
                                             </div>
                                         </div>
                                     </div>
@@ -721,12 +837,14 @@
                     </div>
                 </div>
 
-                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-6">
-                    <div class="text-muted">После редактирования любого блока просто нажмите сохранить внизу страницы.</div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-primary">{{ __('settings.save_changes') }}</button>
-                        <button type="reset" class="btn btn-outline-secondary">{{ __('settings.reset') }}</button>
-                    </div>
+                {{-- «Сбросить» was a native type="reset": it emptied the name, the
+                     email and the phone and set the timezone to Africa/Abidjan,
+                     without asking, because the values are filled in by script and
+                     the HTML defaults behind them are blank. --}}
+                <div class="settings-actionbar card" id="settings-actionbar">
+                    <div class="settings-actionbar__state" id="settings-state">Все изменения сохранены</div>
+                    <button type="button" class="btn btn-text-secondary" id="settings-cancel" hidden>Отменить изменения</button>
+                    <button type="submit" class="btn btn-primary" id="settings-save">{{ __('settings.save_changes') }}</button>
                 </div>
             </form>
         </div>
@@ -746,6 +864,10 @@
                 </div>
             </div>
 
+        </div>
+
+        {{-- Account deletion used to sit on the first screen, beside the tips. --}}
+        <div class="col-12">
             <div class="card settings-danger-card">
                 <div class="card-body p-5">
                     <h5 class="mb-2">{{ __('settings.delete_account_title') }}</h5>
@@ -925,7 +1047,12 @@
     }
     async function loadSettings() {
         const res = await fetch('/api/v1/settings', { headers: authHeaders(), credentials: 'include' });
-        if(!res.ok) return;
+        // Silence here left an empty form that could be saved over the account.
+        if(!res.ok) {
+            setBlocked(true);
+            return;
+        }
+        setBlocked(false);
         const data = await res.json();
         const form = document.getElementById('settings-form');
         const allergyReminderFeature = data.settings.features?.allergy_reminders || {};
@@ -1002,7 +1129,10 @@
 
         setSettingsAvatar(data.user.avatar_url || null, data.user.initials || computeInitials(form.name.value));
     }
-    loadSettings();
+    loadSettings().then(() => {
+        state.baseline = snapshot();
+        refreshDirty();
+    });
     document.getElementById('add-holiday').addEventListener('click', () => addHolidayRow());
     document.getElementById('add-monthly-row').addEventListener('click', () => addMonthlyScheduleRow());
     document.querySelectorAll('input[name="schedule_mode"]').forEach(input => {
@@ -1050,11 +1180,8 @@
         });
     }
 
-    document.getElementById('settings-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        form.querySelectorAll('.invalid-feedback').forEach(el=>el.remove());
-        form.querySelectorAll('.is-invalid').forEach(el=>el.classList.remove('is-invalid'));
+    function buildPayload() {
+        const form = document.getElementById('settings-form');
         const payload = {
             name: form.name.value,
             email: form.email.value,
@@ -1092,11 +1219,146 @@
         const legacySchedule = buildLegacyScheduleFromRules(payload.schedule_rules);
         payload.work_days = legacySchedule.work_days;
         payload.work_hours = legacySchedule.work_hours;
+
+        return payload;
+    }
+
+    /* ---------- unsaved changes ---------- */
+
+    const state = { baseline: null, blocked: false };
+    const stateEl = document.getElementById('settings-state');
+    const cancelBtn = document.getElementById('settings-cancel');
+    const saveBtn = document.getElementById('settings-save');
+
+    function snapshot() {
+        return JSON.stringify(buildPayload());
+    }
+
+    function isDirty() {
+        if (state.baseline === null) return false;
+
+        const passwordTyped = Boolean(document.getElementById('new_password').value
+            || document.getElementById('current_password').value);
+
+        return passwordTyped || snapshot() !== state.baseline;
+    }
+
+    function setBarState(kind, text) {
+        stateEl.className = 'settings-actionbar__state' + (kind ? ' is-' + kind : '');
+        stateEl.textContent = text;
+    }
+
+    function refreshDirty() {
+        if (state.blocked) return;
+
+        const dirty = isDirty();
+        cancelBtn.hidden = !dirty;
+
+        if (dirty) {
+            setBarState('dirty', 'Есть несохранённые изменения');
+        } else if (!stateEl.classList.contains('is-ok')) {
+            setBarState('', 'Все изменения сохранены');
+        }
+    }
+
+    function setBlocked(blocked) {
+        state.blocked = blocked;
+        saveBtn.disabled = blocked;
+
+        const container = document.getElementById('form-messages');
+        container.innerHTML = blocked
+            ? '<div class="alert alert-danger mb-0" role="alert">Не удалось загрузить настройки. Обновите страницу — пока данные не загрузились, сохранять нельзя, иначе можно стереть заполненное.</div>'
+            : '';
+
+        if (blocked) setBarState('bad', 'Настройки не загрузились');
+    }
+
+    /* ---------- the day that would not save ---------- */
+
+    function validateWeeklyHours() {
+        let firstBad = null;
+
+        scheduleDays.forEach(day => {
+            const enabled = document.getElementById('weekly-day-' + day).checked;
+            const input = document.querySelector(`.weekly-day-slots[data-day="${day}"]`);
+            const error = document.querySelector(`[data-slot-error="${day}"]`);
+            // The rule used to be silent: an enabled day without hours was
+            // saved as «disabled» and the switch came back off.
+            const bad = enabled && parseSlots(input.value).length === 0
+                && getSelectedScheduleMode() === 'weekly';
+
+            error.hidden = !bad;
+            input.classList.toggle('is-invalid', bad);
+
+            if (bad && !firstBad) firstBad = input;
+        });
+
+        return firstBad;
+    }
+
+    function focusField(element) {
+        if (!element) return;
+
+        const details = element.closest('details');
+        if (details) details.open = true;
+
+        const hiddenPassword = element.closest('.settings-password-fields');
+        if (hiddenPassword) hiddenPassword.classList.add('is-visible');
+
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => element.focus({ preventScroll: true }), 300);
+    }
+
+    document.getElementById('settings-form').addEventListener('input', refreshDirty);
+    document.getElementById('settings-form').addEventListener('change', refreshDirty);
+
+    cancelBtn.addEventListener('click', async () => {
+        if (!confirm('Вернуть сохранённые значения? Всё, что вы ввели и не сохранили, пропадёт.')) return;
+
+        document.getElementById('current_password').value = '';
+        document.getElementById('new_password').value = '';
+        document.getElementById('new_password_confirmation').value = '';
+        await loadSettings();
+        state.baseline = snapshot();
+        setBarState('', 'Все изменения сохранены');
+        refreshDirty();
+    });
+
+    window.addEventListener('beforeunload', (event) => {
+        if (!isDirty()) return;
+
+        event.preventDefault();
+        event.returnValue = 'Изменения не сохранены.';
+        return 'Изменения не сохранены.';
+    });
+
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        form.querySelectorAll('.invalid-feedback').forEach(el=>el.remove());
+        form.querySelectorAll('.is-invalid').forEach(el=>el.classList.remove('is-invalid'));
+        document.querySelectorAll('[data-slot-error]').forEach(el => el.hidden = true);
+
+        if (state.blocked) return;
+
+        const badDay = validateWeeklyHours();
+        if (badDay) {
+            setBarState('bad', 'Укажите часы у включённых дней.');
+            focusField(badDay);
+            return;
+        }
+
+        const payload = buildPayload();
+
         if(form.new_password.value){
             payload.current_password = form.current_password.value;
             payload.new_password = form.new_password.value;
             payload.new_password_confirmation = form.new_password_confirmation.value;
         }
+
+        saveBtn.disabled = true;
+        setBarState('', 'Сохраняем…');
+
         const res = await fetch('/api/v1/settings', {
             method: 'PATCH',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -1104,11 +1366,19 @@
             body: JSON.stringify(payload)
         });
         const result = await res.json().catch(()=>({}));
+        saveBtn.disabled = false;
         if(!res.ok){
             const errors = result.error?.fields || {};
-            if(Object.keys(errors).length === 0 && result.error?.message){
-                showMessage('danger', result.error.message);
-            }
+            const firstMessage = Object.keys(errors).length
+                ? errors[Object.keys(errors)[0]][0]
+                : (result.error?.message || 'Не удалось сохранить.');
+
+            // The answer used to be inserted at the top of a six-screen page,
+            // 2300px above the button that had just been pressed.
+            setBarState('bad', firstMessage);
+
+            let firstInvalid = null;
+
             Object.keys(errors).forEach(key=>{
                 const fieldName = key.replace(/\.(\w+)/g,'[$1]');
                 let input = form.querySelector(`[name="${fieldName}"]`);
@@ -1121,16 +1391,25 @@
                     const container = input.closest('.form-control-validation') || input.parentNode;
                     const div = document.createElement('div');
                     div.classList.add('invalid-feedback');
+                    div.style.display = 'block';
                     div.textContent = errors[key][0];
                     container.appendChild(div);
+                    if (!firstInvalid) firstInvalid = input;
                 }
             });
+
+            focusField(firstInvalid);
             return;
         }
-        showMessage('success', '{{ __('settings.saved') }}');
         form.current_password.value='';
         form.new_password.value='';
         form.new_password_confirmation.value='';
+        // Reloading brings back what the server actually stored — the phone,
+        // for one, comes home without the mask it was typed in.
+        await loadSettings();
+        state.baseline = snapshot();
+        cancelBtn.hidden = true;
+        setBarState('ok', 'Сохранено');
 
         // If user changed name, update initials in settings avatar (when no image).
         const initials = computeInitials(form.name.value);
