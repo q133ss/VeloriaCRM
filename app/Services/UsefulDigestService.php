@@ -107,6 +107,7 @@ class UsefulDigestService
                 'specialty' => [
                     'label' => $specialty['label'],
                     'hint' => $specialty['hint'],
+                    'is_specific' => $specialty['is_specific'],
                 ],
             ],
             'digest' => $digest,
@@ -399,6 +400,7 @@ class UsefulDigestService
                     'This feed is adapted to your services and similar client needs.'
                 ),
                 'keywords' => $this->keywordBag([$category->name]),
+                'is_specific' => true,
             ];
         }
 
@@ -415,6 +417,10 @@ class UsefulDigestService
                 'Showing posts that are easiest to apply in your work right now.'
             ),
             'keywords' => $this->keywordBag($serviceNames),
+            // Without services there is nothing to have matched, and the page
+            // printed the words «вашу специализацию» in quotes as if it were
+            // the name of one.
+            'is_specific' => ! empty($serviceNames),
         ];
     }
 

@@ -4,9 +4,23 @@
 
 @section('content')
     <style>
-        .useful-page {
-            --useful-shadow: 0 20px 48px -34px rgba(37, 26, 84, 0.45);
+        /* The tokens live on the body: the modals below are siblings of the
+           page, and half of this palette is used inside them. */
+        body {
             --useful-line: color-mix(in srgb, var(--bs-border-color) 70%, transparent);
+            /* The summary is the content of this page, not a caption. Borrowed
+               from the secondary text colour it ran at 2.3:1 on a white card,
+               and the body colour is itself only 4.6:1 — both tints below are
+               mixed down from the heading colour to stay above 4.5:1. */
+            --useful-text: color-mix(in srgb, var(--bs-heading-color) 82%, transparent);
+            --useful-text-faint: color-mix(in srgb, var(--bs-heading-color) 74%, transparent);
+        }
+
+        /* Several blocks here set display, and display beats the attribute:
+           the modal used to keep an empty «Что сделать» line because of it. */
+        .useful-page [hidden],
+        .modal [hidden] {
+            display: none !important;
         }
 
         .useful-hero {
@@ -15,28 +29,28 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 1rem;
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14);
-            border-radius: 1.5rem;
-            padding: 1.35rem 1.5rem;
-            background: linear-gradient(135deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.015) 60%, rgba(var(--bs-info-rgb, 0, 207, 232), 0.04));
-            box-shadow: var(--useful-shadow);
         }
 
         .useful-hero__title {
-            margin: 0 0 0.2rem;
-            font-size: clamp(1.35rem, 2vw, 1.75rem);
+            margin: 0 0 0.15rem;
+            font-size: clamp(1.25rem, 1.6vw, 1.5rem);
             letter-spacing: -0.02em;
         }
 
-        .useful-hero__lead {
-            color: var(--bs-secondary-color);
+        .useful-hero__lead,
+        .useful-hero__note {
+            color: var(--useful-text-faint);
+            font-size: 0.85rem;
         }
 
+        /* One accent on the page, and it belongs to the post of the week.
+           The hero and the list carried the same tint and the same 48px
+           shadow, so nothing on the page was louder than anything else. */
         .useful-surface {
-            border: none;
-            border-radius: 1.35rem;
-            box-shadow: var(--useful-shadow);
-            background: color-mix(in srgb, var(--bs-card-bg) 94%, transparent);
+            border: 1px solid var(--useful-line);
+            border-radius: 1rem;
+            box-shadow: none;
+            background: var(--bs-card-bg);
         }
 
         .useful-toolbar {
@@ -58,17 +72,25 @@
             border: 0;
             border-radius: 999px;
             padding: 0.45rem 0.9rem;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07);
-            color: var(--bs-secondary-color);
+            background: color-mix(in srgb, var(--bs-body-color) 6%, transparent);
+            color: var(--useful-text);
             font-weight: 600;
             font-size: 0.88rem;
             white-space: nowrap;
         }
 
+        /* The selected chip used to be painted in the colour of the panel
+           under it, one to one: the selection was literally invisible, and
+           the unselected topics looked filled in beside it. */
         .useful-chip.is-active {
-            background: var(--bs-card-bg, #fff);
-            color: var(--bs-primary);
-            box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.65);
+            background: var(--bs-emphasis-color);
+            color: var(--bs-body-bg);
+        }
+
+        .useful-chip:focus-visible,
+        .useful-card:focus-visible {
+            outline: 2px solid var(--bs-primary);
+            outline-offset: 2px;
         }
 
         .useful-toolbar__right {
@@ -77,6 +99,11 @@
             gap: 0.6rem;
             flex: 1 1 260px;
             justify-content: flex-end;
+        }
+
+        .useful-toolbar--compact .useful-toolbar__right {
+            flex: 0 1 auto;
+            justify-content: flex-start;
         }
 
         /* Field and switch to one height: the theme gives them three. */
@@ -93,7 +120,7 @@
 
         .useful-featured {
             border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.18);
-            border-radius: 1.35rem;
+            border-radius: 1rem;
             padding: 1.35rem 1.5rem;
             background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.04);
         }
@@ -103,7 +130,7 @@
             flex-wrap: wrap;
             align-items: center;
             gap: 0.5rem;
-            color: var(--bs-secondary-color);
+            color: var(--useful-text-faint);
             font-size: 0.85rem;
         }
 
@@ -145,7 +172,7 @@
             flex-direction: column;
             gap: 0.5rem;
             border: 1px solid var(--useful-line);
-            border-radius: 1.1rem;
+            border-radius: 0.75rem;
             padding: 1.1rem;
             background: var(--bs-card-bg);
             cursor: pointer;
@@ -156,11 +183,11 @@
             border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
         }
 
-        /* Read posts step back without disappearing: the master may want to
-           open one again, and a list that hides its own history is confusing. */
-        .useful-card.is-read .useful-card__title,
-        .useful-card.is-read .useful-card__summary {
-            opacity: 0.68;
+        /* Read posts step back through the card, not through the text: dimmed
+           to 1.7:1 the summary was unreadable, and the master may well want to
+           open one again — a list that hides its own history is confusing. */
+        .useful-card.is-read {
+            background: color-mix(in srgb, var(--bs-card-bg) 90%, var(--bs-body-color));
         }
 
         .useful-card__title {
@@ -170,29 +197,49 @@
             font-weight: 600;
         }
 
+        /* The free space of a card is collected right here, so the action and
+           the buttons stand on one line across the row even when a title
+           wraps and a summary does not. */
         .useful-card__summary {
-            margin: 0;
-            color: var(--bs-secondary-color);
+            margin: 0 0 auto;
+            color: var(--useful-text);
             font-size: 0.9rem;
         }
 
+        /* «Что сделать» is advice, not a control: as a filled bar across the
+           whole card it read as a disabled field and asked to be clicked. */
         .useful-action {
             display: flex;
             align-items: baseline;
-            gap: 0.35rem;
-            padding: 0.55rem 0.7rem;
-            border-radius: 0.75rem;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+            gap: 0.4rem;
             font-size: 0.88rem;
+            color: var(--useful-text-faint);
         }
 
         .useful-action__label {
-            color: var(--bs-secondary-color);
             white-space: nowrap;
         }
 
         .useful-action__value {
             font-weight: 600;
+            color: var(--useful-text);
+        }
+
+        a.useful-action__value {
+            color: var(--bs-primary);
+            text-decoration: underline;
+        }
+
+        .useful-mark {
+            border: 1px solid color-mix(in srgb, var(--bs-heading-color) 35%, transparent);
+            color: var(--useful-text);
+            background: transparent;
+        }
+
+        .useful-mark:hover {
+            border-color: color-mix(in srgb, var(--bs-heading-color) 55%, transparent);
+            color: var(--bs-heading-color);
+            background: color-mix(in srgb, var(--bs-heading-color) 6%, transparent);
         }
 
         .useful-card__foot {
@@ -200,14 +247,51 @@
             flex-wrap: wrap;
             align-items: center;
             gap: 0.4rem;
-            margin-top: auto;
             padding-top: 0.35rem;
+        }
+
+        /* Out of the flow: the toasts used to push the page down by their own
+           height on every message. */
+        .useful-alerts {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            z-index: 1090;
+            width: min(360px, calc(100vw - 2.5rem));
+        }
+
+        .useful-alerts .alert {
+            box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 0.7);
         }
 
         .useful-empty {
             padding: 3rem 1.25rem;
             text-align: center;
-            color: var(--bs-secondary-color);
+            color: var(--useful-text-faint);
+        }
+
+        .useful-lock ul {
+            margin: 0.5rem 0 0;
+            padding-left: 1.1rem;
+            color: var(--useful-text);
+        }
+
+        .useful-lock li + li {
+            margin-top: 0.3rem;
+        }
+
+        .useful-lock .small {
+            color: var(--useful-text-faint);
+        }
+
+        .useful-modal-summary {
+            color: var(--useful-text);
+        }
+
+        /* The title used to shrink on the way in: a post opened smaller than
+           the card it was opened from. */
+        .modal .modal-title {
+            font-size: 1.2rem;
         }
 
         .useful-blocks {
@@ -222,7 +306,7 @@
             font-weight: 700;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: var(--bs-secondary-color);
+            color: var(--useful-text-faint);
         }
 
         .useful-block ul {
@@ -238,6 +322,10 @@
             .useful-hero {
                 flex-direction: column;
                 align-items: stretch;
+            }
+
+            .useful-featured {
+                padding: 1.1rem 1.15rem;
             }
 
             .useful-toolbar,
@@ -265,6 +353,13 @@
             .useful-grid {
                 grid-template-columns: 1fr;
             }
+
+            .useful-alerts {
+                right: 0.75rem;
+                left: 0.75rem;
+                bottom: 0.75rem;
+                width: auto;
+            }
         }
     </style>
 
@@ -280,11 +375,11 @@
                     Подборка раз в неделю
                 </button>
                 {{-- The plan is named before the press, not after it. --}}
-                <small class="text-muted" id="useful-digest-note"></small>
+                <small class="useful-hero__note" id="useful-digest-note"></small>
             </div>
         </section>
 
-        <div id="useful-alerts"></div>
+        <div class="useful-alerts" id="useful-alerts"></div>
 
         <section class="useful-featured" id="useful-featured" hidden></section>
 
@@ -324,7 +419,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted" id="useful-modal-summary"></p>
+                    <p class="useful-modal-summary" id="useful-modal-summary"></p>
                     <div class="useful-blocks" id="useful-modal-body"></div>
                     <div class="useful-action mt-3" id="useful-modal-action" hidden>
                         <span class="useful-action__label">Что сделать:</span>
@@ -334,8 +429,8 @@
                 <div class="modal-footer justify-content-between">
                     <a href="#" target="_blank" rel="noopener" class="btn btn-text-secondary d-none" id="useful-modal-link">Источник</a>
                     <div class="d-flex gap-2 ms-auto">
-                        <button type="button" class="btn btn-outline-primary" id="useful-modal-read"></button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="button" class="btn useful-mark" id="useful-modal-read"></button>
+                        <button type="button" class="btn btn-text-secondary" data-bs-dismiss="modal">Закрыть</button>
                     </div>
                 </div>
             </div>
@@ -353,9 +448,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-4">Одно письмо в неделю: важное обновление и пара материалов, которые подходят вашим услугам.</p>
+                    <p class="useful-modal-summary mb-4">Одно письмо в неделю: важное обновление и пара материалов, которые подходят вашим услугам.</p>
 
-                    <div id="useful-pref-lock" class="useful-empty d-none mb-3"></div>
+                    <div id="useful-pref-lock" class="useful-lock d-none"></div>
 
                     <div id="useful-pref-form">
                         <div class="form-check form-switch mb-3">
@@ -424,6 +519,7 @@
                 search: '',
                 category: 'all',
                 unreadOnly: false,
+                markOnClose: false,
                 payload: { meta: {}, preferences: {}, counts: {}, featured_post: null, filters: [], posts: [] },
                 byId: {},
                 openPostId: null,
@@ -434,6 +530,7 @@
             var featuredEl = document.getElementById('useful-featured');
             var listEl = document.getElementById('useful-list');
             var chipsEl = document.getElementById('useful-chips');
+            var toolbarEl = document.querySelector('.useful-toolbar');
             var searchEl = document.getElementById('useful-search');
             var unreadEl = document.getElementById('useful-unread-only');
             var digestBtn = document.getElementById('useful-digest-btn');
@@ -451,16 +548,28 @@
             var prefPreferences = document.getElementById('useful-pref-preferences');
             var prefStatus = document.getElementById('useful-pref-status');
 
-            function showAlert(type, message) {
+            function dismissAlert(el) {
+                el.classList.remove('show');
+                setTimeout(function () { el.remove(); }, 200);
+            }
+
+            function showAlert(type, message, action) {
                 if (!message) return;
                 var el = document.createElement('div');
-                el.className = 'alert alert-' + type + ' alert-dismissible fade show';
-                el.innerHTML = '<div>' + escapeHtml(message) + '</div><button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                el.className = 'alert alert-' + type + ' alert-dismissible fade show d-flex align-items-center gap-2';
+                el.innerHTML = '<div class="flex-grow-1">' + escapeHtml(message) + '</div>' +
+                    (action ? '<button type="button" class="btn btn-sm btn-text-primary flex-shrink-0" data-useful-alert-action>' + escapeHtml(action.label) + '</button>' : '') +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+
+                if (action) {
+                    el.querySelector('[data-useful-alert-action]').addEventListener('click', function () {
+                        dismissAlert(el);
+                        action.run();
+                    });
+                }
+
                 alertsEl.appendChild(el);
-                setTimeout(function () {
-                    el.classList.remove('show');
-                    el.addEventListener('transitionend', function () { el.remove(); });
-                }, 5000);
+                setTimeout(function () { dismissAlert(el); }, action ? 8000 : 5000);
             }
 
             /* ---------- rendering ---------- */
@@ -498,9 +607,12 @@
                 return '<div class="useful-action"><span class="useful-action__label">Что сделать:</span>' + value + '</div>';
             }
 
+            // One control in both states: a read card used to show a flat text
+            // button beside an outlined one on the card next to it, and
+            // «Прочитано» named a state while acting as an action.
             function readButton(post, extraClass) {
-                return '<button type="button" class="btn btn-sm ' + (post.is_read ? 'btn-text-secondary' : 'btn-outline-primary') + ' ' + (extraClass || '') + '" data-useful-read="' + post.id + '">' +
-                    (post.is_read ? 'Снять отметку' : 'Прочитано') +
+                return '<button type="button" class="btn btn-sm useful-mark ' + (extraClass || '') + '" data-useful-read="' + post.id + '">' +
+                    (post.is_read ? 'Снять отметку' : 'Отметить') +
                     '</button>';
             }
 
@@ -519,8 +631,10 @@
                     parts.push(counts.unread + ' не ' + plural(counts.unread, 'прочитан', 'прочитано', 'прочитано'));
                 }
 
+                // Without services to match, the label was the words «вашу
+                // специализацию» set in quotes, as if it were a name.
                 var specialty = (state.payload.meta || {}).specialty;
-                if (specialty && specialty.label) {
+                if (specialty && specialty.label && specialty.is_specific) {
                     parts.push('подобрано под «' + specialty.label + '»');
                 }
 
@@ -569,6 +683,19 @@
                 }).join('');
             }
 
+            // Three ways to filter four posts cost more attention than the posts
+            // themselves; on a phone they filled the whole first screen.
+            function renderToolbar() {
+                var total = (state.payload.counts || {}).total || 0;
+                var filters = state.payload.filters || [];
+                var compact = total < 15 && state.category === 'all' && !state.search;
+
+                chipsEl.hidden = compact || filters.length < 3;
+                searchEl.hidden = compact;
+                toolbarEl.hidden = chipsEl.hidden && searchEl.hidden && !total;
+                toolbarEl.classList.toggle('useful-toolbar--compact', chipsEl.hidden && searchEl.hidden);
+            }
+
             function renderList() {
                 var posts = state.payload.posts || [];
 
@@ -594,7 +721,7 @@
                 }
 
                 listEl.innerHTML = posts.map(function (post) {
-                    return '<article class="useful-card' + (post.is_read ? ' is-read' : '') + '" data-useful-open="' + post.id + '">' +
+                    return '<article class="useful-card' + (post.is_read ? ' is-read' : '') + '" role="button" tabindex="0" data-useful-open="' + post.id + '">' +
                         metaLine(post) +
                         '<h3 class="useful-card__title">' + escapeHtml(post.title) + '</h3>' +
                         '<p class="useful-card__summary">' + escapeHtml(post.summary || '') + '</p>' +
@@ -621,6 +748,7 @@
                 renderDigestNote();
                 renderFeatured();
                 renderChips();
+                renderToolbar();
                 renderList();
                 renderPreferences();
             }
@@ -687,12 +815,13 @@
                 linkEl.classList.toggle('d-none', !link);
 
                 syncModalReadButton(post);
-                contentModal.show();
 
-                // Opening it is the answer to «читала ли я это» — no second press.
-                if (!post.is_read) {
-                    setRead(post.id, true, { quiet: true });
-                }
+                // Opening is not reading: the mark is put down on the way out,
+                // where it can still be taken back. It used to be written on
+                // the press, and the counter behind the modal moved while the
+                // master was still on the first line.
+                state.markOnClose = !post.is_read;
+                contentModal.show();
             }
 
             function syncModalReadButton(post) {
@@ -701,8 +830,37 @@
                 button.dataset.usefulRead = String(post.id);
             }
 
+            function applyReadLocally(id, read) {
+                var touched = false;
+
+                function touch(post) {
+                    if (post && post.id === id && post.is_read !== read) {
+                        post.is_read = read;
+                        touched = true;
+                    }
+                }
+
+                (state.payload.posts || []).forEach(touch);
+                touch(state.payload.featured_post);
+
+                if (!touched) return false;
+
+                var counts = state.payload.counts || (state.payload.counts = {});
+                counts.unread = Math.max(0, (counts.unread || 0) + (read ? -1 : 1));
+
+                return true;
+            }
+
+            // Every press used to refetch and redraw the whole feed under the
+            // reader's cursor. The card is repainted here and put back if the
+            // request fails.
             function setRead(id, read, options) {
                 var quiet = options && options.quiet;
+
+                if (!applyReadLocally(id, read)) return Promise.resolve();
+
+                render();
+                if (state.openPostId === id) syncModalReadButton(state.byId[id]);
 
                 return fetch('/api/v1/useful/posts/' + id + '/read', {
                     method: 'POST',
@@ -712,16 +870,12 @@
                 })
                     .then(function (response) {
                         if (!response.ok) throw new Error('failed');
-                        return load();
-                    })
-                    .then(function () {
-                        var post = state.byId[id];
-                        if (post && state.openPostId === id) {
-                            syncModalReadButton(post);
-                        }
                     })
                     .catch(function (error) {
                         console.error(error);
+                        applyReadLocally(id, !read);
+                        render();
+                        if (state.openPostId === id) syncModalReadButton(state.byId[id]);
                         if (!quiet) showAlert('danger', 'Не удалось сохранить отметку.');
                     });
             }
@@ -731,9 +885,20 @@
             function renderPreferences() {
                 var prefs = state.payload.preferences || {};
 
+                // The dialog used to repeat the sentence already printed under
+                // the button and offer nothing else: a click that ended in a
+                // grey line about plans.
                 if (!prefs.available) {
                     prefLock.classList.remove('d-none');
-                    prefLock.innerHTML = 'Подборка приходит на тарифах Pro и Elite. <a href="' + escapeHtml(prefs.upgrade_url || '/subscription') + '">Открыть тарифы</a>';
+                    prefLock.innerHTML =
+                        '<div class="fw-semibold">Что приходит в письме</div>' +
+                        '<ul>' +
+                            '<li>Важное обновление недели — одной строкой.</li>' +
+                            '<li>Пара материалов, подобранных под ваши услуги.</li>' +
+                            '<li>Один шаг, который можно сделать за вечер.</li>' +
+                        '</ul>' +
+                        '<a class="btn btn-primary mt-3" href="' + escapeHtml(prefs.upgrade_url || '/subscription') + '">Открыть тарифы</a>' +
+                        '<div class="small mt-2">Подборка входит в тарифы Pro и Elite.</div>';
                     prefForm.classList.add('d-none');
                     return;
                 }
@@ -766,6 +931,13 @@
                         state.payload.preferences = payload.data || state.payload.preferences;
                         renderDigestNote();
                         prefStatus.textContent = 'Сохранено.';
+
+                        // A saved dialog closes itself; it used to stay open
+                        // with one grey word in the corner.
+                        setTimeout(function () {
+                            if (digestModal) digestModal.hide();
+                            showAlert('success', 'Настройки подборки сохранены.');
+                        }, 500);
                     })
                     .catch(function (error) {
                         console.error(error);
@@ -784,6 +956,11 @@
                     event.stopPropagation();
                     var id = Number(readTrigger.dataset.usefulRead);
                     var post = state.byId[id];
+
+                    // Deciding by hand settles the question: nothing is written
+                    // again when the modal closes.
+                    if (state.openPostId === id) state.markOnClose = false;
+
                     setRead(id, !(post && post.is_read));
                     return;
                 }
@@ -798,6 +975,36 @@
                     load();
                 }
             });
+
+            // The whole card is a target for the mouse, so it is one for the
+            // keyboard as well.
+            listEl.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+
+                var card = event.target.closest('.useful-card');
+                if (!card || event.target.closest('button, a')) return;
+
+                event.preventDefault();
+                openPost(Number(card.dataset.usefulOpen));
+            });
+
+            if (contentModalEl) {
+                contentModalEl.addEventListener('hidden.bs.modal', function () {
+                    var id = state.openPostId;
+                    state.openPostId = null;
+
+                    if (!id || !state.markOnClose) return;
+
+                    state.markOnClose = false;
+                    var post = state.byId[id];
+
+                    setRead(id, true, { quiet: true });
+                    showAlert('secondary', 'Отметили прочитанным: «' + ((post && post.title) || '') + '».', {
+                        label: 'Отменить',
+                        run: function () { setRead(id, false, { quiet: true }); },
+                    });
+                });
+            }
 
             // The filter applies itself; there was never an Apply button here
             // and there should not be one.
