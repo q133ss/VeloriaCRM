@@ -260,9 +260,11 @@
             quickServicesContainer.innerHTML = '';
 
             if (!Array.isArray(services) || !services.length) {
+                // A dead end: the form said there were no services and offered no way
+                // to add one.
                 const empty = document.createElement('div');
                 empty.className = 'col-12 text-muted';
-                empty.textContent = 'Услуги ещё не добавлены.';
+                empty.innerHTML = 'Услуги ещё не добавлены. <a href="{{ route('services.index') }}">Добавить услугу</a>';
                 quickServicesContainer.appendChild(empty);
                 updateQuickSummary();
                 return;

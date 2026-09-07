@@ -633,7 +633,8 @@
                     {{ __('dashboard.setup.progress', ['done' => $onboardingCompleted, 'total' => $onboardingTotal]) }}
                 </span>
                 <button type="button" class="btn btn-primary btn-sm" data-setup-open>
-                    {{ __('dashboard.setup.continue') }}
+                    {{-- «Продолжить» на счётчике «0 из 3» предлагало продолжить то, что не начинали. --}}
+                    {{ $onboardingCompleted > 0 ? __('dashboard.setup.continue') : __('dashboard.setup.start') }}
                 </button>
             </div>
         @endif
@@ -654,7 +655,8 @@
                                     &middot; {{ __('dashboard.day.expected', ['amount' => $today['expected_revenue_formatted']]) }}
                                 @endif
                             @else
-                                {{ __('dashboard.day.empty.title') }}
+                                {{-- Карточка ниже говорит то же самое подробнее, поэтому здесь коротко. --}}
+                                {{ $setupPending ? __('dashboard.day.hero_setup') : __('dashboard.day.hero_empty') }}
                             @endif
                         </p>
                     </div>
@@ -731,18 +733,20 @@
                     </div>
                 </section>
 
-                @if ($week['has_data'] || ! empty($occupancy['has_data']))
-                    {{--
-                        Money figures appear only once money has actually come in. A row
-                        of "0 ₽" is not information, it is discouragement, and the week a
-                        master sees their first client is the worst week to serve it.
-                    --}}
-                    <section class="card day-surface">
-                        <div class="card-body">
-                            <div class="day-block-head">
-                                <h2 class="day-block-title">{{ __('dashboard.week.title') }}</h2>
-                                <a class="day-block-link" href="{{ route('analytics') }}">{{ __('dashboard.week.all_analytics') }}</a>
-                            </div>
+                {{--
+                    Money figures appear only once money has actually come in. A row of
+                    "0 ₽" is not information, it is discouragement, and the week a master
+                    sees their first client is the worst week to serve it. Hiding the
+                    figures is right; hiding the whole card was not — a new account then
+                    had no way to learn that the dashboard counts anything at all.
+                --}}
+                <section class="card day-surface">
+                    <div class="card-body">
+                        <div class="day-block-head">
+                            <h2 class="day-block-title">{{ __('dashboard.week.title') }}</h2>
+                            <a class="day-block-link" href="{{ route('analytics') }}">{{ __('dashboard.week.all_analytics') }}</a>
+                        </div>
+                        @if ($week['has_data'] || ! empty($occupancy['has_data']))
                             <div class="day-week">
                                 @if (! empty($occupancy['has_data']))
                                     @php
@@ -820,9 +824,11 @@
                                     </div>
                                 @endif
                             </div>
-                        </div>
-                    </section>
-                @endif
+                        @else
+                            <p class="day-empty-text mb-0">{{ __('dashboard.week.empty') }}</p>
+                        @endif
+                    </div>
+                </section>
             </div>
 
             <aside class="day-aside">
@@ -830,13 +836,13 @@
                     Clients who have slipped past their own rhythm. Each row is a name,
                     the arithmetic behind the claim, and the one action worth taking.
                 --}}
-                @if ($dueClients->isNotEmpty())
-                    <section class="card day-surface">
-                        <div class="card-body">
-                            <div class="day-block-head">
-                                <h2 class="day-block-title">{{ __('dashboard.due.title') }}</h2>
-                                <a class="day-block-link" href="{{ route('clients.index') }}">{{ __('dashboard.due.all_clients') }}</a>
-                            </div>
+                <section class="card day-surface">
+                    <div class="card-body">
+                        <div class="day-block-head">
+                            <h2 class="day-block-title">{{ __('dashboard.due.title') }}</h2>
+                            <a class="day-block-link" href="{{ route('clients.index') }}">{{ __('dashboard.due.all_clients') }}</a>
+                        </div>
+                        @if ($dueClients->isNotEmpty())
                             <ul class="day-due">
                                 @foreach ($dueClients as $due)
                                     <li class="day-due-row">
@@ -862,9 +868,9 @@
                                             data-client-id="{{ $due['client_id'] }}"
                                             data-client-name="{{ $due['name'] }}"
                                             data-client-phone="{{ $due['phone'] }}"
-                                            @if (! empty($freeSlots))
-                                                data-free-day="{{ \Illuminate\Support\Str::ucfirst($freeSlots[0]['label']) }}"
-                                                data-free-slots="{{ implode(',', $freeSlots[0]['free']) }}"
+                                            @if (! empty($freeSlots['days']))
+                                                data-free-day="{{ \Illuminate\Support\Str::ucfirst($freeSlots['days'][0]['label']) }}"
+                                                data-free-slots="{{ implode(',', $freeSlots['days'][0]['free']) }}"
                                             @endif
                                         >
                                             {{ __('dashboard.due.write') }}
@@ -872,22 +878,30 @@
                                     </li>
                                 @endforeach
                             </ul>
-                        </div>
-                    </section>
-                @endif
+                        @else
+                            {{-- The block used to vanish, and with it the fact that the
+                                 dashboard watches who is drifting away. --}}
+                            <p class="day-empty-text mb-0">
+                                {{ ($onboarding['client_count'] ?? 0) > 0
+                                    ? __('dashboard.due.empty')
+                                    : __('dashboard.due.empty_new') }}
+                            </p>
+                        @endif
+                    </div>
+                </section>
 
                 {{--
                     Open slots are only worth showing next to the people who could fill
                     them, so the two blocks are deliberately adjacent.
                 --}}
-                @if (! empty($freeSlots))
-                    <section class="card day-surface">
-                        <div class="card-body">
-                            <div class="day-block-head">
-                                <h2 class="day-block-title">{{ __('dashboard.free.title') }}</h2>
-                            </div>
+                <section class="card day-surface">
+                    <div class="card-body">
+                        <div class="day-block-head">
+                            <h2 class="day-block-title">{{ __('dashboard.free.title') }}</h2>
+                        </div>
+                        @if (! empty($freeSlots['days']))
                             <ul class="day-free">
-                                @foreach ($freeSlots as $day)
+                                @foreach ($freeSlots['days'] as $day)
                                     <li class="day-free-row">
                                         <span class="day-free-day">{{ \Illuminate\Support\Str::ucfirst($day['label']) }}</span>
                                         <span class="day-free-slots">
@@ -908,9 +922,26 @@
                                     {{ __('dashboard.free.hint', ['names' => $dueClients->pluck('name')->take(2)->implode(', ')]) }}
                                 </p>
                             @endif
-                        </div>
-                    </section>
-                @endif
+                        @else
+                            {{-- Three different situations used to share one blank space:
+                                 no schedule, three days off, and a week booked solid. --}}
+                            <p class="day-empty-text mb-0">
+                                @if ($freeSlots['state'] === 'no_schedule')
+                                    {{ __('dashboard.free.empty_no_schedule') }}
+                                @elseif ($freeSlots['state'] === 'day_off')
+                                    {{ __('dashboard.free.empty_day_off') }}
+                                @else
+                                    {{ __('dashboard.free.empty_all_booked') }}
+                                @endif
+                            </p>
+                            @if ($freeSlots['state'] === 'no_schedule')
+                                <a class="btn btn-outline-primary btn-sm mt-3" href="{{ route('settings') }}#settings-work">
+                                    {{ __('dashboard.free.empty_no_schedule_cta') }}
+                                </a>
+                            @endif
+                        @endif
+                    </div>
+                </section>
             </aside>
         </div>
     </div>

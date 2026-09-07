@@ -104,6 +104,8 @@ class DashboardController extends Controller
             ];
         })->values();
 
+        $freeSlots = $this->buildFreeSlots($setting, $orders, $todayStart, $timezone);
+
         $expectedToday = $todayOrders
             ->filter(fn (Order $order) => in_array($order->status, self::REVENUE_STATUSES, true))
             ->sum(fn (Order $order) => (float) $order->total_price);
@@ -117,7 +119,8 @@ class DashboardController extends Controller
             ],
             'schedule' => $schedule,
             'dueClients' => $this->buildDueClients($user->id, $now, $timezone),
-            'freeSlots' => $this->buildFreeSlots($setting, $orders, $todayStart, $timezone),
+            'freeSlots' => $freeSlots,
+            'quickSlots' => $this->buildQuickSlots($setting, $now, $timezone),
             'occupancy' => $this->buildOccupancy($setting, $orders, $todayStart, $timezone),
             'week' => $this->buildWeekSummary($orders, $todayStart, $todayEnd),
             'onboarding' => [
@@ -281,17 +284,29 @@ class DashboardController extends Controller
      * quietly does not arrive, and it is only useful next to the list of clients
      * who are due, which is what the view puts beside it.
      */
+    /**
+     * Free slots for the next three days, and the reason when there are none.
+     *
+     * The block used to disappear whenever the array came back empty, which
+     * folded three different situations into one blank space: no schedule yet,
+     * three days off, and a week booked solid. The last one is good news that
+     * looked like a missing feature.
+     *
+     * @return array{days: array<int, array<string, mixed>>, state: string, capacity: int}
+     */
     private function buildFreeSlots(?Setting $setting, Collection $orders, CarbonInterface $todayStart, string $timezone): array
     {
-        if (! $setting) {
-            return [];
+        if (! $setting || ! $this->hasConfiguredSchedule($setting)) {
+            return ['days' => [], 'state' => 'no_schedule', 'capacity' => 0];
         }
 
         $days = [];
+        $capacity = 0;
 
         for ($offset = 1; $offset <= 3; $offset++) {
             $day = $todayStart->copy()->addDays($offset);
             $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $day, $timezone));
+            $capacity += $slots->count();
 
             if ($slots->isEmpty()) {
                 continue;
@@ -318,7 +333,46 @@ class DashboardController extends Controller
             ];
         }
 
-        return $days;
+        if ($days !== []) {
+            return ['days' => $days, 'state' => 'ok', 'capacity' => $capacity];
+        }
+
+        return [
+            'days' => [],
+            'state' => $capacity === 0 ? 'day_off' : 'all_booked',
+            'capacity' => $capacity,
+        ];
+    }
+
+    /**
+     * Times offered by the quick booking form.
+     *
+     * They used to be five numbers written into the component — 09:00, 11:00,
+     * 13:00, 15:00, 18:00 — and an account with no schedule at all was offered
+     * the same five.
+     *
+     * @return array<int, string>
+     */
+    private function buildQuickSlots(?Setting $setting, CarbonInterface $now, string $timezone): array
+    {
+        if (! $setting || ! $this->hasConfiguredSchedule($setting)) {
+            return [];
+        }
+
+        for ($offset = 0; $offset <= 7; $offset++) {
+            $day = $now->copy()->startOfDay()->addDays($offset);
+            $slots = collect($this->scheduleService->resolveSlotsForDate($setting, $day, $timezone));
+
+            if ($offset === 0) {
+                $slots = $slots->filter(fn (string $slot) => $slot > $now->format('H:i'));
+            }
+
+            if ($slots->isNotEmpty()) {
+                return $slots->take(5)->values()->all();
+            }
+        }
+
+        return [];
     }
 
     /**

@@ -30,6 +30,8 @@ return [
         'new_appointment' => 'New appointment',
         'all_appointments' => 'All appointments',
         'no_service' => 'No service set',
+        'hero_empty' => 'A free day',
+        'hero_setup' => 'The account is still being set up',
         'empty' => [
             'title' => 'Nothing booked today',
             'text' => 'A free day. Invite clients into the open slots, or take the time off.',
@@ -42,6 +44,8 @@ return [
     ],
 
     'due' => [
+        'empty' => 'Nobody has fallen out of their own rhythm.',
+        'empty_new' => 'Clients worth calling back will appear here: the system watches how often each one comes.',
         'title' => 'Time to book',
         'days' => 'day|days',
         'rhythm' => 'usually every :interval, :passed since',
@@ -51,6 +55,10 @@ return [
     ],
 
     'free' => [
+        'empty_no_schedule' => 'Fill in your working hours and the free slots for the next few days will appear here.',
+        'empty_no_schedule_cta' => 'Set the schedule',
+        'empty_all_booked' => 'The next three days are fully booked.',
+        'empty_day_off' => 'You are not working for the next three days.',
         'title' => 'Open slots',
         'tomorrow' => 'Tomorrow',
         'slots' => ':slots free',
@@ -87,6 +95,7 @@ return [
     ],
 
     'week' => [
+        'empty' => 'Occupancy, revenue and the average ticket appear after the first bookings.',
         'title' => 'This week',
         'all_analytics' => 'All analytics',
         'revenue' => 'Revenue',
@@ -102,6 +111,7 @@ return [
         'title' => 'Account setup',
         'progress' => ':done of :total',
         'continue' => 'Continue',
+        'start' => 'Set up',
         'done' => 'Your account is ready',
         'steps' => [
             'schedule' => 'Working hours',

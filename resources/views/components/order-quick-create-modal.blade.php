@@ -54,7 +54,9 @@
                                 'label' => 'Дата и время',
                                 'required' => true,
                                 'helper' => 'Клик по полю открывает календарь. Ниже можно сразу выбрать день и удобное время.',
-                                'timeSlots' => ['09:00', '11:00', '13:00', '15:00', '18:00'],
+                                {{-- Five numbers written into the component were offered even to an
+                                     account whose working hours are not set at all. --}}
+                                'timeSlots' => ($quickSlots ?? []) ?: ['09:00', '11:00', '13:00', '15:00', '18:00'],
                             ])
                         </div>
                         <div class="col-md-6">
