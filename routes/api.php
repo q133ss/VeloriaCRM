@@ -81,6 +81,11 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::delete('/orders/{order}', [ApiOrderController::class, 'destroy']);
         Route::post('/orders/bulk', [ApiOrderController::class, 'bulk']);
         Route::post('/orders/quick-create', [ApiOrderController::class, 'quickStore']);
+
+        // Reads a phrase into the create form. Well above human typing speed —
+        // the point is to cap a stuck retry loop, not to ration the master.
+        Route::post('/orders/parse-intent', [ApiOrderController::class, 'parseIntent'])
+            ->middleware('throttle:20,1');
         Route::post('/orders/{order}/complete', [ApiOrderController::class, 'complete']);
         Route::post('/orders/{order}/start', [ApiOrderController::class, 'start']);
         Route::post('/orders/{order}/no-show', [ApiOrderController::class, 'markNoShow']);

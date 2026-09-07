@@ -7,6 +7,7 @@ use App\Http\Requests\BulkOrderActionRequest;
 use App\Http\Requests\CancelOrderRequest;
 use App\Http\Requests\OrderFilterRequest;
 use App\Http\Requests\OrderFormRequest;
+use App\Http\Requests\ParseBookingIntentRequest;
 use App\Http\Requests\QuickOrderRequest;
 use App\Http\Requests\RescheduleOrderRequest;
 use App\Models\Client;
@@ -17,12 +18,14 @@ use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Ai\AiGateway;
 use App\Services\Booking\BookingConflictService;
+use App\Services\Booking\Intent\BookingIntentResolver;
 use App\Services\Booking\OrderDurationResolver;
 use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\ClientIdentityService;
 use App\Services\Orders\OrderActionPolicy;
 use App\Services\OrderService;
 use App\Services\WaitlistMatchService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -674,6 +677,38 @@ class OrderController extends Controller
         });
 
         return response()->json($payload);
+    }
+
+    /**
+     * Reads «марина завтра ногти в 3 дня» into a half-filled create form.
+     *
+     * Deliberately not gated behind a paid plan. This is the first thing a new
+     * master does, and the rules alone — date, time, phone, a substring match on
+     * the price list — answer most phrases without touching a provider at all.
+     * What is rationed is the model, by a daily budget: over it the endpoint
+     * still answers, with whatever plain PHP worked out.
+     *
+     * Nothing is created here. The answer only fills the form in.
+     */
+    public function parseIntent(ParseBookingIntentRequest $request, BookingIntentResolver $intents): JsonResponse
+    {
+        $master = Auth::guard('sanctum')->user();
+        $timezone = $master?->timezone ?: config('app.timezone');
+        $anchor = $request->filled('date')
+            ? CarbonImmutable::parse($request->string('date')->toString(), $timezone)
+            : null;
+
+        return response()->json($intents->resolve(
+            text: $request->string('text')->toString(),
+            masterId: $this->currentUserId(),
+            services: $this->getUserServices(),
+            searchClients: fn (string $query) => $this->searchSelectableClients($query),
+            now: CarbonImmutable::now($timezone),
+            anchorDay: $anchor,
+            setting: Setting::query()->where('user_id', $this->currentUserId())->first(),
+            timezone: $timezone,
+            paidPlan: $this->userHasProAccess(),
+        ));
     }
 
     public function options(Request $request): JsonResponse

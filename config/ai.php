@@ -60,5 +60,27 @@ return [
         // queue does not belong in the write path, so it stays on OpenAI until
         // the local queue is measured to be idle in practice.
         'order_recommendations' => env('AI_ROUTE_ORDER_RECS', 'openai_first'),
+
+        // A master is looking at the create form waiting for it to fill in.
+        // Twenty seconds behind a shared browser is too long to make her wait
+        // for something the rules already answered most of, so the paid
+        // provider goes first here and the local one is the safety net.
+        'booking_intent' => env('AI_ROUTE_BOOKING_INTENT', 'openai_first'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reading a booking out of a phrase
+    |--------------------------------------------------------------------------
+    |
+    | The model is only asked when the rules are unsure, so these budgets are
+    | not a wall in front of the feature: over the limit the endpoint still
+    | answers, with whatever plain PHP could work out on its own.
+    |
+    */
+
+    'booking_intent' => [
+        'daily_ai_calls_free' => env('AI_BOOKING_INTENT_FREE_CALLS', 40),
+        'daily_ai_calls_pro' => env('AI_BOOKING_INTENT_PRO_CALLS', 400),
     ],
 ];
