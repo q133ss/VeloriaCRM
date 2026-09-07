@@ -84,6 +84,17 @@ return [
         'day_load_failed' => 'Failed to load day details. Please try again.',
     ],
     'no_events' => 'No bookings planned for this period.',
+    'phrase' => [
+        'placeholder' => 'For example: marina tomorrow nails at 3',
+        'submit' => 'Read the phrase',
+        'mic_label' => 'Dictate the booking',
+        'mic_soon' => 'Coming soon — dictate the booking.',
+        'parsing' => 'Reading…',
+        'failed' => 'Could not read the phrase. Fill the fields in by hand.',
+        'too_short' => 'Write at least a name or a service.',
+        'nothing_understood' => 'Nothing recognised — fill the fields in by hand.',
+        'filled_prefix' => 'Filled in:',
+    ],
     'validation' => [
         'start_required' => 'The range start date is required.',
         'start_date' => 'The range start must be a valid date.',

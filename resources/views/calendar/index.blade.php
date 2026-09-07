@@ -25,6 +25,7 @@
 @section('meta')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css">
     @include('components.veloria-datetime-picker-styles')
+    @include('components.booking-phrase-input-styles')
     <style>
         .calendar-page {
             --cal-border: rgba(var(--bs-border-color-rgb, 160, 169, 192), 0.42);
@@ -705,6 +706,7 @@
                          the server's messages are already written for the master. --}}
                     <form id="calendar-create-form" novalidate>
                         <div class="modal-body p-4">
+                            @include('components.booking-phrase-input')
                             <div id="calendar-create-alerts" class="mb-3"></div>
                             <input type="hidden" id="calendar-create-client-id" name="client_id" />
                             <input type="hidden" id="calendar-create-waitlist-entry-id" name="waitlist_entry_id" />
@@ -942,6 +944,7 @@
     @include('components.phone-mask-script')
     @include('components.veloria-datetime-picker-script')
     @include('components.message-sheet-script')
+    @include('components.booking-phrase-input-script')
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
     <script>
@@ -1731,6 +1734,140 @@
                 // with the form, the list only hides the fields underneath it.
                 clearCreateClientResults();
                 updateCreateSummary();
+
+                if (window.BookingPhraseInput) {
+                    window.BookingPhraseInput.reset();
+                }
+            }
+
+            /**
+             * Puts a parsed phrase into the form. Order matters here:
+             * updateCreateSummary() recomputes price and duration from the ticked
+             * services and overwrites both fields until dataset.userEdited is set,
+             * so anything the master stated out loud is applied after it, not before.
+             */
+            function applyBookingIntent(result) {
+                const filled = (result && result.filled) || {};
+
+                clearCreateAlerts();
+                clearCreateFieldErrors();
+
+                if (filled.client) {
+                    setCreateClientSelection(filled.client);
+                    if (createOrderClientSearchEl) {
+                        createOrderClientSearchEl.value = filled.client.name || '';
+                    }
+                } else if (filled.new_client) {
+                    setCreateClientSelection(null);
+
+                    if (createOrderClientNameEl && filled.new_client.name) {
+                        createOrderClientNameEl.value = filled.new_client.name;
+                    }
+
+                    if (createOrderClientPhoneEl && filled.new_client.phone) {
+                        createOrderClientPhoneEl.value = filled.new_client.phone;
+                        // Lets phone-mask-script format what the parser normalised.
+                        createOrderClientPhoneEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+
+                // Never lookupCreateClient() here: it races its own debounce and
+                // reopens the results list over the form that was just filled in.
+                clearCreateClientResults();
+                clearCreateClientSuggestions();
+
+                const wanted = (filled.services || []).map(function (service) { return String(service.id); });
+                document.querySelectorAll('.calendar-create-service-checkbox').forEach(function (checkbox) {
+                    checkbox.checked = wanted.indexOf(checkbox.value) !== -1;
+                });
+
+                if (filled.scheduled_at && createOrderScheduledAtEl) {
+                    if (window.VeloriaDateTimePicker) {
+                        window.VeloriaDateTimePicker.setValue(createOrderScheduledAtEl, filled.scheduled_at);
+                    } else {
+                        createOrderScheduledAtEl.value = filled.scheduled_at;
+                    }
+                }
+
+                updateCreateSummary();
+
+                if (filled.total_price && createOrderTotalPriceEl) {
+                    createOrderTotalPriceEl.value = filled.total_price;
+                    createOrderTotalPriceEl.dataset.userEdited = '1';
+                }
+
+                if (filled.duration && createOrderDurationEl) {
+                    createOrderDurationEl.value = filled.duration;
+                    createOrderDurationEl.dataset.userEdited = '1';
+                }
+
+                if (filled.note && createOrderNoteEl && !createOrderNoteEl.value) {
+                    createOrderNoteEl.value = filled.note;
+                }
+
+                const unresolved = result.unresolved || [];
+
+                if (unresolved.indexOf('client_phone') !== -1 && createOrderClientPhoneEl) {
+                    createOrderClientPhoneEl.focus();
+                } else if (!(result.choices || []).length && createOrderSubmitEl) {
+                    // Focus, never click: the master decides when the record is made.
+                    createOrderSubmitEl.focus();
+                }
+            }
+
+            /**
+             * One chip out of a choice the parser could not settle on its own.
+             * Everything needed is already in the payload, so nothing goes back
+             * to the server.
+             */
+            function applyBookingIntentChoice(field, option) {
+                if (field === 'client') {
+                    if (option.value === 'new') {
+                        setCreateClientSelection(null);
+                        if (createOrderClientNameEl && option.payload && option.payload.name) {
+                            createOrderClientNameEl.value = option.payload.name;
+                        }
+                        if (createOrderClientPhoneEl) {
+                            createOrderClientPhoneEl.focus();
+                        }
+                        return;
+                    }
+
+                    setCreateClientSelection(option.payload);
+                    if (createOrderClientSearchEl) {
+                        createOrderClientSearchEl.value = (option.payload && option.payload.name) || '';
+                    }
+                    clearCreateClientResults();
+                    return;
+                }
+
+                if (field === 'services') {
+                    const checkbox = document.querySelector('.calendar-create-service-checkbox[value="' + option.value + '"]');
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        updateCreateSummary();
+                    }
+                    return;
+                }
+
+                if (field === 'scheduled_at' && createOrderScheduledAtEl && createOrderScheduledAtEl.value) {
+                    const day = createOrderScheduledAtEl.value.slice(0, 10);
+                    if (window.VeloriaDateTimePicker) {
+                        window.VeloriaDateTimePicker.setValue(createOrderScheduledAtEl, day + 'T' + option.value);
+                    }
+                }
+            }
+
+            if (window.BookingPhraseInput) {
+                window.BookingPhraseInput.init({
+                    authHeaders: authHeaders,
+                    ensureOptions: loadCreateOrderOptions,
+                    getAnchorDate: function () {
+                        return createOrderScheduledAtEl ? (createOrderScheduledAtEl.value || '').slice(0, 10) : '';
+                    },
+                    onParsed: applyBookingIntent,
+                    onChoice: applyBookingIntentChoice,
+                });
             }
 
             async function openCreateOrderModal(dateStr) {
