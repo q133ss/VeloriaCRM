@@ -10,7 +10,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Models\User;
-use App\Services\OpenAIService;
+use App\Services\Ai\AiGateway;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +29,7 @@ class AnalyticsController extends Controller
     private const LOYAL_LEVELS = ['gold', 'platinum', 'vip', 'ambassador'];
 
     public function __construct(
-        private readonly OpenAIService $openAI,
+        private readonly AiGateway $ai,
     ) {
     }
 
@@ -1159,20 +1159,13 @@ PROMPT;
         ];
 
         try {
-            $response = $this->openAI->respond($prompt, $context, [
-                'response_format' => [
-                    'type' => 'json_schema',
-                    'json_schema' => $schema,
-                ],
+            $decoded = $this->ai->json('analytics_insights', $prompt, $context, $schema, [
                 'max_tokens' => 600,
             ]);
 
-            $content = Arr::get($response, 'content');
-            if (! $content) {
+            if ($decoded === null) {
                 return $fallback;
             }
-
-            $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
 
             return [
                 'summary' => (string) Arr::get($decoded, 'summary', $fallback['summary']),
@@ -1272,6 +1265,6 @@ PROMPT;
 
     protected function aiEnabled(): bool
     {
-        return (bool) config('openai.api_key');
+        return $this->ai->enabled('analytics_insights');
     }
 }

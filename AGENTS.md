@@ -96,26 +96,44 @@ These sections were also simplified recently. When editing them:
 - hide secondary or advanced actions until needed
 
 ## AI / Agents Layer
-Primary AI-related backend pieces:
-- `app/Services/OpenAIService.php`
-- `app/Services/DashboardAiService.php`
-- `app/Services/UsefulDigestService.php`
-- `app/Http/Controllers/Api/V1/ClientController.php`
-- `app/Http/Controllers/Api/V1/OrderController.php`
-- `app/Http/Controllers/Api/V1/AnalyticsController.php`
-- `app/Http/Controllers/Api/V1/UsefulController.php`
+All generation goes through one door: `app/Services/Ai/AiGateway.php`. Never call
+`OpenAIService` directly from new code.
 
-Current responsibilities:
-- client recommendations and analytics
-- order recommendations and analytics
-- dashboard suggestions and daily tip
-- analytics insights/forecast
-- useful content assembly and weekly digest delivery
+Behind the gateway are two providers:
+- `app/Services/Ai/LocalAiService.php` — `ai_service`, a free FastAPI microservice
+  that drives a real browser (DuckDuckGo AI Chat first, Google AI Overview in
+  reserve). It runs **outside Docker** on the host; the app reaches it at
+  `AI_LOCAL_URL`. One request at a time, tens of seconds, plain text only.
+- `app/Services/OpenAIService.php` — paid, fast, honours a JSON schema.
+
+Order is per task in `config/ai.php` (`local_first` by default). Two rules fall
+out of the local service's limits and should not be worked around:
+- prompts over `ai.local.max_prompt_chars` (2000, the microservice's own cap) are
+  never sent to it, so the heavy analytical contexts land on OpenAI by themselves
+- `order_recommendations` stays `openai_first`: it sits inside order create/update,
+  and a slot in a shared browser queue does not belong in the write path
+
+After a failure the local service is put in cooldown so the next user does not pay
+the timeout again. `AiGateway::text()` / `json()` return **null** rather than
+throwing — null is the cue to use the caller's own written fallback.
+
+Call sites:
+- `app/Services/ClientOutreachService.php` — the client message (plain text)
+- `app/Services/DailyPostIdeaService.php` — daily content idea (scheduled)
+- `ClientController`, `OrderController`, `AnalyticsController` — recommendations
+  and analytics (JSON)
+- `app/Services/DashboardAiService.php` — **dead code**, nothing instantiates it
+- `app/Services/UsefulDigestService.php` — despite the name, uses no LLM at all
 
 Paid-plan behavior matters:
 - many AI features are intended for Pro/Elite access
 - non-paid flows should degrade gracefully with fallbacks
-- avoid introducing hard failures when OpenAI is unavailable
+- the free monthly outreach allowance meters **OpenAI only**; the local service
+  costs nothing, so it stays available after the allowance runs out
+- avoid introducing hard failures when a provider is unavailable
+
+Diagnostics: `docker compose exec app php artisan ai:ping "..."` prints which
+provider answered and how long it took.
 
 ## Working Rules for This Repo
 ### UI verification

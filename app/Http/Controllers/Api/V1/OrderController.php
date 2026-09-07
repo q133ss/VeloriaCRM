@@ -15,10 +15,10 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\WaitlistEntry;
+use App\Services\Ai\AiGateway;
 use App\Services\Booking\BookingConflictService;
 use App\Services\Booking\OrderDurationResolver;
 use App\Services\Booking\ServiceDurationEstimator;
-use App\Services\OpenAIService;
 use App\Services\ClientIdentityService;
 use App\Services\Orders\OrderActionPolicy;
 use App\Services\OrderService;
@@ -39,7 +39,7 @@ use Illuminate\Validation\ValidationException;
 class OrderController extends Controller
 {
     public function __construct(
-        private readonly OpenAIService $openAI,
+        private readonly AiGateway $ai,
         private readonly OrderService $orderService,
         private readonly BookingConflictService $conflicts,
         private readonly WaitlistMatchService $waitlistMatches,
@@ -1040,7 +1040,47 @@ class OrderController extends Controller
 
     protected function aiAvailable(): bool
     {
-        return $this->userHasProAccess() && filled(config('openai.api_key'));
+        return $this->userHasProAccess() && $this->ai->enabled();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function recommendationSchema(): array
+    {
+        return [
+            'name' => 'client_recommendations',
+            'schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'recommendations' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'service_id' => [
+                                    'oneOf' => [
+                                        ['type' => 'integer'],
+                                        ['type' => 'string'],
+                                    ],
+                                ],
+                                'title' => ['type' => 'string'],
+                                'insight' => ['type' => 'string'],
+                                'action' => ['type' => 'string'],
+                                'confidence' => [
+                                    'oneOf' => [
+                                        ['type' => 'number'],
+                                        ['type' => 'null'],
+                                    ],
+                                ],
+                            ],
+                            'required' => ['service_id', 'title', 'insight', 'action'],
+                        ],
+                    ],
+                ],
+                'required' => ['recommendations'],
+            ],
+        ];
     }
 
     protected function buildRecommendedServices(?User $client, $services)
@@ -1076,48 +1116,10 @@ class OrderController extends Controller
 Фокусируйтесь на практических улучшениях сервиса и росте выручки мастера.
 PROMPT;
 
-            $response = $this->openAI->respond($prompt, $context, [
+            $payload = $this->ai->json('order_recommendations', $prompt, $context, $this->recommendationSchema(), [
                 'temperature' => 0.25,
                 'max_tokens' => 700,
-                'response_format' => [
-                    'type' => 'json_schema',
-                    'json_schema' => [
-                        'name' => 'client_recommendations',
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'recommendations' => [
-                                    'type' => 'array',
-                                    'items' => [
-                                        'type' => 'object',
-                                        'properties' => [
-                                            'service_id' => [
-                                                'oneOf' => [
-                                                    ['type' => 'integer'],
-                                                    ['type' => 'string'],
-                                                ],
-                                            ],
-                                            'title' => ['type' => 'string'],
-                                            'insight' => ['type' => 'string'],
-                                            'action' => ['type' => 'string'],
-                                            'confidence' => [
-                                                'oneOf' => [
-                                                    ['type' => 'number'],
-                                                    ['type' => 'null'],
-                                                ],
-                                            ],
-                                        ],
-                                        'required' => ['service_id', 'title', 'insight', 'action'],
-                                    ],
-                                ],
-                            ],
-                            'required' => ['recommendations'],
-                        ],
-                    ],
-                ],
             ]);
-
-            $payload = json_decode($response['content'] ?? '', true);
 
             if (! is_array($payload)) {
                 throw new \UnexpectedValueException('Invalid response payload for recommendations.');
@@ -1813,40 +1815,36 @@ PROMPT;
 с фокусом на заботу о клиенте и бизнес-задачи мастера.
 PROMPT;
 
-            $response = $this->openAI->respond($prompt, $context, [
-                'temperature' => 0.3,
-                'max_tokens' => 750,
-                'response_format' => [
-                    'type' => 'json_schema',
-                    'json_schema' => [
-                        'name' => 'client_analytics',
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'summary' => ['type' => 'string'],
-                                'risk_flags' => [
-                                    'type' => 'array',
-                                    'items' => ['type' => 'string'],
+            $schema = [
+                'name' => 'client_analytics',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'summary' => ['type' => 'string'],
+                        'risk_flags' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string'],
+                        ],
+                        'recommendations' => [
+                            'type' => 'array',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'title' => ['type' => 'string'],
+                                    'action' => ['type' => 'string'],
                                 ],
-                                'recommendations' => [
-                                    'type' => 'array',
-                                    'items' => [
-                                        'type' => 'object',
-                                        'properties' => [
-                                            'title' => ['type' => 'string'],
-                                            'action' => ['type' => 'string'],
-                                        ],
-                                        'required' => ['title', 'action'],
-                                    ],
-                                ],
+                                'required' => ['title', 'action'],
                             ],
-                            'required' => ['summary'],
                         ],
                     ],
+                    'required' => ['summary'],
                 ],
-            ]);
+            ];
 
-            $payload = json_decode($response['content'] ?? '', true);
+            $payload = $this->ai->json('client_analytics', $prompt, $context, $schema, [
+                'temperature' => 0.3,
+                'max_tokens' => 750,
+            ]);
 
             if (is_array($payload)) {
                 if (! empty($payload['summary']) && is_string($payload['summary'])) {

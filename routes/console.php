@@ -3,6 +3,8 @@
 use App\Models\MarketingCampaign;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Ai\AiGateway;
+use App\Services\Ai\LocalAiService;
 use App\Services\AllergyReminderService;
 use App\Services\DailyPostIdeaService;
 use App\Services\Marketing\MarketingCampaignService;
@@ -191,6 +193,42 @@ Artisan::command('alerts:send-allergy-reminders {userId?}', function (?int $user
         $this->line(json_encode($item, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 })->purpose('Send in-app allergy reminders before appointments for Pro and Elite users');
+
+Artisan::command('ai:ping {prompt?}', function (?string $prompt = null) {
+    /** @var LocalAiService $local */
+    $local = app(LocalAiService::class);
+    /** @var AiGateway $gateway */
+    $gateway = app(AiGateway::class);
+
+    $health = $local->health();
+
+    $this->line('Local service: ' . config('ai.local.url'));
+    $this->line($health
+        ? 'Health: ok, queue depth ' . ($health['queue_depth'] ?? '?')
+        : 'Health: unreachable');
+
+    if ($local->cooling()) {
+        $this->warn('Local service is in cooldown after a recent failure and will be skipped.');
+    }
+
+    $prompt ??= 'Напиши одно тёплое приветствие для клиентки бьюти-мастера. Только текст.';
+
+    $started = microtime(true);
+    $text = $gateway->text('outreach_message', $prompt);
+    $elapsed = round((microtime(true) - $started) * 1000);
+
+    if ($text === null) {
+        $this->error('No provider produced text (' . $elapsed . ' ms).');
+
+        return 1;
+    }
+
+    $this->info('Provider: ' . $gateway->lastProvider() . ', ' . $elapsed . ' ms');
+    $this->newLine();
+    $this->line($text);
+
+    return 0;
+})->purpose('Check the AI providers end to end and show which one answered');
 
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
