@@ -55,13 +55,22 @@ class ServiceManagementTest extends TestCase
             'name' => 'Brows',
         ]);
 
+        // `upsell_suggestions` is a list of the master's own service ids, as
+        // the column has always said it was; it used to accept any string.
+        $tint = Service::create([
+            'user_id' => $user->id,
+            'name' => 'Brow tint',
+            'base_price' => 700,
+            'duration_min' => 20,
+        ]);
+
         $createPayload = [
             'name' => 'Brow shaping',
             'category_id' => $category->id,
             'base_price' => 1200,
             'cost' => 300,
             'duration_min' => 45,
-            'upsell_suggestions' => ['Tint'],
+            'upsell_suggestions' => [$tint->id],
         ];
 
         $createResponse = $this->postJson('/api/v1/services', $createPayload);
@@ -83,7 +92,7 @@ class ServiceManagementTest extends TestCase
             'base_price' => 1400,
             'cost' => 400,
             'duration_min' => 50,
-            'upsell_suggestions' => ['Tint', 'Lamination'],
+            'upsell_suggestions' => [$tint->id],
         ];
 
         $updateResponse = $this->patchJson('/api/v1/services/' . $serviceId, $updatePayload);

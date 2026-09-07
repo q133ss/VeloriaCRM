@@ -2,48 +2,29 @@
 
 return [
     'title' => 'Services',
-    'subtitle' => 'Organise your catalogue, track prices and duration for every treatment.',
+    'subtitle' => 'Price, duration and demand — everything a service is decided on.',
     'actions' => [
         'create_service' => 'New service',
         'create_category' => 'New category',
         'cancel' => 'Cancel',
+        'edit' => 'Edit',
+        'book' => 'Book this service',
+        'more' => 'More',
+        'delete' => 'Delete service',
+        'rename' => 'Rename',
+        'delete_category' => 'Delete category',
+        'close' => 'Close',
     ],
     'filters' => [
         'search_label' => 'Search services',
-        'search_placeholder' => 'Name, category or keyword',
-        'category_label' => 'Category',
-        'category_placeholder' => 'All categories',
-        'price_label' => 'Price (₽)',
-        'duration_label' => 'Duration (min)',
-        'price_min_placeholder' => 'from',
-        'price_max_placeholder' => 'to',
-        'duration_min_placeholder' => 'from',
-        'duration_max_placeholder' => 'to',
-        'sort_label' => 'Sort by',
-        'direction_label' => 'Order',
-        'sort_options' => [
-            'name' => 'Name',
-            'base_price' => 'Price',
-            'duration_min' => 'Duration',
-            'created_at' => 'Creation date',
-        ],
-        'direction_options' => [
-            'asc' => 'Ascending',
-            'desc' => 'Descending',
-        ],
-        'apply' => 'Apply',
-        'reset' => 'Reset',
+        'search_placeholder' => 'Name or category',
     ],
     'groups' => [
         'uncategorized' => 'Without category',
     ],
     'stats' => [
         'summary' => [
-            'filtered' => 'Matching: :count',
-            'total' => 'Total services: :count',
-            'avg_price' => 'Average price: :value',
-            'avg_duration' => 'Average duration: :value min',
-            'uncategorized' => 'Without category: :count',
+            'all_categories' => 'All',
         ],
     ],
     'messages' => [
@@ -57,15 +38,37 @@ return [
     'alerts' => [
         'no_services' => 'No services found. Try adjusting the filters or add your first service.',
         'load_error' => 'Failed to load services. Please refresh the page.',
-        'validation_failed' => 'Please check the highlighted fields.',
     ],
     'table' => [
         'price' => 'Price',
         'duration' => 'Duration',
-        'cost' => 'Cost',
-        'margin' => 'Margin',
-        'upsell' => 'Upsell',
-        'updated_at' => 'Updated :date',
+        'upsell' => 'Often booked together',
+        'service' => 'Service',
+        'demand' => 'Demand',
+    ],
+    'units' => [
+        'visits' => ['one' => 'visit', 'few' => 'visits', 'many' => 'visits'],
+        'bookings' => ['one' => 'booking', 'few' => 'bookings', 'many' => 'bookings'],
+        'services' => ['one' => 'service', 'few' => 'services', 'many' => 'services'],
+        'times' => ['one' => 'time', 'few' => 'times', 'many' => 'times'],
+    ],
+    'duration' => [
+        'planned' => ':minutes min',
+        'measured' => 'usually :minutes min',
+        'samples' => 'over :count :unit',
+        'apply' => 'Set :minutes min',
+        'applied' => 'Duration updated: :minutes min.',
+        'review_lead' => '{1} one service takes longer than planned|[0,*] :count services take longer than planned',
+    ],
+    'demand' => [
+        'never' => 'Never booked',
+        'bookings' => ':count :unit',
+        'never_completed' => 'none finished',
+        'below_cost' => 'Price is below cost',
+    ],
+    'lead' => [
+        'catalog' => ':count :unit in the catalogue',
+        'empty' => 'The catalogue is empty — bookings start here.',
     ],
     'modals' => [
         'service' => [
@@ -76,7 +79,10 @@ return [
             'category_placeholder' => 'No category',
             'base_price' => 'Base price, ₽',
             'cost' => 'Cost, ₽',
-            'cost_hint' => 'Optional. Track your cost price or calculate it below.',
+            'cost_hint' => 'Optional.',
+            'upsell' => 'Often booked together',
+            'upsell_hint' => 'Services you offer alongside this one.',
+            'upsell_suggested' => 'Bookings show these taken with it:',
             'duration_min' => 'Duration, min',
             'cost_calculator' => [
                 'open' => 'Cost calculator',
@@ -140,10 +146,10 @@ return [
                 'max' => 'The maximum duration is :max minutes.',
             ],
             'upsell' => [
-                'array' => 'The upsell list must be an array.',
-                'max' => 'You can add up to :max suggestions.',
-                'string' => 'Each suggestion must be a string.',
-                'item_max' => 'A suggestion may not exceed :max characters.',
+                'array' => 'The related services list must be an array.',
+                'max' => 'You can add up to :max services.',
+                'item' => 'Pick a service from your own catalogue.',
+                'self' => 'A service cannot accompany itself.',
             ],
         ],
         'category' => [

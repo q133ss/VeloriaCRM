@@ -36,6 +36,84 @@ class ServiceDurationEstimator
      */
     public function estimatesFor(int $masterId): array
     {
+        $estimates = [];
+
+        foreach ($this->measurements($masterId) as $signature => $group) {
+            $samples = collect($group['samples']);
+
+            if ($samples->count() < self::MIN_SAMPLES) {
+                continue;
+            }
+
+            $median = $this->roundToFive((float) $samples->median());
+
+            if (! $this->worthSaying($median, $group['planned'])) {
+                continue;
+            }
+
+            $estimates[$signature] = [
+                'service_ids' => $group['service_ids'],
+                'minutes' => $median,
+                'samples' => $samples->count(),
+            ];
+        }
+
+        return $estimates;
+    }
+
+    /**
+     * The same measurement, per single service, for the price list.
+     *
+     * Only visits booked on their own count: `services` is a JSON snapshot with
+     * no pivot table, so a two-hour appointment for a cut and a blow-dry cannot
+     * be divided between them. And unlike the booking form, nothing is filtered
+     * out here for agreeing with the plan — the price list is where the plan is
+     * set, so it is the caller that compares the two.
+     *
+     * @return array<int, array{minutes: int, samples: int}> keyed by service id
+     */
+    public function perServiceFor(int $masterId): array
+    {
+        $measured = [];
+
+        foreach ($this->measurements($masterId) as $group) {
+            if (count($group['service_ids']) !== 1) {
+                continue;
+            }
+
+            $samples = collect($group['samples']);
+
+            if ($samples->count() < self::MIN_SAMPLES) {
+                continue;
+            }
+
+            $measured[$group['service_ids'][0]] = [
+                'minutes' => $this->roundToFive((float) $samples->median()),
+                'samples' => $samples->count(),
+            ];
+        }
+
+        return $measured;
+    }
+
+    /**
+     * A difference worth acting on: a quarter of an hour, and at least a sixth
+     * of the plan. Anything smaller is noise a master should not be nagged about.
+     */
+    public function worthSaying(int $median, int $planned): bool
+    {
+        $delta = abs($median - $planned);
+
+        return $delta >= self::MIN_DELTA_MINUTES && $delta >= $planned * self::MIN_DELTA_RATIO;
+    }
+
+    /**
+     * Wall-clock durations of finished visits, grouped by the exact set booked.
+     *
+     * @return array<string, array{service_ids: array<int, int>, planned: int, samples: array<int, int>}>
+     */
+    private function measurements(int $masterId): array
+    {
         $orders = Order::query()
             ->where('master_id', $masterId)
             ->where('status', 'completed')
@@ -58,34 +136,13 @@ class ServiceDurationEstimator
                 continue;
             }
 
-            $grouped[$this->signature($ids)]['service_ids'] = $ids;
-            $grouped[$this->signature($ids)]['planned'] = $planned;
-            $grouped[$this->signature($ids)]['samples'][] = $measured;
+            $signature = $this->signature($ids);
+            $grouped[$signature]['service_ids'] = $ids;
+            $grouped[$signature]['planned'] = $planned;
+            $grouped[$signature]['samples'][] = $measured;
         }
 
-        $estimates = [];
-
-        foreach ($grouped as $signature => $group) {
-            $samples = collect($group['samples']);
-
-            if ($samples->count() < self::MIN_SAMPLES) {
-                continue;
-            }
-
-            $median = $this->roundToFive((float) $samples->median());
-
-            if (! $this->worthSaying($median, $group['planned'])) {
-                continue;
-            }
-
-            $estimates[$signature] = [
-                'service_ids' => $group['service_ids'],
-                'minutes' => $median,
-                'samples' => $samples->count(),
-            ];
-        }
-
-        return $estimates;
+        return $grouped;
     }
 
     /**
@@ -144,13 +201,6 @@ class ServiceDurationEstimator
         }
 
         return $measured <= $planned * self::MAX_PLAUSIBLE_RATIO;
-    }
-
-    private function worthSaying(int $median, int $planned): bool
-    {
-        $delta = abs($median - $planned);
-
-        return $delta >= self::MIN_DELTA_MINUTES && $delta >= $planned * self::MIN_DELTA_RATIO;
     }
 
     private function roundToFive(float $minutes): int

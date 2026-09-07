@@ -609,7 +609,33 @@
                 checkbox.addEventListener('change', updateSummary);
             });
 
+            applyServiceFromUrl();
             updateSummary();
+        }
+
+        /**
+         * Arriving from the price list with a service already in mind. Ticked
+         * once: re-rendering the list must not undo a box the master unticked.
+         */
+        let serviceFromUrlApplied = false;
+
+        function applyServiceFromUrl() {
+            if (serviceFromUrlApplied) {
+                return;
+            }
+
+            const serviceId = new URLSearchParams(window.location.search).get('service');
+
+            if (!serviceId) {
+                return;
+            }
+
+            const checkbox = document.querySelector(`.service-checkbox[value="${CSS.escape(serviceId)}"]`);
+
+            if (checkbox) {
+                checkbox.checked = true;
+                serviceFromUrlApplied = true;
+            }
         }
 
         function formatCurrency(value) {

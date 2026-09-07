@@ -45,7 +45,16 @@ class Service extends Model
     {
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
-            $query->where('name', 'like', "%{$search}%");
+
+            // LIKE is case-sensitive on Postgres, so «стрижка» found no Стрижку.
+            // The field has always promised to search the category too; now it
+            // does, instead of quietly matching the name and nothing else.
+            $like = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+            $query->where(function (Builder $builder) use ($search, $like) {
+                $builder->where('name', $like, "%{$search}%")
+                    ->orWhereHas('category', fn (Builder $category) => $category->where('name', $like, "%{$search}%"));
+            });
         }
 
         if (array_key_exists('category_id', $filters) && $filters['category_id'] !== null && $filters['category_id'] !== '') {
