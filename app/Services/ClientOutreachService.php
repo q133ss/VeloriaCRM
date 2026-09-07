@@ -5,11 +5,10 @@ namespace App\Services;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Ai\AiGateway;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * Writes the message that asks a client to come back.
@@ -26,10 +25,15 @@ use Throwable;
  */
 class ClientOutreachService
 {
-    /** Generations a month for accounts without a paid plan. */
+    /**
+     * Paid generations a month for accounts without a paid plan. Only OpenAI
+     * counts against it: the local service costs nothing, so there is nothing
+     * to ration. What a paid plan buys here is the fast, reliable provider
+     * rather than a slot in a shared browser queue.
+     */
     public const FREE_MONTHLY_LIMIT = 3;
 
-    public function __construct(private readonly OpenAIService $openAI)
+    public function __construct(private readonly AiGateway $ai)
     {
     }
 
@@ -41,27 +45,22 @@ class ClientOutreachService
         $facts = $this->collectFacts($master, $card, $context);
         $paid = $this->hasPaidPlan($master);
         $used = $this->usedThisMonth($master);
-        $allowed = $paid || $used < self::FREE_MONTHLY_LIMIT;
+        $mayPay = $paid || $used < self::FREE_MONTHLY_LIMIT;
 
-        if (! $allowed || ! $this->aiEnabled()) {
-            return [
-                'text' => $this->fallbackText($facts),
-                'source' => $allowed ? 'template' : 'limit',
-                'remaining' => $paid ? null : max(0, self::FREE_MONTHLY_LIMIT - $used),
-            ];
-        }
-
-        $text = $this->generate($facts);
+        // Running out of free generations closes the paid provider, not the
+        // feature: the local service costs nothing, so it stays open to
+        // everyone and the master keeps getting real wording.
+        $text = $this->generate($facts, $mayPay ? [] : ['only' => AiGateway::LOCAL]);
 
         if ($text === null) {
             return [
                 'text' => $this->fallbackText($facts),
-                'source' => 'template',
+                'source' => $mayPay ? 'template' : 'limit',
                 'remaining' => $paid ? null : max(0, self::FREE_MONTHLY_LIMIT - $used),
             ];
         }
 
-        if (! $paid) {
+        if (! $paid && $this->ai->lastProvider() === AiGateway::OPENAI) {
             $used = $this->recordUsage($master);
         }
 
@@ -112,7 +111,7 @@ class ClientOutreachService
         ];
     }
 
-    private function generate(array $facts): ?string
+    private function generate(array $facts, array $options = []): ?string
     {
         $prompt = <<<'PROMPT'
 Ты пишешь короткое сообщение от мастера бьюти-сферы её клиентке, чтобы позвать
@@ -129,22 +128,14 @@ class ClientOutreachService
 - Верни только текст сообщения, ничего больше.
 PROMPT;
 
-        try {
-            $response = $this->openAI->respond($prompt, $facts, [
-                'max_tokens' => 220,
-                'temperature' => 0.8,
-            ]);
-
-            $content = trim((string) Arr::get($response, 'content'));
-
-            return $content !== '' ? $content : null;
-        } catch (Throwable $exception) {
-            Log::warning('Failed to draft a client outreach message.', [
-                'exception' => $exception->getMessage(),
-            ]);
-
-            return null;
-        }
+        // A master is watching a spinner, so the local provider gets the short
+        // timeout; if it does not answer in time the paid one still fits inside
+        // the request before anything upstream gives up.
+        return $this->ai->text('outreach_message', $prompt, $facts, $options + [
+            'max_tokens' => 220,
+            'temperature' => 0.8,
+            'timeout' => (int) config('ai.local.sync_timeout', 20),
+        ]);
     }
 
     /**
@@ -204,10 +195,5 @@ PROMPT;
         Cache::put($key, $used, Carbon::now()->endOfMonth()->addDay());
 
         return $used;
-    }
-
-    private function aiEnabled(): bool
-    {
-        return filled(config('openai.api_key'));
     }
 }
