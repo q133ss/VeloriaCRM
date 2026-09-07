@@ -10,6 +10,9 @@ return [
         'slot_opened_title' => 'A slot just opened',
         'slot_opened_message' => 'There are :count waitlist candidates for :time. The strongest fit is :client.',
     ],
+    'validation' => [
+        'already_waiting' => ':name is already waiting for this service on :date.',
+    ],
     'reasons' => [
         'exact_date' => 'exact date match',
         'flexible_date' => 'flexible date range',

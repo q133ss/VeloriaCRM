@@ -983,7 +983,7 @@
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form id="calendar-waitlist-form">
+                    <form id="calendar-waitlist-form" novalidate>
                         <div class="modal-body p-4">
                             <div id="calendar-waitlist-alerts" class="mb-3"></div>
                             <div class="row g-3">
@@ -1413,9 +1413,64 @@
                 return Boolean(first);
             }
 
+            const waitlistFieldAnchors = {
+                client_phone: 'calendar-waitlist-client-phone',
+                client_name: 'calendar-waitlist-client-name',
+                client_email: 'calendar-waitlist-client-email',
+                service_id: 'calendar-waitlist-service',
+                preferred_dates: 'calendar-waitlist-date',
+                preferred_time_windows: 'calendar-waitlist-time-start',
+                notes: 'calendar-waitlist-notes',
+            };
+
             function clearWaitlistAlerts() {
                 if (!waitlistAlertsEl) return;
                 waitlistAlertsEl.innerHTML = '';
+                clearWaitlistFieldErrors();
+            }
+
+            function clearWaitlistFieldErrors() {
+                document.querySelectorAll('#calendar-waitlist-modal .is-invalid').forEach(function (el) {
+                    el.classList.remove('is-invalid');
+                });
+                document.querySelectorAll('[data-waitlist-field-error]').forEach(function (el) {
+                    el.remove();
+                });
+            }
+
+            function showWaitlistFieldErrors(fields) {
+                clearWaitlistFieldErrors();
+
+                let first = null;
+
+                Object.keys(fields || {}).forEach(function (key) {
+                    // Laravel names an item failure preferred_time_windows.0.end;
+                    // the master only needs to know which control to look at.
+                    const anchorId = waitlistFieldAnchors[key] || waitlistFieldAnchors[key.split('.')[0]];
+                    const anchor = anchorId ? document.getElementById(anchorId) : null;
+                    if (!anchor) return;
+
+                    const messages = Array.isArray(fields[key]) ? fields[key] : [fields[key]];
+                    const text = messages.filter(Boolean).join(' ');
+                    if (!text) return;
+
+                    anchor.classList.add('is-invalid');
+
+                    const note = document.createElement('div');
+                    note.className = 'invalid-feedback d-block';
+                    note.setAttribute('data-waitlist-field-error', '');
+                    note.textContent = text;
+
+                    (anchor.closest('.form-floating') || anchor).insertAdjacentElement('afterend', note);
+
+                    if (!first) first = anchor;
+                });
+
+                if (first) {
+                    first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+
+                return Boolean(first);
             }
 
             function showWaitlistAlert(type, message) {
@@ -1473,11 +1528,19 @@
                 if (!waitlistServiceEl) return;
                 waitlistServiceEl.innerHTML = '';
 
-                (services || []).forEach(function (service, index) {
+                // Empty first: the list used to pick whatever service came first
+                // alphabetically, so a form sent without looking put the client
+                // down for something nobody chose.
+                const empty = document.createElement('option');
+                empty.value = '';
+                empty.textContent = 'Выберите услугу';
+                empty.selected = true;
+                waitlistServiceEl.appendChild(empty);
+
+                (services || []).forEach(function (service) {
                     const option = document.createElement('option');
                     option.value = String(service.id);
                     option.textContent = service.name + ' · ' + (service.duration || 0) + ' мин';
-                    option.selected = index === 0;
                     waitlistServiceEl.appendChild(option);
                 });
             }
@@ -3142,7 +3205,18 @@
                     });
 
                     if (!response.ok) {
-                        showWaitlistAlert('danger', (result.error && result.error.message) || 'Не удалось добавить клиента в лист ожидания.');
+                        // BaseRequest wraps its failures as error.fields; the ones
+                        // thrown inside the controller — the duplicate above all —
+                        // arrive as Laravel's plain errors bag.
+                        const fields = (result.error && result.error.fields) || result.errors || {};
+                        const message = (result.error && result.error.message)
+                            || result.message
+                            || 'Не удалось добавить клиента в лист ожидания.';
+
+                        if (!showWaitlistFieldErrors(fields)) {
+                            showWaitlistAlert('danger', message);
+                        }
+
                         if (waitlistSubmitEl) {
                             waitlistSubmitEl.disabled = false;
                         }

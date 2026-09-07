@@ -10,6 +10,9 @@ return [
         'slot_opened_title' => 'Освободилось время',
         'slot_opened_message' => 'На :time ждут своей очереди :count клиент(ов). Больше всего подходит :client.',
     ],
+    'validation' => [
+        'already_waiting' => ':name уже ждёт эту услугу на :date.',
+    ],
     'reasons' => [
         'exact_date' => 'дата совпадает',
         'flexible_date' => 'гибкие даты',
