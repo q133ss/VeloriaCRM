@@ -93,6 +93,9 @@ return [
         'clients' => 'Клиентов',
         'clients_word' => 'клиент|клиента|клиентов',
         'average_ticket' => 'Средний чек',
+        'change_up' => '+:percent% к прошлой неделе',
+        'change_down' => '−:percent% к прошлой неделе',
+        'change_same' => 'как на прошлой неделе',
     ],
 
     'setup' => [

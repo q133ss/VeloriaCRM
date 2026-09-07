@@ -387,22 +387,70 @@ class DashboardController extends Controller
     private function buildWeekSummary(Collection $orders, CarbonInterface $todayStart, CarbonInterface $todayEnd): array
     {
         $weekStart = $todayStart->copy()->subDays(6);
+        $current = $this->weekTotals($orders, $weekStart, $todayEnd);
 
+        // The same seven days a week earlier. A figure with nothing beside it
+        // says how much; a figure with last week beside it says which way.
+        $previous = $this->weekTotals(
+            $orders,
+            $weekStart->copy()->subDays(7),
+            $todayEnd->copy()->subDays(7),
+        );
+
+        return [
+            'has_data' => $current['revenue'] > 0 || $current['visits'] > 0,
+            'revenue' => $current['revenue'],
+            'revenue_formatted' => $this->formatCurrency($current['revenue']),
+            'revenue_change' => $this->weekChange($current['revenue'], $previous['revenue']),
+            'clients' => $current['clients'],
+            'clients_change' => $this->weekChange($current['clients'], $previous['clients']),
+            'visits' => $current['visits'],
+            'average_ticket_formatted' => $this->formatCurrency($current['average_ticket']),
+            'average_ticket_change' => $this->weekChange($current['average_ticket'], $previous['average_ticket']),
+        ];
+    }
+
+    /**
+     * @return array{revenue: float, visits: int, clients: int, average_ticket: float}
+     */
+    private function weekTotals(Collection $orders, CarbonInterface $from, CarbonInterface $to): array
+    {
         $weekOrders = $orders
-            ->filter(fn (Order $order) => $this->isWithinDay($order->scheduled_at, $weekStart, $todayEnd))
+            ->filter(fn (Order $order) => $this->isWithinDay($order->scheduled_at, $from, $to))
             ->filter(fn (Order $order) => in_array($order->status, self::REVENUE_STATUSES, true));
 
         $revenue = (float) $weekOrders->sum(fn (Order $order) => (float) $order->total_price);
         $visits = $weekOrders->count();
-        $clients = $weekOrders->pluck('client_id')->filter()->unique()->count();
 
         return [
-            'has_data' => $revenue > 0 || $visits > 0,
             'revenue' => $revenue,
-            'revenue_formatted' => $this->formatCurrency($revenue),
-            'clients' => $clients,
             'visits' => $visits,
-            'average_ticket_formatted' => $this->formatCurrency($visits > 0 ? $revenue / $visits : 0),
+            'clients' => $weekOrders->pluck('client_id')->filter()->unique()->count(),
+            'average_ticket' => $visits > 0 ? $revenue / $visits : 0.0,
+        ];
+    }
+
+    /**
+     * Direction and size, or nothing at all: a percentage against a week that
+     * had no bookings in it would be arithmetic, not information.
+     *
+     * @return array{direction: string, percent: int}|null
+     */
+    private function weekChange(float $current, float $previous): ?array
+    {
+        if ($previous <= 0) {
+            return null;
+        }
+
+        $percent = (int) round((($current - $previous) / $previous) * 100);
+
+        return [
+            'direction' => match (true) {
+                $percent > 0 => 'up',
+                $percent < 0 => 'down',
+                default => 'same',
+            },
+            'percent' => abs($percent),
         ];
     }
 

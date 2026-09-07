@@ -22,6 +22,120 @@
             --analytics-shadow: 0 24px 54px -36px rgba(37, 26, 84, 0.42);
         }
 
+        .analytics-title {
+            font-size: clamp(1.35rem, 2vw, 1.75rem);
+            letter-spacing: -0.02em;
+        }
+
+        .analytics-periods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .analytics-periods.is-busy {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .analytics-period {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.45rem 0.95rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07);
+            color: var(--bs-secondary-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .analytics-period.is-active {
+            background: var(--bs-card-bg, #fff);
+            color: var(--bs-primary);
+            box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.65);
+        }
+
+        .analytics-custom-period {
+            margin-top: 0.75rem;
+        }
+
+        .analytics-custom-period summary {
+            cursor: pointer;
+            list-style: none;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .analytics-custom-period summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .analytics-outcome + .analytics-outcome,
+        .analytics-segment + .analytics-segment {
+            margin-top: 0.85rem;
+        }
+
+        .analytics-outcome__head,
+        .analytics-segment__head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .analytics-outcome__head strong,
+        .analytics-segment__head strong {
+            font-size: 1.05rem;
+        }
+
+        .analytics-outcome__bar {
+            height: 0.4rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.07);
+            overflow: hidden;
+        }
+
+        .analytics-outcome__bar span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: var(--bs-primary);
+        }
+
+        .analytics-outcome--good .analytics-outcome__bar span {
+            background: var(--bs-success);
+        }
+
+        .analytics-outcome--bad .analytics-outcome__bar span {
+            background: var(--bs-danger);
+        }
+
+        .analytics-outcome--muted .analytics-outcome__bar span,
+        .analytics-segment--never .analytics-outcome__bar span {
+            background: var(--bs-secondary-color);
+        }
+
+        .analytics-segment--sleeping .analytics-outcome__bar span {
+            background: var(--bs-warning);
+        }
+
+        .analytics-segment--regular .analytics-outcome__bar span {
+            background: var(--bs-success);
+        }
+
+        .analytics-upsell {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.9rem 1.15rem;
+            border: 1px dashed rgba(var(--bs-primary-rgb, 255, 0, 252), 0.25);
+            border-radius: 1rem;
+        }
+
         .analytics-page .analytics-hero,
         .analytics-page .analytics-surface,
         .analytics-page .analytics-card {
@@ -354,48 +468,40 @@
     <div class="analytics-page d-flex flex-column gap-4">
         <section class="analytics-hero">
             <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-4">
-                <div class="d-flex flex-column gap-3">
-                    <span class="analytics-eyebrow">
-                        <i class="ri ri-line-chart-line text-primary"></i>
-                        Обзор бизнеса
-                    </span>
-                    <div>
-                        <h4 class="mb-1">@lang('analytics.heading')</h4>
-                        <p class="text-muted mb-0">@lang('analytics.subtitle')</p>
-                    </div>
+                <div>
+                    <h1 class="analytics-title mb-1">@lang('analytics.title')</h1>
+                    <p class="text-muted mb-0">@lang('analytics.subtitle')</p>
                 </div>
-                <div class="d-flex flex-column flex-sm-row gap-2 align-self-start">
-                    <button type="button" class="btn btn-outline-secondary" id="analytics-refresh">
-                        <i class="ri ri-refresh-line me-1"></i>
-                        @lang('analytics.actions.refresh')
-                    </button>
-                    <a href="#" class="btn btn-primary disabled" id="analytics-export" target="_blank" rel="noopener">
-                        <i class="ri ri-file-excel-2-line me-1"></i>
+                <div class="d-flex flex-column align-items-sm-end gap-1 align-self-start">
+                    {{-- Was a permanently disabled button with href="#". --}}
+                    <a href="#" class="btn btn-outline-primary" id="analytics-export" download>
+                        <i class="ri ri-download-2-line me-1"></i>
                         @lang('analytics.actions.export')
                     </a>
+                    <small class="text-muted">@lang('analytics.actions.export_hint')</small>
                 </div>
             </div>
         </section>
 
+        {{-- «Неделя / Месяц / 3 месяца / Год» instead of two date pickers, a
+             grouping select and an Apply button. The grouping now follows from
+             the length of the period, which is the only sensible choice anyway. --}}
         <section class="analytics-surface">
-            <form id="analytics-filters" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label for="filter-from" class="form-label">@lang('analytics.filters.from')</label>
-                    <input type="date" class="form-control" id="filter-from" name="from" />
-                </div>
-                <div class="col-md-3">
-                    <label for="filter-to" class="form-label">@lang('analytics.filters.to')</label>
-                    <input type="date" class="form-control" id="filter-to" name="to" />
-                </div>
-                <div class="col-md-3">
-                    <label for="filter-grouping" class="form-label">@lang('analytics.filters.grouping')</label>
-                    <select class="form-select" id="filter-grouping" name="grouping"></select>
-                </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">@lang('analytics.filters.apply')</button>
-                    <button type="button" class="btn btn-outline-secondary flex-fill" id="analytics-reset">@lang('analytics.filters.reset')</button>
-                </div>
-            </form>
+            <div class="analytics-periods" id="analytics-presets"></div>
+            <details class="analytics-custom-period" id="analytics-custom">
+                <summary>@lang('analytics.filters.custom')</summary>
+                <form id="analytics-filters" class="row g-3 align-items-end mt-1">
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="filter-from" class="form-label">@lang('analytics.filters.from')</label>
+                        <input type="date" class="form-control" id="filter-from" name="from" />
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="filter-to" class="form-label">@lang('analytics.filters.to')</label>
+                        <input type="date" class="form-control" id="filter-to" name="to" />
+                    </div>
+                </form>
+            </details>
+            <p class="text-muted small mb-0 mt-2" id="analytics-compare-note"></p>
         </section>
 
         <div id="analytics-alerts"></div>
@@ -416,10 +522,7 @@
                             <i class="ri ri-bar-chart-2-line"></i>
                         </span>
                     </div>
-                    <div class="analytics-pill-list mt-3 small text-muted">
-                        <span class="analytics-soft-card py-2 px-3">@lang('analytics.summary.services_revenue'): <span data-metric-value="services_revenue">—</span></span>
-                        <span class="analytics-soft-card py-2 px-3">@lang('analytics.summary.retail_revenue'): <span data-metric-value="retail_revenue">—</span></span>
-                    </div>
+                    <p class="text-muted small mt-3 mb-0">@lang('analytics.summary.revenue_hint')</p>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -437,7 +540,7 @@
                             <i class="ri ri-bank-card-line"></i>
                         </span>
                     </div>
-                    <p class="text-muted small mt-3 mb-0 analytics-kpi-note" data-metric-note="average_ticket"></p>
+                    <p class="text-muted small mt-3 mb-0">@lang('analytics.summary.average_ticket_hint')</p>
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
@@ -469,11 +572,10 @@
                             <i class="ri ri-user-smile-line"></i>
                         </span>
                     </div>
-                    <ul class="list-unstyled mb-0 mt-3 small text-muted" id="analytics-client-overview">
-                        <li>@lang('analytics.summary.new_clients'): <span data-clients-count="new">—</span></li>
-                        <li>@lang('analytics.summary.active_clients'): <span data-clients-count="active">—</span></li>
-                        <li>@lang('analytics.summary.loyal_clients'): <span data-clients-count="loyal">—</span></li>
-                    </ul>
+                    {{-- «Постоянные клиенты: 0» used to live here and argue with
+                         the breakdown below, which said six. One count now, and
+                         it is stated in words rather than as a bare percentage. --}}
+                    <p class="text-muted small mt-3 mb-0" id="analytics-retention-note">—</p>
                 </div>
             </div>
         </section>
@@ -565,12 +667,7 @@
                 </div>
             </div>
 
-            <div class="analytics-lock-card" id="analytics-peak-hours-locked" hidden>
-                @include('components.elite-lock-card', [
-                    'title' => 'Когда у вас лучший доход',
-                    'description' => 'Спокойный обзор недели: в какие часы у вас чаще выше выручка и где легче делать мягкие допродажи.',
-                ])
-            </div>
+            <div id="analytics-peak-hours-locked" hidden></div>
         </section>
 
         <section class="row g-4" id="analytics-smart-panels">
@@ -623,68 +720,40 @@
             </div>
         </section>
 
-        <section class="analytics-card" id="analytics-smart-panels-locked" hidden>
-            @include('components.elite-lock-card', [
-                'title' => 'Какие AI-инсайты и прогнозы вам доступны',
-                'description' => 'Здесь появятся короткие выводы по выручке, клиентам, удержанию и прогнозу, чтобы быстрее понимать, на чём расти дальше.',
-            ])
+        {{-- Two full-width slabs of grey skeleton bars used to stand here,
+             one of them repeating its own section heading word for word. A
+             locked feature deserves a line, not a third of the page. --}}
+        <section class="analytics-upsell" id="analytics-smart-panels-locked" hidden>
+            <div>
+                <strong>@lang('analytics.smart_lock.title')</strong>
+                <p class="text-muted small mb-0">@lang('analytics.smart_lock.description')</p>
+            </div>
+            <a href="{{ url('/subscription') }}" class="btn btn-sm btn-outline-primary">@lang('analytics.smart_lock.cta')</a>
         </section>
 
-        <details class="analytics-collapse" open id="analytics-sales-details">
-            <summary>
-                <div>
-                    <h5 class="mb-1">Продажи и сегменты</h5>
-                    <p class="text-muted mb-0 small">Воронка, статусы клиентов и структура базы.</p>
-                </div>
-            </summary>
-            <div class="analytics-collapse-body">
-                <div class="row g-4">
-                    <div class="col-xl-6">
-                        <div class="analytics-card h-100">
-                            <h5 class="mb-3">@lang('analytics.cards.funnel')</h5>
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>@lang('analytics.tables.funnel_stage')</th>
-                                            <th class="text-end">@lang('analytics.tables.funnel_clients')</th>
-                                            <th class="text-end">@lang('analytics.tables.funnel_conversion')</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="analytics-funnel-body">
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="analytics-card h-100">
-                            <h5 class="mb-3">@lang('analytics.cards.segments')</h5>
-                            <div class="table-responsive mb-3">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>@lang('analytics.tables.segment')</th>
-                                            <th class="text-end">@lang('analytics.tables.count')</th>
-                                            <th class="text-end">@lang('analytics.tables.share')</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="analytics-segments-body">
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-4">@lang('analytics.labels.loading')</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="small text-muted" id="analytics-persona-duplicate-placeholder" hidden></div>
-                        </div>
+        <section class="row g-4">
+            <div class="col-xl-6">
+                <div class="analytics-card h-100">
+                    <h2 class="h5 mb-1">@lang('analytics.cards.outcomes')</h2>
+                    <p class="text-muted small mb-3">@lang('analytics.cards.outcomes_hint')</p>
+                    {{-- Was «Воронка продаж» whose first two stages were the same
+                         thing, printed as four zeros because it counted a table
+                         this CRM does not write to. --}}
+                    <div class="analytics-outcomes" id="analytics-outcomes">
+                        <p class="text-muted mb-0">@lang('analytics.labels.loading')</p>
                     </div>
                 </div>
             </div>
-        </details>
+            <div class="col-xl-6">
+                <div class="analytics-card h-100">
+                    <h2 class="h5 mb-1">@lang('analytics.cards.segments')</h2>
+                    <p class="text-muted small mb-3">@lang('analytics.cards.segments_hint')</p>
+                    <div class="analytics-segments" id="analytics-segments">
+                        <p class="text-muted mb-0">@lang('analytics.labels.loading')</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <details class="analytics-collapse" id="analytics-risk-details">
             <summary>
@@ -735,6 +804,7 @@
                                     <h4 class="mb-0" id="analytics-ltv-value">—</h4>
                                     <div class="d-flex align-items-center gap-2 small text-muted mt-1">
                                         <span id="analytics-ltv-delta">—</span>
+                                        <span>@lang('analytics.labels.vs_previous')</span>
                                     </div>
                                 </div>
                             </div>
@@ -780,20 +850,31 @@
     <script src="{{ asset('assets/vendor/libs/chartjs/chartjs.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const texts = @json(trans('analytics.labels'));
-            const funnelLabels = @json(trans('analytics.funnel'));
-            const segmentLabels = @json(trans('analytics.segments'));
+            const locale = document.documentElement.lang || 'ru';
+            const texts = Object.assign(
+                @json(trans('analytics.labels')),
+                {
+                    compare_note: @json(trans('analytics.filters.compare_note')),
+                    retention_hint: @json(trans('analytics.summary.retention_hint')),
+                    retention_empty: @json(trans('analytics.summary.retention_empty')),
+                },
+            );
             const aiTexts = @json(trans('analytics.ai'));
+
+            function formatDate(value) {
+                if (!value) return '';
+                try {
+                    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(new Date(value));
+                } catch (e) {
+                    return value;
+                }
+            }
             const peakHoursTexts = @json(trans('analytics.peak_hours'));
 
             const state = {
                 filters: {
                     from: '',
-                    to: '',
-                    grouping: 'day'
-                },
-                exports: {
-                    excel: null
+                    to: ''
                 },
                 charts: {
                     revenue: null,
@@ -803,10 +884,11 @@
 
             const alertsContainer = document.getElementById('analytics-alerts');
             const filtersForm = document.getElementById('analytics-filters');
-            const refreshButton = document.getElementById('analytics-refresh');
-            const resetButton = document.getElementById('analytics-reset');
             const exportLink = document.getElementById('analytics-export');
-            const groupingSelect = document.getElementById('filter-grouping');
+            const presetsEl = document.getElementById('analytics-presets');
+            const customDetails = document.getElementById('analytics-custom');
+            const compareNoteEl = document.getElementById('analytics-compare-note');
+            const retentionNoteEl = document.getElementById('analytics-retention-note');
             const fromInput = document.getElementById('filter-from');
             const toInput = document.getElementById('filter-to');
             const revenueTrendSummary = document.getElementById('analytics-revenue-trend-summary');
@@ -820,8 +902,8 @@
             const aiForecastMetaEl = document.getElementById('analytics-ai-forecast-meta');
             const aiForecastCommentEl = document.getElementById('analytics-ai-forecast-comment');
             const aiRecommendationsEl = document.getElementById('analytics-ai-recommendations');
-            const funnelBody = document.getElementById('analytics-funnel-body');
-            const segmentsBody = document.getElementById('analytics-segments-body');
+            const outcomesEl = document.getElementById('analytics-outcomes');
+            const segmentsEl = document.getElementById('analytics-segments');
             const riskBody = document.getElementById('analytics-risk-body');
             const topClientsBody = document.getElementById('analytics-top-clients');
             const shareLegend = document.getElementById('analytics-share-legend');
@@ -842,7 +924,6 @@
             const peakGridEl = document.getElementById('analytics-peak-grid');
             const peakEmptyTitleEl = document.getElementById('analytics-peak-empty-title');
             const peakEmptyDescriptionEl = document.getElementById('analytics-peak-empty-description');
-            const peakLockedEl = document.getElementById('analytics-peak-hours-locked');
             const smartPanelsEl = document.getElementById('analytics-smart-panels');
             const smartPanelsLockedEl = document.getElementById('analytics-smart-panels-locked');
 
@@ -905,14 +986,13 @@
             }
 
             function setLoading(isLoading) {
-                [refreshButton, resetButton].forEach(function (button) {
-                    button.disabled = isLoading;
+                presetsEl.classList.toggle('is-busy', isLoading);
+            }
+
+            function escapeHtml(value) {
+                return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, function (character) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character];
                 });
-                if (isLoading) {
-                    refreshButton.classList.add('btn-progress');
-                } else {
-                    refreshButton.classList.remove('btn-progress');
-                }
             }
 
             function updateMetricCard(key, metric) {
@@ -959,16 +1039,16 @@
             }
 
             function updateClientsSummary(clients) {
-                const mapping = {
-                    new: document.querySelector('[data-clients-count="new"]'),
-                    active: document.querySelector('[data-clients-count="active"]'),
-                    loyal: document.querySelector('[data-clients-count="loyal"]')
-                };
+                if (!retentionNoteEl) return;
 
-                if (!clients) return;
-                if (mapping.new) mapping.new.textContent = formatNumber(clients.new || 0);
-                if (mapping.active) mapping.active.textContent = formatNumber(clients.active || 0);
-                if (mapping.loyal) mapping.loyal.textContent = formatNumber(clients.loyal || 0);
+                if (!clients || !clients.served) {
+                    retentionNoteEl.textContent = texts.retention_empty;
+                    return;
+                }
+
+                retentionNoteEl.textContent = texts.retention_hint
+                    .replace(':returning', formatNumber(clients.returning || 0))
+                    .replace(':served', formatNumber(clients.served || 0));
             }
 
             function updateShareLegend(data) {
@@ -990,36 +1070,53 @@
                 });
             }
 
-            function renderFunnel(funnel) {
-                funnelBody.innerHTML = '';
-                if (!funnel || funnel.length === 0) {
-                    funnelBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">' + texts.no_data + '</td></tr>';
+            function renderOutcomes(outcomes) {
+                outcomesEl.innerHTML = '';
+
+                if (!outcomes || !outcomes.length || !(outcomes[0].count)) {
+                    outcomesEl.innerHTML = '<p class="text-muted mb-0">' + texts.no_data + '</p>';
                     return;
                 }
 
-                funnel.forEach(function (stage) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = '<td>' + (stage.label || funnelLabels[stage.key] || '') + '</td>' +
-                        '<td class="text-end">' + formatNumber(stage.count || 0) + '</td>' +
-                        '<td class="text-end">' + formatPercent(stage.conversion || 0) + '</td>';
-                    funnelBody.appendChild(tr);
+                const total = outcomes[0].count || 0;
+
+                outcomes.forEach(function (row) {
+                    const line = document.createElement('div');
+                    line.className = 'analytics-outcome analytics-outcome--' + (row.tone || 'neutral');
+
+                    const width = total > 0 ? Math.round((row.count / total) * 100) : 0;
+
+                    line.innerHTML =
+                        '<div class="analytics-outcome__head">' +
+                            '<span>' + escapeHtml(row.label) + '</span>' +
+                            '<strong>' + formatNumber(row.count || 0) + '</strong>' +
+                        '</div>' +
+                        '<div class="analytics-outcome__bar"><span style="width:' + width + '%"></span></div>';
+
+                    outcomesEl.appendChild(line);
                 });
             }
 
             function renderSegments(segments) {
-                segmentsBody.innerHTML = '';
-                if (!segments || !segments.distribution) {
-                    segmentsBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">' + texts.no_data + '</td></tr>';
+                segmentsEl.innerHTML = '';
+
+                if (!segments || !segments.distribution || !segments.total) {
+                    segmentsEl.innerHTML = '<p class="text-muted mb-0">' + texts.no_data + '</p>';
                     return;
                 }
 
                 Object.keys(segments.distribution).forEach(function (key) {
                     const segment = segments.distribution[key];
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = '<td>' + (segmentLabels[key] || key) + '</td>' +
-                        '<td class="text-end">' + formatNumber(segment.count || 0) + '</td>' +
-                        '<td class="text-end">' + formatPercent(segment.share || 0) + '</td>';
-                    segmentsBody.appendChild(tr);
+                    const row = document.createElement('div');
+                    row.className = 'analytics-segment analytics-segment--' + key;
+                    row.innerHTML =
+                        '<div class="analytics-segment__head">' +
+                            '<span>' + escapeHtml(segment.label || key) + '</span>' +
+                            '<strong>' + formatNumber(segment.count || 0) + '</strong>' +
+                        '</div>' +
+                        '<div class="analytics-outcome__bar"><span style="width:' + Math.round(segment.share || 0) + '%"></span></div>' +
+                        '<small class="text-muted">' + escapeHtml(segment.hint || '') + '</small>';
+                    segmentsEl.appendChild(row);
                 });
 
                 personaEl.textContent = '';
@@ -1117,16 +1214,16 @@
             }
 
             function renderPeakHours(data) {
-                if (!peakHoursReady || !peakHoursEmpty || !peakLockedEl) return;
+                if (!peakHoursReady || !peakHoursEmpty) return;
+
+                const section = document.getElementById('analytics-peak-hours-section');
 
                 if (data && data.status === 'locked') {
-                    peakHoursReady.hidden = true;
-                    peakHoursEmpty.hidden = true;
-                    peakLockedEl.hidden = false;
+                    if (section) section.hidden = true;
                     return;
                 }
 
-                peakLockedEl.hidden = true;
+                if (section) section.hidden = false;
 
                 if (!data || data.status === 'empty') {
                     peakHoursReady.hidden = true;
@@ -1241,9 +1338,7 @@
                     smartPanelsLockedEl.hidden = available;
                 }
 
-                if (available && peakLockedEl) {
-                    peakLockedEl.hidden = true;
-                }
+
             }
 
             function renderCharts(data) {
@@ -1332,29 +1427,39 @@
                 updateShareLegend(data.service_share);
             }
 
-            function populateGroupings(options) {
-                groupingSelect.innerHTML = '';
-                options.forEach(function (option) {
-                    const opt = document.createElement('option');
-                    opt.value = option.value;
-                    opt.textContent = option.label;
-                    groupingSelect.appendChild(opt);
+            function renderPresets(presets) {
+                presetsEl.innerHTML = '';
+
+                (presets || []).forEach(function (preset) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'analytics-period' + (preset.active ? ' is-active' : '');
+                    button.textContent = preset.label;
+                    button.addEventListener('click', function () {
+                        state.filters.from = preset.from;
+                        state.filters.to = preset.to;
+                        fetchAnalytics();
+                    });
+                    presetsEl.appendChild(button);
                 });
+
+                // A hand-picked range is not one of the presets, so the panel
+                // stays open to show which dates are in force.
+                const custom = !(presets || []).some(function (preset) { return preset.active; });
+                if (custom) {
+                    customDetails.open = true;
+                }
             }
 
             function applyFiltersToInputs(period) {
                 if (period.from) fromInput.value = period.from;
                 if (period.to) toInput.value = period.to;
-                if (period.grouping && groupingSelect.querySelector('option[value="' + period.grouping + '"]')) {
-                    groupingSelect.value = period.grouping;
-                    state.filters.grouping = period.grouping;
-                }
-            }
 
-            function syncFiltersFromInputs() {
-                state.filters.from = fromInput.value;
-                state.filters.to = toInput.value;
-                state.filters.grouping = groupingSelect.value || 'day';
+                if (compareNoteEl && period.compare_from && period.compare_to) {
+                    compareNoteEl.textContent = texts.compare_note
+                        .replace(':from', formatDate(period.compare_from))
+                        .replace(':to', formatDate(period.compare_to));
+                }
             }
 
             function updateDeferredPlaceholders() {
@@ -1374,7 +1479,6 @@
                 const params = new URLSearchParams();
                 if (state.filters.from) params.append('from', state.filters.from);
                 if (state.filters.to) params.append('to', state.filters.to);
-                if (state.filters.grouping) params.append('grouping', state.filters.grouping);
                 extraSections.forEach(function (section) {
                     params.append('sections[]', section);
                 });
@@ -1384,7 +1488,6 @@
             function fetchAnalytics() {
                 clearAlerts();
                 setLoading(true);
-                syncFiltersFromInputs();
                 updateDeferredPlaceholders();
 
                 const query = buildQuery();
@@ -1401,20 +1504,15 @@
 
                         renderSmartAccess(meta.access || null);
 
-                        if (meta.filters && meta.filters.groupings) {
-                            populateGroupings(meta.filters.groupings);
+                        if (meta.filters && meta.filters.presets) {
+                            renderPresets(meta.filters.presets);
                         }
                         if (meta.period) {
                             applyFiltersToInputs(meta.period);
                         }
-                        if (meta.exports && meta.exports.excel) {
-                            state.exports.excel = meta.exports.excel;
-                            exportLink.href = meta.exports.excel;
+                        if (meta.exports && meta.exports.csv) {
+                            exportLink.href = meta.exports.csv;
                             exportLink.classList.remove('disabled');
-                        } else {
-                            state.exports.excel = null;
-                            exportLink.href = '#';
-                            exportLink.classList.add('disabled');
                         }
 
                         updateMetricCard('revenue', data.summary ? data.summary.revenue : null);
@@ -1434,7 +1532,7 @@
                             renderInsights(financialInsightsEl, data.financial.insights || []);
                         }
 
-                        renderFunnel(data.clients ? data.clients.funnel : null);
+                        renderOutcomes(data.clients ? data.clients.outcomes : null);
                         renderSegments(data.clients ? data.clients.segments : null);
                         renderInsights(clientInsightsEl, data.clients ? data.clients.insights : []);
 
@@ -1496,17 +1594,19 @@
                 fetchAnalytics();
             });
 
-            refreshButton.addEventListener('click', function () {
-                fetchAnalytics();
-            });
 
-            resetButton.addEventListener('click', function () {
-                fromInput.value = '';
-                toInput.value = '';
-                if (groupingSelect.options.length) {
-                    groupingSelect.selectedIndex = 0;
-                }
-                fetchAnalytics();
+            // Dates apply themselves; «Применить» was one more press between
+            // choosing a period and seeing it.
+            [fromInput, toInput].forEach(function (input) {
+                input.addEventListener('change', function () {
+                    if (!fromInput.value || !toInput.value) {
+                        return;
+                    }
+
+                    state.filters.from = fromInput.value;
+                    state.filters.to = toInput.value;
+                    fetchAnalytics();
+                });
             });
 
             if (riskDetails) {

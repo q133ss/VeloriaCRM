@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AnalyticsRequest;
-use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Payment;
@@ -20,13 +19,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class AnalyticsController extends Controller
 {
     private const ORDER_REVENUE_STATUSES = ['completed', 'in_progress', 'confirmed'];
     private const PAYMENT_REVENUE_STATUSES = ['succeeded', 'paid'];
-    private const LOYAL_LEVELS = ['gold', 'platinum', 'vip', 'ambassador'];
+
+    /**
+     * A booking whose time has passed and which was neither cancelled nor
+     * missed: the client came. The same rule decides «была / не была» on the
+     * client list and in the outreach message, and the three must not disagree.
+     */
+    private const VISIT_STATUSES = ['completed', 'in_progress', 'confirmed'];
+
+    /** Away this long, with nothing booked, and the client has slipped off. */
+    private const SLEEPING_AFTER_DAYS = 60;
 
     public function __construct(
         private readonly AiGateway $ai,
@@ -39,7 +48,7 @@ class AnalyticsController extends Controller
         $hasEliteAccess = $this->userHasEliteAccess();
         $activePlanSlug = $this->activePlanSlug();
         $validated = $request->validated();
-        $grouping = $validated['grouping'] ?? 'day';
+        $requestedGrouping = $validated['grouping'] ?? null;
         $requestedSections = collect((array) $request->query('sections', []))
             ->filter(fn (mixed $section) => is_string($section) && $section !== '')
             ->values();
@@ -57,7 +66,17 @@ class AnalyticsController extends Controller
             [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
         }
 
-        $periodDays = max(1, $from->diffInDays($to) + 1);
+        $periodDays = max(1, (int) $from->diffInDays($to) + 1);
+
+        // Nobody should have to choose «по дням / по неделям» to read a chart:
+        // a month of days is readable, a year of days is a hairbrush.
+        $grouping = in_array($requestedGrouping, ['day', 'week', 'month'], true)
+            ? $requestedGrouping
+            : match (true) {
+                $periodDays <= 45 => 'day',
+                $periodDays <= 200 => 'week',
+                default => 'month',
+            };
 
         $compareTo = $this->resolveDate($validated['compare_to'] ?? null, $timezone)?->endOfDay();
         $compareFrom = $this->resolveDate($validated['compare_from'] ?? null, $timezone)?->startOfDay();
@@ -67,18 +86,28 @@ class AnalyticsController extends Controller
             $compareFrom = $compareTo->copy()->subDays($periodDays - 1)->startOfDay();
         }
 
-        [$orders, $payments, $appointments, $clients, $services] = $this->loadData($userId);
+        [$orders, $payments, $clients, $services] = $this->loadData($userId);
 
         $revenueTransactions = $this->buildRevenueTransactions($orders, $payments);
         $currentRevenueTransactions = $revenueTransactions->filter(fn (array $tx) => $this->isWithinPeriod($tx['date'] ?? null, $from, $to) && $tx['is_revenue']);
         $previousRevenueTransactions = $revenueTransactions->filter(fn (array $tx) => $this->isWithinPeriod($tx['date'] ?? null, $compareFrom, $compareTo) && $tx['is_revenue']);
 
-        $currentAppointments = $appointments->filter(fn (Appointment $appt) => $this->isWithinPeriod($appt->starts_at, $from, $to));
-        $previousAppointments = $appointments->filter(fn (Appointment $appt) => $this->isWithinPeriod($appt->starts_at, $compareFrom, $compareTo));
-        $pastAppointments = $appointments->filter(fn (Appointment $appt) => $appt->starts_at && $appt->starts_at->lessThan($from));
+        // Bookings live in `orders`. They used to be counted from `appointments`,
+        // a table only the client portal ever writes to, so for a master who
+        // books everyone herself this page reported nought visits, nought
+        // retention and an empty funnel next to a full month of takings.
+        $currentBookings = $orders->filter(fn (Order $order) => $this->isWithinPeriod($order->scheduled_at, $from, $to));
+        $currentVisits = $currentBookings->filter(fn (Order $order) => in_array($order->status, self::VISIT_STATUSES, true));
+        $previousVisits = $orders
+            ->filter(fn (Order $order) => $this->isWithinPeriod($order->scheduled_at, $compareFrom, $compareTo))
+            ->filter(fn (Order $order) => in_array($order->status, self::VISIT_STATUSES, true));
+        $pastVisits = $orders->filter(
+            fn (Order $order) => in_array($order->status, self::VISIT_STATUSES, true)
+                && $order->scheduled_at
+                && $order->scheduled_at->lessThan($from),
+        );
 
         $currentClients = $clients->filter(fn (Client $client) => $this->isWithinPeriod($client->created_at, $from, $to));
-        $currentClientVisits = $clients->filter(fn (Client $client) => $this->isWithinPeriod($client->last_visit_at, $from, $to));
 
         $currentRevenue = $currentRevenueTransactions->sum('amount');
         $previousRevenue = $previousRevenueTransactions->sum('amount');
@@ -95,34 +124,32 @@ class AnalyticsController extends Controller
             : $previousRevenue / $previousRevenueTransactions->count();
         $avgTicketDelta = $this->percentChange($avgTicketCurrent, $avgTicketPrevious);
 
-        $transactionsCurrent = $currentAppointments->count();
-        $transactionsPrevious = $previousAppointments->count();
+        $transactionsCurrent = $currentVisits->count();
+        $transactionsPrevious = $previousVisits->count();
         $transactionsDelta = $this->percentChange($transactionsCurrent, $transactionsPrevious);
 
-        $servedClientsCurrent = $currentAppointments->pluck('client_id')->filter()->unique()->count();
-        $returningClients = $currentAppointments
-            ->groupBy('client_id')
-            ->filter(fn (Collection $visits, $clientId) => $clientId && $pastAppointments->where('client_id', $clientId)->isNotEmpty())
-            ->count();
-        $retentionRate = $servedClientsCurrent > 0
-            ? round(($returningClients / $servedClientsCurrent) * 100, 1)
+        $returnedBefore = $pastVisits->pluck('client_id')->filter()->unique()->flip();
+        $servedClientsCurrent = $currentVisits->pluck('client_id')->filter()->unique();
+        $returningClients = $servedClientsCurrent->filter(fn ($clientId) => $returnedBefore->has($clientId))->count();
+        $retentionRate = $servedClientsCurrent->count() > 0
+            ? round(($returningClients / $servedClientsCurrent->count()) * 100, 1)
             : 0.0;
 
-        $loyalClients = $clients
-            ->filter(fn (Client $client) => in_array($client->loyalty_level, self::LOYAL_LEVELS, true))
-            ->count();
-
-        $segments = $this->buildClientSegments($clients, $to);
+        // One count of the client base, used by the card and by the breakdown.
+        // The two used to disagree in plain sight: «Постоянные клиенты: 0» on
+        // one card and «Постоянные 6» on the next.
+        $segments = $this->buildClientSegments($clients, $orders, $from, $to);
+        $loyalClients = $segments['distribution']['regular']['count'] ?? 0;
         $riskClients = $this->buildRiskClients($clients, $to);
         $churnRate = $clients->isEmpty()
             ? 0.0
             : round(($riskClients->count() / max(1, $clients->count())) * 100, 1);
 
         $ltv = $this->calculateLtv($revenueTransactions, $previousRevenueTransactions);
-        $funnel = $this->buildFunnel($currentAppointments, $returningClients);
+        $outcomes = $this->buildBookingOutcomes($currentBookings, $returningClients);
         $topClients = $this->resolveTopClients($currentRevenueTransactions);
 
-        $serviceShare = $this->buildServiceShare($currentRevenueTransactions, $currentAppointments, $services);
+        $serviceShare = $this->buildServiceShare($currentRevenueTransactions);
         $peakHours = $hasEliteAccess
             ? $this->buildPeakHoursInsight($currentRevenueTransactions, $locale, $timezone)
             : $this->lockedSmartInsightsPayload();
@@ -171,14 +198,14 @@ class AnalyticsController extends Controller
                     'service_share' => $serviceShare,
                     'ltv' => $ltv,
                     'transactions' => $transactionsCurrent,
-                    'funnel' => $funnel,
+                    'funnel' => $outcomes,
                     'persona' => $persona,
                 ]);
             })
             : $this->lockedSmartInsightsPayload();
 
         $clientsPayload = [
-            'funnel' => $funnel,
+            'outcomes' => $outcomes,
             'segments' => $segments,
             'insights' => $clientInsights,
             'persona' => $persona,
@@ -203,7 +230,8 @@ class AnalyticsController extends Controller
                 'average_ticket' => $this->formatMetric($avgTicketCurrent, $avgTicketPrevious, $avgTicketDelta),
                 'clients' => [
                     'new' => $currentClients->count(),
-                    'active' => $currentClientVisits->count(),
+                    'served' => $servedClientsCurrent->count(),
+                    'returning' => $returningClients,
                     'loyal' => $loyalClients,
                 ],
                 'transactions' => $this->formatMetric($transactionsCurrent, $transactionsPrevious, $transactionsDelta),
@@ -242,9 +270,10 @@ class AnalyticsController extends Controller
                         ['value' => 'week', 'label' => trans('analytics.grouping_options.week')],
                         ['value' => 'month', 'label' => trans('analytics.grouping_options.month')],
                     ],
+                    'presets' => $this->periodPresets($timezone, $from, $to),
                 ],
                 'exports' => [
-                    'excel' => null,
+                    'csv' => route('api.analytics.export', ['from' => $from->toDateString(), 'to' => $to->toDateString()]),
                 ],
                 'included_sections' => $requestedSections->all(),
                 'access' => [
@@ -275,17 +304,114 @@ class AnalyticsController extends Controller
     }
 
     /**
-     * @return array{0: Collection<int, Order>, 1: Collection<int, Payment>, 2: Collection<int, Appointment>, 3: Collection<int, Client>, 4: Collection<int, Service>}
+     * @return array{0: Collection<int, Order>, 1: Collection<int, Payment>, 2: Collection<int, Client>, 3: Collection<int, Service>}
      */
+    /**
+     * Ready-made ranges, so the usual question — «а как за месяц?» — is one
+     * press rather than two date pickers and an Apply button.
+     *
+     * @return array<int, array{key: string, label: string, from: string, to: string, active: bool}>
+     */
+    protected function periodPresets(string $timezone, Carbon $from, Carbon $to): array
+    {
+        $today = Carbon::now($timezone)->endOfDay();
+
+        $ranges = [
+            'week' => 6,
+            'month' => 29,
+            'quarter' => 89,
+            'year' => 364,
+        ];
+
+        $presets = [];
+
+        foreach ($ranges as $key => $days) {
+            $start = $today->copy()->subDays($days)->startOfDay();
+
+            $presets[] = [
+                'key' => $key,
+                'label' => trans('analytics.filters.presets.' . $key),
+                'from' => $start->toDateString(),
+                'to' => $today->toDateString(),
+                'active' => $from->toDateString() === $start->toDateString()
+                    && $to->toDateString() === $today->toDateString(),
+            ];
+        }
+
+        return $presets;
+    }
+
+    /**
+     * Every booking of the period as a spreadsheet.
+     *
+     * The header used to carry a permanently disabled «Экспорт в Excel» button
+     * whose url was hard-coded null. A file the master can hand to an
+     * accountant is more use than a chart she cannot take with her, and a
+     * semicolon-separated CSV with a byte order mark is what Excel opens
+     * without an import wizard.
+     */
+    public function export(AnalyticsRequest $request): StreamedResponse
+    {
+        $userId = $this->currentUserId();
+        $timezone = $request->user()?->timezone ?? config('app.timezone');
+        $validated = $request->validated();
+
+        $to = $this->resolveDate($validated['to'] ?? null, $timezone)?->endOfDay() ?? Carbon::now($timezone)->endOfDay();
+        $from = $this->resolveDate($validated['from'] ?? null, $timezone)?->startOfDay() ?? $to->copy()->subDays(29)->startOfDay();
+
+        $orders = Order::query()
+            ->where('master_id', $userId)
+            ->whereBetween('scheduled_at', [$from, $to])
+            ->orderBy('scheduled_at')
+            ->get();
+
+        $cards = Client::where('user_id', $userId)->get()->keyBy('client_user_id');
+        $statuses = trans('analytics.export.statuses');
+        $filename = 'veloria-' . $from->toDateString() . '_' . $to->toDateString() . '.csv';
+
+        return response()->streamDownload(function () use ($orders, $cards, $statuses, $timezone) {
+            $handle = fopen('php://output', 'w');
+
+            // Excel reads a CSV as the local codepage unless the file says
+            // otherwise, and Cyrillic without this mark arrives as mojibake.
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                trans('analytics.export.date'),
+                trans('analytics.export.time'),
+                trans('analytics.export.client'),
+                trans('analytics.export.services'),
+                trans('analytics.export.status'),
+                trans('analytics.export.amount'),
+            ], ';');
+
+            foreach ($orders as $order) {
+                $at = $order->scheduled_at?->copy()->timezone($timezone);
+
+                fputcsv($handle, [
+                    $at?->format('d.m.Y') ?? '',
+                    $at?->format('H:i') ?? '',
+                    $cards->get($order->client_id)?->name ?? '',
+                    collect($order->services ?? [])->pluck('name')->filter()->implode(', '),
+                    $statuses[$order->status] ?? $order->status,
+                    number_format((float) $order->total_price, 2, ',', ''),
+                ], ';');
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     protected function loadData(int $userId): array
     {
         $orders = Order::where('master_id', $userId)->get();
         $payments = Payment::where('user_id', $userId)->get();
-        $appointments = Appointment::where('user_id', $userId)->get();
         $clients = Client::where('user_id', $userId)->get();
         $services = Service::where('user_id', $userId)->get()->keyBy('id');
 
-        return [$orders, $payments, $appointments, $clients, $services];
+        return [$orders, $payments, $clients, $services];
     }
 
     protected function resolveDate(mixed $value, string $timezone): ?Carbon
@@ -441,32 +567,73 @@ class AnalyticsController extends Controller
         return $orderTransactions->merge($paymentTransactions);
     }
 
-    protected function buildClientSegments(Collection $clients, Carbon $reference): array
+    /**
+     * Who the master's clients are, in four groups that do not overlap.
+     *
+     * They used to be three overlapping questions — created recently, visited
+     * recently, away for a while — printed under a column called «доля», so the
+     * shares added up to 200%. Every client now falls into exactly one group,
+     * and the numbers add up to the size of the book.
+     *
+     * @param  Collection<int, Client>  $clients
+     * @param  Collection<int, Order>  $orders
+     */
+    protected function buildClientSegments(Collection $clients, Collection $orders, Carbon $from, Carbon $to): array
     {
-        $total = max(1, $clients->count());
-        $activeThreshold = $reference->copy()->subDays(30);
-        $sleepingThreshold = $reference->copy()->subDays(60);
+        $sleepingThreshold = $to->copy()->subDays(self::SLEEPING_AFTER_DAYS);
 
-        $new = $clients->filter(fn (Client $client) => $client->created_at && $client->created_at->greaterThanOrEqualTo($activeThreshold))->count();
-        $active = $clients->filter(fn (Client $client) => $client->last_visit_at && $client->last_visit_at->greaterThanOrEqualTo($activeThreshold))->count();
-        $sleeping = $clients->filter(fn (Client $client) => ! $client->last_visit_at || $client->last_visit_at->lessThan($sleepingThreshold))->count();
+        $visitsByAccount = $orders
+            ->filter(fn (Order $order) => in_array($order->status, self::VISIT_STATUSES, true)
+                && $order->scheduled_at
+                && $order->scheduled_at->lessThanOrEqualTo($to))
+            ->groupBy('client_id');
+
+        $counts = ['regular' => 0, 'new' => 0, 'sleeping' => 0, 'never' => 0];
+
+        foreach ($clients as $client) {
+            $visits = $client->client_user_id
+                ? ($visitsByAccount->get($client->client_user_id) ?? collect())
+                : collect();
+
+            if ($visits->isEmpty()) {
+                $counts['never']++;
+
+                continue;
+            }
+
+            $lastVisit = $visits->max('scheduled_at');
+
+            if ($lastVisit && $lastVisit->lessThan($sleepingThreshold)) {
+                $counts['sleeping']++;
+
+                continue;
+            }
+
+            if ($visits->count() >= 2) {
+                $counts['regular']++;
+
+                continue;
+            }
+
+            $counts['new']++;
+        }
+
+        $total = max(1, $clients->count());
+
+        $distribution = [];
+
+        foreach (['regular', 'new', 'sleeping', 'never'] as $key) {
+            $distribution[$key] = [
+                'count' => $counts[$key],
+                'share' => round(($counts[$key] / $total) * 100, 1),
+                'label' => trans('analytics.segments.' . $key),
+                'hint' => trans('analytics.segments.' . $key . '_hint'),
+            ];
+        }
 
         return [
             'total' => $clients->count(),
-            'distribution' => [
-                'new' => [
-                    'count' => $new,
-                    'share' => round(($new / $total) * 100, 1),
-                ],
-                'active' => [
-                    'count' => $active,
-                    'share' => round(($active / $total) * 100, 1),
-                ],
-                'sleeping' => [
-                    'count' => $sleeping,
-                    'share' => round(($sleeping / $total) * 100, 1),
-                ],
-            ],
+            'distribution' => $distribution,
         ];
     }
 
@@ -489,38 +656,33 @@ class AnalyticsController extends Controller
             ]);
     }
 
-    protected function buildFunnel(Collection $appointments, int $returningClients): array
+    /**
+     * What became of the bookings in the period.
+     *
+     * This used to be a «воронка продаж» whose first two stages were the same
+     * thing — this product has no lead stage, a booking is made and then it
+     * either happens or it does not. Four numbers a master can act on beat a
+     * funnel shape borrowed from a sales team she does not have.
+     *
+     * @param  Collection<int, Order>  $bookings
+     * @return array<int, array{key: string, label: string, count: int, share: float, tone: string}>
+     */
+    protected function buildBookingOutcomes(Collection $bookings, int $returningClients): array
     {
-        $stages = [
-            'leads' => [
-                'label' => trans('analytics.funnel.leads'),
-                'count' => $appointments->count(),
-            ],
-            'booked' => [
-                'label' => trans('analytics.funnel.booked'),
-                'count' => $appointments->whereIn('status', ['scheduled', 'confirmed', 'completed'])->count(),
-            ],
-            'completed' => [
-                'label' => trans('analytics.funnel.completed'),
-                'count' => $appointments->where('status', 'completed')->count(),
-            ],
-            'returning' => [
-                'label' => trans('analytics.funnel.returning'),
-                'count' => $returningClients,
-            ],
+        $total = $bookings->count();
+        $came = $bookings->filter(fn (Order $order) => in_array($order->status, self::VISIT_STATUSES, true))->count();
+        $cancelled = $bookings->where('status', 'cancelled')->count();
+        $missed = $bookings->where('status', 'no_show')->count();
+
+        $share = fn (int $count) => $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
+
+        return [
+            ['key' => 'total', 'label' => trans('analytics.outcomes.total'), 'count' => $total, 'share' => $total > 0 ? 100.0 : 0.0, 'tone' => 'neutral'],
+            ['key' => 'came', 'label' => trans('analytics.outcomes.came'), 'count' => $came, 'share' => $share($came), 'tone' => 'good'],
+            ['key' => 'returning', 'label' => trans('analytics.outcomes.returning'), 'count' => $returningClients, 'share' => $share($returningClients), 'tone' => 'good'],
+            ['key' => 'cancelled', 'label' => trans('analytics.outcomes.cancelled'), 'count' => $cancelled, 'share' => $share($cancelled), 'tone' => 'muted'],
+            ['key' => 'no_show', 'label' => trans('analytics.outcomes.no_show'), 'count' => $missed, 'share' => $share($missed), 'tone' => 'bad'],
         ];
-
-        $previous = null;
-        foreach ($stages as $key => $stage) {
-            $count = (int) $stage['count'];
-            $conversion = $previous === null || $previous === 0
-                ? 100.0
-                : round(($count / $previous) * 100, 1);
-            $stages[$key]['conversion'] = $conversion;
-            $previous = max($count, 1);
-        }
-
-        return array_values($stages);
     }
 
     protected function resolveTopClients(Collection $transactions): array
@@ -584,7 +746,7 @@ class AnalyticsController extends Controller
             ->all();
     }
 
-    protected function buildServiceShare(Collection $transactions, Collection $appointments, Collection $services): array
+    protected function buildServiceShare(Collection $transactions): array
     {
         $totals = collect();
 
@@ -596,15 +758,6 @@ class AnalyticsController extends Controller
                     return;
                 }
                 $totals[$name] = ($totals[$name] ?? 0) + ($price > 0 ? $price : 1);
-            });
-        });
-
-        $appointments->each(function (Appointment $appointment) use (&$totals, $services) {
-            collect($appointment->service_ids ?? [])->each(function ($serviceId) use (&$totals, $services) {
-                $service = $services->get($serviceId);
-                if ($service) {
-                    $totals[$service->name] = ($totals[$service->name] ?? 0) + ($service->base_price ?? 1);
-                }
             });
         });
 
@@ -714,8 +867,12 @@ class AnalyticsController extends Controller
                 'label' => $label,
                 'start' => $rangeStart->copy(),
                 'end' => $rangeEnd->copy(),
-                'offset' => $rangeStart->diffInDays($from),
-                'span' => $rangeEnd->diffInDays($rangeStart),
+                // Carbon 3 signs its diffs: `$a->diffInDays($b)` is `$b - $a`,
+                // so the old `$rangeStart->diffInDays($from)` was negative and
+                // every «прошлый период» bucket was looked up before the compare
+                // window even began — which is why that line was flat at zero.
+                'offset' => (int) $from->diffInDays($rangeStart),
+                'span' => (int) $rangeStart->diffInDays($rangeEnd),
             ];
 
             $cursor = $rangeEnd->copy()->addDay()->startOfDay();
@@ -977,7 +1134,7 @@ class AnalyticsController extends Controller
     {
         $insights = [];
 
-        $activeShare = $segments['distribution']['active']['share'] ?? 0;
+        $activeShare = $segments['distribution']['regular']['share'] ?? 0;
         $sleepingCount = $segments['distribution']['sleeping']['count'] ?? 0;
 
         $insights[] = [

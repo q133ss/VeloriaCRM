@@ -784,22 +784,39 @@
                                         </span>
                                     </div>
                                 @endif
+                                @php
+                                    // Occupancy already said «неделю назад 10%, растёт»; the
+                                    // money stood there with nothing to compare it to.
+                                    $weekChange = function (?array $change) {
+                                        if (! $change) {
+                                            return null;
+                                        }
+
+                                        return __('dashboard.week.change_' . $change['direction'], ['percent' => $change['percent']]);
+                                    };
+                                @endphp
                                 @if ($week['revenue'] > 0)
                                     <div class="day-week-item">
                                         <span class="day-week-value">{{ $week['revenue_formatted'] }}</span>
-                                        <span class="day-week-label">{{ __('dashboard.week.revenue') }}</span>
+                                        <span class="day-week-label">
+                                            {{ __('dashboard.week.revenue') }}@if ($note = $weekChange($week['revenue_change'])), {{ $note }}@endif
+                                        </span>
                                     </div>
                                 @endif
                                 @if ($week['clients'] > 0)
                                     <div class="day-week-item">
                                         <span class="day-week-value">{{ $week['clients'] }}</span>
-                                        <span class="day-week-label">{{ __('dashboard.week.clients') }}</span>
+                                        <span class="day-week-label">
+                                            {{ __('dashboard.week.clients') }}@if ($note = $weekChange($week['clients_change'])), {{ $note }}@endif
+                                        </span>
                                     </div>
                                 @endif
                                 @if ($week['revenue'] > 0)
                                     <div class="day-week-item">
                                         <span class="day-week-value">{{ $week['average_ticket_formatted'] }}</span>
-                                        <span class="day-week-label">{{ __('dashboard.week.average_ticket') }}</span>
+                                        <span class="day-week-label">
+                                            {{ __('dashboard.week.average_ticket') }}@if ($note = $weekChange($week['average_ticket_change'])), {{ $note }}@endif
+                                        </span>
                                     </div>
                                 @endif
                             </div>

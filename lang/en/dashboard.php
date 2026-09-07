@@ -93,6 +93,9 @@ return [
         'clients' => 'Clients',
         'clients_word' => 'client|clients',
         'average_ticket' => 'Average ticket',
+        'change_up' => '+:percent% vs last week',
+        'change_down' => '−:percent% vs last week',
+        'change_same' => 'same as last week',
     ],
 
     'setup' => [
