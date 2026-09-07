@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Ai\AiGateway;
 use App\Services\Telegram\TelegramBotApiService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -15,7 +16,7 @@ use Throwable;
 class DailyPostIdeaService
 {
     public function __construct(
-        private readonly OpenAIService $openAI,
+        private readonly AiGateway $ai,
         private readonly NotificationService $notifications,
         private readonly TelegramBotApiService $telegram,
     ) {
@@ -140,45 +141,56 @@ PROMPT;
             ],
         ];
 
-        try {
-            $response = $this->openAI->respond($prompt, $context, [
-                'response_format' => [
-                    'type' => 'json_schema',
-                    'json_schema' => $schema,
-                ],
-                'max_tokens' => 350,
-            ]);
+        // The scheduler runs this, so nobody is watching a spinner and the
+        // local provider gets the ordinary timeout.
+        $decoded = $this->ai->json('daily_post_idea', $prompt, $context, $schema, [
+            'max_tokens' => 350,
+            'local_context' => $this->compactContext($context),
+        ]);
 
-            $content = Arr::get($response, 'content');
-            if (! $content) {
-                return $this->fallbackIdea($context);
-            }
-
-            $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-
-            $title = trim((string) Arr::get($decoded, 'title', ''));
-            $idea = trim((string) Arr::get($decoded, 'idea', ''));
-            $channel = trim((string) Arr::get($decoded, 'channel', ''));
-            $cta = trim((string) Arr::get($decoded, 'cta', ''));
-
-            if ($title === '' || $idea === '' || $channel === '' || $cta === '') {
-                return $this->fallbackIdea($context);
-            }
-
-            return [
-                'title' => $title,
-                'idea' => $idea,
-                'channel' => $channel,
-                'cta' => $cta,
-            ];
-        } catch (Throwable $exception) {
-            Log::warning('Failed to generate daily post idea.', [
-                'user_id' => $user->id,
-                'exception' => $exception->getMessage(),
-            ]);
-
+        if ($decoded === null) {
             return $this->fallbackIdea($context);
         }
+
+        $title = trim((string) Arr::get($decoded, 'title', ''));
+        $idea = trim((string) Arr::get($decoded, 'idea', ''));
+        $channel = trim((string) Arr::get($decoded, 'channel', ''));
+        $cta = trim((string) Arr::get($decoded, 'cta', ''));
+
+        if ($title === '' || $idea === '' || $channel === '' || $cta === '') {
+            return $this->fallbackIdea($context);
+        }
+
+        return [
+            'title' => $title,
+            'idea' => $idea,
+            'channel' => $channel,
+            'cta' => $cta,
+        ];
+    }
+
+    /**
+     * What one day's idea actually rests on. The full context carries a month
+     * of orders and the whole price list, which does not fit the local
+     * provider's prompt budget and adds nothing to a content idea.
+     *
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    protected function compactContext(array $context): array
+    {
+        return [
+            'дата' => Arr::get($context, 'date'),
+            'мастер' => Arr::get($context, 'user.name'),
+            'канал' => Arr::get($context, 'daily_idea_settings.channel_preference'),
+            'бриф' => Arr::get($context, 'daily_idea_settings.brief'),
+            'услуги' => collect(Arr::get($context, 'services', []))
+                ->pluck('name')
+                ->filter()
+                ->take(5)
+                ->values()
+                ->all(),
+        ];
     }
 
     /**
@@ -331,7 +343,7 @@ PROMPT;
 
     protected function aiEnabled(): bool
     {
-        return (bool) config('openai.api_key');
+        return $this->ai->enabled('daily_post_idea');
     }
 
     protected function userHasEliteAccess(User $user): bool

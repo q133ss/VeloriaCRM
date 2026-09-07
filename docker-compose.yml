@@ -4,6 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: veloria_app
+    # ai_service runs on the host, outside compose. Docker Desktop resolves
+    # host.docker.internal on its own; a Linux VPS does not, hence the mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
@@ -32,6 +36,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: veloria_queue
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
@@ -65,6 +71,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: veloria_scheduler
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
