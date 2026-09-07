@@ -57,4 +57,33 @@ class Client extends Authenticatable
     {
         return self::LOYALTY_LEVELS;
     }
+
+    /**
+     * The level the bookings already imply.
+     *
+     * `loyalty_level` is a field on the client form, so unless the master filled
+     * it in by hand it says nothing — and nobody fills it in. Counting visits
+     * gives the same answer without asking. A value the master did set stays
+     * hers: `vip` and `ambassador` are judgements about a person, not a tally,
+     * and no arithmetic should be allowed to take them away.
+     */
+    public static function loyaltyFromVisits(int $visits): string
+    {
+        return match (true) {
+            $visits >= 10 => 'platinum',
+            $visits >= 5 => 'gold',
+            $visits >= 2 => 'silver',
+            $visits === 1 => 'bronze',
+            default => 'new',
+        };
+    }
+
+    public static function loyaltyLabel(?string $level): ?string
+    {
+        if (! $level) {
+            return null;
+        }
+
+        return self::LOYALTY_LEVELS[$level] ?? ucfirst($level);
+    }
 }

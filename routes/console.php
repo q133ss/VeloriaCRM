@@ -5,6 +5,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Ai\AiGateway;
 use App\Services\Ai\LocalAiService;
+use App\Services\Clients\ClientVisitStats;
 use App\Services\AllergyReminderService;
 use App\Services\DailyPostIdeaService;
 use App\Services\Marketing\MarketingCampaignService;
@@ -230,8 +231,21 @@ Artisan::command('ai:ping {prompt?}', function (?string $prompt = null) {
     return 0;
 })->purpose('Check the AI providers end to end and show which one answered');
 
+Artisan::command('clients:refresh-visits {--master= : Only this master\'s clients}', function (ClientVisitStats $stats) {
+    // A booking turns into a visit because the hour passed, and nothing is
+    // written at that moment for the observer to catch. Once a night is enough:
+    // every other way a visit can change goes through an order save.
+    $master = $this->option('master');
+    $changed = $stats->refreshAll($master ? (int) $master : null);
+
+    $this->info("Clients whose last visit moved: {$changed}.");
+
+    return 0;
+})->purpose('Recount when each client last came, from the bookings');
+
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
 Schedule::command('alerts:send-allergy-reminders')->everyMinute();
 Schedule::command('content:send-daily-ideas')->dailyAt('09:00');
 Schedule::command('content:send-weekly-useful')->weeklyOn(1, '09:00');
+Schedule::command('clients:refresh-visits')->dailyAt('03:20');

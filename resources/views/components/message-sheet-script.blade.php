@@ -158,9 +158,11 @@
             setError('');
             updateSendButton();
 
-            // A ready text goes straight in; only a draft costs a request.
-            if (options.text) {
-                textField.value = options.text;
+            // A ready text goes straight in; only a draft costs a request. With
+            // neither, the box is cleared rather than left holding whatever was
+            // written to the last person it was opened for.
+            if (options.text || !current.draft) {
+                textField.value = options.text || '';
                 updateWhatsappLink();
                 modal.show();
 

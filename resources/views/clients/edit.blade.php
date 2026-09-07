@@ -139,13 +139,7 @@
                         <label for="client-birthday">День рождения</label>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-floating form-floating-outline">
-                        <input type="datetime-local" class="form-control" id="client-last-visit" name="last_visit_at" />
-                        <label for="client-last-visit">Последний визит</label>
-                    </div>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <div class="form-floating form-floating-outline">
                         <select class="form-select" id="client-loyalty" name="loyalty_level"></select>
                         <label for="client-loyalty">Статус клиента</label>
@@ -615,7 +609,6 @@
                 form.phone.value = client.phone || '';
                 form.email.value = client.email || '';
                 form.birthday.value = client.birthday || '';
-                form.last_visit_at.value = client.last_visit_at_local || '';
                 form.loyalty_level.value = client.loyalty_level || '';
                 form.tags.value = formatListForInput(client.tags || []);
                 form.allergies.value = formatListForInput(client.allergies || []);
@@ -637,7 +630,6 @@
                     phone: form.phone.value.trim(),
                     email: form.email.value.trim() || null,
                     birthday: form.birthday.value || null,
-                    last_visit_at: form.last_visit_at.value || null,
                     loyalty_level: form.loyalty_level.value || null,
                     notes: form.notes.value.trim() || null,
                     tags: readTagifyValues(tagsTagify, form.tags),

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use App\OpenApi\DocumentTransformers\ApplyVeloriaApiDocument;
 use App\OpenApi\OperationTransformers\ApplyVeloriaApiSecurity;
 use App\OpenApi\OperationTransformers\ApplyVeloriaOperationMetadata;
@@ -22,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Order::observe(OrderObserver::class);
+
         if (! class_exists(\Dedoc\Scramble\Scramble::class)) {
             return;
         }

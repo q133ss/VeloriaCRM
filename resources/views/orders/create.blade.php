@@ -1278,7 +1278,40 @@
             }
         });
 
+        /**
+         * Arriving from the client list with a person already chosen. The list
+         * knows who she is, and asking the master to type the name again would
+         * be the third place in this product that asks for what it already has.
+         */
+        function applyClientFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const accountId = params.get('client_id');
+            const name = params.get('client_name');
+            const phone = params.get('client_phone');
+
+            if (!accountId && !phone) {
+                return;
+            }
+
+            if (accountId) {
+                setClientSelection({ id: Number(accountId), name: name || '', phone: phone || '' });
+            } else {
+                // A card with no account behind it yet: the phone is enough, and
+                // the account gets made when the booking is saved.
+                if (clientPhoneInput) clientPhoneInput.value = phone || '';
+                if (clientNameInput) clientNameInput.value = name || '';
+                manualClientCard?.classList.remove('d-none');
+            }
+
+            if (clientSearchInput) {
+                clientSearchInput.value = name || phone || '';
+            }
+
+            clearClientResults();
+        }
+
         applyDateFromUrl();
+        applyClientFromUrl();
         updateProgressState();
         loadOptions();
     </script>

@@ -212,9 +212,9 @@
                         </div>
                     </div>
                     <div class="hero-actions d-flex flex-column flex-sm-row gap-2 align-self-start">
-                        <button type="button" class="btn btn-outline-info" id="client-reminder-btn" disabled>
-                            <i class="ri ri-mail-line me-1"></i>
-                            Автонапоминание
+                        <button type="button" class="btn btn-outline-info" id="client-message-btn" disabled>
+                            <i class="ri ri-chat-1-line me-1"></i>
+                            Написать
                         </button>
                         <a href="#" class="btn btn-primary" id="client-edit-link" hidden>
                             <i class="ri ri-edit-line me-1"></i>
@@ -375,35 +375,13 @@
         </div>
     </div>
 
-    <div class="modal fade" id="clientReminderModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="reminder-title">Автонапоминание</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="reminder-message" class="form-label">Текст напоминания</label>
-                        <textarea class="form-control" id="reminder-message" rows="4"></textarea>
-                        <div class="form-text">Текст загружается из настроек. При необходимости адаптируйте перед отправкой.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Канал связи</label>
-                        <div id="reminder-channels" class="d-flex flex-column gap-2"></div>
-                    </div>
-                    <div id="reminder-errors" class="text-danger small"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" id="reminder-send">Отправить</button>
-                </div>
-            </div>
-        </div>
-    </div>
+
+    @include('components.message-sheet-styles')
+    @include('components.message-sheet')
 @endsection
 
 @section('scripts')
+    @include('components.message-sheet-script')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const container = document.getElementById('client-view');
@@ -445,7 +423,7 @@
             const aiDetails = document.getElementById('client-ai-details');
             const aiLock = document.getElementById('client-ai-lock');
             const editLink = document.getElementById('client-edit-link');
-            const reminderButton = document.getElementById('client-reminder-btn');
+            const messageButton = document.getElementById('client-message-btn');
             const analyticsButton = document.getElementById('client-analytics-btn');
             const analyticsModalEl = document.getElementById('clientAnalyticsModal');
             const analyticsModal = analyticsModalEl ? new bootstrap.Modal(analyticsModalEl) : null;
@@ -457,15 +435,7 @@
             const riskSignalsList = document.getElementById('client-risk-signals');
             const riskSuggestionsList = document.getElementById('client-risk-suggestions');
 
-            const reminderModalEl = document.getElementById('clientReminderModal');
-            const reminderModal = reminderModalEl ? new bootstrap.Modal(reminderModalEl) : null;
-            const reminderTitle = document.getElementById('reminder-title');
-            const reminderMessageInput = document.getElementById('reminder-message');
-            const reminderChannels = document.getElementById('reminder-channels');
-            const reminderErrors = document.getElementById('reminder-errors');
-            const reminderSendBtn = document.getElementById('reminder-send');
 
-            let reminderMessageTemplate = '';
             let currentClient = null;
             let clientMeta = {};
             let analyticsData = null;
@@ -960,31 +930,9 @@
                 renderRecommendations([]);
             }
 
-            function renderReminderChannels(client) {
-                reminderChannels.innerHTML = '';
-                const channels = Array.isArray(client.available_channels) ? client.available_channels : [];
-                if (!channels.length) {
-                    reminderChannels.innerHTML = '<p class="text-muted mb-0">Добавьте телефон или email, чтобы выбрать канал связи.</p>';
-                    reminderSendBtn.disabled = true;
-                    return;
-                }
-                channels.forEach(function (channel, index) {
-                    const id = `reminder-channel-${channel.key}-${client.id}`;
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'form-check';
-                    wrapper.innerHTML = `
-                        <input class="form-check-input" type="radio" name="reminder-channel" id="${id}" value="${channel.key}" ${index === 0 ? 'checked' : ''} />
-                        <label class="form-check-label" for="${id}">${channel.label}</label>
-                    `;
-                    reminderChannels.appendChild(wrapper);
-                });
-                reminderSendBtn.disabled = false;
-            }
-
             function fillClient(client, meta) {
                 currentClient = client;
                 clientMeta = meta || {};
-                reminderMessageTemplate = clientMeta.reminder_message || '';
                 analyticsData = null;
                 analyticsLoaded = false;
                 analyticsLoading = false;
@@ -1050,7 +998,7 @@
                 if (client.id) {
                     editLink.href = '/clients/' + client.id + '/edit';
                     editLink.hidden = false;
-                    reminderButton.disabled = false;
+                    messageButton.disabled = false;
                 }
             }
 
@@ -1077,16 +1025,26 @@
                 }
             }
 
-            function openReminderModal() {
-                if (!currentClient || !reminderModal) {
+            /**
+             * The same sheet the client list and the calendar open: a draft the
+             * master edits, then copies or sends. The button used to open a form
+             * that asked which channel to use and then only copied to the
+             * clipboard, ignoring the answer.
+             */
+            function openMessageSheet() {
+                if (!currentClient || !window.veloriaMessage) {
                     return;
                 }
 
-                reminderTitle.textContent = `Автонапоминание для ${currentClient.name || 'клиента'}`;
-                reminderMessageInput.value = reminderMessageTemplate || '';
-                reminderErrors.textContent = '';
-                renderReminderChannels(currentClient);
-                reminderModal.show();
+                window.veloriaMessage.open({
+                    clientId: currentClient.id,
+                    clientName: currentClient.name || 'Клиент',
+                    clientPhone: currentClient.phone || '',
+                    channels: currentClient.channels || [],
+                    // Wording is worth generating only when there is something
+                    // to say, and «come back» is only true if she stopped coming.
+                    draft: currentClient.group === 'sleeping' ? { intent: 'return' } : null,
+                });
             }
 
             if (analyticsButton && analyticsModal) {
@@ -1102,42 +1060,8 @@
                 });
             }
 
-            if (reminderButton) {
-                reminderButton.addEventListener('click', openReminderModal);
-            }
-
-            if (reminderSendBtn) {
-                reminderSendBtn.addEventListener('click', async function () {
-                    reminderErrors.textContent = '';
-                    const message = reminderMessageInput.value.trim();
-                    const channelInput = reminderChannels.querySelector('input[name="reminder-channel"]:checked');
-
-                    if (!channelInput) {
-                        reminderErrors.textContent = 'Выберите канал связи.';
-                        return;
-                    }
-
-                    if (!message) {
-                        reminderErrors.textContent = 'Добавьте текст напоминания.';
-                        return;
-                    }
-
-                    try {
-                        if (navigator.clipboard && navigator.clipboard.writeText) {
-                            await navigator.clipboard.writeText(message);
-                            showAlert('info', 'Текст напоминания скопирован. Отправьте его клиенту через выбранный канал.');
-                        } else {
-                            showAlert('info', 'Скопируйте текст напоминания вручную и отправьте клиенту.');
-                        }
-                    } catch (error) {
-                        console.warn('Clipboard copy failed', error);
-                        showAlert('info', 'Не удалось скопировать текст автоматически. Скопируйте вручную.');
-                    }
-
-                    if (reminderModal) {
-                        reminderModal.hide();
-                    }
-                });
+            if (messageButton) {
+                messageButton.addEventListener('click', openMessageSheet);
             }
 
             renderRisk(null);

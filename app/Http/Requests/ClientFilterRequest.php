@@ -18,6 +18,11 @@ class ClientFilterRequest extends BaseRequest
             $this->merge(['search' => $search !== '' ? $search : null]);
         }
 
+        if ($this->has('group')) {
+            $group = trim((string) $this->input('group'));
+            $this->merge(['group' => $group !== '' ? $group : null]);
+        }
+
         if ($this->has('sort')) {
             $sort = trim((string) $this->input('sort'));
             $this->merge(['sort' => $sort !== '' ? $sort : null]);
@@ -39,6 +44,7 @@ class ClientFilterRequest extends BaseRequest
         return [
             'search' => ['nullable', 'string', 'max:255'],
             'loyalty' => ['nullable', 'string', Rule::in(array_keys(Client::loyaltyLevels()))],
+            'group' => ['nullable', 'string', Rule::in(['all', 'upcoming', 'sleeping', 'new'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'sort' => ['nullable', 'string', Rule::in(['name', 'last_visit_at', 'created_at'])],
@@ -52,6 +58,7 @@ class ClientFilterRequest extends BaseRequest
             'search.string' => 'Поисковый запрос должен быть строкой.',
             'search.max' => 'Поисковый запрос не должен превышать :max символов.',
             'loyalty.in' => 'Выбран неверный уровень лояльности.',
+            'group.in' => 'Выбрана неизвестная группа клиентов.',
             'page.integer' => 'Номер страницы должен быть числом.',
             'page.min' => 'Номер страницы не может быть меньше 1.',
             'per_page.integer' => 'Количество элементов на странице должно быть числом.',

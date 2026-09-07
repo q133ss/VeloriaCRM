@@ -1174,6 +1174,7 @@
             </div>
         </div>
 
+        @include('components.message-sheet-styles')
         @include('components.message-sheet')
 @endsection
 

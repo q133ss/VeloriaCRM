@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Ai\AiGateway;
 use App\Services\ClientAttendanceService;
+use App\Services\Clients\ClientVisitStats;
 use App\Services\ClientIdentityService;
 use App\Services\ClientOutreachService;
 use App\Services\Marketing\ClientChannelResolver;
@@ -35,81 +36,253 @@ class ClientController extends Controller
     ) {
     }
 
-    public function index(ClientFilterRequest $request): JsonResponse
+    public function index(ClientFilterRequest $request, ClientVisitStats $visits): JsonResponse
     {
         $userId = $this->currentUserId();
         $filters = $request->validated();
 
-        $perPage = (int) ($filters['per_page'] ?? 12);
-        $perPage = max(1, min($perPage, 100));
-        $page = (int) ($filters['page'] ?? 1);
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 12), 100));
+        $page = max(1, (int) ($filters['page'] ?? 1));
         $search = trim((string) ($filters['search'] ?? ''));
         $loyalty = $filters['loyalty'] ?? null;
-        $sort = $filters['sort'] ?? 'name';
-        $direction = strtolower($filters['direction'] ?? 'asc');
+        $group = $filters['group'] ?? 'all';
+        $sort = in_array($filters['sort'] ?? null, ['name', 'last_visit_at', 'created_at'], true)
+            ? $filters['sort']
+            : null;
+        $direction = in_array(strtolower($filters['direction'] ?? ''), ['asc', 'desc'], true)
+            ? strtolower($filters['direction'])
+            : null;
 
-        $allowedSorts = ['name', 'last_visit_at', 'created_at'];
-        if (! in_array($sort, $allowedSorts, true)) {
-            $sort = 'name';
-        }
+        $now = Carbon::now();
 
-        if (! in_array($direction, ['asc', 'desc'], true)) {
-            $direction = 'asc';
-        }
+        // The whole book, not a page of it: which tab a client falls into and how
+        // long she has been away are counted from her bookings, and neither can
+        // be expressed as an `order by` on the clients table. A master's book is
+        // hundreds of cards, and this is two queries over it either way.
+        $cards = Client::query()
+            ->where('user_id', $userId)
+            ->when($search !== '', fn ($query) => $this->applyClientSearch($query, $search))
+            ->when($loyalty, fn ($query) => $query->where('loyalty_level', $loyalty))
+            ->get();
 
-        $query = Client::where('user_id', $userId);
+        $stats = $visits->forCards($userId, $cards, $now);
 
-        if ($search !== '') {
-            $digits = preg_replace('/[^0-9]+/', '', $search);
+        $rows = $cards->map(fn (Client $card) => [
+            'card' => $card,
+            'stats' => $stats[$card->id],
+            'group' => $visits->groupFor($stats[$card->id], $now),
+        ]);
 
-            $query->where(function ($builder) use ($search, $digits) {
-                $builder->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+        $counts = [
+            'all' => $rows->count(),
+            'upcoming' => $rows->where('group', 'upcoming')->count(),
+            'sleeping' => $rows->where('group', 'sleeping')->count(),
+            'new' => $rows->where('group', 'new')->count(),
+        ];
 
-                if ($digits) {
-                    $normalized = '+' . ltrim($digits, '+');
-                    $builder->orWhere('phone', 'like', "%{$normalized}%");
-                }
-            });
-        }
+        $selected = $this->sortClientRows(
+            $group === 'all' ? $rows : $rows->where('group', $group)->values(),
+            $group,
+            $sort,
+            $direction,
+        );
 
-        if ($loyalty) {
-            $query->where('loyalty_level', $loyalty);
-        }
-
-        $query->orderBy($sort, $direction);
-
-        $clients = $query->paginate($perPage, ['*'], 'page', $page);
-        $clients->getCollection()->transform(fn (Client $client) => $this->transformClient($client));
+        $total = $selected->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $items = $selected->forPage($page, $perPage)->values();
 
         $settings = $this->resolveUserSettings();
+        $resolver = app(ClientChannelResolver::class);
+        $accounts = User::query()
+            ->whereIn('id', $items->pluck('card.client_user_id')->filter()->unique()->all())
+            ->get()
+            ->keyBy('id');
+
+        $data = $items->map(function (array $row) use ($now, $settings, $resolver, $accounts) {
+            $card = $row['card'];
+            $account = $card->client_user_id ? $accounts->get($card->client_user_id) : null;
+
+            return $this->transformClient($card) + $this->visitFacts(
+                $row['stats'],
+                $row['group'],
+                $now,
+                $resolver->availableChannels($settings, $card, $account),
+            );
+        })->all();
 
         return response()->json([
-            'data' => $clients->items(),
+            'data' => $data,
             'meta' => [
                 'pagination' => [
-                    'current_page' => $clients->currentPage(),
-                    'per_page' => $clients->perPage(),
-                    'total' => $clients->total(),
-                    'last_page' => $clients->lastPage(),
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => $lastPage,
                 ],
                 'filters' => [
                     'search' => $search !== '' ? $search : null,
                     'loyalty' => $loyalty,
-                    'sort' => $sort,
-                    'direction' => $direction,
+                    'group' => $group,
+                    'sort' => $sort ?? 'name',
+                    'direction' => $direction ?? 'asc',
                 ],
+                'groups' => $counts,
                 'loyalty_options' => ['' => 'Все уровни'] + Client::loyaltyLevels(),
-                'reminder_message' => optional($settings)->reminder_message,
-            ],
-            'links' => [
-                'first' => $clients->url(1),
-                'last' => $clients->url($clients->lastPage()),
-                'prev' => $clients->previousPageUrl(),
-                'next' => $clients->nextPageUrl(),
             ],
         ]);
+    }
+
+    /**
+     * LIKE is case-sensitive on Postgres, so «лебед» found no Лебедеву — and a
+     * master types a name in lower case, from the middle of a word, on a phone.
+     */
+    private function applyClientSearch($query, string $search): void
+    {
+        $like = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+        $digits = preg_replace('/[^0-9]+/', '', $search);
+
+        $query->where(function ($builder) use ($search, $digits, $like) {
+            $builder->where('name', $like, "%{$search}%")
+                ->orWhere('email', $like, "%{$search}%")
+                ->orWhere('phone', $like, "%{$search}%")
+                // Tags are the one thing in this list a master writes herself,
+                // and until now they were the one thing she could not search by.
+                // They live in a JSON column, and how Cyrillic survives in there
+                // depends on the driver: Postgres parses the \uXXXX escapes back
+                // into letters, SQLite keeps the escapes. Both spellings are
+                // asked for rather than guessing which database this is.
+                ->orWhere('tags', $like, "%{$search}%")
+                ->orWhere('tags', $like, '%' . trim(json_encode($search), '"') . '%');
+
+            if ($digits) {
+                $builder->orWhere('phone', $like, '%+' . ltrim($digits, '+') . '%');
+            }
+        });
+    }
+
+    /**
+     * Inside a tab there is one order that needs no explaining: the visit that
+     * comes soonest, the client who has been gone longest, the card added last.
+     *
+     * @param  \Illuminate\Support\Collection<int, array>  $rows
+     * @return \Illuminate\Support\Collection<int, array>
+     */
+    private function sortClientRows(Collection $rows, string $group, ?string $sort, ?string $direction): Collection
+    {
+        if ($sort !== null) {
+            $descending = $direction === 'desc';
+
+            return match ($sort) {
+                'last_visit_at' => $rows->sortBy(fn (array $row) => optional($row['stats']['last_visit_at'])->getTimestamp() ?? 0, SORT_REGULAR, $descending)->values(),
+                'created_at' => $rows->sortBy(fn (array $row) => optional($row['card']->created_at)->getTimestamp() ?? 0, SORT_REGULAR, $descending)->values(),
+                default => $rows->sortBy(fn (array $row) => mb_strtolower((string) $row['card']->name), SORT_REGULAR, $descending)->values(),
+            };
+        }
+
+        return match ($group) {
+            'upcoming' => $rows->sortBy(fn (array $row) => optional($row['stats']['next_at'])->getTimestamp() ?? PHP_INT_MAX)->values(),
+            'sleeping' => $rows->sortBy(fn (array $row) => optional($row['stats']['last_visit_at'])->getTimestamp() ?? 0)->values(),
+            'new' => $rows->sortByDesc(fn (array $row) => optional($row['card']->created_at)->getTimestamp() ?? 0)->values(),
+            default => $rows->sortBy(fn (array $row) => mb_strtolower((string) $row['card']->name))->values(),
+        };
+    }
+
+    /**
+     * @param  array<int, string>  $channels
+     */
+    private function visitFacts(array $stats, string $group, Carbon $now, array $channels): array
+    {
+        $last = $stats['last_visit_at'];
+        $next = $stats['next_at'];
+        $visits = (int) $stats['visits'];
+
+        return [
+            'visits' => $visits,
+            'no_shows' => (int) $stats['no_shows'],
+            'group' => $group,
+            'channels' => $channels,
+            'last_visit' => [
+                'at' => $last?->toIso8601String(),
+                'days' => $last ? (int) $last->copy()->startOfDay()->diffInDays($now->copy()->startOfDay()) : null,
+                'text' => $this->lastVisitText($last, $visits, $now),
+            ],
+            'next' => [
+                'at' => $next?->toIso8601String(),
+                'order_id' => $stats['next_order_id'],
+                'text' => $this->nextVisitText($next, $now),
+            ],
+            'visits_text' => $visits > 0
+                ? $visits . ' ' . $this->plural($visits, 'визит', 'визита', 'визитов')
+                : null,
+            // The count of missed visits is stated, never scored. A percentage
+            // next to someone's name is a verdict on a person the master cannot
+            // audit; «не пришла дважды» is the same fact and points at an action.
+            'no_shows_text' => $stats['no_shows'] > 0
+                ? 'Не пришла ' . $stats['no_shows'] . ' ' . $this->plural((int) $stats['no_shows'], 'раз', 'раза', 'раз')
+                : null,
+        ];
+    }
+
+    private function lastVisitText(?Carbon $last, int $visits, Carbon $now): string
+    {
+        if (! $last || $visits < 1) {
+            return 'Ещё не приходила';
+        }
+
+        $days = (int) $last->copy()->startOfDay()->diffInDays($now->copy()->startOfDay());
+
+        if ($days <= 0) {
+            return 'Была сегодня';
+        }
+
+        if ($days === 1) {
+            return 'Была вчера';
+        }
+
+        if ($days < 30) {
+            return 'Была ' . $days . ' ' . $this->plural($days, 'день', 'дня', 'дней') . ' назад';
+        }
+
+        $date = $last->copy()->locale('ru');
+
+        return 'Была ' . ($date->year === $now->year
+            ? $date->isoFormat('D MMMM')
+            : $date->isoFormat('D MMMM YYYY'));
+    }
+
+    private function nextVisitText(?Carbon $next, Carbon $now): string
+    {
+        if (! $next) {
+            return 'Записи нет';
+        }
+
+        $at = $next->copy()->locale('ru');
+        $days = (int) $now->copy()->startOfDay()->diffInDays($at->copy()->startOfDay());
+
+        $day = match (true) {
+            $days === 0 => 'сегодня',
+            $days === 1 => 'завтра',
+            $at->year === $now->year => $at->isoFormat('D MMMM'),
+            default => $at->isoFormat('D MMMM YYYY'),
+        };
+
+        return 'Придёт ' . $day . ', ' . $at->format('H:i');
+    }
+
+    private function plural(int $count, string $one, string $few, string $many): string
+    {
+        $mod100 = $count % 100;
+
+        if ($mod100 >= 11 && $mod100 <= 14) {
+            return $many;
+        }
+
+        return match ($count % 10) {
+            1 => $one,
+            2, 3, 4 => $few,
+            default => $many,
+        };
     }
 
     /**
@@ -235,17 +408,25 @@ class ClientController extends Controller
         ]);
     }
 
-    public function show(Client $client): JsonResponse
+    public function show(Client $client, ClientVisitStats $visits): JsonResponse
     {
         $this->ensureClientBelongsToCurrentUser($client);
 
         $client->refresh();
         $settings = $this->resolveUserSettings();
 
+        $now = Carbon::now();
+        $stats = $visits->forCard($client, $now);
+        $account = $client->client_user_id ? User::find($client->client_user_id) : null;
+
         return response()->json([
-            'data' => $this->transformClient($client),
+            'data' => $this->transformClient($client) + $this->visitFacts(
+                $stats,
+                $visits->groupFor($stats, $now),
+                $now,
+                app(ClientChannelResolver::class)->availableChannels($settings, $client, $account),
+            ),
             'meta' => [
-                'reminder_message' => optional($settings)->reminder_message,
                 'loyalty_levels' => Client::loyaltyLevels(),
                 'statistics' => $this->buildClientStatistics($client),
                 'has_pro_access' => $this->userHasProAccess(),
@@ -554,13 +735,13 @@ class ClientController extends Controller
 
     protected function transformClient(Client $client): array
     {
-        $client->refresh();
-
         $birthday = $client->birthday ? $client->birthday->copy() : null;
         $lastVisit = $client->last_visit_at ? $client->last_visit_at->copy() : null;
 
         return [
             'id' => $client->id,
+            // The booking form works off the client's account, not off the card.
+            'account_id' => $client->client_user_id,
             'name' => $client->name,
             'phone' => $client->phone,
             'email' => $client->email,
@@ -580,24 +761,7 @@ class ClientController extends Controller
             'created_at' => $client->created_at?->toIso8601String(),
             'created_at_formatted' => $client->created_at?->format('d.m.Y H:i'),
             'updated_at' => $client->updated_at?->toIso8601String(),
-            'available_channels' => $this->availableChannels($client),
         ];
-    }
-
-    protected function availableChannels(Client $client): array
-    {
-        $channels = [];
-
-        if ($client->phone) {
-            $channels[] = ['key' => 'sms', 'label' => 'SMS'];
-            $channels[] = ['key' => 'whatsapp', 'label' => 'WhatsApp'];
-        }
-
-        if ($client->email) {
-            $channels[] = ['key' => 'email', 'label' => 'Email'];
-        }
-
-        return $channels;
     }
 
     protected function collectSuggestions(Collection $collection, string $field): array
