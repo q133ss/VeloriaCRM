@@ -158,16 +158,20 @@ class Order extends Model
             $search = trim((string) $filters['search']);
             $digits = preg_replace('/[^0-9]+/', '', $search);
 
-            $query->where(function (Builder $builder) use ($search, $digits) {
-                $builder->whereHas('client', function (Builder $clientQuery) use ($search, $digits) {
-                    $clientQuery->where(function (Builder $nested) use ($search, $digits) {
-                        $nested->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%");
+            // LIKE is case-sensitive on Postgres, so «анна» found no Анна.
+            // A master types the name in lower case, from the middle of a word.
+            $like = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+            $query->where(function (Builder $builder) use ($search, $digits, $like) {
+                $builder->whereHas('client', function (Builder $clientQuery) use ($search, $digits, $like) {
+                    $clientQuery->where(function (Builder $nested) use ($search, $digits, $like) {
+                        $nested->where('name', $like, "%{$search}%")
+                            ->orWhere('email', $like, "%{$search}%")
+                            ->orWhere('phone', $like, "%{$search}%");
 
                         if ($digits) {
                             $normalized = '+' . ltrim($digits, '+');
-                            $nested->orWhere('phone', 'like', "%{$normalized}%");
+                            $nested->orWhere('phone', $like, "%{$normalized}%");
                         }
                     });
                 });

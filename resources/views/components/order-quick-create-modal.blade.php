@@ -21,12 +21,12 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="quickCreateModalLabel">Быстрое создание записи</h5>
+                <h5 class="modal-title" id="quickCreateModalLabel">Новая запись</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="quick-create-form" onsubmit="return false;">
                 <div class="modal-body">
-                    <p class="text-muted">Сначала найдите клиента по имени или телефону. Если нужного человека нет в истории, ниже можно сразу создать нового.</p>
+                    <p class="text-muted">Найдите клиента по имени или телефону. Если его ещё нет — заполните телефон и имя ниже.</p>
                     <input type="hidden" id="quick_master_name" value="{{ auth()->user()?->name ?? 'Вы' }}" />
                     <input type="hidden" id="quick_client_id" name="client_id" />
                     <div class="row g-3">
@@ -99,9 +99,14 @@
                     </div>
                     <div id="quick-create-errors" class="mt-3"></div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отменить</button>
-                    <button type="submit" class="btn btn-primary">Создать</button>
+                <div class="modal-footer justify-content-between">
+                    {{-- One way into a booking: the full form is not a second
+                         route, it is this one continued. --}}
+                    <a href="{{ route('orders.create') }}" class="btn btn-text-secondary">Все поля</a>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отменить</button>
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
                 </div>
             </form>
         </div>

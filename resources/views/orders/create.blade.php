@@ -269,9 +269,8 @@
                         </span>
                         <div>
                             <h1 class="mb-2">Новая запись</h1>
-                            <p class="text-muted mb-0 fs-6">Сначала выберите клиентку, потом дату и услуги. Всё второстепенное убрали в отдельные блоки ниже.</p>
+                            <p class="text-muted mb-0 fs-6">Клиентка, дата, услуги. Остальное можно уточнить позже.</p>
                         </div>
-                        <div class="small text-muted">Основной сценарий: выбрать клиентку, поставить время, отметить услуги и создать запись.</div>
                     </div>
                     <div class="d-flex flex-column flex-sm-row gap-2 align-self-stretch align-self-xl-start">
                         <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary">
@@ -835,7 +834,11 @@
 
             if (hasClient) {
                 clearClientResults();
-            } else if (clientSearchInput && clientSearchInput.value.trim() === '') {
+            } else if (
+                clientSearchInput
+                && clientSearchInput.value.trim() === ''
+                && document.activeElement === clientSearchInput
+            ) {
                 renderClientResults(recentClients, 'Недавние клиентки');
             } else {
                 clearClientResults();
@@ -1086,7 +1089,9 @@
             renderServices(availableServices);
             renderRecommendations(data.recommended_services || []);
             renderStatuses(data.status_options || {});
-            renderClientResults(recentClients, 'Недавние клиентки');
+            // The recent list opens on a click in the field, never on its own:
+            // open at load, it covered the date field underneath it.
+            clearClientResults();
             updateSummary();
         }
 

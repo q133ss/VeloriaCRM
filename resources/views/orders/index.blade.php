@@ -4,50 +4,36 @@
 
 @section('meta')
     @include('components.veloria-datetime-picker-styles')
+    @include('components.booking-phrase-input-styles')
 @endsection
 
 @section('content')
     <div class="orders-page">
         <div class="d-flex flex-column gap-4">
             <section class="orders-hero">
-                <div class="d-flex flex-column flex-xl-row gap-4 justify-content-between align-items-xl-start">
-                    <div class="orders-hero__content d-flex flex-column gap-3">
-                        <span class="orders-eyebrow">
-                            <i class="ri ri-calendar-check-line"></i>
-                            Записи под контролем
-                        </span>
-                        <div>
-                            <h1 class="orders-hero__title mb-2">Записи</h1>
-                            <p class="text-muted mb-0 fs-6">
-                                Один экран для расписания, статусов и быстрых действий без лишнего визуального шума.
-                            </p>
-                        </div>
-                        <div class="orders-overview">
-                            <div class="orders-overview-card">
-                                <span>Всего записей</span>
-                                <strong id="orders-hero-total">0</strong>
-                            </div>
-                            <div class="orders-overview-card">
-                                <span>Период</span>
-                                <strong id="orders-hero-period">Все записи</strong>
-                            </div>
-                            <div class="orders-overview-card">
-                                <span>Выбрано</span>
-                                <strong><span id="orders-selected-count">0</span> для действий</strong>
-                            </div>
-                        </div>
+                <div class="orders-hero__top">
+                    <div>
+                        <h1 class="orders-hero__title">Сегодня, <span id="orders-today-date">—</span></h1>
+                        <p class="orders-hero__lead mb-0" id="orders-today-line">Смотрим расписание…</p>
                     </div>
+                    <button
+                        type="button"
+                        class="btn btn-primary orders-hero__cta"
+                        data-bs-toggle="modal"
+                        data-bs-target="#quickCreateModal"
+                    >
+                        <i class="ri ri-add-line me-1"></i>
+                        Новая запись
+                    </button>
+                </div>
 
-                    <div class="orders-hero__actions d-flex flex-column flex-sm-row gap-2 align-self-start">
-                        <button class="btn orders-soft-btn" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
-                            <i class="ri ri-flashlight-line me-1"></i>
-                            Быстрое создание
-                        </button>
-                        <a href="{{ route('orders.create') }}" class="btn btn-primary">
-                            <i class="ri ri-add-line me-1"></i>
-                            Новая запись
-                        </a>
-                    </div>
+                {{-- One line instead of choosing between a modal and a full-page form. --}}
+                @include('components.booking-phrase-input')
+
+                <div>
+                    <button type="button" class="btn btn-primary btn-sm d-none" id="orders-phrase-open">
+                        Проверить и создать
+                    </button>
                 </div>
             </section>
 
@@ -55,105 +41,55 @@
 
             <style>
         .orders-page {
-            --orders-accent-soft: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.12);
             --orders-card-shadow: 0 20px 48px -34px rgba(37, 26, 84, 0.45);
+            --orders-line: color-mix(in srgb, var(--bs-border-color) 70%, transparent);
         }
 
         .orders-hero {
-            position: relative;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
             border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14);
             border-radius: 1.5rem;
-            padding: 1.5rem;
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.15), transparent 34%),
-                linear-gradient(135deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.02) 52%, rgba(var(--bs-info-rgb, 0, 207, 232), 0.05));
+            padding: 1.35rem 1.5rem;
+            background: linear-gradient(135deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.015) 60%, rgba(var(--bs-info-rgb, 0, 207, 232), 0.04));
             box-shadow: var(--orders-card-shadow);
         }
 
-        .orders-hero::after {
-            content: '';
-            position: absolute;
-            right: -3rem;
-            bottom: -4rem;
-            width: 12rem;
-            height: 12rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-            filter: blur(8px);
-        }
-
-        .orders-hero__content,
-        .orders-hero__actions {
-            position: relative;
-            z-index: 1;
-        }
-
-        .orders-eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.45rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
-            color: var(--bs-body-color);
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .orders-eyebrow i {
-            color: var(--bs-primary);
+        .orders-hero__top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
         }
 
         .orders-hero__title {
-            font-size: clamp(1.85rem, 2.6vw, 2.6rem);
-            line-height: 1.05;
-            letter-spacing: -0.03em;
+            margin: 0 0 0.2rem;
+            font-size: clamp(1.35rem, 2vw, 1.75rem);
+            letter-spacing: -0.02em;
         }
 
-        .orders-overview {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.9rem;
-        }
-
-        .orders-overview-card {
-            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.08);
-            border-radius: 1.05rem;
-            padding: 1rem 1.05rem;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.76);
-            backdrop-filter: blur(6px);
-        }
-
-        .orders-overview-card span {
-            display: block;
+        .orders-hero__lead {
             color: var(--bs-secondary-color);
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.45rem;
         }
 
-        .orders-overview-card strong {
-            display: block;
-            font-size: 1rem;
-            line-height: 1.3;
+        .orders-hero__lead a {
+            font-weight: 600;
         }
 
-        .orders-soft-btn {
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.72);
-            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.18);
-        }
-
-        .orders-soft-btn:hover,
-        .orders-soft-btn:focus {
-            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
-            color: var(--bs-primary);
-        }
-
-        .orders-hero__actions .btn {
+        .orders-hero__cta {
             white-space: nowrap;
+        }
+
+        /* The phrase line lives in the header, not in the calendar form:
+           a grey block in a light header read as a placeholder. */
+        .orders-hero .booking-phrase {
+            margin-bottom: 0;
+            padding: 0.55rem 0.7rem;
+            border-radius: 1rem;
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.16);
+            background: color-mix(in srgb, var(--bs-card-bg) 92%, transparent);
         }
 
         .orders-surface {
@@ -163,98 +99,85 @@
             background: color-mix(in srgb, var(--bs-card-bg) 94%, transparent);
         }
 
-        .orders-filters-grid {
-            display: grid;
-            grid-template-columns: 1.1fr 1fr 1.4fr auto;
-            gap: 0.85rem;
-        }
-
-        .orders-bulk-bar {
-            display: none;
+        .orders-toolbar {
+            display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            padding: 1rem 1.25rem 0;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
         }
 
-        .orders-bulk-bar.is-visible {
-            display: flex;
+        .orders-tabs {
+            display: inline-flex;
+            gap: 0.2rem;
+            padding: 0.25rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07);
         }
 
-        .orders-bulk-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .orders-table-wrap {
-            padding: 0 1rem 1rem;
-        }
-
-        .orders-table {
-            margin-bottom: 0;
-        }
-
-        .orders-table thead th {
+        .orders-tab {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.45rem 0.95rem;
+            background: transparent;
             color: var(--bs-secondary-color);
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom-width: 1px;
-            background: rgba(var(--bs-body-bg-rgb, 255, 255, 255), 0.68);
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
         }
 
-        .orders-table tbody tr {
-            transition: background-color 0.2s ease;
+        .orders-tab.is-active {
+            background: var(--bs-card-bg, #fff);
+            color: var(--bs-primary);
+            box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.65);
         }
 
-        .orders-table tbody tr:hover {
-            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.03);
-        }
-
-        .orders-date-cell strong,
-        .orders-client-cell strong {
-            display: block;
-            font-size: 0.96rem;
-        }
-
-        .orders-client-cell small,
-        .orders-date-cell small {
-            display: block;
-            margin-top: 0.18rem;
-        }
-
-        .orders-services {
+        .orders-toolbar__right {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 260px;
+            justify-content: flex-end;
         }
 
-        .orders-service-pill {
+        .orders-search {
+            max-width: 260px;
+        }
+
+        /* Field and buttons to one height: the theme gives them three. */
+        .orders-toolbar__right .orders-search {
+            height: 2.625rem;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .orders-toolbar__right .btn {
+            height: 2.625rem;
             display: inline-flex;
             align-items: center;
-            padding: 0.28rem 0.6rem;
-            border-radius: 999px;
-            background: var(--orders-accent-soft);
-            color: var(--bs-primary);
-            font-size: 0.76rem;
-            font-weight: 600;
         }
 
-        .orders-empty {
-            padding: 3.5rem 1rem !important;
+        .orders-extra {
+            display: none;
+            gap: 0.75rem;
+            padding: 0 1.25rem 1rem;
         }
 
-        .orders-pagination {
-            padding: 0 1.25rem 1.1rem;
-            border-top: none;
-            background: transparent;
+        .orders-extra.is-visible {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .orders-extra > div {
+            min-width: 200px;
         }
 
         .orders-reminder-note {
             display: none;
+            margin: 0 1.25rem 1rem;
             border-radius: 1rem;
-            padding: 0.85rem 1rem;
+            padding: 0.8rem 1rem;
             background: rgba(var(--bs-warning-rgb, 255, 159, 67), 0.14);
             color: var(--bs-warning-text-emphasis, var(--bs-warning));
         }
@@ -263,114 +186,269 @@
             display: block;
         }
 
-        @media (max-width: 991.98px) {
-            .orders-overview,
-            .orders-filters-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .orders-bulk-bar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        .orders-bulk-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.05);
         }
 
+        .orders-bulk-bar.is-visible {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .orders-bulk-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* Rows, not a table: on a phone the same data folds into a card
+           instead of running off the right edge. */
+        .orders-row,
+        .orders-list-head {
+            display: grid;
+            grid-template-columns: 116px minmax(140px, 1.2fr) minmax(170px, 1.5fr) 132px 168px;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.85rem 1.25rem;
+        }
+
+        .orders-list.is-picking .orders-row,
+        .orders-list.is-picking + .orders-list-head,
+        .orders-list-head.is-picking {
+            grid-template-columns: 26px 116px minmax(140px, 1.2fr) minmax(170px, 1.5fr) 132px 168px;
+        }
+
+        .orders-list-head {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--orders-line);
+        }
+
+        .orders-row {
+            border-bottom: 1px solid var(--orders-line);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .orders-row:hover {
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.03);
+        }
+
+        .orders-row.is-selected {
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+        }
+
+        /* The cells dim, never the row: opacity on the row makes a stacking
+           context, and the dropdown inside it falls under its neighbours. */
+        .orders-row.is-past .orders-row__when,
+        .orders-row.is-past .orders-row__who,
+        .orders-row.is-past .orders-row__what,
+        .orders-row.is-past .orders-row__status {
+            opacity: 0.72;
+        }
+
+        .orders-row__pick {
+            display: none;
+        }
+
+        .orders-list.is-picking .orders-row__pick {
+            display: block;
+        }
+
+        .orders-row__when strong {
+            display: block;
+            font-size: 1.05rem;
+            line-height: 1.2;
+        }
+
+        .orders-row__when small,
+        .orders-row__who small,
+        .orders-row__what small {
+            display: block;
+            margin-top: 0.15rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .orders-row__who strong {
+            display: block;
+            font-size: 0.98rem;
+        }
+
+        .orders-row__what {
+            min-width: 0;
+        }
+
+        .orders-row__what span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .orders-row__act {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.35rem;
+        }
+
+        .orders-row__act .btn {
+            white-space: nowrap;
+        }
+
+        .orders-empty {
+            padding: 3rem 1.25rem;
+            text-align: center;
+            color: var(--bs-secondary-color);
+        }
+
+        .orders-pagination {
+            padding: 0.9rem 1.25rem;
+            border-top: 1px solid var(--orders-line);
+            background: transparent;
+        }
+
+        @media (max-width: 767.98px) {
+            .orders-list-head {
+                display: none;
+            }
+
+            .orders-row,
+            .orders-list.is-picking .orders-row {
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    'when status'
+                    'who who'
+                    'what what'
+                    'act act';
+                row-gap: 0.5rem;
+                padding: 1rem 1.1rem;
+            }
+
+            .orders-list.is-picking .orders-row {
+                grid-template-areas:
+                    'pick status'
+                    'when when'
+                    'who who'
+                    'what what'
+                    'act act';
+            }
+
+            .orders-row__pick { grid-area: pick; }
+            .orders-row__when { grid-area: when; }
+            .orders-row__who { grid-area: who; }
+            .orders-row__what { grid-area: what; }
+            .orders-row__status { grid-area: status; justify-self: end; }
+            .orders-row__act { grid-area: act; justify-content: stretch; }
+
+            .orders-row__act .orders-row__primary {
+                flex: 1;
+            }
+
+            .orders-toolbar,
+            .orders-toolbar__right {
+                justify-content: flex-start;
+            }
+
+            .orders-search {
+                max-width: none;
+            }
+
+            .orders-tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
     </style>
 
-            <section class="card orders-surface">
-                <div class="card-body p-4 d-flex flex-column gap-3">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
-                        <div>
-                            <h2 class="h5 mb-1">Фильтры и поиск</h2>
-                            <p class="text-muted mb-0">Оставили только те параметры, которые помогают быстро найти нужную запись.</p>
-                        </div>
-                        <div class="orders-reminder-note" id="orders-reminder-note"></div>
-                    </div>
-
-                    <form id="filters-form" class="orders-filters-grid align-items-end">
-                        <div>
-                            <label for="filter-period" class="form-label">Период</label>
-                            <select class="form-select" id="filter-period" name="period"></select>
-                        </div>
-                        <div>
-                            <label for="filter-status" class="form-label">Статус</label>
-                            <select class="form-select" id="filter-status" name="status"></select>
-                        </div>
-                        <div>
-                            <label for="filter-search" class="form-label">Поиск клиента</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="filter-search"
-                                name="search"
-                                placeholder="Имя или телефон клиента"
-                            />
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-fill">Применить</button>
-                            <button type="button" id="filters-reset" class="btn btn-outline-secondary flex-fill">Сбросить</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
             <section class="card orders-surface" id="orders-card">
-                <div class="card-body p-0">
-                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 px-4 pt-4">
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h2 class="h5 mb-0">Список записей</h2>
-                                <span class="badge bg-label-secondary" id="orders-total">0</span>
-                            </div>
-                            <p class="text-muted mb-0">Клиент, время и статус читаются первыми. Остальные действия доступны без перегрузки экрана.</p>
-                        </div>
+                <div class="orders-toolbar">
+                    <div class="orders-tabs" role="group" aria-label="Период">
+                        <button type="button" class="orders-tab is-active" data-period="today">Сегодня</button>
+                        <button type="button" class="orders-tab" data-period="tomorrow">Завтра</button>
+                        <button type="button" class="orders-tab" data-period="this_week">Неделя</button>
+                        <button type="button" class="orders-tab" data-period="all">Все</button>
                     </div>
 
-                    <div class="orders-bulk-bar" id="orders-bulk-bar">
-                        <div class="text-muted">
-                            Выбрано <strong id="orders-bulk-selected">0</strong> записей
-                        </div>
-                        <div class="orders-bulk-actions">
-                            <button type="button" class="btn btn-success btn-sm bulk-action-btn" data-action="confirm" disabled>
-                                <i class="ri ri-check-double-line me-1"></i>
-                                Подтвердить
-                            </button>
-                            <button type="button" class="btn btn-info btn-sm text-white bulk-action-btn" data-action="remind" id="bulk-remind-btn" disabled>
-                                <i class="ri ri-mail-line me-1"></i>
-                                Напомнить
-                            </button>
-                            <button type="button" class="btn btn-outline-danger btn-sm bulk-action-btn" data-action="cancel" disabled>
-                                <i class="ri ri-close-circle-line me-1"></i>
-                                Отменить
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive orders-table-wrap">
-                        <table class="table table-hover mb-0 align-middle orders-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;">
-                                        <input type="checkbox" class="form-check-input" id="select-all" />
-                                    </th>
-                                    <th>Дата и мастер</th>
-                                    <th>Клиент</th>
-                                    <th>Услуги</th>
-                                    <th>Статус</th>
-                                    <th class="text-end">Сумма</th>
-                                    <th class="text-end">Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody id="orders-body">
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted orders-empty">Загрузка данных...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="orders-toolbar__right">
+                        <input
+                            type="search"
+                            class="form-control orders-search"
+                            id="filter-search"
+                            placeholder="Имя или телефон"
+                            aria-label="Поиск клиента"
+                        />
+                        <button type="button" class="btn btn-outline-secondary" id="orders-more-filters">
+                            <i class="ri ri-equalizer-line me-1"></i>
+                            Ещё
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="orders-select-mode">
+                            Выбрать несколько
+                        </button>
                     </div>
                 </div>
-                <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 orders-pagination" id="orders-pagination">
-                    <div class="text-muted small" id="orders-summary">Загрузка...</div>
+
+                <div class="orders-extra" id="orders-extra-filters">
+                    <div>
+                        <label for="filter-status" class="form-label">Статус</label>
+                        <select class="form-select" id="filter-status"></select>
+                    </div>
+                    <div>
+                        <label for="filter-period" class="form-label">Другой период</label>
+                        <select class="form-select" id="filter-period"></select>
+                    </div>
+                    <div class="d-flex align-items-end">
+                        <button type="button" id="filters-reset" class="btn btn-outline-secondary">Сбросить</button>
+                    </div>
+                </div>
+
+                <div class="orders-reminder-note" id="orders-reminder-note"></div>
+
+                <div class="orders-bulk-bar" id="orders-bulk-bar">
+                    <label class="d-flex align-items-center gap-2 mb-0">
+                        <input type="checkbox" class="form-check-input mt-0" id="select-all" />
+                        <span class="text-muted">Выбрано <strong id="orders-bulk-selected">0</strong></span>
+                    </label>
+                    <div class="orders-bulk-actions">
+                        <button type="button" class="btn btn-success btn-sm bulk-action-btn" data-action="confirm" disabled>
+                            <i class="ri ri-check-double-line me-1"></i>
+                            Подтвердить<span class="bulk-count"></span>
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm text-white bulk-action-btn" data-action="remind" id="bulk-remind-btn" disabled>
+                            <i class="ri ri-mail-line me-1"></i>
+                            Напомнить<span class="bulk-count"></span>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm bulk-action-btn" data-action="cancel" disabled>
+                            <i class="ri ri-close-circle-line me-1"></i>
+                            Отменить<span class="bulk-count"></span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-text-secondary" id="orders-select-done">Готово</button>
+                    </div>
+                </div>
+
+                <div class="orders-list-head" id="orders-list-head">
+                    <span>Когда</span>
+                    <span>Клиент</span>
+                    <span>Услуги и сумма</span>
+                    <span>Статус</span>
+                    <span></span>
+                </div>
+
+                <div class="orders-list" id="orders-body">
+                    <div class="orders-empty">Загружаем записи…</div>
+                </div>
+
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 orders-pagination" id="orders-pagination">
+                    <div class="text-muted small" id="orders-summary">Загрузка…</div>
                     <nav>
                         <ul class="pagination pagination-sm mb-0" id="pagination-list"></ul>
                     </nav>
@@ -385,6 +463,7 @@
 @section('scripts')
     @include('components.phone-mask-script')
     @include('components.veloria-datetime-picker-script')
+    @include('components.booking-phrase-input-script')
     <script>
         function getCookie(name) {
             var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -400,7 +479,7 @@
 
         const state = {
             filters: {
-                period: 'this_week',
+                period: 'today',
                 status: 'all',
                 search: ''
             },
@@ -408,27 +487,36 @@
             perPage: 12,
             reminderMessage: null,
             total: 0,
+            picking: false,
         };
 
         const selectedOrders = new Set();
+        // What each booking allows comes down with the list, so the row button
+        // and the bulk bar answer the same question the same way.
+        const orderActions = new Map();
 
         const ordersAlerts = document.getElementById('orders-alerts');
         const periodSelect = document.getElementById('filter-period');
         const statusSelect = document.getElementById('filter-status');
         const searchInput = document.getElementById('filter-search');
         const ordersBody = document.getElementById('orders-body');
+        const ordersListHead = document.getElementById('orders-list-head');
         const ordersTotal = document.getElementById('orders-total');
         const ordersSummary = document.getElementById('orders-summary');
         const paginationList = document.getElementById('pagination-list');
         const selectAllCheckbox = document.getElementById('select-all');
         const bulkButtons = document.querySelectorAll('.bulk-action-btn');
         const bulkRemindBtn = document.getElementById('bulk-remind-btn');
-        const ordersHeroTotal = document.getElementById('orders-hero-total');
-        const ordersHeroPeriod = document.getElementById('orders-hero-period');
-        const ordersSelectedCount = document.getElementById('orders-selected-count');
         const ordersBulkBar = document.getElementById('orders-bulk-bar');
         const ordersBulkSelected = document.getElementById('orders-bulk-selected');
         const ordersReminderNote = document.getElementById('orders-reminder-note');
+        const ordersTabs = document.querySelectorAll('.orders-tab');
+        const ordersExtraFilters = document.getElementById('orders-extra-filters');
+        const ordersMoreFilters = document.getElementById('orders-more-filters');
+        const ordersSelectMode = document.getElementById('orders-select-mode');
+        const ordersSelectDone = document.getElementById('orders-select-done');
+        const ordersTodayDate = document.getElementById('orders-today-date');
+        const ordersTodayLine = document.getElementById('orders-today-line');
         const quickForm = document.getElementById('quick-create-form');
         const quickServicesContainer = document.getElementById('quick-services-container');
         const quickServicesSummary = document.getElementById('quick-services-summary');
@@ -439,9 +527,12 @@
         const quickSelectedClient = document.getElementById('quick-selected-client');
         const quickClientResults = document.getElementById('quick-client-results');
         const quickClientSuggestions = document.getElementById('quick-client-suggestions');
+        const quickScheduledAtInput = document.getElementById('quick_scheduled_at');
+        const quickNoteInput = document.getElementById('quick_note');
         let quickLookupController = null;
         let quickLookupTimer = null;
         let quickRecentClients = [];
+        let searchDebounce = null;
 
         function showAlert(type, message, sticky = false) {
             const wrapper = document.createElement('div');
@@ -460,10 +551,6 @@
             }
         }
 
-        function clearAlerts() {
-            ordersAlerts.innerHTML = '';
-        }
-
         function renderOptions(selectElement, options, selected) {
             selectElement.innerHTML = '';
             Object.keys(options).forEach(function (key) {
@@ -477,97 +564,279 @@
             });
         }
 
+        function formatMoney(value) {
+            if (value === null || value === undefined) {
+                return '—';
+            }
+
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                maximumFractionDigits: 0,
+            }).format(value);
+        }
+
+        function describeDay(date) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const day = new Date(date);
+            day.setHours(0, 0, 0, 0);
+            const diff = Math.round((day - today) / 86400000);
+
+            if (diff === 0) return 'сегодня';
+            if (diff === 1) return 'завтра';
+            if (diff === -1) return 'вчера';
+
+            return day.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        }
+
+        /**
+         * One button per row: the one this booking needs now. The order
+         * matters — while a visit is running, Finish beats a reminder.
+         */
+        function primaryActionFor(order) {
+            const can = order.actions || {};
+
+            if (can.can_confirm) {
+                return { action: 'confirm', label: 'Подтвердить', cls: 'btn-primary' };
+            }
+
+            if (order.status === 'in_progress' && can.can_complete) {
+                return { action: 'complete', label: 'Завершить', cls: 'btn-success' };
+            }
+
+            if (can.can_start) {
+                return { action: 'start', label: 'Начать', cls: 'btn-primary' };
+            }
+
+            if (can.can_remind) {
+                return { action: 'remind', label: 'Напомнить', cls: 'btn-outline-primary' };
+            }
+
+            return null;
+        }
+
+        function menuActionsFor(order, primary) {
+            const can = order.actions || {};
+            const items = [];
+
+            if (can.can_confirm) items.push({ action: 'confirm', label: 'Подтвердить' });
+            if (can.can_start) items.push({ action: 'start', label: 'Начать' });
+            if (can.can_complete) items.push({ action: 'complete', label: 'Завершить' });
+            if (can.can_remind) items.push({ action: 'remind', label: 'Напомнить' });
+            if (can.can_mark_no_show) items.push({ action: 'no_show', label: 'Не пришёл', danger: true });
+            if (can.can_cancel) items.push({ action: 'cancel', label: 'Отменить', danger: true });
+
+            return items.filter(item => !primary || item.action !== primary.action);
+        }
+
+        /**
+         * There is nothing to send a reminder with until its text is in the
+         * settings, so the button goes out here instead of erroring on click.
+         */
+        function remindBlocked(action) {
+            if (action !== 'remind' || state.reminderMessage) {
+                return '';
+            }
+
+            return ' disabled title="Сначала добавьте текст напоминания в настройках"';
+        }
+
         function renderOrders(orders) {
             ordersBody.innerHTML = '';
             selectedOrders.clear();
+            orderActions.clear();
             selectAllCheckbox.checked = false;
             updateBulkButtons();
 
             if (!orders.length) {
-                const emptyRow = document.createElement('tr');
-                emptyRow.innerHTML = '<td colspan="7" class="text-center text-muted orders-empty">Записей пока нет.</td>';
-                ordersBody.appendChild(emptyRow);
+                ordersBody.appendChild(buildEmptyState());
                 return;
             }
 
-            orders.forEach(function (order) {
-                const tr = document.createElement('tr');
-                const serviceNames = (order.services || []).map(service => service.name).filter(Boolean);
-                const servicesPreview = serviceNames
-                    .slice(0, 2)
-                    .map(name => `<span class="orders-service-pill">${name}</span>`)
-                    .join('');
-                const extraServices = serviceNames.length > 2
-                    ? `<span class="text-muted small">+ еще ${serviceNames.length - 2}</span>`
-                    : '';
-                const totalPrice = order.total_price !== null && order.total_price !== undefined
-                    ? new Intl.NumberFormat('ru-RU', {
-                        style: 'currency',
-                        currency: 'RUB',
-                        maximumFractionDigits: 0
-                    }).format(order.total_price)
-                    : '—';
+            const now = new Date();
 
-                tr.innerHTML = `
-                    <td>
-                        <input type="checkbox" class="form-check-input order-checkbox" data-id="${order.id}" />
-                    </td>
-                    <td>
-                        <div class="orders-date-cell">
-                            <strong>${order.scheduled_at_formatted || '—'}</strong>
-                            <small class="text-muted">${order.master?.name || 'Без мастера'}</small>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="orders-client-cell">
-                            <strong>${order.client?.name || 'Без имени'}</strong>
-                            <small class="text-muted">${order.client?.phone || 'Без телефона'}</small>
-                        </div>
-                    </td>
-                    <td>
-                        ${serviceNames.length
-                            ? `<div class="orders-services">${servicesPreview}</div>${extraServices ? `<div class="mt-1">${extraServices}</div>` : ''}`
-                            : '<span class="text-muted">Услуги не выбраны</span>'}
-                    </td>
-                    <td>
+            orders.forEach(function (order) {
+                orderActions.set(order.id, order.actions || {});
+
+                const scheduled = order.scheduled_at ? new Date(order.scheduled_at) : null;
+                const time = scheduled
+                    ? scheduled.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                    : '—';
+                const dayLabel = scheduled ? describeDay(scheduled) : '';
+                const serviceNames = (order.services || []).map(service => service.name).filter(Boolean);
+                const primary = primaryActionFor(order);
+                const menu = menuActionsFor(order, primary);
+
+                const row = document.createElement('article');
+                row.className = 'orders-row' + (scheduled && scheduled < now ? ' is-past' : '');
+                row.setAttribute('data-id', order.id);
+
+                const menuItems = menu.map(item => `
+                    <li>
+                        <button type="button" class="dropdown-item${item.danger ? ' text-danger' : ''} js-order-action" data-action="${item.action}"${remindBlocked(item.action)}>
+                            ${item.label}
+                        </button>
+                    </li>
+                `).join('');
+
+                row.innerHTML = `
+                    <div class="orders-row__pick">
+                        <input type="checkbox" class="form-check-input order-checkbox" data-id="${order.id}" aria-label="Выбрать запись" />
+                    </div>
+                    <div class="orders-row__when">
+                        <strong>${time}</strong>
+                        <small>${dayLabel}</small>
+                    </div>
+                    <div class="orders-row__who">
+                        <strong>${order.client?.name || 'Без имени'}</strong>
+                        <small>${order.client?.phone || 'Без телефона'}</small>
+                    </div>
+                    <div class="orders-row__what">
+                        <span>${serviceNames.length ? serviceNames.join(', ') : 'Услуга не выбрана'}</span>
+                        <small>${formatMoney(order.total_price)}</small>
+                    </div>
+                    <div class="orders-row__status">
                         <span class="badge ${order.status_class}">${order.status_label}</span>
-                    </td>
-                    <td class="text-end fw-semibold">${totalPrice}</td>
-                    <td class="text-end">
-                        <div class="btn-group" role="group">
-                            <a href="/orders/${order.id}" class="btn btn-sm btn-icon btn-text-secondary" title="Открыть запись">
-                                <i class="ri ri-eye-line"></i>
-                            </a>
-                            <a href="/orders/${order.id}/edit" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать">
-                                <i class="ri ri-edit-line"></i>
-                            </a>
-                            <button type="button" class="btn btn-sm btn-icon btn-text-secondary text-danger js-cancel-single" data-order-id="${order.id}" title="Отменить запись">
-                                <i class="ri ri-close-circle-line"></i>
+                    </div>
+                    <div class="orders-row__act">
+                        ${primary
+                            ? `<button type="button" class="btn btn-sm ${primary.cls} orders-row__primary js-order-action" data-action="${primary.action}"${remindBlocked(primary.action)}>${primary.label}</button>`
+                            : `<a href="/orders/${order.id}" class="btn btn-sm btn-outline-secondary orders-row__primary">Открыть</a>`}
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-sm btn-icon btn-text-secondary" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Другие действия">
+                                <i class="ri ri-more-2-fill"></i>
                             </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/orders/${order.id}">Открыть запись</a></li>
+                                <li><a class="dropdown-item" href="/orders/${order.id}/edit">Редактировать</a></li>
+                                ${menuItems ? '<li><hr class="dropdown-divider"></li>' + menuItems : ''}
+                            </ul>
                         </div>
-                    </td>
+                    </div>
                 `;
 
-                const checkbox = tr.querySelector('.order-checkbox');
+                const checkbox = row.querySelector('.order-checkbox');
                 checkbox.addEventListener('change', function () {
                     if (this.checked) {
                         selectedOrders.add(order.id);
                     } else {
                         selectedOrders.delete(order.id);
                     }
+                    row.classList.toggle('is-selected', this.checked);
                     updateBulkButtons();
                 });
 
-                const cancelButton = tr.querySelector('.js-cancel-single');
-                cancelButton.addEventListener('click', function () {
-                    const orderId = this.getAttribute('data-order-id');
-                    if (!orderId) return;
-                    if (!confirm('Вы уверены, что хотите отменить эту запись?')) return;
-                    cancelOrder(orderId);
+                row.querySelectorAll('.js-order-action').forEach(function (button) {
+                    button.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                        runOrderAction(order.id, this.getAttribute('data-action'), button);
+                    });
                 });
 
-                ordersBody.appendChild(tr);
+                // A click anywhere in the row opens the booking: no aiming at icons.
+                row.addEventListener('click', function (event) {
+                    if (event.target.closest('button, a, input, label, .dropdown-menu')) {
+                        return;
+                    }
+
+                    if (state.picking) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                        return;
+                    }
+
+                    window.location.href = `/orders/${order.id}`;
+                });
+
+                ordersBody.appendChild(row);
             });
+        }
+
+        function buildEmptyState() {
+            const box = document.createElement('div');
+            box.className = 'orders-empty';
+
+            if (state.filters.period === 'today' && state.filters.status === 'all' && !state.filters.search) {
+                box.innerHTML = `
+                    <p class="mb-3">На сегодня записей нет.</p>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="orders-empty-week">Показать неделю</button>
+                `;
+                box.querySelector('#orders-empty-week').addEventListener('click', function () {
+                    setPeriod('this_week');
+                });
+
+                return box;
+            }
+
+            box.innerHTML = `
+                <p class="mb-3">Ничего не нашлось по этим условиям.</p>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="orders-empty-reset">Сбросить фильтры</button>
+            `;
+            box.querySelector('#orders-empty-reset').addEventListener('click', resetFilters);
+
+            return box;
+        }
+
+        /**
+         * One action on one booking. The moves differ, the behaviour does not:
+         * the button locks for the request, the list is re-read after it.
+         */
+        async function runOrderAction(orderId, action, button) {
+            const can = orderActions.get(orderId) || {};
+
+            if (action === 'start' && can.start_needs_confirm) {
+                // The start time disagrees with the booked one: that is settled
+                // on its own screen, not silently from a list.
+                window.location.href = `/orders/${orderId}/start-confirmation`;
+                return;
+            }
+
+            if (action === 'cancel' && !confirm('Отменить эту запись?')) return;
+            if (action === 'no_show' && !confirm('Отметить, что клиент не пришёл?')) return;
+
+            const endpoints = {
+                start: `/api/v1/orders/${orderId}/start`,
+                complete: `/api/v1/orders/${orderId}/complete`,
+                remind: `/api/v1/orders/${orderId}/remind`,
+                cancel: `/api/v1/orders/${orderId}/cancel`,
+                no_show: `/api/v1/orders/${orderId}/no-show`,
+            };
+
+            if (button) button.disabled = true;
+
+            try {
+                const response = action === 'confirm'
+                    ? await fetch('/api/v1/orders/bulk', {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        credentials: 'include',
+                        body: JSON.stringify({ action: 'confirm', orders: [orderId] }),
+                    })
+                    : await fetch(endpoints[action], {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        credentials: 'include',
+                        body: JSON.stringify({}),
+                    });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    showAlert('danger', result.error?.message || 'Не удалось выполнить действие.');
+                    return;
+                }
+
+                showAlert('success', result.message || 'Готово.');
+
+                if (result.reminder_text) {
+                    showAlert('info', '<strong>Текст напоминания:</strong><div class="mt-2 small">' + result.reminder_text.replace(/\n/g, '<br>') + '</div>', true);
+                }
+
+                loadOrders(state.page);
+            } finally {
+                if (button) button.disabled = false;
+            }
         }
 
         function formatQuickCurrency(value) {
@@ -647,6 +916,15 @@
                 quickClientNameInput.readOnly = hasClient;
                 quickClientNameInput.value = hasClient ? (client.name || '') : '';
             }
+
+            // «New client» fields next to an already chosen one left the master
+            // guessing what to fill. While she is chosen, they are simply gone.
+            [quickClientPhoneInput, quickClientNameInput].forEach(function (input) {
+                const column = input?.closest('.col-md-6');
+                if (column) {
+                    column.classList.toggle('d-none', hasClient);
+                }
+            });
 
             clearQuickClientSuggestions();
 
@@ -966,22 +1244,48 @@
             }
         }
 
+        function eligibleCount(permission) {
+            let count = 0;
+            selectedOrders.forEach(function (id) {
+                if ((orderActions.get(id) || {})[permission]) {
+                    count += 1;
+                }
+            });
+
+            return count;
+        }
+
         function updateBulkButtons() {
-            const hasSelection = selectedOrders.size > 0;
-            bulkButtons.forEach(btn => {
-                btn.disabled = !hasSelection;
+            const permissions = {
+                confirm: 'can_confirm',
+                remind: 'can_remind',
+                cancel: 'can_cancel',
+            };
+
+            bulkButtons.forEach(function (btn) {
+                const action = btn.getAttribute('data-action');
+                const count = eligibleCount(permissions[action]);
+                // The button goes out when no selected booking would take the
+                // action: there was never anything to confirm twice.
+                const blockedByTemplate = action === 'remind' && !state.reminderMessage;
+
+                btn.disabled = count === 0 || blockedByTemplate;
+                btn.title = blockedByTemplate
+                    ? 'Сначала добавьте текст напоминания в настройках'
+                    : (count === 0 ? 'Среди выбранных записей нет подходящих' : '');
+
+                const label = btn.querySelector('.bulk-count');
+                if (label) {
+                    label.textContent = count ? ` (${count})` : '';
+                }
             });
 
             if (ordersBulkBar) {
-                ordersBulkBar.classList.toggle('is-visible', hasSelection);
+                ordersBulkBar.classList.toggle('is-visible', state.picking);
             }
 
             if (ordersBulkSelected) {
                 ordersBulkSelected.textContent = String(selectedOrders.size);
-            }
-
-            if (ordersSelectedCount) {
-                ordersSelectedCount.textContent = String(selectedOrders.size);
             }
         }
 
@@ -1042,8 +1346,50 @@
             ordersSummary.textContent = `Показано ${Math.min(pagination.current_page * pagination.per_page, pagination.total)} из ${pagination.total}`;
         }
 
+        function renderTodaySummary(today) {
+            if (!today || !ordersTodayLine) return;
+
+            if (ordersTodayDate) {
+                ordersTodayDate.textContent = today.date_label || '';
+            }
+
+            const parts = [];
+            parts.push(today.total === 0
+                ? 'записей нет'
+                : today.total + ' ' + pluralOrders(today.total));
+
+            if (today.next) {
+                const when = today.next.is_today
+                    ? ('в ' + today.next.time)
+                    : (today.next.day_label + ', ' + today.next.time);
+                const who = today.next.client_name || 'клиент';
+                parts.push(`ближайшая — <a href="/orders/${today.next.id}">${who} ${when}</a>`);
+            }
+
+            ordersTodayLine.innerHTML = parts.join(' · ');
+        }
+
+        function pluralOrders(count) {
+            const tail = count % 100;
+            if (tail > 10 && tail < 20) return 'записей';
+            switch (count % 10) {
+                case 1: return 'запись';
+                case 2:
+                case 3:
+                case 4: return 'записи';
+                default: return 'записей';
+            }
+        }
+
+        function syncTabs() {
+            ordersTabs.forEach(function (tab) {
+                tab.classList.toggle('is-active', tab.getAttribute('data-period') === state.filters.period);
+            });
+        }
+
         async function loadOrders(page = 1) {
-            clearAlerts();
+            // The list is re-read right after an action, and clearing here wiped
+            // the message saying the action went through.
             state.page = page;
             const params = new URLSearchParams({
                 period: state.filters.period,
@@ -1053,7 +1399,7 @@
                 per_page: state.perPage,
             });
 
-            ordersBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted orders-empty">Загрузка данных...</td></tr>';
+            ordersBody.innerHTML = '<div class="orders-empty">Загружаем записи…</div>';
 
             const response = await fetch(`/api/v1/orders?${params.toString()}`, {
                 headers: authHeaders(),
@@ -1062,7 +1408,7 @@
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
-                ordersBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Не удалось загрузить записи.</td></tr>';
+                ordersBody.innerHTML = '<div class="orders-empty text-danger">Не удалось загрузить записи.</div>';
                 showAlert('danger', error.error?.message || 'Произошла ошибка при загрузке списка.');
                 return;
             }
@@ -1073,67 +1419,119 @@
 
             renderOptions(periodSelect, data.meta.period_options, data.meta.filters.period);
             renderOptions(statusSelect, data.meta.status_options, data.meta.filters.status);
-            searchInput.value = data.meta.filters.search || '';
 
-            ordersTotal.textContent = state.total;
-
-            if (ordersHeroTotal) {
-                ordersHeroTotal.textContent = String(state.total);
+            if (document.activeElement !== searchInput) {
+                searchInput.value = data.meta.filters.search || '';
             }
 
-            if (ordersHeroPeriod) {
-                const currentPeriodLabel = periodSelect.options[periodSelect.selectedIndex]?.textContent || 'Текущий период';
-                ordersHeroPeriod.textContent = currentPeriodLabel;
+            if (ordersTotal) {
+                ordersTotal.textContent = state.total;
             }
+
+            renderTodaySummary(data.meta.today);
+            syncTabs();
 
             if (!state.reminderMessage) {
                 if (ordersReminderNote) {
-                    ordersReminderNote.innerHTML = 'Добавьте текст автонапоминания в настройках, чтобы отправлять сообщения. <a href="/settings" class="alert-link">Перейти в настройки</a>.';
+                    ordersReminderNote.innerHTML = 'Чтобы отправлять напоминания, добавьте их текст в настройках. <a href="/settings" class="alert-link">Перейти в настройки</a>.';
                     ordersReminderNote.classList.add('is-visible');
                 }
-                bulkRemindBtn.disabled = true;
-            } else {
-                if (ordersReminderNote) {
-                    ordersReminderNote.innerHTML = '';
-                    ordersReminderNote.classList.remove('is-visible');
-                }
-                bulkRemindBtn.disabled = false;
+            } else if (ordersReminderNote) {
+                ordersReminderNote.innerHTML = '';
+                ordersReminderNote.classList.remove('is-visible');
             }
 
             renderOrders(data.data || []);
             renderPagination(data.meta);
         }
 
-        function resetFilters() {
-            state.filters = {
-                period: 'this_week',
-                status: 'all',
-                search: ''
-            };
+        function setPeriod(period) {
+            state.filters.period = period;
+            syncTabs();
             loadOrders(1);
         }
 
-        document.getElementById('filters-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-            state.filters.period = periodSelect.value;
-            state.filters.status = statusSelect.value;
-            state.filters.search = searchInput.value.trim();
+        function resetFilters() {
+            state.filters = {
+                period: 'today',
+                status: 'all',
+                search: ''
+            };
+            searchInput.value = '';
+            loadOrders(1);
+        }
+
+        ordersTabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                setPeriod(this.getAttribute('data-period'));
+            });
+        });
+
+        // Filters apply themselves: Apply looked like the only way to change
+        // anything, and without pressing it the filter seemed broken.
+        statusSelect.addEventListener('change', function () {
+            state.filters.status = this.value;
             loadOrders(1);
         });
 
-        document.getElementById('filters-reset').addEventListener('click', function () {
-            resetFilters();
+        periodSelect.addEventListener('change', function () {
+            state.filters.period = this.value;
+            syncTabs();
+            loadOrders(1);
+        });
+
+        searchInput.addEventListener('input', function () {
+            const value = this.value.trim();
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(function () {
+                state.filters.search = value;
+                loadOrders(1);
+            }, 400);
+        });
+
+        document.getElementById('filters-reset').addEventListener('click', resetFilters);
+
+        ordersMoreFilters.addEventListener('click', function () {
+            const visible = ordersExtraFilters.classList.toggle('is-visible');
+            this.classList.toggle('active', visible);
+        });
+
+        function setPicking(on) {
+            state.picking = on;
+            ordersBody.classList.toggle('is-picking', on);
+            ordersListHead.classList.toggle('is-picking', on);
+            ordersSelectMode.classList.toggle('active', on);
+
+            if (!on) {
+                selectedOrders.clear();
+                selectAllCheckbox.checked = false;
+                document.querySelectorAll('.order-checkbox').forEach(function (cb) {
+                    cb.checked = false;
+                    cb.closest('.orders-row')?.classList.remove('is-selected');
+                });
+            }
+
+            updateBulkButtons();
+        }
+
+        ordersSelectMode.addEventListener('click', function () {
+            setPicking(!state.picking);
+        });
+
+        ordersSelectDone.addEventListener('click', function () {
+            setPicking(false);
         });
 
         selectAllCheckbox.addEventListener('change', function () {
-            const checkboxes = document.querySelectorAll('.order-checkbox');
-            checkboxes.forEach(cb => {
+            document.querySelectorAll('.order-checkbox').forEach(function (cb) {
                 cb.checked = selectAllCheckbox.checked;
+                const id = parseInt(cb.getAttribute('data-id'), 10);
                 if (cb.checked) {
-                    selectedOrders.add(parseInt(cb.getAttribute('data-id'), 10));
+                    selectedOrders.add(id);
                 } else {
-                    selectedOrders.delete(parseInt(cb.getAttribute('data-id'), 10));
+                    selectedOrders.delete(id);
                 }
+                cb.closest('.orders-row')?.classList.toggle('is-selected', cb.checked);
             });
             updateBulkButtons();
         });
@@ -1177,24 +1575,6 @@
                 showAlert('info', '<strong>Текст автонапоминания:</strong><div class="mt-2 small">' + result.reminder_text.replace(/\n/g, '<br>') + '</div>', true);
             }
 
-            loadOrders(state.page);
-        }
-
-        async function cancelOrder(orderId) {
-            const response = await fetch(`/api/v1/orders/${orderId}/cancel`, {
-                method: 'POST',
-                headers: authHeaders(),
-                credentials: 'include',
-                body: JSON.stringify({}),
-            });
-
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                showAlert('danger', result.error?.message || 'Не удалось отменить запись.');
-                return;
-            }
-
-            showAlert('success', result.message || 'Запись отменена.');
             loadOrders(state.page);
         }
 
@@ -1274,6 +1654,13 @@
         const quickModalElement = document.getElementById('quickCreateModal');
         if (quickModalElement) {
             quickModalElement.addEventListener('shown.bs.modal', () => {
+                if (phrasePrefill) {
+                    // The phrase already named her: a list of recent clients over
+                    // a filled-in form is only in the way.
+                    phrasePrefill = false;
+                    return;
+                }
+
                 if (quickClientSearchInput && !quickClientSearchInput.value.trim()) {
                     renderQuickClientResults(quickRecentClients, 'Недавние клиенты');
                 } else if (quickClientSearchInput && quickClientSearchInput.value.trim()) {
@@ -1291,6 +1678,7 @@
                 setQuickClientSelection(null);
                 clearQuickClientSuggestions();
                 clearQuickClientResults();
+                resetPhrase();
             });
         }
 
@@ -1376,6 +1764,147 @@
                 } else {
                     loadOrders(1);
                 }
+            });
+        }
+
+        let phrasePrefill = false;
+
+        function openQuickModal() {
+            const element = document.getElementById('quickCreateModal');
+            if (!element || !window.bootstrap) return;
+            bootstrap.Modal.getOrCreateInstance(element).show();
+        }
+
+        function resetPhrase() {
+            if (window.BookingPhraseInput) {
+                window.BookingPhraseInput.reset();
+            }
+            if (phraseOpenButton) {
+                phraseOpenButton.classList.add('d-none');
+            }
+        }
+
+        const phraseOpenButton = document.getElementById('orders-phrase-open');
+
+        if (phraseOpenButton) {
+            phraseOpenButton.addEventListener('click', function () {
+                phrasePrefill = true;
+                openQuickModal();
+            });
+        }
+
+        /**
+         * A parsed phrase lands in the quick form. Nothing is ever submitted
+         * from here: the master sees the result and presses Create herself.
+         */
+        function applyPhraseToQuick(result) {
+            const filled = (result && result.filled) || {};
+
+            if (filled.client) {
+                setQuickClientSelection(filled.client);
+                if (quickClientSearchInput) {
+                    quickClientSearchInput.value = filled.client.name || '';
+                }
+            } else if (filled.new_client) {
+                setQuickClientSelection(null);
+
+                if (quickClientNameInput && filled.new_client.name) {
+                    quickClientNameInput.value = filled.new_client.name;
+                }
+
+                if (quickClientPhoneInput && filled.new_client.phone) {
+                    quickClientPhoneInput.value = filled.new_client.phone;
+                    quickClientPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+
+            // The lookup opens its own suggestions on its own timer, over the
+            // fields that were just filled in.
+            clearQuickClientResults();
+            clearQuickClientSuggestions();
+
+            const wanted = (filled.services || []).map(service => String(service.id));
+            document.querySelectorAll('.quick-service-checkbox').forEach(function (checkbox) {
+                checkbox.checked = wanted.indexOf(checkbox.value) !== -1;
+            });
+            updateQuickSummary();
+
+            if (filled.scheduled_at && quickScheduledAtInput) {
+                if (window.VeloriaDateTimePicker) {
+                    window.VeloriaDateTimePicker.setValue(quickScheduledAtInput, filled.scheduled_at);
+                } else {
+                    quickScheduledAtInput.value = filled.scheduled_at;
+                }
+            }
+
+            if (filled.note && quickNoteInput && !quickNoteInput.value) {
+                quickNoteInput.value = filled.note;
+            }
+
+            const choices = (result && result.choices) || [];
+
+            if (!choices.length) {
+                phrasePrefill = true;
+                openQuickModal();
+                return;
+            }
+
+            // The parser is asking something back: the chips stay on the page
+            // rather than under the modal, and the form opens once answered.
+            if (phraseOpenButton) {
+                phraseOpenButton.classList.remove('d-none');
+            }
+        }
+
+        function applyPhraseChoice(field, option) {
+            if (field === 'client') {
+                if (option.value === 'new') {
+                    setQuickClientSelection(null);
+                    if (quickClientNameInput && option.payload && option.payload.name) {
+                        quickClientNameInput.value = option.payload.name;
+                    }
+                } else {
+                    setQuickClientSelection(option.payload);
+                    if (quickClientSearchInput) {
+                        quickClientSearchInput.value = (option.payload && option.payload.name) || '';
+                    }
+                    clearQuickClientResults();
+                }
+
+                if (phraseOpenButton) {
+                    phraseOpenButton.classList.remove('d-none');
+                }
+
+                return;
+            }
+
+            if (field === 'services') {
+                const checkbox = document.querySelector('.quick-service-checkbox[value="' + option.value + '"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    updateQuickSummary();
+                }
+
+                return;
+            }
+
+            if (field === 'scheduled_at' && quickScheduledAtInput && quickScheduledAtInput.value) {
+                const day = quickScheduledAtInput.value.slice(0, 10);
+                if (window.VeloriaDateTimePicker) {
+                    window.VeloriaDateTimePicker.setValue(quickScheduledAtInput, day + 'T' + option.value);
+                }
+            }
+        }
+
+        if (window.BookingPhraseInput) {
+            window.BookingPhraseInput.init({
+                authHeaders: authHeaders(),
+                ensureOptions: loadQuickServices,
+                getAnchorDate: function () {
+                    return quickScheduledAtInput ? (quickScheduledAtInput.value || '').slice(0, 10) : '';
+                },
+                onParsed: applyPhraseToQuick,
+                onChoice: applyPhraseChoice,
             });
         }
 

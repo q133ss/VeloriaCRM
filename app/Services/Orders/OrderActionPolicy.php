@@ -41,6 +41,13 @@ class OrderActionPolicy
             'can_start' => $isToday && in_array($order->status, ['new', 'confirmed'], true),
             'start_warning' => $startsSoon && $hoursDiff !== null && $hoursDiff > 1,
             'start_needs_confirm' => $this->startNeedsConfirm($order, $now),
+            // A booking is confirmed once, out of `new`. Pressing Confirm on
+            // something already confirmed, closed or cancelled used to silently
+            // rewrite its status and its confirmed_at.
+            'can_confirm' => $order->status === 'new',
+            // Reminding someone about a visit that is over, cancelled or missed
+            // is the one message a master can never take back.
+            'can_remind' => ! in_array($order->status, ['completed', 'cancelled', 'no_show'], true),
             'can_complete' => in_array($order->status, ['in_progress', 'confirmed'], true),
             'can_reschedule' => ! in_array($order->status, ['completed', 'cancelled'], true),
             'can_cancel' => ! in_array($order->status, ['completed', 'cancelled'], true),

@@ -58,13 +58,24 @@ class OrderController extends Controller
         $perPage = (int) ($filters['per_page'] ?? 12);
         $perPage = max(1, min($perPage, 50));
 
+        $now = Carbon::now();
+
+        // The master opens this screen to see who is coming, not who came. The
+        // nearest booking goes first and the past falls in behind it, freshest
+        // first — sorting by date alone buried today under next week.
         $orders = Order::with(['client', 'master'])
             ->where('master_id', $userId)
             ->withFilter($filters)
+            ->orderByRaw('(scheduled_at < ?) asc', [$now])
+            ->orderByRaw('case when scheduled_at >= ? then scheduled_at end asc', [$now])
             ->orderByDesc('scheduled_at')
             ->paginate($perPage);
 
-        $orders->getCollection()->transform(fn (Order $order) => $this->transformOrder($order));
+        $orders->getCollection()->transform(fn (Order $order) => $this->transformOrder($order) + [
+            // The list offers one action per row, and which one it is depends on
+            // the same rules the card and the calendar already answer with.
+            'actions' => $this->buildActionAvailability($order),
+        ]);
 
         return response()->json([
             'data' => $orders->items(),
@@ -83,6 +94,7 @@ class OrderController extends Controller
                 'period_options' => Order::periodOptions(),
                 'status_options' => ['all' => 'Все статусы'] + Order::statusLabels(),
                 'reminder_message' => optional($this->resolveUserSettings())->reminder_message,
+                'today' => $this->buildTodaySummary($userId, $now),
             ],
             'links' => [
                 'first' => $orders->url(1),
@@ -286,9 +298,35 @@ class OrderController extends Controller
         }
 
         $now = Carbon::now();
+        $policy = app(OrderActionPolicy::class);
+        $permission = [
+            'confirm' => 'can_confirm',
+            'remind' => 'can_remind',
+            'cancel' => 'can_cancel',
+        ][$validated['action']];
 
-        DB::transaction(function () use ($orders, $validated, $now) {
-            foreach ($orders as $order) {
+        // Select-all sweeps up whatever the filter happened to show, including
+        // visits that are already closed. Applying the action to those rewrote
+        // finished bookings without a word about it.
+        [$eligible, $skipped] = $orders->partition(
+            fn (Order $order) => $policy->for($order)[$permission],
+        );
+
+        if ($eligible->isEmpty()) {
+            return response()->json([
+                'error' => [
+                    'code' => 'action_not_applicable',
+                    'message' => [
+                        'confirm' => 'Эти записи уже подтверждены или закрыты — подтверждать нечего.',
+                        'remind' => 'Напомнить можно только о предстоящих записях.',
+                        'cancel' => 'Эти записи уже отменены или завершены.',
+                    ][$validated['action']],
+                ],
+            ], 422);
+        }
+
+        DB::transaction(function () use ($eligible, $validated, $now) {
+            foreach ($eligible as $order) {
                 switch ($validated['action']) {
                     case 'confirm':
                         $order->update([
@@ -313,14 +351,21 @@ class OrderController extends Controller
         });
 
         $messages = [
-            'confirm' => 'Выбранные записи подтверждены.',
-            'remind' => 'Напоминания отмечены как отправленные.',
-            'cancel' => 'Выбранные записи отменены.',
+            'confirm' => 'Подтверждено записей: ' . $eligible->count() . '.',
+            'remind' => 'Напоминаний отмечено: ' . $eligible->count() . '.',
+            'cancel' => 'Отменено записей: ' . $eligible->count() . '.',
         ];
 
+        $message = $messages[$validated['action']];
+
+        if ($skipped->isNotEmpty()) {
+            $message .= ' Пропущено: ' . $skipped->count() . ' — уже закрыты или отменены.';
+        }
+
         $response = [
-            'message' => $messages[$validated['action']],
-            'updated_ids' => $orders->pluck('id'),
+            'message' => $message,
+            'updated_ids' => $eligible->pluck('id')->values(),
+            'skipped_ids' => $skipped->pluck('id')->values(),
         ];
 
         if ($validated['action'] === 'remind') {
@@ -2056,6 +2101,44 @@ PROMPT;
                     ->orWhere('plan_user.ends_at', '>', Carbon::now());
             })
             ->exists();
+    }
+
+    /**
+     * What the header says before anything is filtered: how many people are
+     * coming today and who is next. Both questions are asked of the whole
+     * schedule, so switching the period filter never changes the answer.
+     */
+    protected function buildTodaySummary(int $userId, Carbon $now): array
+    {
+        $todayTotal = Order::query()
+            ->where('master_id', $userId)
+            ->whereBetween('scheduled_at', [$now->copy()->startOfDay(), $now->copy()->endOfDay()])
+            ->whereNotIn('status', ['cancelled', 'no_show'])
+            ->count();
+
+        $next = Order::query()
+            ->with('client')
+            ->where('master_id', $userId)
+            ->where('scheduled_at', '>=', $now)
+            ->whereIn('status', ['new', 'confirmed', 'in_progress'])
+            ->orderBy('scheduled_at')
+            ->first();
+
+        return [
+            'date_label' => $now->copy()->locale('ru')->isoFormat('D MMMM'),
+            'total' => $todayTotal,
+            'next' => $next ? [
+                'id' => $next->id,
+                'client_name' => $next->client?->name,
+                'time' => $next->scheduled_at?->format('H:i'),
+                'is_today' => (bool) $next->scheduled_at?->isSameDay($now),
+                'day_label' => $next->scheduled_at?->copy()->locale('ru')->isoFormat('D MMMM'),
+                'services' => collect($next->services ?? [])
+                    ->pluck('name')
+                    ->filter()
+                    ->implode(', '),
+            ] : null,
+        ];
     }
 
     protected function transformOrder(Order $order): array
