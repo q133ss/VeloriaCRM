@@ -49,8 +49,13 @@
         color: var(--bs-primary);
     }
 
+    /* Collapses when it has nothing to say: an always-reserved line turns the
+       whole block into an empty grey box on a phone. */
+    .booking-phrase__status:empty {
+        display: none;
+    }
+
     .booking-phrase__status {
-        min-height: 1.1rem;
         font-size: 0.82rem;
         color: var(--bs-secondary-color);
     }

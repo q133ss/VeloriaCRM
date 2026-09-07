@@ -85,7 +85,7 @@ return [
     ],
     'no_events' => 'No bookings planned for this period.',
     'phrase' => [
-        'placeholder' => 'For example: marina tomorrow nails at 3',
+        'placeholder' => 'Marina tomorrow nails at 3',
         'submit' => 'Read the phrase',
         'mic_label' => 'Dictate the booking',
         'mic_soon' => 'Coming soon — dictate the booking.',

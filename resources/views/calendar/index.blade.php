@@ -500,6 +500,104 @@
             border-top: 1px solid var(--bs-border-color);
         }
 
+        .calendar-step + .calendar-step {
+            margin-top: 1.5rem;
+        }
+
+        .calendar-step__title {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: var(--bs-secondary-color);
+        }
+
+        .calendar-step__num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 50%;
+            background: rgba(var(--bs-primary-rgb), 0.12);
+            color: var(--bs-primary);
+            font-size: 0.75rem;
+        }
+
+        /* A line with a way out, not a banner. The old one repeated the name and
+           the phone the fields below already held, and had no way to change it. */
+        .calendar-chosen-client {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.5rem;
+        }
+
+        .calendar-chosen-client__body {
+            min-width: 0;
+            line-height: 1.25;
+        }
+
+        .calendar-chosen-client__phone {
+            font-size: 0.8rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .calendar-chosen-client__clear {
+            margin-left: auto;
+            border: 0;
+            background: transparent;
+            color: var(--bs-secondary-color);
+            line-height: 1;
+        }
+
+        .calendar-chosen-client__clear:hover {
+            color: var(--bs-danger);
+        }
+
+        .calendar-more-toggle {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .calendar-create-footer {
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 575.98px) {
+            /* The summary takes the whole first line so the two buttons stay
+               side by side instead of stacking into a stack of full-width bars. */
+            .calendar-create-footer {
+                justify-content: flex-end;
+            }
+
+            .calendar-create-total {
+                flex: 1 0 100%;
+                margin-right: 0 !important;
+            }
+        }
+
+        .calendar-create-total {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            min-width: 0;
+            font-size: 0.9rem;
+        }
+
+        .calendar-create-total span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .calendar-modal-search-layer {
             position: relative;
             display: flex;
@@ -711,139 +809,162 @@
                             <input type="hidden" id="calendar-create-client-id" name="client_id" />
                             <input type="hidden" id="calendar-create-waitlist-entry-id" name="waitlist_entry_id" />
 
-                            <div class="row g-4">
-                                <div class="col-lg-7">
-                                    <div class="row g-3">
-                                        <div class="col-12">
-                                            <div class="calendar-modal-search-layer">
-                                                <div class="form-floating form-floating-outline">
-                                                    <input
-                                                        type="text"
-                                                        class="form-control"
-                                                        id="calendar-create-client-search"
-                                                        placeholder="Анна или +7..."
-                                                        autocomplete="off"
-                                                    />
-                                                    <label for="calendar-create-client-search">Найти клиентку</label>
-                                                </div>
-                                                <div id="calendar-create-client-results" class="calendar-modal-results list-group d-none"></div>
-                                            </div>
-                                            <div id="calendar-create-selected-client" class="alert alert-primary d-none mt-3 mb-0"></div>
-                                        </div>
+                            {{-- One column, in the order a master thinks: who, what, when.
+                                 Everything that is administration rather than booking waits
+                                 under «Ещё». --}}
+                            <section class="calendar-step">
+                                <h6 class="calendar-step__title"><span class="calendar-step__num">1</span>Кто</h6>
 
-                                        <div class="col-md-6">
-                                            <div class="calendar-modal-search-layer">
-                                                <div class="form-floating form-floating-outline">
-                                                    <input
-                                                        type="text"
-                                                        class="form-control"
-                                                        id="calendar-create-client-phone"
-                                                        name="client_phone"
-                                                        placeholder="+7(999)999-99-99"
-                                                        data-phone-mask
-                                                        required
-                                                    />
-                                                    <label for="calendar-create-client-phone">Телефон</label>
-                                                </div>
-                                                <div id="calendar-create-client-suggestions" class="calendar-modal-suggestions list-group d-none"></div>
-                                            </div>
-                                        </div>
+                                <div class="calendar-modal-search-layer">
+                                    <div class="form-floating form-floating-outline">
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            id="calendar-create-client-search"
+                                            placeholder="Анна или +7..."
+                                            autocomplete="off"
+                                        />
+                                        <label for="calendar-create-client-search">Имя или телефон</label>
+                                    </div>
+                                    <div id="calendar-create-client-results" class="calendar-modal-results list-group d-none"></div>
+                                </div>
 
-                                        <div class="col-md-6">
+                                <div id="calendar-create-selected-client" class="calendar-chosen-client d-none"></div>
+
+                                {{-- Only for someone who has never been here: three ways to
+                                     name one person at once is what confused everybody. --}}
+                                <div id="calendar-create-new-client" class="row g-3 mt-0 d-none">
+                                    <div class="col-md-6">
+                                        <div class="calendar-modal-search-layer">
                                             <div class="form-floating form-floating-outline">
                                                 <input
                                                     type="text"
                                                     class="form-control"
-                                                    id="calendar-create-client-name"
-                                                    name="client_name"
-                                                    placeholder="Имя клиентки"
+                                                    id="calendar-create-client-phone"
+                                                    name="client_phone"
+                                                    placeholder="+7(999)999-99-99"
+                                                    data-phone-mask
+                                                    required
                                                 />
-                                                <label for="calendar-create-client-name">Имя клиентки</label>
+                                                <label for="calendar-create-client-phone">Телефон</label>
                                             </div>
+                                            <div id="calendar-create-client-suggestions" class="calendar-modal-suggestions list-group d-none"></div>
                                         </div>
+                                    </div>
 
-                                        <div class="col-md-6">
-                                            @include('components.veloria-datetime-field', [
-                                                'id' => 'calendar-create-scheduled-at',
-                                                'name' => 'scheduled_at',
-                                                'label' => 'Дата и время',
-                                                'required' => true,
-                                                'helper' => 'Сначала выберите день, затем время. Для быстрого сценария используйте готовые слоты ниже.',
-                                                'timeSlots' => ['09:00', '10:00', '12:00', '15:00', '18:00'],
-                                            ])
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <div class="form-floating form-floating-outline">
-                                                <select class="form-select" id="calendar-create-status" name="status" required></select>
-                                                <label for="calendar-create-status">Статус</label>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12">
-                                            <div class="form-floating form-floating-outline">
-                                                <textarea class="form-control" id="calendar-create-note" name="note" style="height: 120px"></textarea>
-                                                <label for="calendar-create-note">Комментарий для мастера</label>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                id="calendar-create-client-name"
+                                                name="client_name"
+                                                placeholder="Имя клиентки"
+                                            />
+                                            <label for="calendar-create-client-name">Имя клиентки</label>
                                         </div>
                                     </div>
                                 </div>
+                            </section>
 
-                                <div class="col-lg-5">
-                                    <div class="calendar-modal-summary mb-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="text-muted">Предварительная сумма</span>
-                                            <strong id="calendar-create-summary-price">0 ₽</strong>
+                            <section class="calendar-step">
+                                <h6 class="calendar-step__title">
+                                    <span class="calendar-step__num">2</span>Что
+                                    <span class="badge bg-label-primary ms-auto" id="calendar-create-services-count">0</span>
+                                </h6>
+
+                                <div id="calendar-create-services" class="calendar-modal-services d-flex flex-column gap-2">
+                                    <p class="text-muted mb-0">Загрузка услуг...</p>
+                                </div>
+                            </section>
+
+                            <section class="calendar-step">
+                                <h6 class="calendar-step__title"><span class="calendar-step__num">3</span>Когда</h6>
+
+                                @include('components.veloria-datetime-field', [
+                                    'id' => 'calendar-create-scheduled-at',
+                                    'name' => 'scheduled_at',
+                                    'label' => '',
+                                    'required' => true,
+                                    'helper' => '',
+                                    'timeSlots' => ['09:00', '10:00', '12:00', '15:00', '18:00'],
+                                ])
+                            </section>
+
+                            <button
+                                type="button"
+                                class="btn btn-link p-0 text-decoration-none calendar-more-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#calendar-create-more"
+                                aria-expanded="false"
+                                aria-controls="calendar-create-more"
+                            >
+                                Ещё: статус, своя цена, длительность, комментарий
+                            </button>
+
+                            <div class="collapse" id="calendar-create-more">
+                                <div class="row g-3 pt-3">
+                                    <div class="col-md-4">
+                                        <div class="form-floating form-floating-outline">
+                                            <select class="form-select" id="calendar-create-status" name="status" required></select>
+                                            <label for="calendar-create-status">Статус</label>
                                         </div>
                                     </div>
 
-                                    <div class="form-floating form-floating-outline mb-1">
-                                        <input
-                                            type="number"
-                                            min="5"
-                                            max="720"
-                                            step="5"
-                                            class="form-control"
-                                            id="calendar-create-duration"
-                                            name="duration_forecast"
-                                        />
-                                        <label for="calendar-create-duration">{{ __('calendar.day.duration_label') }}</label>
-                                    </div>
-
-                                    {{-- Appears only when the measured time really differs from the price list. --}}
-                                    <div id="calendar-create-duration-hint" class="calendar-duration-hint d-none mb-3">
-                                        <span id="calendar-create-duration-hint-text"></span>
-                                        <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" id="calendar-create-duration-apply">
-                                            {{ __('calendar.day.duration_apply') }}
-                                        </button>
-                                    </div>
-
-                                    <div class="form-floating form-floating-outline mb-3">
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            class="form-control"
-                                            id="calendar-create-total-price"
-                                            name="total_price"
-                                        />
-                                        <label for="calendar-create-total-price">Своя сумма, если нужно</label>
-                                    </div>
-
-                                    <div>
-                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <h6 class="mb-0">Услуги</h6>
-                                            <span class="badge bg-label-primary" id="calendar-create-services-count">0</span>
+                                    <div class="col-md-4">
+                                        <div class="form-floating form-floating-outline">
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                class="form-control"
+                                                id="calendar-create-total-price"
+                                                name="total_price"
+                                            />
+                                            <label for="calendar-create-total-price">Своя сумма</label>
                                         </div>
-                                        <div id="calendar-create-services" class="calendar-modal-services d-flex flex-column gap-2">
-                                            <p class="text-muted mb-0">Загрузка услуг...</p>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="form-floating form-floating-outline">
+                                            <input
+                                                type="number"
+                                                min="5"
+                                                max="720"
+                                                step="5"
+                                                class="form-control"
+                                                id="calendar-create-duration"
+                                                name="duration_forecast"
+                                            />
+                                            <label for="calendar-create-duration">{{ __('calendar.day.duration_label') }}</label>
+                                        </div>
+
+                                        {{-- Appears only when the measured time really differs from the price list. --}}
+                                        <div id="calendar-create-duration-hint" class="calendar-duration-hint d-none mt-1">
+                                            <span id="calendar-create-duration-hint-text"></span>
+                                            <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" id="calendar-create-duration-apply">
+                                                {{ __('calendar.day.duration_apply') }}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="form-floating form-floating-outline">
+                                            <textarea class="form-control" id="calendar-create-note" name="note" style="height: 110px"></textarea>
+                                            <label for="calendar-create-note">Комментарий для мастера</label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="modal-footer px-4 py-3">
+                        <div class="modal-footer calendar-create-footer px-4 py-3">
+                            {{-- One line instead of three money fields that showed the same
+                                 number twice above the services that produce it. --}}
+                            <div class="calendar-create-total me-auto">
+                                <span id="calendar-create-summary-text" class="text-muted"></span>
+                                <strong id="calendar-create-summary-price">0 ₽</strong>
+                            </div>
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
                             <button type="submit" class="btn btn-primary" id="calendar-create-submit">Создать запись</button>
                         </div>
@@ -1064,6 +1185,7 @@
             const createOrderServicesEl = document.getElementById('calendar-create-services');
             const createOrderServicesCountEl = document.getElementById('calendar-create-services-count');
             const createOrderSummaryPriceEl = document.getElementById('calendar-create-summary-price');
+            const createOrderSummaryTextEl = document.getElementById('calendar-create-summary-text');
             const createOrderDurationEl = document.getElementById('calendar-create-duration');
             const createOrderDurationHintEl = document.getElementById('calendar-create-duration-hint');
             const createOrderDurationHintTextEl = document.getElementById('calendar-create-duration-hint-text');
@@ -1388,6 +1510,42 @@
                 if (createOrderTotalPriceEl && !createOrderTotalPriceEl.dataset.userEdited) {
                     createOrderTotalPriceEl.value = totalPrice ? totalPrice.toFixed(2) : '';
                 }
+
+                updateCreateSummaryText(selectedServices, totalDuration);
+            }
+
+            /**
+             * The footer says what is about to be created, so the master reads one
+             * line instead of hunting three fields for the same number.
+             */
+            function updateCreateSummaryText(selectedServices, totalDuration) {
+                if (!createOrderSummaryTextEl) return;
+
+                const parts = [];
+                const who = createOrderClientNameEl ? createOrderClientNameEl.value.trim() : '';
+
+                if (who) {
+                    parts.push(who);
+                }
+
+                if (selectedServices === 1) {
+                    const checked = document.querySelector('.calendar-create-service-checkbox:checked');
+                    const label = checked ? checked.parentElement.querySelector('.fw-semibold') : null;
+                    if (label) parts.push(label.textContent);
+                } else if (selectedServices > 1) {
+                    parts.push(selectedServices + ' услуги');
+                }
+
+                if (createOrderScheduledAtEl && createOrderScheduledAtEl.value) {
+                    parts.push(createOrderScheduledAtEl.value.slice(11, 16));
+                }
+
+                const minutes = Number((createOrderDurationEl && createOrderDurationEl.value) || totalDuration || 0);
+                if (minutes) {
+                    parts.push(humanMinutes(minutes));
+                }
+
+                createOrderSummaryTextEl.textContent = parts.length ? parts.join(' · ') + ' ·' : '';
             }
 
             /**
@@ -1478,6 +1636,13 @@
                 createOrderClientSuggestionsEl.classList.add('d-none');
             }
 
+            const createOrderNewClientEl = document.getElementById('calendar-create-new-client');
+
+            function toggleNewClientFields(show) {
+                if (!createOrderNewClientEl) return;
+                createOrderNewClientEl.classList.toggle('d-none', !show);
+            }
+
             function setCreateClientSelection(client) {
                 const hasClient = Boolean(client && client.id);
 
@@ -1488,17 +1653,34 @@
                 if (createOrderSelectedClientEl) {
                     if (hasClient) {
                         createOrderSelectedClientEl.innerHTML = `
-                            <div>
-                                <div class="fw-semibold">Выбрана клиентка: ${client.name || 'Без имени'}</div>
-                                <div class="small">${formatCreatePhone(client.phone || '') || 'Без телефона'}</div>
+                            <div class="calendar-chosen-client__body">
+                                <div class="fw-semibold text-truncate">${client.name || 'Без имени'}</div>
+                                <div class="calendar-chosen-client__phone">${formatCreatePhone(client.phone || '') || 'Без телефона'}</div>
                             </div>
+                            <button type="button" class="calendar-chosen-client__clear" aria-label="Выбрать другую клиентку">
+                                <i class="ri ri-close-line"></i>
+                            </button>
                         `;
+                        // There was no way out of a selection before: phone and name
+                        // went read-only and nothing said the search field clears it.
+                        createOrderSelectedClientEl.querySelector('.calendar-chosen-client__clear')
+                            .addEventListener('click', function () {
+                                setCreateClientSelection(null);
+                                if (createOrderClientSearchEl) {
+                                    createOrderClientSearchEl.value = '';
+                                    createOrderClientSearchEl.focus();
+                                }
+                            });
                         createOrderSelectedClientEl.classList.remove('d-none');
                     } else {
                         createOrderSelectedClientEl.innerHTML = '';
                         createOrderSelectedClientEl.classList.add('d-none');
                     }
                 }
+
+                // Phone and name belong to a person who has never been here. With a
+                // client chosen they only repeat what the line above already says.
+                toggleNewClientFields(false);
 
                 if (createOrderClientPhoneEl) {
                     createOrderClientPhoneEl.readOnly = hasClient;
@@ -1512,6 +1694,9 @@
                 }
 
                 clearCreateClientSuggestions();
+
+                // After the name field, not before it: the footer line reads from it.
+                updateCreateSummary();
             }
 
             function renderCreateClientResults(items, title) {
@@ -1519,14 +1704,11 @@
 
                 createOrderClientResultsEl.innerHTML = '';
 
-                if (!Array.isArray(items) || !items.length) {
-                    createOrderClientResultsEl.classList.add('d-none');
-                    return;
-                }
+                items = Array.isArray(items) ? items : [];
 
                 const header = document.createElement('div');
                 header.className = 'list-group-item small text-muted';
-                header.textContent = title;
+                header.textContent = items.length ? title : 'Никого не нашли';
                 createOrderClientResultsEl.appendChild(header);
 
                 items.forEach(function (item) {
@@ -1558,15 +1740,26 @@
                     <i class="ri ri-user-add-line"></i>
                 `;
                 createButton.addEventListener('click', function () {
+                    // Carry over whatever she already typed: if it looks like a
+                    // phone it is one, otherwise it is the name.
+                    const typed = createOrderClientSearchEl ? createOrderClientSearchEl.value.trim() : '';
+                    const digits = typed.replace(/\D/g, '');
+
                     setCreateClientSelection(null);
                     clearCreateClientResults();
+                    toggleNewClientFields(true);
 
                     if (createOrderClientSearchEl) {
                         createOrderClientSearchEl.value = '';
                     }
 
-                    if (createOrderClientPhoneEl) {
-                        createOrderClientPhoneEl.focus();
+                    if (digits.length >= 10 && createOrderClientPhoneEl) {
+                        createOrderClientPhoneEl.value = typed;
+                        createOrderClientPhoneEl.dispatchEvent(new Event('input', { bubbles: true }));
+                        if (createOrderClientNameEl) createOrderClientNameEl.focus();
+                    } else {
+                        if (typed && createOrderClientNameEl) createOrderClientNameEl.value = typed;
+                        if (createOrderClientPhoneEl) createOrderClientPhoneEl.focus();
                     }
                 });
                 createOrderClientResultsEl.appendChild(createButton);
@@ -1735,6 +1928,13 @@
                 clearCreateClientResults();
                 updateCreateSummary();
 
+                toggleNewClientFields(false);
+
+                const more = document.getElementById('calendar-create-more');
+                if (more) {
+                    more.classList.remove('show');
+                }
+
                 if (window.BookingPhraseInput) {
                     window.BookingPhraseInput.reset();
                 }
@@ -1759,6 +1959,7 @@
                     }
                 } else if (filled.new_client) {
                     setCreateClientSelection(null);
+                    toggleNewClientFields(true);
 
                     if (createOrderClientNameEl && filled.new_client.name) {
                         createOrderClientNameEl.value = filled.new_client.name;
@@ -2760,6 +2961,19 @@
                     if (!this.value.trim()) {
                         renderCreateClientResults(createOrderRecentClients, 'Недавние клиентки');
                     }
+                });
+            }
+
+            if (createOrderScheduledAtEl) {
+                // The footer line carries the time, so it follows the picker.
+                createOrderScheduledAtEl.addEventListener('input', function () {
+                    updateCreateSummary();
+                });
+            }
+
+            if (createOrderClientNameEl) {
+                createOrderClientNameEl.addEventListener('input', function () {
+                    updateCreateSummary();
                 });
             }
 
