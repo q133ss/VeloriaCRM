@@ -4,186 +4,356 @@
 
 @section('content')
     <style>
-        .useful-shell {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .useful-hero,
-        .useful-featured,
-        .useful-article-card,
-        .useful-empty {
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
-            border-radius: 1.25rem;
+        .useful-page {
+            --useful-shadow: 0 20px 48px -34px rgba(37, 26, 84, 0.45);
+            --useful-line: color-mix(in srgb, var(--bs-border-color) 70%, transparent);
         }
 
         .useful-hero {
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.14), transparent 32%),
-                linear-gradient(180deg, rgba(var(--bs-primary-rgb), 0.05), rgba(var(--bs-body-bg-rgb), 0.02));
-        }
-
-        .useful-hero-copy {
-            max-width: 760px;
-        }
-
-        .useful-hero-actions {
             display: flex;
+            flex-wrap: wrap;
             align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.14);
+            border-radius: 1.5rem;
+            padding: 1.35rem 1.5rem;
+            background: linear-gradient(135deg, rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07), rgba(var(--bs-primary-rgb, 255, 0, 252), 0.015) 60%, rgba(var(--bs-info-rgb, 0, 207, 232), 0.04));
+            box-shadow: var(--useful-shadow);
+        }
+
+        .useful-hero__title {
+            margin: 0 0 0.2rem;
+            font-size: clamp(1.35rem, 2vw, 1.75rem);
+            letter-spacing: -0.02em;
+        }
+
+        .useful-hero__lead {
+            color: var(--bs-secondary-color);
+        }
+
+        .useful-surface {
+            border: none;
+            border-radius: 1.35rem;
+            box-shadow: var(--useful-shadow);
+            background: color-mix(in srgb, var(--bs-card-bg) 94%, transparent);
+        }
+
+        .useful-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+        }
+
+        .useful-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .useful-chip {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.45rem 0.9rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.07);
+            color: var(--bs-secondary-color);
+            font-weight: 600;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+
+        .useful-chip.is-active {
+            background: var(--bs-card-bg, #fff);
+            color: var(--bs-primary);
+            box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.65);
+        }
+
+        .useful-toolbar__right {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex: 1 1 260px;
             justify-content: flex-end;
         }
 
+        /* Field and switch to one height: the theme gives them three. */
+        .useful-toolbar__right .useful-search {
+            max-width: 280px;
+            height: 2.625rem;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .useful-featured h2 {
+            line-height: 1.3;
+        }
+
         .useful-featured {
-            background: rgba(var(--bs-primary-rgb), 0.04);
-            padding: 1.5rem;
+            border: 1px solid rgba(var(--bs-primary-rgb, 255, 0, 252), 0.18);
+            border-radius: 1.35rem;
+            padding: 1.35rem 1.5rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.04);
         }
 
-        .useful-featured-meta,
-        .useful-article-meta {
+        .useful-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem 0.75rem;
+            align-items: center;
+            gap: 0.5rem;
             color: var(--bs-secondary-color);
-            font-size: 0.875rem;
+            font-size: 0.85rem;
         }
 
-        .useful-filters {
+        .useful-meta__dot::before {
+            content: '·';
+            margin-right: 0.5rem;
+        }
+
+        .useful-match {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-success-rgb, 40, 199, 111), 0.12);
+            color: var(--bs-success-text-emphasis, var(--bs-success));
+            font-weight: 600;
+            font-size: 0.78rem;
+        }
+
+        .useful-read-flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--bs-success-text-emphasis, var(--bs-success));
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .useful-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .useful-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            border: 1px solid var(--useful-line);
+            border-radius: 1.1rem;
+            padding: 1.1rem;
+            background: var(--bs-card-bg);
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .useful-card:hover {
+            border-color: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.35);
+        }
+
+        /* Read posts step back without disappearing: the master may want to
+           open one again, and a list that hides its own history is confusing. */
+        .useful-card.is-read .useful-card__title,
+        .useful-card.is-read .useful-card__summary {
+            opacity: 0.68;
+        }
+
+        .useful-card__title {
+            margin: 0;
+            font-size: 1.02rem;
+            line-height: 1.35;
+            font-weight: 600;
+        }
+
+        .useful-card__summary {
+            margin: 0;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .useful-action {
+            display: flex;
+            align-items: baseline;
+            gap: 0.35rem;
+            padding: 0.55rem 0.7rem;
+            border-radius: 0.75rem;
+            background: rgba(var(--bs-primary-rgb, 255, 0, 252), 0.06);
+            font-size: 0.88rem;
+        }
+
+        .useful-action__label {
+            color: var(--bs-secondary-color);
+            white-space: nowrap;
+        }
+
+        .useful-action__value {
+            font-weight: 600;
+        }
+
+        .useful-card__foot {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-
-        .useful-filter {
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.12);
-            border-radius: 999px;
-            padding: 0.65rem 1rem;
-            background: transparent;
-            color: inherit;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .useful-filter:hover,
-        .useful-filter.is-active {
-            border-color: rgba(var(--bs-primary-rgb), 0.35);
-            background: rgba(var(--bs-primary-rgb), 0.08);
-            color: rgb(var(--bs-primary-rgb));
-        }
-
-        .useful-article-card {
-            padding: 1.25rem;
-            height: 100%;
-            background: rgba(var(--bs-body-bg-rgb), 0.55);
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: auto;
+            padding-top: 0.35rem;
         }
 
         .useful-empty {
-            padding: 2rem;
+            padding: 3rem 1.25rem;
             text-align: center;
             color: var(--bs-secondary-color);
-            border-style: dashed;
         }
 
-        html[data-bs-theme="dark"] .useful-featured,
-        html[data-bs-theme="dark"] .useful-article-card,
-        html[data-bs-theme="dark"] .useful-filter.is-active,
-        html[data-bs-theme="dark"] .useful-filter:hover {
-            background: rgba(var(--bs-primary-rgb), 0.1);
+        .useful-blocks {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        @media (max-width: 991.98px) {
-            .useful-hero-actions {
+        .useful-block__title {
+            margin-bottom: 0.35rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--bs-secondary-color);
+        }
+
+        .useful-block ul {
+            margin: 0;
+            padding-left: 1.1rem;
+        }
+
+        .useful-block li + li {
+            margin-top: 0.35rem;
+        }
+
+        @media (max-width: 767.98px) {
+            .useful-hero {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .useful-toolbar,
+            .useful-toolbar__right {
                 justify-content: flex-start;
+            }
+
+            .useful-toolbar__right .useful-search {
+                max-width: none;
+            }
+
+            .useful-chips {
+                width: 100%;
+            }
+
+            /* The switch label wrapped into two lines beside the field. */
+            .useful-toolbar__right {
+                flex-wrap: wrap;
+            }
+
+            .useful-toolbar__right .form-check {
+                width: 100%;
+            }
+
+            .useful-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 
-    <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="useful-shell">
-            <section class="card shadow-sm useful-hero">
-                <div class="card-body p-4 p-lg-5">
-                    <div class="row g-4 align-items-start">
-                        <div class="col-12 col-lg-8">
-                            <div class="useful-hero-copy">
-                                <span class="badge bg-label-primary mb-3">Полезное</span>
-                                <h2 class="mb-2" id="useful-title">Полезное</h2>
-                                <p class="text-muted mb-3" id="useful-subtitle">Короткие статьи, идеи и важные изменения для работы.</p>
-                                <div class="d-flex flex-wrap gap-2 align-items-center">
-                                    <span class="badge bg-label-secondary" id="useful-specialty-badge">Подбираем фокус...</span>
-                                    <span class="small text-muted" id="useful-specialty-hint"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <div class="useful-hero-actions">
-                                <button type="button" class="btn btn-outline-primary" id="useful-open-digest-settings">
-                                    Получать подборку раз в неделю
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+    <div class="useful-page d-flex flex-column gap-4">
+        <section class="useful-hero">
+            <div>
+                <h1 class="useful-hero__title" id="useful-title">Полезное</h1>
+                <p class="useful-hero__lead mb-0" id="useful-lead">Загрузка...</p>
+            </div>
+            <div class="d-flex flex-column align-items-sm-end gap-1">
+                <button type="button" class="btn btn-outline-primary" id="useful-digest-btn">
+                    <i class="ri ri-mail-send-line me-1"></i>
+                    Подборка раз в неделю
+                </button>
+                {{-- The plan is named before the press, not after it. --}}
+                <small class="text-muted" id="useful-digest-note"></small>
+            </div>
+        </section>
 
-            <section>
-                <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
-                    <div>
-                        <p class="small text-uppercase text-muted mb-1" id="useful-digest-badge">Главное на этой неделе</p>
-                        <h4 class="mb-1">Главная статья недели</h4>
-                        <p class="text-muted mb-0" id="useful-digest-summary">Подбираем одну важную публикацию без перегруза.</p>
-                    </div>
-                    <div class="small text-muted" id="useful-digest-week"></div>
-                </div>
-                <div id="useful-featured"></div>
-            </section>
+        <div id="useful-alerts"></div>
 
-            <section>
-                <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
-                    <div>
-                        <h4 class="mb-1">Статьи</h4>
-                        <p class="text-muted mb-0">Открывайте только то, что полезно вам прямо сейчас.</p>
+        <section class="useful-featured" id="useful-featured" hidden></section>
+
+        <div class="card useful-surface">
+            <div class="useful-toolbar">
+                <div class="useful-chips" id="useful-chips"></div>
+                <div class="useful-toolbar__right">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="useful-unread-only" />
+                        <label class="form-check-label" for="useful-unread-only">Не прочитано</label>
                     </div>
+                    <input
+                        type="search"
+                        class="form-control useful-search"
+                        id="useful-search"
+                        placeholder="Найти материал"
+                        aria-label="Найти материал"
+                        autocomplete="off"
+                    />
                 </div>
-                <div class="useful-filters mb-4" id="useful-filters"></div>
-                <div class="row g-4" id="useful-posts"></div>
-                <div class="useful-empty d-none mt-4" id="useful-posts-empty">По этому фильтру пока нет статей.</div>
-            </section>
+            </div>
+
+            <div class="useful-grid" id="useful-list">
+                <div class="useful-empty">Загрузка...</div>
+            </div>
         </div>
     </div>
 
     <div class="modal fade" id="usefulContentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <div>
-                        <div class="small text-muted mb-1" id="useful-modal-type"></div>
-                        <h5 class="modal-title" id="useful-modal-title"></h5>
+                        <div class="useful-meta mb-1" id="useful-modal-meta"></div>
+                        <h5 class="modal-title" id="useful-modal-title">Материал</h5>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="useful-modal-body" class="d-flex flex-column gap-3"></div>
+                    <p class="text-muted" id="useful-modal-summary"></p>
+                    <div class="useful-blocks" id="useful-modal-body"></div>
+                    <div class="useful-action mt-3" id="useful-modal-action" hidden>
+                        <span class="useful-action__label">Что сделать:</span>
+                        <span class="useful-action__value" id="useful-modal-action-value"></span>
+                    </div>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <a href="#" target="_blank" rel="noopener" class="btn btn-outline-primary d-none" id="useful-modal-link">Открыть источник</a>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <a href="#" target="_blank" rel="noopener" class="btn btn-text-secondary d-none" id="useful-modal-link">Источник</a>
+                    <div class="d-flex gap-2 ms-auto">
+                        <button type="button" class="btn btn-outline-primary" id="useful-modal-read"></button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="modal fade" id="usefulDigestModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <div>
-                        <div class="small text-muted mb-1">Weekly-подборка</div>
-                        <h5 class="modal-title">Получать раз в неделю</h5>
+                        <div class="small text-muted mb-1">Раз в неделю, по понедельникам</div>
+                        <h5 class="modal-title">Подборка на почту и в Telegram</h5>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-4">Один спокойный дайджест с важными обновлениями и полезными статьями внутри CRM или в Telegram.</p>
+                    <p class="text-muted mb-4">Одно письмо в неделю: важное обновление и пара материалов, которые подходят вашим услугам.</p>
 
                     <div id="useful-pref-lock" class="useful-empty d-none mb-3"></div>
 
@@ -204,7 +374,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold" for="useful-pref-preferences">Что вам особенно важно</label>
-                            <textarea class="form-control" id="useful-pref-preferences" rows="4" placeholder="Например: налоги, бизнес, идеи для постов, возврат клиентов."></textarea>
+                            <textarea class="form-control" id="useful-pref-preferences" rows="3" placeholder="Например: налоги, идеи для постов, возврат клиентов."></textarea>
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
@@ -224,374 +394,453 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             function getCookie(name) {
-                var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-                return match ? decodeURIComponent(match[1]) : null;
+                var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+                return match ? decodeURIComponent(match[2]) : null;
             }
 
-            function buildHeaders(extra) {
-                var headers = Object.assign({ Accept: 'application/json' }, extra || {});
+            function authHeaders(extra) {
                 var token = getCookie('token');
-                if (token) {
-                    headers['Authorization'] = 'Bearer ' + token;
-                }
+                var headers = Object.assign({ 'Accept': 'application/json', 'Content-Type': 'application/json' }, extra || {});
+                if (token) headers['Authorization'] = 'Bearer ' + token;
                 return headers;
             }
 
             function escapeHtml(value) {
-                return String(value || '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
+                return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, function (character) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character];
+                });
             }
 
-            function formatDate(value) {
-                if (!value) {
-                    return '';
-                }
-
-                try {
-                    return new Date(value).toLocaleDateString(document.documentElement.lang || 'ru-RU', {
-                        day: 'numeric',
-                        month: 'long'
-                    });
-                } catch (error) {
-                    return value;
-                }
-            }
-
-            function setText(id, value) {
-                var el = document.getElementById(id);
-                if (el) {
-                    el.textContent = value || '';
-                }
-            }
-
-            function createContentBlocks(content) {
-                if (Array.isArray(content)) {
-                    return content.map(function (item) {
-                        return '<div class="p-3 rounded-3 bg-body-tertiary">' + escapeHtml(item) + '</div>';
-                    }).join('');
-                }
-
-                if (content && typeof content === 'object') {
-                    return Object.keys(content).map(function (key) {
-                        var value = content[key];
-                        var renderedValue = Array.isArray(value) ? value.map(escapeHtml).join('<br>') : escapeHtml(value);
-                        return '<div><div class="small text-muted text-uppercase mb-1">' + escapeHtml(key) + '</div><div class="p-3 rounded-3 bg-body-tertiary">' + renderedValue + '</div></div>';
-                    }).join('');
-                }
-
-                return '<div class="p-3 rounded-3 bg-body-tertiary">' + escapeHtml(content || 'Материал скоро появится.') + '</div>';
+            function plural(count, one, few, many) {
+                var mod100 = count % 100;
+                if (mod100 >= 11 && mod100 <= 14) return many;
+                var mod10 = count % 10;
+                if (mod10 === 1) return one;
+                if (mod10 >= 2 && mod10 <= 4) return few;
+                return many;
             }
 
             var state = {
-                activeFilter: 'all',
-                payload: {
-                    meta: {},
-                    digest: {},
-                    preferences: {},
-                    featured_post: null,
-                    filters: [],
-                    posts: []
-                }
+                search: '',
+                category: 'all',
+                unreadOnly: false,
+                payload: { meta: {}, preferences: {}, counts: {}, featured_post: null, filters: [], posts: [] },
+                byId: {},
+                openPostId: null,
             };
+
+            var alertsEl = document.getElementById('useful-alerts');
+            var leadEl = document.getElementById('useful-lead');
+            var featuredEl = document.getElementById('useful-featured');
+            var listEl = document.getElementById('useful-list');
+            var chipsEl = document.getElementById('useful-chips');
+            var searchEl = document.getElementById('useful-search');
+            var unreadEl = document.getElementById('useful-unread-only');
+            var digestBtn = document.getElementById('useful-digest-btn');
+            var digestNote = document.getElementById('useful-digest-note');
 
             var contentModalEl = document.getElementById('usefulContentModal');
             var contentModal = contentModalEl ? new bootstrap.Modal(contentModalEl) : null;
             var digestModalEl = document.getElementById('usefulDigestModal');
             var digestModal = digestModalEl ? new bootstrap.Modal(digestModalEl) : null;
 
-            function openContentModal(post) {
-                if (!contentModal || !post) {
+            var prefLock = document.getElementById('useful-pref-lock');
+            var prefForm = document.getElementById('useful-pref-form');
+            var prefEnabled = document.getElementById('useful-pref-enabled');
+            var prefChannel = document.getElementById('useful-pref-channel');
+            var prefPreferences = document.getElementById('useful-pref-preferences');
+            var prefStatus = document.getElementById('useful-pref-status');
+
+            function showAlert(type, message) {
+                if (!message) return;
+                var el = document.createElement('div');
+                el.className = 'alert alert-' + type + ' alert-dismissible fade show';
+                el.innerHTML = '<div>' + escapeHtml(message) + '</div><button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                alertsEl.appendChild(el);
+                setTimeout(function () {
+                    el.classList.remove('show');
+                    el.addEventListener('transitionend', function () { el.remove(); });
+                }, 5000);
+            }
+
+            /* ---------- rendering ---------- */
+
+            function metaLine(post) {
+                var parts = [
+                    '<span>' + escapeHtml(post.topic || 'Материал') + '</span>',
+                    '<span class="useful-meta__dot">' + post.reading_minutes + ' ' + plural(post.reading_minutes, 'минута', 'минуты', 'минут') + '</span>',
+                ];
+
+                if (post.matches_specialty) {
+                    parts.push('<span class="useful-match"><i class="ri ri-check-line"></i>подходит вашим услугам</span>');
+                }
+
+                if (post.is_read) {
+                    parts.push('<span class="useful-read-flag"><i class="ri ri-check-double-line"></i>прочитано</span>');
+                }
+
+                return '<div class="useful-meta">' + parts.join('') + '</div>';
+            }
+
+            function actionLine(post) {
+                var label = post.action && post.action.label;
+
+                if (!label) {
+                    return '';
+                }
+
+                // «Что с этим делать» was stored on every post and shown on none:
+                // the old page only rendered it when the action carried a url.
+                var value = post.action.url
+                    ? '<a class="useful-action__value" href="' + escapeHtml(post.action.url) + '" target="_blank" rel="noopener">' + escapeHtml(label) + '</a>'
+                    : '<span class="useful-action__value">' + escapeHtml(label) + '</span>';
+
+                return '<div class="useful-action"><span class="useful-action__label">Что сделать:</span>' + value + '</div>';
+            }
+
+            function readButton(post, extraClass) {
+                return '<button type="button" class="btn btn-sm ' + (post.is_read ? 'btn-text-secondary' : 'btn-outline-primary') + ' ' + (extraClass || '') + '" data-useful-read="' + post.id + '">' +
+                    (post.is_read ? 'Снять отметку' : 'Прочитано') +
+                    '</button>';
+            }
+
+            function renderLead() {
+                var counts = state.payload.counts || {};
+                var total = counts.total || 0;
+
+                if (!total) {
+                    leadEl.textContent = 'Материалов пока нет — они появятся здесь и в подборке.';
                     return;
                 }
 
-                setText('useful-modal-type', post.topic || 'Статья');
-                setText('useful-modal-title', post.title || '');
-                document.getElementById('useful-modal-body').innerHTML = createContentBlocks(post.content);
+                var parts = [total + ' ' + plural(total, 'материал', 'материала', 'материалов')];
 
-                var linkEl = document.getElementById('useful-modal-link');
-                var link = post.source_url || (post.action && post.action.url) || null;
-                if (link) {
-                    linkEl.href = link;
-                    linkEl.classList.remove('d-none');
-                } else {
-                    linkEl.href = '#';
-                    linkEl.classList.add('d-none');
+                if (counts.unread) {
+                    parts.push(counts.unread + ' не ' + plural(counts.unread, 'прочитан', 'прочитано', 'прочитано'));
                 }
 
-                contentModal.show();
+                var specialty = (state.payload.meta || {}).specialty;
+                if (specialty && specialty.label) {
+                    parts.push('подобрано под «' + specialty.label + '»');
+                }
+
+                leadEl.textContent = parts.join(' · ');
             }
 
-            function renderHero() {
-                var meta = state.payload.meta || {};
-                var digest = state.payload.digest || {};
+            function renderDigestNote() {
+                var prefs = state.payload.preferences || {};
 
-                setText('useful-title', meta.title || 'Полезное');
-                setText('useful-subtitle', meta.subtitle || '');
-                setText(
-                    'useful-specialty-badge',
-                    meta.specialty && meta.specialty.label ? meta.specialty.label : 'Подборка по вашему профилю'
-                );
-                setText('useful-specialty-hint', meta.specialty ? meta.specialty.hint : '');
-                setText('useful-digest-badge', digest.badge || 'Главное на этой неделе');
-                setText('useful-digest-summary', digest.summary || 'Подбираем одну важную публикацию без перегруза.');
-                setText('useful-digest-week', digest.week_label || '');
+                if (!prefs.available) {
+                    digestNote.textContent = 'Доступно на тарифах Pro и Elite';
+                    return;
+                }
+
+                digestNote.textContent = prefs.enabled ? 'Включена, по понедельникам' : 'Пока выключена';
             }
 
             function renderFeatured() {
-                var root = document.getElementById('useful-featured');
                 var post = state.payload.featured_post;
 
-                if (!root) {
-                    return;
-                }
-
                 if (!post) {
-                    root.innerHTML = '<div class="useful-empty">Пока нет главной статьи недели.</div>';
+                    featuredEl.hidden = true;
                     return;
                 }
 
-                var sourceButton = post.source_url
-                    ? '<a class="btn btn-outline-secondary" href="' + escapeHtml(post.source_url) + '" target="_blank" rel="noopener">Источник</a>'
-                    : '';
-
-                root.innerHTML =
-                    '<div class="useful-featured">' +
-                        '<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">' +
-                            '<div>' +
-                                '<span class="badge bg-label-primary mb-2">Главное</span>' +
-                                '<h3 class="mb-2">' + escapeHtml(post.title) + '</h3>' +
-                            '</div>' +
-                            '<span class="badge bg-label-secondary">' + escapeHtml(post.topic || 'Полезное') + '</span>' +
-                        '</div>' +
-                        '<p class="text-muted mb-3">' + escapeHtml(post.summary || '') + '</p>' +
-                        '<div class="useful-featured-meta mb-4">' +
-                            (post.reading_time_minutes ? '<span>' + escapeHtml(post.reading_time_minutes) + ' мин чтения</span>' : '') +
-                            (post.published_at ? '<span>' + escapeHtml(formatDate(post.published_at)) + '</span>' : '') +
-                        '</div>' +
-                        '<div class="d-flex flex-wrap gap-2">' +
-                            '<button type="button" class="btn btn-primary" data-useful-open="' + escapeHtml(String(post.id)) + '">Открыть</button>' +
-                            sourceButton +
-                        '</div>' +
+                featuredEl.hidden = false;
+                featuredEl.innerHTML =
+                    '<div class="text-muted small mb-2">Читать на этой неделе</div>' +
+                    metaLine(post) +
+                    '<h2 class="h4 mt-2 mb-2">' + escapeHtml(post.title) + '</h2>' +
+                    '<p class="text-muted">' + escapeHtml(post.summary || '') + '</p>' +
+                    actionLine(post) +
+                    '<div class="d-flex flex-wrap gap-2 mt-3">' +
+                        '<button type="button" class="btn btn-primary btn-sm" data-useful-open="' + post.id + '">Открыть</button>' +
+                        readButton(post) +
                     '</div>';
             }
 
-            function renderFilters() {
-                var root = document.getElementById('useful-filters');
+            function renderChips() {
                 var filters = state.payload.filters || [];
 
-                if (!root) {
-                    return;
-                }
-
-                root.innerHTML = filters.map(function (filter) {
-                    var isActive = filter.key === state.activeFilter;
-                    return '<button type="button" class="useful-filter' + (isActive ? ' is-active' : '') + '" data-useful-filter="' + escapeHtml(filter.key) + '">' + escapeHtml(filter.label) + '</button>';
+                chipsEl.innerHTML = filters.map(function (filter) {
+                    var active = filter.key === state.category ? ' is-active' : '';
+                    return '<button type="button" class="useful-chip' + active + '" data-useful-filter="' + escapeHtml(filter.key) + '">' +
+                        escapeHtml(filter.label) + '</button>';
                 }).join('');
             }
 
-            function visiblePosts() {
+            function renderList() {
                 var posts = state.payload.posts || [];
-                if (state.activeFilter === 'all') {
-                    return posts;
-                }
-
-                return posts.filter(function (post) {
-                    return post.topic_key === state.activeFilter;
-                });
-            }
-
-            function renderPosts() {
-                var root = document.getElementById('useful-posts');
-                var empty = document.getElementById('useful-posts-empty');
-                var posts = visiblePosts();
-
-                if (!root || !empty) {
-                    return;
-                }
 
                 if (!posts.length) {
-                    root.innerHTML = '';
-                    empty.classList.remove('d-none');
+                    var box = document.createElement('div');
+                    box.className = 'useful-empty';
+
+                    if (state.search) {
+                        box.textContent = 'По запросу «' + state.search + '» ничего не нашли.';
+                    } else if (state.unreadOnly) {
+                        box.textContent = 'Вы прочитали всё, что здесь есть.';
+                    } else if (state.category !== 'all') {
+                        box.textContent = 'В этой теме пока пусто.';
+                    } else if (state.payload.featured_post) {
+                        box.textContent = 'Это пока единственный материал.';
+                    } else {
+                        box.textContent = 'Материалов пока нет — они появятся здесь и в подборке.';
+                    }
+
+                    listEl.innerHTML = '';
+                    listEl.appendChild(box);
                     return;
                 }
 
-                empty.classList.add('d-none');
-
-                root.innerHTML = posts.map(function (post) {
-                    var sourceLink = post.source_url
-                        ? '<a class="btn btn-sm btn-outline-secondary" href="' + escapeHtml(post.source_url) + '" target="_blank" rel="noopener">Источник</a>'
-                        : '';
-
-                    return (
-                        '<div class="col-12 col-md-6">' +
-                            '<article class="useful-article-card">' +
-                                '<div class="d-flex justify-content-between align-items-start gap-3 mb-3">' +
-                                    '<div>' +
-                                        '<div class="small text-muted mb-2">' + escapeHtml(post.topic || 'Полезное') + '</div>' +
-                                        '<h5 class="mb-0">' + escapeHtml(post.title) + '</h5>' +
-                                    '</div>' +
-                                    '<span class="badge bg-label-secondary">' + escapeHtml(post.reading_time_minutes || '3') + ' мин</span>' +
-                                '</div>' +
-                                '<p class="text-muted mb-3">' + escapeHtml(post.summary || '') + '</p>' +
-                                '<div class="useful-article-meta mb-4">' +
-                                    (post.published_at ? '<span>' + escapeHtml(formatDate(post.published_at)) + '</span>' : '') +
-                                    (post.is_featured ? '<span>Приоритетный материал</span>' : '') +
-                                '</div>' +
-                                '<div class="d-flex flex-wrap gap-2">' +
-                                    '<button type="button" class="btn btn-outline-primary btn-sm" data-useful-open="' + escapeHtml(String(post.id)) + '">Открыть</button>' +
-                                    sourceLink +
-                                '</div>' +
-                            '</article>' +
-                        '</div>'
-                    );
+                listEl.innerHTML = posts.map(function (post) {
+                    return '<article class="useful-card' + (post.is_read ? ' is-read' : '') + '" data-useful-open="' + post.id + '">' +
+                        metaLine(post) +
+                        '<h3 class="useful-card__title">' + escapeHtml(post.title) + '</h3>' +
+                        '<p class="useful-card__summary">' + escapeHtml(post.summary || '') + '</p>' +
+                        actionLine(post) +
+                        '<div class="useful-card__foot">' +
+                            '<button type="button" class="btn btn-sm btn-primary" data-useful-open="' + post.id + '">Открыть</button>' +
+                            readButton(post) +
+                        '</div>' +
+                    '</article>';
                 }).join('');
             }
 
-            function renderPreferences(preferences) {
-                var lockEl = document.getElementById('useful-pref-lock');
-                var formEl = document.getElementById('useful-pref-form');
-
-                if (!lockEl || !formEl) {
-                    return;
+            function indexPosts() {
+                state.byId = {};
+                (state.payload.posts || []).forEach(function (post) { state.byId[post.id] = post; });
+                if (state.payload.featured_post) {
+                    state.byId[state.payload.featured_post.id] = state.payload.featured_post;
                 }
-
-                if (!preferences.available) {
-                    lockEl.innerHTML = 'Weekly-подборка доступна на тарифах Pro и Elite. <a href="' + escapeHtml(preferences.upgrade_url || '/subscription') + '">Открыть тарифы</a>';
-                    lockEl.classList.remove('d-none');
-                    formEl.classList.add('d-none');
-                    return;
-                }
-
-                lockEl.classList.add('d-none');
-                formEl.classList.remove('d-none');
-                document.getElementById('useful-pref-enabled').checked = !!preferences.enabled;
-                document.getElementById('useful-pref-channel').value = preferences.channel || 'platform';
-                document.getElementById('useful-pref-preferences').value = preferences.preferences || '';
             }
 
-            function renderAll() {
-                renderHero();
+            function render() {
+                indexPosts();
+                renderLead();
+                renderDigestNote();
                 renderFeatured();
-                renderFilters();
-                renderPosts();
-                renderPreferences(state.payload.preferences || {});
+                renderChips();
+                renderList();
+                renderPreferences();
             }
 
-            function findPostById(id) {
-                var featured = state.payload.featured_post;
-                if (featured && featured.id === id) {
-                    return featured;
-                }
+            /* ---------- loading ---------- */
 
-                return (state.payload.posts || []).find(function (post) {
-                    return post.id === id;
-                }) || null;
-            }
+            function load() {
+                var params = new URLSearchParams();
+                if (state.search) params.append('search', state.search);
+                if (state.category && state.category !== 'all') params.append('category', state.category);
+                if (state.unreadOnly) params.append('unread', '1');
 
-            function loadOverview() {
-                fetch('/api/v1/useful/overview', { headers: buildHeaders() })
+                return fetch('/api/v1/useful/overview?' + params.toString(), {
+                    headers: authHeaders(),
+                    credentials: 'include',
+                })
                     .then(function (response) {
-                        if (!response.ok) {
-                            throw new Error('Не удалось загрузить раздел.');
-                        }
-
+                        if (!response.ok) throw new Error('failed');
                         return response.json();
                     })
                     .then(function (payload) {
-                        state.payload = payload;
-                        renderAll();
+                        state.payload = payload || state.payload;
+                        render();
                     })
                     .catch(function (error) {
-                        document.getElementById('useful-featured').innerHTML = '<div class="useful-empty">' + escapeHtml(error.message) + '</div>';
+                        console.error(error);
+                        listEl.innerHTML = '<div class="useful-empty text-danger">Не удалось загрузить материалы.</div>';
                     });
+            }
+
+            /* ---------- reading ---------- */
+
+            function openPost(id) {
+                var post = state.byId[id];
+                if (!post || !contentModal) return;
+
+                state.openPostId = post.id;
+
+                document.getElementById('useful-modal-meta').innerHTML = metaLine(post).replace('<div class="useful-meta">', '').replace(/<\/div>$/, '');
+                document.getElementById('useful-modal-title').textContent = post.title || '';
+                document.getElementById('useful-modal-summary').textContent = post.summary || '';
+
+                var blocks = post.content_blocks || [];
+                document.getElementById('useful-modal-body').innerHTML = blocks.length
+                    ? blocks.map(function (block) {
+                        return '<div class="useful-block">' +
+                            (block.title ? '<div class="useful-block__title">' + escapeHtml(block.title) + '</div>' : '') +
+                            '<ul>' + block.items.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>' +
+                            '</div>';
+                    }).join('')
+                    : '<p class="text-muted mb-0">Материал скоро появится.</p>';
+
+                var actionBox = document.getElementById('useful-modal-action');
+                if (post.action && post.action.label) {
+                    actionBox.hidden = false;
+                    document.getElementById('useful-modal-action-value').textContent = post.action.label;
+                } else {
+                    actionBox.hidden = true;
+                }
+
+                var linkEl = document.getElementById('useful-modal-link');
+                var link = post.source_url || (post.action && post.action.url) || null;
+                linkEl.href = link || '#';
+                linkEl.classList.toggle('d-none', !link);
+
+                syncModalReadButton(post);
+                contentModal.show();
+
+                // Opening it is the answer to «читала ли я это» — no second press.
+                if (!post.is_read) {
+                    setRead(post.id, true, { quiet: true });
+                }
+            }
+
+            function syncModalReadButton(post) {
+                var button = document.getElementById('useful-modal-read');
+                button.textContent = post.is_read ? 'Снять отметку' : 'Отметить прочитанным';
+                button.dataset.usefulRead = String(post.id);
+            }
+
+            function setRead(id, read, options) {
+                var quiet = options && options.quiet;
+
+                return fetch('/api/v1/useful/posts/' + id + '/read', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    credentials: 'include',
+                    body: JSON.stringify({ read: read }),
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('failed');
+                        return load();
+                    })
+                    .then(function () {
+                        var post = state.byId[id];
+                        if (post && state.openPostId === id) {
+                            syncModalReadButton(post);
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        if (!quiet) showAlert('danger', 'Не удалось сохранить отметку.');
+                    });
+            }
+
+            /* ---------- weekly digest ---------- */
+
+            function renderPreferences() {
+                var prefs = state.payload.preferences || {};
+
+                if (!prefs.available) {
+                    prefLock.classList.remove('d-none');
+                    prefLock.innerHTML = 'Подборка приходит на тарифах Pro и Elite. <a href="' + escapeHtml(prefs.upgrade_url || '/subscription') + '">Открыть тарифы</a>';
+                    prefForm.classList.add('d-none');
+                    return;
+                }
+
+                prefLock.classList.add('d-none');
+                prefForm.classList.remove('d-none');
+                prefEnabled.checked = Boolean(prefs.enabled);
+                prefChannel.value = prefs.channel || 'platform';
+                prefPreferences.value = prefs.preferences || '';
             }
 
             function savePreferences() {
-                var statusEl = document.getElementById('useful-pref-status');
-                statusEl.textContent = 'Сохраняем...';
+                prefStatus.textContent = 'Сохраняем...';
 
-                fetch('/api/v1/useful/preferences', {
+                return fetch('/api/v1/useful/preferences', {
                     method: 'PATCH',
-                    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+                    headers: authHeaders(),
+                    credentials: 'include',
                     body: JSON.stringify({
-                        enabled: document.getElementById('useful-pref-enabled').checked,
-                        channel: document.getElementById('useful-pref-channel').value,
-                        preferences: document.getElementById('useful-pref-preferences').value.trim()
-                    })
+                        enabled: prefEnabled.checked,
+                        channel: prefChannel.value,
+                        preferences: prefPreferences.value,
+                    }),
                 })
                     .then(function (response) {
-                        if (!response.ok) {
-                            throw new Error('Не удалось сохранить настройки.');
-                        }
-
+                        if (!response.ok) throw new Error('failed');
                         return response.json();
                     })
                     .then(function (payload) {
-                        state.payload.preferences = payload.data || {};
-                        renderPreferences(state.payload.preferences);
-                        statusEl.textContent = 'Настройки weekly-подборки сохранены.';
+                        state.payload.preferences = payload.data || state.payload.preferences;
+                        renderDigestNote();
+                        prefStatus.textContent = 'Сохранено.';
                     })
                     .catch(function (error) {
-                        statusEl.textContent = error.message;
+                        console.error(error);
+                        prefStatus.textContent = 'Не удалось сохранить.';
                     });
             }
 
-            function sendTestDigest() {
-                var statusEl = document.getElementById('useful-pref-status');
-                statusEl.textContent = 'Отправляем тест...';
+            /* ---------- wiring ---------- */
 
-                fetch('/api/v1/useful/test-digest', {
-                    method: 'POST',
-                    headers: buildHeaders({ 'Content-Type': 'application/json' })
-                })
-                    .then(function (response) {
-                        if (!response.ok) {
-                            throw new Error('Не удалось отправить тестовую подборку.');
-                        }
+            document.addEventListener('click', function (event) {
+                var openTrigger = event.target.closest('[data-useful-open]');
+                var readTrigger = event.target.closest('[data-useful-read]');
+                var filterTrigger = event.target.closest('[data-useful-filter]');
 
-                        return response.json();
-                    })
-                    .then(function () {
-                        statusEl.textContent = 'Тестовая weekly-подборка отправлена.';
-                    })
-                    .catch(function (error) {
-                        statusEl.textContent = error.message;
-                    });
-            }
-
-            document.getElementById('useful-open-digest-settings').addEventListener('click', function () {
-                if (digestModal) {
-                    digestModal.show();
+                if (readTrigger) {
+                    event.stopPropagation();
+                    var id = Number(readTrigger.dataset.usefulRead);
+                    var post = state.byId[id];
+                    setRead(id, !(post && post.is_read));
+                    return;
                 }
+
+                if (openTrigger) {
+                    openPost(Number(openTrigger.dataset.usefulOpen));
+                    return;
+                }
+
+                if (filterTrigger) {
+                    state.category = filterTrigger.dataset.usefulFilter;
+                    load();
+                }
+            });
+
+            // The filter applies itself; there was never an Apply button here
+            // and there should not be one.
+            var searchTimer = null;
+            searchEl.addEventListener('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    var value = searchEl.value.trim();
+                    if (value === state.search) return;
+                    state.search = value;
+                    load();
+                }, 400);
+            });
+
+            unreadEl.addEventListener('change', function () {
+                state.unreadOnly = unreadEl.checked;
+                load();
+            });
+
+            digestBtn.addEventListener('click', function () {
+                if (digestModal) digestModal.show();
             });
 
             document.getElementById('useful-pref-save').addEventListener('click', savePreferences);
-            document.getElementById('useful-pref-test').addEventListener('click', sendTestDigest);
 
-            document.addEventListener('click', function (event) {
-                var filterButton = event.target.closest('[data-useful-filter]');
-                if (filterButton) {
-                    state.activeFilter = filterButton.getAttribute('data-useful-filter') || 'all';
-                    renderFilters();
-                    renderPosts();
-                    return;
-                }
+            document.getElementById('useful-pref-test').addEventListener('click', function () {
+                prefStatus.textContent = 'Отправляем...';
 
-                var postButton = event.target.closest('[data-useful-open]');
-                if (!postButton) {
-                    return;
-                }
-
-                var id = parseInt(postButton.getAttribute('data-useful-open'), 10);
-                var post = findPostById(id);
-                openContentModal(post);
+                fetch('/api/v1/useful/test-digest', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    credentials: 'include',
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('failed');
+                        prefStatus.textContent = 'Тестовая подборка отправлена.';
+                    })
+                    .catch(function () {
+                        prefStatus.textContent = 'Не удалось отправить тест.';
+                    });
             });
 
-            loadOverview();
+            load();
         });
     </script>
 @endsection

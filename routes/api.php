@@ -143,6 +143,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::get('/useful/overview', [UsefulController::class, 'overview']);
         Route::patch('/useful/preferences', [UsefulController::class, 'updatePreferences']);
         Route::post('/useful/test-digest', [UsefulController::class, 'sendTestDigest']);
+        Route::post('/useful/posts/{article}/read', [UsefulController::class, 'markRead']);
         Route::get('/trends/overview', [TrendsController::class, 'overview']);
 
         Route::get('/subscription', [ApiSubscriptionController::class, 'show']);

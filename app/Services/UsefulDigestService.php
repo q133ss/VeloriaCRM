@@ -12,6 +12,7 @@ use App\Services\Telegram\TelegramBotApiService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -24,7 +25,10 @@ class UsefulDigestService
     ) {
     }
 
-    public function buildOverviewPayload(User $user, string $locale): array
+    /**
+     * @param  array{search?: ?string, category?: ?string, unread?: bool}  $filters
+     */
+    public function buildOverviewPayload(User $user, string $locale, array $filters = []): array
     {
         $services = Service::forUser($user->id)
             ->with('category')
@@ -69,12 +73,23 @@ class UsefulDigestService
         $setting = $user->setting ?? new Setting();
         $digest = $this->buildDigestData($user, $setting, $sortedArticles, $sortedLessons, $locale);
 
-        $postCards = $sortedArticles
-            ->take(12)
-            ->map(fn (LearningArticle $article) => $this->transformArticle($article, $locale))
+        $readAt = $this->readMarks($user);
+
+        $allCards = $sortedArticles
+            ->map(fn (LearningArticle $article) => $this->transformArticle($article, $locale, $keywords, $readAt))
             ->values();
 
-        $featuredPost = $postCards->firstWhere('is_featured', true) ?? $postCards->first();
+        $postCards = $this->applyFilters($allCards, $filters);
+        $isFiltered = $postCards->count() !== $allCards->count()
+            || trim((string) ($filters['search'] ?? '')) !== ''
+            || (($filters['category'] ?? 'all') !== 'all' && ($filters['category'] ?? null) !== null)
+            || ! empty($filters['unread']);
+
+        // «Статья недели» is a recommendation, not a search result: while the
+        // master is looking for something specific it steps out of the way.
+        $featuredPost = $isFiltered
+            ? null
+            : ($allCards->firstWhere('is_featured', true) ?? $allCards->first());
 
         $posts = $postCards
             ->reject(fn (array $post) => $featuredPost && $post['id'] === $featuredPost['id'])
@@ -97,8 +112,13 @@ class UsefulDigestService
             'digest' => $digest,
             'preferences' => $this->preferencesPayload($user, $setting),
             'featured_post' => $featuredPost,
-            'filters' => $this->buildTopicFilters($postCards, $locale),
+            'filters' => $this->buildTopicFilters($allCards, $locale),
             'posts' => $posts,
+            'counts' => [
+                'total' => $allCards->count(),
+                'unread' => $allCards->reject(fn (array $post) => $post['is_read'])->count(),
+                'shown' => count($posts) + ($featuredPost ? 1 : 0),
+            ],
         ];
     }
 
@@ -429,10 +449,16 @@ class UsefulDigestService
             ->values();
     }
 
-    protected function transformArticle(LearningArticle $article, string $locale): array
+    /**
+     * @param  array<int, string>  $keywords
+     * @param  array<int, string>  $readAt  keyed by article id
+     */
+    protected function transformArticle(LearningArticle $article, string $locale, array $keywords = [], array $readAt = []): array
     {
         $action = $this->extractArticleAction($article, $locale);
         $category = $this->resolveArticleCategory($article, $locale);
+        $content = $article->getTranslation('content', $locale, 'en');
+        $blocks = $this->contentBlocks($content, $locale);
 
         return [
             'id' => $article->id,
@@ -446,13 +472,160 @@ class UsefulDigestService
                 'slug' => $category['key'],
                 'name' => $category['label'],
             ],
-            'reading_time_minutes' => $article->reading_time_minutes,
+            // Measured from the text rather than typed in beside it: three
+            // bullet points were labelled «7 мин чтения».
+            'reading_minutes' => $this->readingMinutes($blocks, $article),
             'source_url' => $article->source_url,
             'published_at' => optional($article->published_at)->toIso8601String(),
             'is_featured' => (bool) $article->is_featured,
-            'content' => $article->getTranslation('content', $locale, 'en'),
+            'is_read' => isset($readAt[$article->id]),
+            'read_at' => $readAt[$article->id] ?? null,
+            // The feed is already ordered by how well a post fits the master's
+            // own services; saying so is what makes the order trustworthy.
+            'matches_specialty' => $this->matchesSpecialty($article, $category, $locale, $keywords),
+            'content' => $content,
+            'content_blocks' => $blocks,
             'action' => $action,
         ];
+    }
+
+    /**
+     * Turn the stored content into titled blocks.
+     *
+     * The keys of the content object used to be printed as headings, in English
+     * and in capitals, so a Russian article opened with the word «SECTIONS».
+     *
+     * @return array<int, array{key: string, title: string, items: array<int, string>}>
+     */
+    protected function contentBlocks(mixed $content, string $locale): array
+    {
+        if (is_string($content) && trim($content) !== '') {
+            return [[
+                'key' => 'body',
+                'title' => '',
+                'items' => [trim($content)],
+            ]];
+        }
+
+        if (! is_array($content)) {
+            return [];
+        }
+
+        $titles = [
+            'sections' => ['ru' => 'Что внутри', 'en' => "What's inside"],
+            'steps' => ['ru' => 'Как сделать', 'en' => 'How to do it'],
+            'ideas' => ['ru' => 'Идеи', 'en' => 'Ideas'],
+            'structure' => ['ru' => 'Из чего собрать', 'en' => 'What to include'],
+            'checklist' => ['ru' => 'Чек-лист', 'en' => 'Checklist'],
+            'body' => ['ru' => '', 'en' => ''],
+        ];
+
+        $blocks = [];
+
+        foreach ($content as $key => $value) {
+            $items = collect(is_array($value) ? $value : [$value])
+                ->map(fn ($item) => is_scalar($item) ? trim((string) $item) : '')
+                ->filter()
+                ->values()
+                ->all();
+
+            if ($items === []) {
+                continue;
+            }
+
+            $title = $titles[$key][$locale] ?? $titles[$key]['ru'] ?? null;
+
+            $blocks[] = [
+                'key' => (string) $key,
+                // An unknown key is not a heading anybody should read.
+                'title' => $title ?? $this->copyForLocale($locale, 'Ещё', 'More'),
+                'items' => $items,
+            ];
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * @param  array<int, array{items: array<int, string>}>  $blocks
+     */
+    protected function readingMinutes(array $blocks, LearningArticle $article): int
+    {
+        $words = collect($blocks)
+            ->flatMap(fn (array $block) => $block['items'])
+            ->sum(fn (string $item) => count(preg_split('/\s+/u', trim($item)) ?: []));
+
+        if ($words < 1) {
+            return max(1, (int) $article->reading_time_minutes);
+        }
+
+        return max(1, (int) round($words / 140));
+    }
+
+    /**
+     * @param  array{label: string}  $category
+     * @param  array<int, string>  $keywords
+     */
+    protected function matchesSpecialty(LearningArticle $article, array $category, string $locale, array $keywords): bool
+    {
+        if ($keywords === []) {
+            return false;
+        }
+
+        $haystack = mb_strtolower(implode(' ', array_filter([
+            $article->getTranslationAsString('title', $locale, 'en'),
+            $article->getTranslationAsString('summary', $locale, 'en'),
+            $category['label'],
+        ])));
+
+        foreach ($keywords as $keyword) {
+            if (Str::contains($haystack, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function readMarks(User $user): array
+    {
+        return DB::table('useful_article_reads')
+            ->where('user_id', $user->id)
+            ->pluck('read_at', 'learning_article_id')
+            ->map(fn ($value) => (string) $value)
+            ->all();
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, array>  $posts
+     * @param  array{search?: ?string, category?: ?string, unread?: bool}  $filters
+     * @return \Illuminate\Support\Collection<int, array>
+     */
+    protected function applyFilters(Collection $posts, array $filters): Collection
+    {
+        $search = trim((string) ($filters['search'] ?? ''));
+        $category = $filters['category'] ?? null;
+
+        return $posts
+            ->when($category && $category !== 'all', fn (Collection $items) => $items->where('topic_key', $category))
+            ->when(! empty($filters['unread']), fn (Collection $items) => $items->reject(fn (array $post) => $post['is_read']))
+            ->when($search !== '', function (Collection $items) use ($search) {
+                $needle = mb_strtolower($search);
+
+                return $items->filter(function (array $post) use ($needle) {
+                    $haystack = mb_strtolower(implode(' ', [
+                        $post['title'],
+                        $post['summary'],
+                        $post['topic'],
+                    ]));
+
+                    return Str::contains($haystack, $needle);
+                });
+            })
+            ->values();
     }
 
     protected function extractArticleAction(LearningArticle $article, string $locale): array
