@@ -46,6 +46,135 @@
     <link rel="stylesheet" href="/assets/css/demo.css" />
     <style>
         /* Ensure notification counter badge sits neatly on the bell icon across themes and screen sizes. */
+        /* Running visit, visible from every page. */
+        .active-timer {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .active-timer.d-none {
+            display: none !important;
+        }
+
+        .active-timer__link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px solid rgba(var(--bs-success-rgb, 40, 199, 111), 0.35);
+            border-radius: 999px;
+            color: var(--bs-body-color);
+            text-decoration: none;
+            line-height: 1.15;
+        }
+
+        .active-timer__link:hover {
+            border-color: rgba(var(--bs-success-rgb, 40, 199, 111), 0.6);
+            color: var(--bs-body-color);
+        }
+
+        .active-timer__pulse {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 999px;
+            background: rgb(var(--bs-success-rgb, 40, 199, 111));
+            animation: active-timer-pulse 2s ease-in-out infinite;
+        }
+
+        .active-timer__body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .active-timer__elapsed {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.9rem;
+        }
+
+        .active-timer__client {
+            color: var(--bs-secondary-color);
+            font-size: 0.72rem;
+        }
+
+        .active-timer__finish {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.85rem;
+            height: 1.85rem;
+            padding: 0;
+            border: 1px solid rgba(var(--bs-danger-rgb, 255, 62, 29), 0.45);
+            border-radius: 999px;
+            background: rgba(var(--bs-danger-rgb, 255, 62, 29), 0.12);
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .active-timer__finish:hover:not(:disabled),
+        .active-timer__finish:focus-visible {
+            background: rgba(var(--bs-danger-rgb, 255, 62, 29), 0.22);
+            border-color: rgb(var(--bs-danger-rgb, 255, 62, 29));
+        }
+
+        .active-timer__finish:disabled {
+            opacity: 0.5;
+        }
+
+        .active-timer__stop {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 1px;
+            background: rgb(var(--bs-danger-rgb, 255, 62, 29));
+        }
+
+        /* Native title waits a second; this button needs to name itself at once. */
+        .active-timer__finish::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 0.4rem);
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.35rem;
+            background: var(--bs-body-color);
+            color: var(--bs-body-bg);
+            font-size: 0.72rem;
+            line-height: 1.3;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.12s ease;
+        }
+
+        .active-timer__finish:hover::after,
+        .active-timer__finish:focus-visible::after {
+            opacity: 1;
+        }
+
+        .active-timer.is-over .active-timer__link {
+            border-color: rgba(var(--bs-warning-rgb, 255, 171, 0), 0.6);
+        }
+
+        .active-timer.is-over .active-timer__pulse {
+            background: rgb(var(--bs-warning-rgb, 255, 171, 0));
+        }
+
+        @keyframes active-timer-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.25; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .active-timer__pulse { animation: none; }
+        }
+
+        /* On a phone the header has no room for a name alongside the clock. */
+        @media (max-width: 575.98px) {
+            .active-timer__client { display: none; }
+        }
+
         .navbar .navbar-notifications-badge {
             min-width: 18px;
             height: 18px;
@@ -274,6 +403,7 @@
                     </div>
 
                     <ul class="navbar-nav flex-row align-items-center ms-md-auto">
+                        @include('components.active-timer')
                         <li class="nav-item dropdown me-2 me-lg-3" data-notifications-root>
                             <a
                                 class="nav-link btn-icon dropdown-toggle hide-arrow position-relative"
@@ -886,6 +1016,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+@include('components.active-timer-script')
 @yield('scripts')
 @stack('scripts')
 <!-- Page JS -->

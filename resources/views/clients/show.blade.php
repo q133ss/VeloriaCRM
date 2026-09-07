@@ -322,10 +322,10 @@
                 <div class="col-lg-4">
                     <div class="surface-card p-4 stack-card">
                         <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-                            <h2 class="h5 mb-0">Риск неявки</h2>
+                            <h2 class="h5 mb-0">Как приходит</h2>
                             <span class="badge bg-label-secondary" id="client-risk-badge">—</span>
                         </div>
-                        <div class="risk-summary mb-3" id="client-risk-score">Анализируем предыдущие записи клиента, чтобы подсказать, как снизить вероятность неявки.</div>
+                        <div class="risk-summary mb-3" id="client-risk-score">Смотрим прошлые записи, чтобы подсказать, о чём стоит напомнить.</div>
                         <div class="mb-3">
                             <h6 class="fw-semibold mb-2">Сигналы</h6>
                             <ul class="list-unstyled small mb-0" id="client-risk-signals"></ul>
@@ -578,7 +578,7 @@
                     highlights.push('Индекс удержания: ' + Math.round(stats.retention_score) + '%');
                 }
                 if (risk && risk.label) {
-                    highlights.push('Риск неявки: ' + risk.label);
+                    highlights.push(risk.label);
                 }
 
                 if (!highlights.length) {
@@ -692,28 +692,27 @@
                 if (!risk) {
                     riskBadge.className = 'badge bg-label-secondary';
                     riskBadge.textContent = '—';
-                    riskScoreEl.textContent = 'Недостаточно данных для расчёта риска. Сохраняйте историю визитов.';
-                    riskSignalsList.innerHTML = '<li class="text-muted">Добавьте завершённые визиты, чтобы увидеть сигналы риска.</li>';
+                    riskScoreEl.textContent = 'Истории пока нет — она появится после первых визитов.';
+                    riskSignalsList.innerHTML = '<li class="text-muted">Завершайте визиты, и здесь появится история.</li>';
                     riskSuggestionsList.innerHTML = '<li class="text-muted">Настройте автонапоминания и уточняйте причины отмен.</li>';
                     return;
                 }
 
                 const levelClass = {
-                    low: 'bg-label-success',
-                    medium: 'bg-label-warning',
-                    high: 'bg-label-danger',
+                    ok: 'bg-label-success',
+                    attention: 'bg-label-warning',
                     active_visit: 'bg-label-info',
                 }[risk.level] || 'bg-label-secondary';
 
                 riskBadge.className = 'badge ' + levelClass;
                 riskBadge.textContent = risk.label || '—';
 
+                // A fact about attendance, not a score. The calendar says the same
+                // thing in the same words on the booking card.
                 if (risk.level === 'active_visit' && risk.historical?.label) {
-                    riskScoreEl.textContent = `Клиент уже на визите. Исторический риск: ${risk.historical.label}.`;
-                } else if (typeof risk.score === 'number') {
-                    riskScoreEl.textContent = `Оценка риска: ${Math.round(risk.score)} из 100.`;
+                    riskScoreEl.textContent = `Клиент уже на визите. По истории: ${risk.historical.label.toLowerCase()}.`;
                 } else {
-                    riskScoreEl.textContent = 'Оценка риска доступна на основе истории визитов.';
+                    riskScoreEl.textContent = risk.summary || risk.label || '';
                 }
 
                 const signals = Array.isArray(risk.signals) && risk.signals.length

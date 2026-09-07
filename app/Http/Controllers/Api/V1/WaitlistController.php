@@ -9,16 +9,20 @@ use App\Http\Requests\WaitlistUpdateRequest;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\WaitlistEntry;
+use App\Services\ClientIdentityService;
 use App\Services\WaitlistMatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class WaitlistController extends Controller
 {
     public function __construct(
         private readonly WaitlistMatchService $matches,
+        private readonly ClientIdentityService $identity,
     ) {
     }
 
@@ -56,8 +60,13 @@ class WaitlistController extends Controller
         $clients = Client::query()->where('user_id', $masterId);
         if ($query !== '') {
             $digits = preg_replace('/[^0-9]+/', '', $query);
-            $clients->where(function ($builder) use ($query, $digits) {
+            // `like` is case sensitive on Postgres and a name is typed lowercase
+            // as often as not, so «марина» has to reach «Марина».
+            $capitalised = Str::ucfirst($query);
+
+            $clients->where(function ($builder) use ($query, $capitalised, $digits) {
                 $builder->where('name', 'like', '%' . $query . '%')
+                    ->orWhere('name', 'like', '%' . $capitalised . '%')
                     ->orWhere('phone', 'like', '%' . $query . '%');
 
                 if ($digits !== '') {
@@ -89,10 +98,21 @@ class WaitlistController extends Controller
         $validated = $request->validated();
         $client = $this->resolveClientProfile($validated);
 
+        $duplicate = $this->findPendingDuplicate($client, $validated);
+
+        if ($duplicate !== null) {
+            throw ValidationException::withMessages([
+                'client_phone' => __('waitlist.validation.already_waiting', [
+                    'name' => $client->name,
+                    'date' => Carbon::parse($duplicate)->format('d.m.Y'),
+                ]),
+            ]);
+        }
+
         $entry = WaitlistEntry::query()->create([
             'user_id' => $this->currentUserId(),
             'client_id' => $client->id,
-            'client_user_id' => $validated['client_user_id'] ?? null,
+            'client_user_id' => $validated['client_user_id'] ?? $client->client_user_id,
             'service_id' => (int) $validated['service_id'],
             'preferred_slots' => $validated['preferred_slots'] ?? [],
             'preferred_dates' => collect($validated['preferred_dates'])->map(fn ($date) => Carbon::parse($date)->toDateString())->values()->all(),
@@ -214,6 +234,13 @@ class WaitlistController extends Controller
         ];
     }
 
+    /**
+     * The waiting list used to keep its own idea of who a person is: it matched
+     * cards by the raw string in the phone field and made a card with no account
+     * behind it. So «+7(916)000-11-22» typed here and «+79160001122» booked in the
+     * calendar were two different women, and the one who waited could never be
+     * recognised as the one who came. Both now go through the same door.
+     */
     private function resolveClientProfile(array $validated): Client
     {
         $masterId = $this->currentUserId();
@@ -227,28 +254,56 @@ class WaitlistController extends Controller
         $phone = trim((string) ($validated['client_phone'] ?? ''));
         $email = trim((string) ($validated['client_email'] ?? ''));
 
-        $client = Client::query()
-            ->where('user_id', $masterId)
-            ->when($phone !== '', fn ($query) => $query->where('phone', $phone))
-            ->when($phone === '' && $email !== '', fn ($query) => $query->where('email', $email))
-            ->first();
+        if ($phone === '') {
+            $client = Client::query()
+                ->where('user_id', $masterId)
+                ->where('email', $email)
+                ->first();
 
-        if ($client) {
-            $client->forceFill([
-                'name' => $validated['client_name'] ?? $client->name,
-                'phone' => $phone !== '' ? $phone : $client->phone,
-                'email' => $email !== '' ? $email : $client->email,
-            ])->save();
-
-            return $client;
+            return $client ?: Client::query()->create([
+                'user_id' => $masterId,
+                'name' => $validated['client_name'] ?: __('calendar.unnamed_client'),
+                'phone' => '',
+                'email' => $email !== '' ? $email : null,
+            ]);
         }
 
-        return Client::query()->create([
-            'user_id' => $masterId,
-            'name' => $validated['client_name'] ?: __('calendar.unnamed_client'),
-            'phone' => $phone,
-            'email' => $email !== '' ? $email : null,
-        ]);
+        return $this->identity->resolve(
+            $masterId,
+            $phone,
+            $validated['client_name'] ?: null,
+            $email !== '' ? $email : null,
+        )['card'];
+    }
+
+    /**
+     * The same woman waiting twice for the same service on the same day is a
+     * slip, not an intention — and it doubles her chances in the ranking.
+     *
+     * @return ?string the day she is already waiting for
+     */
+    private function findPendingDuplicate(Client $client, array $validated): ?string
+    {
+        $wanted = collect($validated['preferred_dates'])
+            ->map(fn ($date) => Carbon::parse($date)->toDateString())
+            ->all();
+
+        $existing = WaitlistEntry::query()
+            ->where('user_id', $this->currentUserId())
+            ->where('client_id', $client->id)
+            ->where('service_id', (int) $validated['service_id'])
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($existing as $entry) {
+            $clash = array_intersect($wanted, (array) ($entry->preferred_dates ?? []));
+
+            if ($clash !== []) {
+                return reset($clash);
+            }
+        }
+
+        return null;
     }
 
     private function ensureBelongsToCurrentUser(WaitlistEntry $waitlist): void

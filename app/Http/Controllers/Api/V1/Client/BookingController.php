@@ -361,23 +361,27 @@ class BookingController extends Controller
     }
 
     /**
-     * @return array<int, array{id:int|null,name:string,price:float,duration:int}>
+     * A booking with no service chosen keeps an empty snapshot, the same as one
+     * the master makes by hand for a client who has not decided.
+     *
+     * It used to write a stand-in service called «Услуга уточняется», which read
+     * well on screen and lied to everything counting a client's history: the
+     * return-message draft picked it as her usual service and wrote «в прошлый
+     * раз делали "Услуга уточняется"» to her. The fact that no service was named
+     * lives in appointments.meta, where it belongs.
+     *
+     * @return array<int, array{id:int,name:string,price:float,duration:int}>
      */
     private function buildOrderServicePayload(?Service $service, int $durationMinutes): array
     {
-        if ($service) {
-            return [[
-                'id' => $service->id,
-                'name' => $service->name,
-                'price' => (float) ($service->base_price ?? 0),
-                'duration' => $durationMinutes,
-            ]];
+        if (! $service) {
+            return [];
         }
 
         return [[
-            'id' => null,
-            'name' => self::UNSPECIFIED_SERVICE_LABEL,
-            'price' => 0.0,
+            'id' => $service->id,
+            'name' => $service->name,
+            'price' => (float) ($service->base_price ?? 0),
             'duration' => $durationMinutes,
         ]];
     }

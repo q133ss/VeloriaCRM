@@ -34,6 +34,7 @@ class OrderFormRequest extends BaseRequest
             ],
             'note' => ['nullable', 'string'],
             'total_price' => ['nullable', 'numeric', 'min:0'],
+            'duration_forecast' => ['nullable', 'integer', 'min:5', 'max:720'],
             'status' => ['required', Rule::in($statusKeys)],
             'source' => ['nullable', 'string', 'max:50'],
         ];

@@ -9,9 +9,14 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
+use App\Models\User;
+use App\Models\WaitlistEntry;
+use App\Services\Ai\AiGateway;
+use App\Services\ClientAttendanceService;
 use App\Services\ClientIdentityService;
 use App\Services\ClientOutreachService;
-use App\Services\Ai\AiGateway;
+use App\Services\Marketing\ClientChannelResolver;
+use App\Services\Marketing\MarketingChannelSender;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -145,12 +150,89 @@ class ClientController extends Controller
 
         $master = Auth::guard('sanctum')->user();
         $context = request()->validate([
+            'intent' => ['nullable', 'string', 'in:return,gap_offer'],
             'free_day' => ['nullable', 'string', 'max:40'],
             'free_slots' => ['nullable', 'array', 'max:5'],
             'free_slots.*' => ['nullable', 'string', 'regex:/^\d{2}:\d{2}$/'],
+            'gap_start' => ['nullable', 'string', 'regex:/^\d{2}:\d{2}$/'],
+            'gap_end' => ['nullable', 'string', 'regex:/^\d{2}:\d{2}$/'],
+            'waitlist_entry_id' => ['nullable', 'integer'],
         ]);
 
+        // The service name is looked up from the entry rather than accepted from
+        // the browser: it ends up inside a model prompt, and there is nothing to
+        // gain from letting the client supply that text.
+        if (! empty($context['waitlist_entry_id'])) {
+            $entry = WaitlistEntry::query()
+                ->with('service')
+                ->where('user_id', $this->currentUserId())
+                ->whereKey($context['waitlist_entry_id'])
+                ->first();
+
+            $context['service_name'] = $entry?->service?->name;
+        }
+
+        unset($context['waitlist_entry_id']);
+
         return response()->json(['data' => $outreach->draft($master, $client, $context)]);
+    }
+
+    /**
+     * Send a message the master has read and approved.
+     *
+     * Nothing is generated here and nothing is sent on its own: this is the last
+     * step after she has seen the text on screen. Copy always works; sending is
+     * best effort, because the channel she actually uses may be one this app
+     * cannot reach.
+     */
+    public function sendMessage(Client $client, ClientChannelResolver $channels): JsonResponse
+    {
+        $this->ensureClientBelongsToCurrentUser($client);
+
+        $validated = request()->validate([
+            'text' => ['required', 'string', 'max:1500'],
+        ]);
+
+        $settings = $this->resolveUserSettings();
+        $account = $client->client_user_id ? User::find($client->client_user_id) : null;
+        $channel = $channels->resolve($settings, $client, $account);
+
+        if (! $channel) {
+            return response()->json([
+                'error' => [
+                    'code' => 'no_channel',
+                    'message' => 'Не настроен ни один канал связи с этим клиентом. Скопируйте текст и отправьте сами.',
+                ],
+            ], 422);
+        }
+
+        try {
+            app(MarketingChannelSender::class)->send(
+                $settings,
+                $channel['channel'],
+                $channel['address'],
+                null,
+                $validated['text'],
+            );
+        } catch (\RuntimeException $exception) {
+            Log::warning('Failed to send a client message from the calendar.', [
+                'client_id' => $client->id,
+                'channel' => $channel['channel'],
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => [
+                    'code' => 'send_failed',
+                    'message' => 'Не удалось отправить сообщение. Скопируйте текст и отправьте сами.',
+                ],
+            ], 422);
+        }
+
+        return response()->json([
+            'data' => ['channel' => $channel['channel']],
+            'message' => __('calendar.day.message_sent.' . $channel['channel']),
+        ]);
     }
 
     public function show(Client $client): JsonResponse
@@ -629,10 +711,11 @@ class ClientController extends Controller
 
         if ($orders->isEmpty()) {
             return [
-                'level' => 'low',
-                'label' => 'Низкий риск',
-                'score' => 10,
-                'signals' => ['Недостаточно данных, используйте напоминания для повышения удержания.'],
+                'level' => 'ok',
+                'label' => 'Визитов пока не было',
+                'score' => null,
+                'summary' => 'Визитов пока не было',
+                'signals' => ['Истории пока нет — она появится после первых визитов.'],
                 'suggestions' => ['Настройте автонапоминания хотя бы за сутки до визита.'],
             ];
         }
@@ -642,31 +725,24 @@ class ClientController extends Controller
             ->sortByDesc(fn (Order $order) => $order->actual_started_at ?? $order->scheduled_at)
             ->first();
 
-        $total = $orders->count();
         $noShows = $orders->where('status', 'no_show');
         $cancelled = $orders->where('status', 'cancelled');
         $rescheduled = $orders->sum(fn (Order $order) => (int) ($order->reschedule_count ?? 0));
 
-        $score = 0;
         $signals = [];
         $suggestions = [];
 
         if ($noShows->isNotEmpty()) {
-            $ratio = $noShows->count() / $total;
-            $score += min(40, round($ratio * 100));
             $signals[] = 'Были пропуски визитов без предупреждения.';
             $suggestions[] = 'Запросите предоплату или подтверждение за день до визита.';
         }
 
         if ($cancelled->isNotEmpty()) {
-            $ratio = $cancelled->count() / $total;
-            $score += min(25, round($ratio * 80));
             $signals[] = 'Частые отмены записей.';
             $suggestions[] = 'Позвоните клиенту и уточните, что мешает приходить вовремя.';
         }
 
         if ($rescheduled > 0) {
-            $score += min(15, $rescheduled * 3);
             $signals[] = 'Переносит встречи (общее количество переносов: ' . $rescheduled . ').';
             $suggestions[] = 'Предложите гибкие слоты и напомните о политике переносов.';
         }
@@ -680,32 +756,32 @@ class ClientController extends Controller
             $daysAgo = $lastVisit->scheduled_at->diffInDays(Carbon::now());
 
             if ($daysAgo > 120) {
-                $score += 20;
                 $signals[] = 'Давно не было завершённых визитов (более 4 месяцев).';
                 $suggestions[] = 'Пришлите персональное предложение на повторное посещение.';
             } elseif ($daysAgo > 75) {
-                $score += 12;
                 $signals[] = 'Перерыв между посещениями превышает норму.';
                 $suggestions[] = 'Напомните о регулярности и предложите бонус за возврат.';
             }
         }
 
         if ($client->loyalty_level && in_array($client->loyalty_level, ['gold', 'platinum', 'vip', 'ambassador'], true)) {
-            $score -= 10;
             $signals[] = 'Высокий уровень лояльности помогает удержанию.';
         }
 
-        $score = max(0, min(100, $score));
+        // A percentage next to a person's name is a verdict she cannot audit, and
+        // the calendar states the same history as a plain fact. One product, one
+        // way of saying it.
+        $fact = app(ClientAttendanceService::class)->factFor($noShows->count());
 
-        if ($score <= 30) {
-            $level = 'low';
-            $label = 'Низкий риск';
-        } elseif ($score <= 60) {
-            $level = 'medium';
-            $label = 'Средний риск';
+        if ($fact) {
+            $level = 'attention';
+            $label = $fact['text'];
+        } elseif ($cancelled->count() >= 3 || $rescheduled >= 3) {
+            $level = 'attention';
+            $label = 'Часто переносит записи';
         } else {
-            $level = 'high';
-            $label = 'Высокий риск';
+            $level = 'ok';
+            $label = 'Приходит стабильно';
         }
 
         $signals = array_values(array_unique($signals));
@@ -714,7 +790,8 @@ class ClientController extends Controller
         $historicalRisk = [
             'level' => $level,
             'label' => $label,
-            'score' => $score,
+            'score' => null,
+            'summary' => $label,
             'signals' => $signals,
             'suggestions' => $suggestions,
         ];
@@ -729,6 +806,7 @@ class ClientController extends Controller
             'level' => 'active_visit',
             'label' => 'Сейчас на визите',
             'score' => null,
+            'summary' => 'Сейчас на визите',
             'signals' => array_values(array_filter([
                 'Текущая запись уже началась, поэтому риск неявки для этого визита не актуален.',
                 $activeVisitTime ? 'Начало зафиксировано: ' . $activeVisitTime->format('d.m.Y H:i') . '.' : null,
@@ -749,8 +827,13 @@ class ClientController extends Controller
 
     protected function fetchClientOrders(Client $client, ?int $limit = null): Collection
     {
+        // orders.client_id points at the client's account, not at this card.
+        if (! $client->client_user_id) {
+            return collect();
+        }
+
         $query = Order::where('master_id', $this->currentUserId())
-            ->where('client_id', $client->id)
+            ->where('client_id', $client->client_user_id)
             ->orderByDesc('scheduled_at');
 
         if ($limit !== null) {

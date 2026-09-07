@@ -174,8 +174,12 @@ class ClientPortalAuthAndBookingTest extends TestCase
         $this->assertNotNull($order);
         $this->assertSame('client_portal', $order->source);
         $this->assertSame(60, $order->duration_forecast);
-        $this->assertSame('Услуга уточняется', data_get($order->services, '0.name'));
-        $this->assertSame(0.0, (float) data_get($order->services, '0.price'));
+        // Empty, like a booking the master makes by hand for a client who has
+        // not decided. The stand-in service that used to live here was read as
+        // a real one by everything counting a client's history — including the
+        // return-message draft, which wrote its name back to the client.
+        $this->assertSame([], $order->services);
+        $this->assertSame(0.0, (float) $order->total_price);
     }
 
     public function test_client_can_login_via_email_code_when_client_exists(): void
@@ -340,6 +344,11 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
     public function test_client_slots_support_custom_month_schedule_with_half_hour_slots(): void
     {
+        // The schedule under test is pinned to a fixed date, so the clock has to be
+        // pinned too: past slots are filtered out, and this test used to start
+        // failing on its own once real time passed 2026-03-20.
+        Carbon::setTestNow('2026-03-19 08:00:00');
+
         $master = User::factory()->create([
             'timezone' => 'Europe/Moscow',
         ]);
@@ -373,8 +382,12 @@ class ClientPortalAuthAndBookingTest extends TestCase
 
         Sanctum::actingAs($client);
 
-        $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-20')
-            ->assertOk()
-            ->assertJsonPath('data.slots.1', '15:30');
+        try {
+            $this->getJson('/api/v1/client/services/' . $service->id . '/slots?date=2026-03-20')
+                ->assertOk()
+                ->assertJsonPath('data.slots.1', '15:30');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }

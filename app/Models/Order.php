@@ -51,6 +51,7 @@ class Order extends Model
         'cancelled_at',
         'reminded_at',
         'start_confirmation_notified_at',
+        'start_prompt_notified_at',
         'allergy_reminder_sent_at',
         'allergy_reminder_sent_for',
         'payment_method',
@@ -82,6 +83,7 @@ class Order extends Model
             'cancelled_at' => 'datetime',
             'reminded_at' => 'datetime',
             'start_confirmation_notified_at' => 'datetime',
+            'start_prompt_notified_at' => 'datetime',
             'allergy_reminder_sent_at' => 'datetime',
             'allergy_reminder_sent_for' => 'datetime',
             'payment_method' => 'string',
@@ -205,5 +207,15 @@ class Order extends Model
     public function getStatusClassAttribute(): string
     {
         return self::statusBadgeClasses()[$this->status] ?? 'bg-label-secondary';
+    }
+
+    /**
+     * A booking may be made before the client has decided what she wants, and
+     * then the services snapshot is simply empty — not a placeholder service,
+     * which would lie to everything that reads a client's service history.
+     */
+    public function hasServices(): bool
+    {
+        return collect($this->services ?? [])->isNotEmpty();
     }
 }

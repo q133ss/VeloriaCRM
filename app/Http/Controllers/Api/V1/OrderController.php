@@ -7,6 +7,7 @@ use App\Http\Requests\BulkOrderActionRequest;
 use App\Http\Requests\CancelOrderRequest;
 use App\Http\Requests\OrderFilterRequest;
 use App\Http\Requests\OrderFormRequest;
+use App\Http\Requests\ParseBookingIntentRequest;
 use App\Http\Requests\QuickOrderRequest;
 use App\Http\Requests\RescheduleOrderRequest;
 use App\Models\Client;
@@ -15,11 +16,16 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\WaitlistEntry;
-use App\Services\Booking\BookingConflictService;
 use App\Services\Ai\AiGateway;
+use App\Services\Booking\BookingConflictService;
+use App\Services\Booking\Intent\BookingIntentResolver;
+use App\Services\Booking\OrderDurationResolver;
+use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\ClientIdentityService;
+use App\Services\Orders\OrderActionPolicy;
 use App\Services\OrderService;
 use App\Services\WaitlistMatchService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -112,7 +118,10 @@ class OrderController extends Controller
             }
 
             $scheduledAt = Carbon::parse($validated['scheduled_at']);
-            $durationForecast = (int) ($services->sum('duration_min') ?: 60);
+            // A duration the master typed beats the price-list sum; she has just
+            // been told what this actually takes and decided to trust it.
+            $durationForecast = (int) (Arr::get($validated, 'duration_forecast')
+                ?: ($services->sum('duration_min') ?: 60));
             $this->ensureNoBookingConflict($masterId, $scheduledAt, $durationForecast);
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
@@ -190,7 +199,15 @@ class OrderController extends Controller
 
             $newScheduledAt = Carbon::parse($validated['scheduled_at']);
             $scheduledChanged = !$order->scheduled_at || !$order->scheduled_at->equalTo($newScheduledAt);
-            $durationForecast = (int) ($services->sum('duration_min') ?: $order->duration_forecast ?: 60);
+            // What she typed wins. Otherwise, if the services were part of this
+            // edit, the length follows them — clearing them off a two-hour
+            // booking used to leave it blocking two hours forever, because the
+            // edit form does not send a forecast of its own. An edit that never
+            // mentioned services leaves the length alone.
+            $durationForecast = (int) (Arr::get($validated, 'duration_forecast')
+                ?: (array_key_exists('services', $validated)
+                    ? ($services->sum('duration_min') ?: 60)
+                    : ($order->duration_forecast ?: 60)));
             $this->ensureNoBookingConflict($masterId, $newScheduledAt, $durationForecast, $order->id);
 
             $recommended = $this->buildRecommendedServices($client, $this->getUserServices());
@@ -374,11 +391,27 @@ class OrderController extends Controller
     public function complete(Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        // A visit closed with nothing in it is a hole in the takings and in the
+        // history the recommendations are built from. The sum is not checked —
+        // a free visit is a real thing.
+        if (! $order->hasServices()) {
+            return response()->json([
+                'error' => [
+                    'code' => 'service_required',
+                    'message' => 'Отметьте услугу и сумму — без них визит не закрыть.',
+                ],
+            ], 422);
+        }
+
         $now = Carbon::now();
         $duration = null;
 
         if ($order->actual_started_at) {
-            $duration = $order->actual_started_at->diffInMinutes($now);
+            // Carbon 3 returns a float here, and `duration` is an integer column:
+            // on Postgres the unrounded value made every finish fail with a 500,
+            // which is why no measured duration ever reached the database.
+            $duration = (int) round($order->actual_started_at->diffInMinutes($now));
         }
 
         $order->update([
@@ -392,6 +425,68 @@ class OrderController extends Controller
         return response()->json([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись завершена.',
+        ]);
+    }
+
+    /**
+     * The visit currently being timed, if there is one.
+     *
+     * Kept deliberately small: every page polls it to keep the header timer
+     * running, so it returns one row and nothing else.
+     */
+    public function active(): JsonResponse
+    {
+        $order = Order::query()
+            ->with('client')
+            ->where('master_id', $this->currentUserId())
+            ->where('status', 'in_progress')
+            ->whereNotNull('actual_started_at')
+            ->latest('actual_started_at')
+            ->first();
+
+        if (! $order) {
+            return response()->json(['data' => null]);
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $order->id,
+                'client_name' => $order->client?->name ?: __('calendar.unnamed_client'),
+                'started_at' => $order->actual_started_at->toIso8601String(),
+                'elapsed_minutes' => (int) $order->actual_started_at->diffInMinutes(Carbon::now()),
+                'planned_minutes' => app(OrderDurationResolver::class)->resolve($order),
+                'url' => '/orders/' . $order->id,
+            ],
+        ]);
+    }
+
+    /**
+     * Record that the client did not turn up.
+     *
+     * The status existed but nothing could set it except the full edit form,
+     * which is why almost no master ever recorded a no-show. update() is not a
+     * substitute here: it demands the whole payload and re-runs conflict
+     * detection for a booking that is already in the past.
+     */
+    public function markNoShow(Order $order): JsonResponse
+    {
+        $this->ensureOrderBelongsToCurrentUser($order);
+
+        if (! app(OrderActionPolicy::class)->for($order)['can_mark_no_show']) {
+            return response()->json([
+                'error' => [
+                    'code' => 'no_show_unavailable',
+                    'message' => 'Отметить неявку можно только для прошедшей неотменённой записи.',
+                ],
+            ], 422);
+        }
+
+        $order->update(['status' => 'no_show']);
+        $order->refresh();
+
+        return response()->json([
+            'data' => $this->decorateOrder($order),
+            'message' => 'Отмечено: клиент не пришёл.',
         ]);
     }
 
@@ -604,6 +699,38 @@ class OrderController extends Controller
         return response()->json($payload);
     }
 
+    /**
+     * Reads «марина завтра ногти в 3 дня» into a half-filled create form.
+     *
+     * Deliberately not gated behind a paid plan. This is the first thing a new
+     * master does, and the rules alone — date, time, phone, a substring match on
+     * the price list — answer most phrases without touching a provider at all.
+     * What is rationed is the model, by a daily budget: over it the endpoint
+     * still answers, with whatever plain PHP worked out.
+     *
+     * Nothing is created here. The answer only fills the form in.
+     */
+    public function parseIntent(ParseBookingIntentRequest $request, BookingIntentResolver $intents): JsonResponse
+    {
+        $master = Auth::guard('sanctum')->user();
+        $timezone = $master?->timezone ?: config('app.timezone');
+        $anchor = $request->filled('date')
+            ? CarbonImmutable::parse($request->string('date')->toString(), $timezone)
+            : null;
+
+        return response()->json($intents->resolve(
+            text: $request->string('text')->toString(),
+            masterId: $this->currentUserId(),
+            services: $this->getUserServices(),
+            searchClients: fn (string $query) => $this->searchSelectableClients($query),
+            now: CarbonImmutable::now($timezone),
+            anchorDay: $anchor,
+            setting: Setting::query()->where('user_id', $this->currentUserId())->first(),
+            timezone: $timezone,
+            paidPlan: $this->userHasProAccess(),
+        ));
+    }
+
     public function options(Request $request): JsonResponse
     {
         $services = $this->getUserServices();
@@ -646,6 +773,11 @@ class OrderController extends Controller
             ] : null,
             'recent_clients' => $recentClients->values(),
             'suggestions' => $suggestions->values(),
+            // Measured durations per service set, so the form can say what this
+            // actually takes instead of repeating the price list back.
+            'duration_estimates' => array_values(
+                app(ServiceDurationEstimator::class)->estimatesFor($this->currentUserId()),
+            ),
         ]);
     }
 
@@ -903,7 +1035,11 @@ class OrderController extends Controller
         ]));
     }
 
-    protected function collectServices(array $serviceIds)
+    /**
+     * Nullable on purpose: «services»: null is the natural shape for a booking
+     * made before the client has decided, and validated() keeps the key.
+     */
+    protected function collectServices(?array $serviceIds)
     {
         if (empty($serviceIds)) {
             return collect();
@@ -2067,19 +2203,7 @@ PROMPT;
 
     protected function buildActionAvailability(Order $order): array
     {
-        $now = Carbon::now();
-        $scheduledAt = $order->scheduled_at;
-        $isToday = $scheduledAt ? $scheduledAt->isSameDay($now) : false;
-        $startsSoon = $scheduledAt ? $scheduledAt->greaterThan($now) : false;
-        $hoursDiff = $scheduledAt ? $now->diffInHours($scheduledAt, false) : null;
-
-        return [
-            'can_start_now' => $isToday,
-            'start_warning' => $startsSoon && $hoursDiff !== null && $hoursDiff > 1,
-            'can_complete' => in_array($order->status, ['in_progress', 'confirmed']),
-            'can_reschedule' => !in_array($order->status, ['completed', 'cancelled']),
-            'can_cancel' => !in_array($order->status, ['completed', 'cancelled']),
-        ];
+        return app(OrderActionPolicy::class)->for($order);
     }
 
     protected function decorateOrder(Order $order): array

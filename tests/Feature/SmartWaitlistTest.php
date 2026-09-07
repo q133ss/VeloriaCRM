@@ -8,8 +8,10 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\User;
 use App\Models\WaitlistEntry;
+use App\Services\WaitlistMatchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -167,5 +169,114 @@ class SmartWaitlistTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.matches.0.client.name', 'VIP Client')
             ->assertJsonPath('data.matches.0.service.id', $service->id);
+    }
+
+    public function test_ranking_many_slots_does_not_scale_the_query_count(): void
+    {
+        $master = User::factory()->create();
+
+        $service = Service::create([
+            'user_id' => $master->id,
+            'name' => 'Haircut',
+            'base_price' => 2500,
+            'cost' => 900,
+            'duration_min' => 60,
+        ]);
+
+        for ($i = 0; $i < 20; $i++) {
+            $account = User::factory()->create(['phone' => '+7999000' . str_pad((string) $i, 4, '0', STR_PAD_LEFT)]);
+
+            $card = Client::create([
+                'user_id' => $master->id,
+                'client_user_id' => $account->id,
+                'name' => 'Client ' . $i,
+                'phone' => $account->phone,
+            ]);
+
+            Order::query()->create([
+                'master_id' => $master->id,
+                'client_id' => $account->id,
+                'services' => [['id' => $service->id, 'name' => 'Haircut', 'price' => 2500, 'duration' => 60]],
+                'scheduled_at' => Carbon::now()->subMonth(),
+                'total_price' => 2500,
+                'status' => 'completed',
+                'source' => 'manual',
+            ]);
+
+            WaitlistEntry::create([
+                'user_id' => $master->id,
+                'client_id' => $card->id,
+                'client_user_id' => $account->id,
+                'service_id' => $service->id,
+                'preferred_slots' => [],
+                'preferred_dates' => [Carbon::now()->addWeek()->toDateString()],
+                'flexibility_days' => 5,
+                'priority_manual' => 0,
+                'status' => 'pending',
+                'source' => 'manual',
+            ]);
+        }
+
+        $slots = [];
+
+        foreach ([10, 12, 14, 16] as $hour) {
+            $slots['gap-' . $hour] = [
+                'start' => Carbon::now()->addWeek()->setTime($hour, 0),
+                'duration' => 90,
+                'service_id' => $service->id,
+            ];
+        }
+
+        DB::enableQueryLog();
+        $results = app(WaitlistMatchService::class)->rankForSlots($master->id, $slots, 3);
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertCount(4, $results);
+        $this->assertGreaterThan(0, $results->get('gap-10')->count());
+
+        // Entries and slots must not multiply into queries: one for the entries,
+        // their eager loads, one account lookup and one aggregate.
+        $this->assertLessThanOrEqual(8, $queries);
+    }
+
+    public function test_require_fit_drops_services_longer_than_the_slot(): void
+    {
+        $master = User::factory()->create();
+        $account = User::factory()->create(['phone' => '+79995550001']);
+
+        $card = Client::create([
+            'user_id' => $master->id,
+            'client_user_id' => $account->id,
+            'name' => 'Long Service Client',
+            'phone' => $account->phone,
+        ]);
+
+        $service = Service::create([
+            'user_id' => $master->id,
+            'name' => 'Colouring',
+            'base_price' => 6500,
+            'cost' => 2000,
+            'duration_min' => 150,
+        ]);
+
+        WaitlistEntry::create([
+            'user_id' => $master->id,
+            'client_id' => $card->id,
+            'client_user_id' => $account->id,
+            'service_id' => $service->id,
+            'preferred_slots' => [],
+            'preferred_dates' => [Carbon::now()->addWeek()->toDateString()],
+            'flexibility_days' => 5,
+            'priority_manual' => 0,
+            'status' => 'pending',
+            'source' => 'manual',
+        ]);
+
+        $slot = ['start' => Carbon::now()->addWeek()->setTime(12, 0), 'duration' => 60, 'service_id' => null];
+        $service9 = app(WaitlistMatchService::class);
+
+        $this->assertCount(1, $service9->rankForSlots($master->id, ['gap' => $slot])->get('gap'));
+        $this->assertCount(0, $service9->rankForSlots($master->id, ['gap' => $slot], 8, true)->get('gap'));
     }
 }

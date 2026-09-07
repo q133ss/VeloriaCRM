@@ -577,10 +577,13 @@
             actionEdit.href = `/orders/${order.id}/edit`;
             actionButtons.hidden = false;
 
-            const canStartNow = !!order.actions?.can_start_now;
+            const canStartNow = !!order.actions?.can_start;
             actionStart.hidden = !canStartNow;
             actionStart.disabled = !canStartNow;
-            actionStart.dataset.warning = order.actions?.start_warning ? '1' : '0';
+            actionStart.dataset.warning = order.actions?.start_needs_confirm ? '1' : '0';
+            actionStart.dataset.scheduledTime = order.scheduled_at
+                ? new Date(order.scheduled_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                : '';
 
             const canComplete = !!order.actions?.can_complete;
             actionComplete.hidden = !canComplete;
@@ -649,13 +652,29 @@
             } else {
                 loadOrder();
             }
+
+            // Starting or finishing here changes what the header timer shows, and
+            // it polls only once a minute on its own.
+            if (window.veloriaActiveTimer) {
+                window.veloriaActiveTimer.refresh();
+            }
+
             return result;
         }
+
+        document.addEventListener('veloria:order-changed', function () {
+            loadOrder();
+        });
 
         actionStart.addEventListener('click', function () {
             if (this.disabled) return;
             if (this.dataset.warning === '1') {
-                if (!confirm('До записи остаётся достаточно времени. Вы уверены, что хотите начать работу сейчас?')) {
+                const now = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                const question = @json(__('calendar.day.actions.start_confirm'))
+                    .replace(':time', this.dataset.scheduledTime || '')
+                    .replace(':now', now);
+
+                if (!confirm(question)) {
                     return;
                 }
             }

@@ -28,7 +28,7 @@ class SendOrderStartReminderJob implements ShouldQueue
     public function handle(NotificationService $notifications): void
     {
         $order = Order::query()
-            ->with('master')
+            ->with(['master', 'client'])
             ->find($this->orderId);
 
         if (! $order) {
@@ -60,7 +60,8 @@ class SendOrderStartReminderJob implements ShouldQueue
         }
 
         $now = Carbon::now();
-        $threshold = Carbon::createFromTimestamp($this->scheduledAtTimestamp)->addMinutes(10);
+        // Matches OrderService::START_REMINDER_DELAY_SECONDS.
+        $threshold = Carbon::createFromTimestamp($this->scheduledAtTimestamp)->addMinutes(5);
 
         if ($now->lessThan($threshold)) {
             return;
@@ -70,8 +71,11 @@ class SendOrderStartReminderJob implements ShouldQueue
 
         $notifications->send(
             $order->master_id,
-            'Подтвердите начало процедуры',
-            'Пожалуйста, подтвердите, что процедура началась!',
+            __('orders.start_reminder.title'),
+            __('orders.start_reminder.message', [
+                'client' => $order->client?->name ?: __('calendar.unnamed_client'),
+                'time' => $order->scheduled_at->format('H:i'),
+            ]),
             $actionUrl,
         );
 

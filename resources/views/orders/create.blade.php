@@ -373,7 +373,7 @@
                                 <span class="step-badge">2</span>
                                 <div>
                                     <h2 class="h5 mb-1">Визит</h2>
-                                    <p class="text-muted mb-0">Выберите дату, а затем отметьте только те услуги, которые действительно входят в запись.</p>
+                                    <p class="text-muted mb-0">Выберите дату и отметьте услуги. Если клиентка ещё не решила, оставьте список пустым.</p>
                                 </div>
                             </div>
 
@@ -464,10 +464,10 @@
                             </div>
 
                             <div class="small text-muted" id="summary-selection-note">
-                                Выберите клиентку, дату и хотя бы одну услугу, чтобы запись была полностью готова.
+                                Выберите клиентку и дату. Услугу можно уточнить позже.
                             </div>
 
-                            <div class="form-floating form-floating-outline d-none" id="custom-price-wrap">
+                            <div class="form-floating form-floating-outline" id="custom-price-wrap">
                                 <input
                                     type="number"
                                     step="0.01"
@@ -723,14 +723,14 @@
 
             if (summarySelectionNote) {
                 if (clientLabel === 'Не выбрана' || !scheduledAtInput?.value || selectedCount === 0) {
-                    summarySelectionNote.textContent = 'Выберите клиентку, дату и хотя бы одну услугу, чтобы запись была полностью готова.';
+                    summarySelectionNote.textContent = 'Выберите клиентку и дату. Услугу можно уточнить позже.';
                 } else {
                     summarySelectionNote.textContent = `${clientLabel} • ${dateLabel} • ${selectedCount} усл.`;
                 }
             }
 
             if (customPriceWrap) {
-                customPriceWrap.classList.toggle('d-none', selectedCount === 0);
+                customPriceWrap.classList.remove('d-none');
             }
         }
 
