@@ -75,9 +75,17 @@
             margin-top: 1.5rem;
             margin-bottom: 0;
             padding: 0.85rem 1.1rem;
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
-            border-radius: 1rem;
             box-shadow: 0 -10px 26px -22px rgba(0, 0, 0, 0.75);
+        }
+
+        /* «Открыть поля» broke across two lines in its own button. */
+        #toggle-password-fields {
+            white-space: nowrap;
+        }
+
+        /* An empty message container still spent its bottom margin. */
+        #form-messages:empty {
+            display: none;
         }
 
         /* On a phone the four sections took four full rows of their own. */
@@ -178,7 +186,9 @@
 
         .settings-summary-card {
             position: sticky;
-            top: 1.5rem;
+            /* The card was already sticky, but at 1.5rem it travelled under the
+               fixed navbar. */
+            top: 5.5rem;
         }
 
         .settings-feature-card {
@@ -250,7 +260,7 @@
 
         .allergy-reminder-help {
             font-size: 0.8125rem;
-            color: var(--bs-secondary-color);
+            color: var(--settings-faint);
             margin-top: 0.45rem;
         }
 
@@ -293,8 +303,9 @@
         }
 
         .schedule-help {
+            flex: 0 0 auto;
             font-size: 0.8125rem;
-            color: var(--bs-secondary-color);
+            color: var(--settings-faint);
         }
 
         html[data-bs-theme="dark"] .settings-feature-card {
@@ -791,7 +802,8 @@
                                     <tbody></tbody>
                                 </table>
                             </div>
-                            <button type="button" class="btn btn-sm btn-secondary" id="add-holiday">{{ __('settings.add') }}</button>
+                            {{-- The two «Добавить» buttons of this page were styled differently. --}}
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="add-holiday">{{ __('settings.add') }}</button>
                         </div>
                     </div>
                 </div>
@@ -867,7 +879,7 @@
         </div>
 
         {{-- Account deletion used to sit on the first screen, beside the tips. --}}
-        <div class="col-12">
+        <div class="col-xl-8">
             <div class="card settings-danger-card">
                 <div class="card-body p-5">
                     <h5 class="mb-2">{{ __('settings.delete_account_title') }}</h5>
