@@ -75,6 +75,11 @@ class UpdateSettingsRequest extends BaseRequest
             'daily_post_ideas_enabled' => ['nullable', 'boolean'],
             'daily_post_ideas_channel' => ['nullable', Rule::in(['telegram', 'platform', 'both'])],
             'daily_post_ideas_preferences' => ['nullable', 'string', 'max:2000'],
+            'branding' => ['nullable', 'array'],
+            'branding.app_display_name' => ['nullable', 'string', 'max:60'],
+            'branding.primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'branding.secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'branding.logo_url' => ['nullable', 'url', 'max:2048'],
         ];
     }
 
@@ -85,6 +90,8 @@ class UpdateSettingsRequest extends BaseRequest
             // а календарь после него отдавал 500 и не открывался, пока пояс не
             // поправят обратно.
             'timezone.timezone' => 'Такого часового пояса нет — выберите его из списка.',
+            'branding.primary_color.regex' => 'Цвет должен быть в формате #RRGGBB.',
+            'branding.secondary_color.regex' => 'Цвет должен быть в формате #RRGGBB.',
         ];
     }
 }

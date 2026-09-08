@@ -1,8 +1,11 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
+import { BrandSignature } from '../../../shared/ui/BrandSignature';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
 import { SectionCard } from '../../../shared/ui/SectionCard';
@@ -11,9 +14,26 @@ import { useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-export function HomeScreen({}: Props) {
-  const theme = useAppTheme();
-  const { home, master, session } = useClientPortal();
+// `home.services` falls back to mock cards with non-numeric ids (`'svc-1'`)
+// when the real fetch failed or came back empty (ClientPortalProvider.loadHomeFeed)
+// — those can't be pre-selected on Booking, so let the picker start from scratch.
+function resolveNumericServiceId(id: string): number | undefined {
+  const numericId = Number(id);
+
+  return Number.isFinite(numericId) ? numericId : undefined;
+}
+
+export function HomeScreen({ navigation }: Props) {
+  const { home, master, session, refreshHomeFeed } = useClientPortal();
+  const theme = useAppTheme(master?.branding);
+
+  // Catches a booking made on BookingConfirmationScreen: coming back to Home
+  // should show the new appointment, not the state from before it existed.
+  useFocusEffect(
+    useCallback(() => {
+      void refreshHomeFeed();
+    }, [refreshHomeFeed]),
+  );
 
   if (!home || !master) {
     return null;
@@ -21,6 +41,15 @@ export function HomeScreen({}: Props) {
 
   return (
     <ScreenContainer theme={theme}>
+      <View style={styles.brandRow}>
+        <BrandSignature
+          compact
+          theme={theme}
+          logoUrl={master.branding?.logoUrl}
+          displayName={master.branding?.appDisplayName}
+        />
+      </View>
+
       <LinearGradient
         colors={[theme.colors.heroBackground, theme.colors.heroSecondary]}
         start={{ x: 0.1, y: 0 }}
@@ -36,53 +65,74 @@ export function HomeScreen({}: Props) {
 
       <View style={styles.section}>
         <SectionCard theme={theme}>
-          <View style={styles.rowBetween}>
-            <View style={styles.flexOne}>
+          {home.nextAppointment ? (
+            <>
+              <View style={styles.rowBetween}>
+                <View style={styles.flexOne}>
+                  <Text style={[styles.cardLabel, { color: theme.colors.textMuted }]}>Ближайшая запись</Text>
+                  <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>
+                    {home.nextAppointment.serviceLabel}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusPill,
+                    {
+                      backgroundColor: theme.colors.accentSoft,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.statusText, { color: theme.colors.textPrimary }]}>
+                    {home.nextAppointment.statusLabel}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.cardMeta, { color: theme.colors.textSecondary }]}>
+                {home.nextAppointment.dateLabel} · {home.nextAppointment.timeLabel}
+              </Text>
+
+              <View style={styles.actionsRow}>
+                <PrimaryButton
+                  onPress={() => navigation.navigate('Booking', {})}
+                  theme={theme}
+                  title="Новая запись"
+                  style={styles.flexButton}
+                />
+                <PrimaryButton
+                  onPress={() => navigation.navigate('Appointments')}
+                  theme={theme}
+                  title="Все записи"
+                  variant="secondary"
+                  style={styles.flexButton}
+                />
+              </View>
+            </>
+          ) : (
+            <>
               <Text style={[styles.cardLabel, { color: theme.colors.textMuted }]}>Ближайшая запись</Text>
-              <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>
-                {home.nextAppointment.service}
+              <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>Пока нет записей</Text>
+              <Text style={[styles.cardMeta, { color: theme.colors.textSecondary }]}>
+                Выберите услугу и удобное время — это займет меньше минуты.
               </Text>
-            </View>
-            <View
-              style={[
-                styles.statusPill,
-                {
-                  backgroundColor: theme.colors.accentSoft,
-                },
-              ]}
-            >
-              <Text style={[styles.statusText, { color: theme.colors.textPrimary }]}>
-                {home.nextAppointment.status}
-              </Text>
-            </View>
-          </View>
 
-          <Text style={[styles.cardMeta, { color: theme.colors.textSecondary }]}>
-            {home.nextAppointment.dateLabel} · {home.nextAppointment.timeLabel}
-          </Text>
-
-          <View style={styles.actionsRow}>
-            <PrimaryButton
-              onPress={() => {}}
-              theme={theme}
-              title="Выбрать другое время"
-              style={styles.flexButton}
-            />
-            <PrimaryButton
-              onPress={() => {}}
-              theme={theme}
-              title="Перенести позже"
-              variant="secondary"
-              style={styles.flexButton}
-            />
-          </View>
+              <PrimaryButton
+                onPress={() => navigation.navigate('Booking', {})}
+                theme={theme}
+                title="Записаться"
+                style={styles.primaryButtonFull}
+              />
+            </>
+          )}
         </SectionCard>
       </View>
 
       <View style={styles.section}>
         <View style={styles.rowBetween}>
           <Text style={[styles.blockTitle, { color: theme.colors.textPrimary }]}>Популярные услуги</Text>
-          <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Все услуги</Text>
+          <Pressable onPress={() => navigation.navigate('Booking', {})}>
+            <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Все услуги</Text>
+          </Pressable>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
@@ -114,7 +164,12 @@ export function HomeScreen({}: Props) {
               <Text style={[styles.serviceTitle, { color: theme.colors.textPrimary }]}>{service.title}</Text>
               <Text style={[styles.serviceMeta, { color: theme.colors.textSecondary }]}>{service.duration}</Text>
               <Text style={[styles.servicePrice, { color: theme.colors.textPrimary }]}>{service.price}</Text>
-              <PrimaryButton onPress={() => {}} theme={theme} title="Записаться" style={styles.serviceButton} />
+              <PrimaryButton
+                onPress={() => navigation.navigate('Booking', { serviceId: resolveNumericServiceId(service.id) })}
+                theme={theme}
+                title="Записаться"
+                style={styles.serviceButton}
+              />
             </View>
           ))}
         </ScrollView>
@@ -141,6 +196,11 @@ export function HomeScreen({}: Props) {
 }
 
 const styles = StyleSheet.create({
+  brandRow: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    marginBottom: 4,
+  },
   header: {
     margin: 16,
     marginBottom: 20,
@@ -207,6 +267,9 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     gap: 10,
+  },
+  primaryButtonFull: {
+    marginTop: 18,
   },
   flexButton: {
     flex: 1,

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\AdminPageController;
+use App\Http\Controllers\ClientPortal\MagicLinkRedirectController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LandingPageController;
@@ -36,6 +37,10 @@ Route::middleware('set.locale')->group(function () {
     Route::view('/forgot-password', 'auth.forgot')->name('password.request');
 
     Route::prefix('auth')->group(function () {
+        // Browser landing page for the client mobile app's magic-link email
+        // (App\Services\ClientPortal\ClientPortalAuthService::buildMagicLink()).
+        Route::get('verify', MagicLinkRedirectController::class)->name('client-portal.magic-link.redirect');
+
         Route::get('{provider}/redirect', [SocialAuthController::class, 'redirect'])
             ->whereIn('provider', SocialAuthController::SUPPORTED_PROVIDERS)
             ->name('social.redirect');
@@ -135,3 +140,24 @@ Route::middleware('set.locale')->group(function () {
             });
     });
 });
+
+// Digital Asset Links file Android needs to auto-verify the client mobile app's
+// App Link (see config/services.php's client_portal.android_* keys). Outside the
+// set.locale group deliberately — it's a machine-read manifest, not a page.
+Route::get('/.well-known/assetlinks.json', function () {
+    $fingerprints = array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) config('services.client_portal.android_sha256_fingerprints')),
+    )));
+
+    return response()->json([
+        [
+            'relation' => ['delegate_permission/common.handle_all_urls'],
+            'target' => [
+                'namespace' => 'android_app',
+                'package_name' => config('services.client_portal.android_package'),
+                'sha256_cert_fingerprints' => $fingerprints,
+            ],
+        ],
+    ]);
+})->name('client-portal.assetlinks');

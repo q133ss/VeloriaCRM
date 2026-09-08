@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { AppTheme } from '../../theme/theme';
@@ -6,32 +7,44 @@ type BrandSignatureProps = {
   theme: AppTheme;
   style?: ViewStyle;
   compact?: boolean;
+  // Both unset pre-login (there's no unauthenticated master-lookup endpoint) and
+  // for a Lite master's clients (App\Http\Controllers\Api\V1\Client\AuthController::me()
+  // sends `branding: null` for them) — the default Veloria mark is what's left.
+  logoUrl?: string | null;
+  displayName?: string | null;
 };
 
-export function BrandSignature({ theme, style, compact = false }: BrandSignatureProps) {
+export function BrandSignature({ theme, style, compact = false, logoUrl, displayName }: BrandSignatureProps) {
+  const markWrapStyle = [
+    styles.markWrap,
+    compact ? styles.markWrapCompact : null,
+    { backgroundColor: theme.colors.accentSoft },
+  ];
+
   return (
     <View style={[styles.row, style]}>
-      <View
-        style={[
-          styles.markWrap,
-          compact ? styles.markWrapCompact : null,
-          {
-            backgroundColor: theme.colors.accentSoft,
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.mark,
-            compact ? styles.markCompact : null,
-            {
-              color: theme.colors.primary,
-            },
-          ]}
-        >
-          V
-        </Text>
-      </View>
+      {logoUrl ? (
+        <Image
+          source={{ uri: logoUrl }}
+          style={markWrapStyle}
+          contentFit="cover"
+          transition={150}
+        />
+      ) : (
+        <View style={markWrapStyle}>
+          <Text
+            style={[
+              styles.mark,
+              compact ? styles.markCompact : null,
+              {
+                color: theme.colors.primary,
+              },
+            ]}
+          >
+            V
+          </Text>
+        </View>
+      )}
       <Text
         style={[
           styles.wordmark,
@@ -41,7 +54,7 @@ export function BrandSignature({ theme, style, compact = false }: BrandSignature
           },
         ]}
       >
-        Veloria
+        {displayName?.trim() || 'Veloria'}
       </Text>
     </View>
   );

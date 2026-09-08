@@ -2,7 +2,9 @@ import { httpRequest } from '../../../shared/api/http';
 import {
   ApiClient,
   ApiEnvelope,
+  ApiMaster,
   AppointmentDto,
+  AppointmentListItemDto,
   ClientServiceDto,
   ClientSlotsDto,
   CreateAppointmentBody,
@@ -43,7 +45,7 @@ export const clientPortalApi = {
   },
 
   getMe(token: string) {
-    return httpRequest<ApiEnvelope<{ client: ApiClient }>>({
+    return httpRequest<ApiEnvelope<{ client: ApiClient; master: ApiMaster }>>({
       path: '/client/me',
       token,
     });
@@ -77,6 +79,13 @@ export const clientPortalApi = {
       path: `/client/services/${serviceId}/slots`,
       token,
       query,
+    });
+  },
+
+  getAppointments(token: string) {
+    return httpRequest<ApiEnvelope<{ appointments: AppointmentListItemDto[] }>>({
+      path: '/client/appointments',
+      token,
     });
   },
 

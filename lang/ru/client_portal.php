@@ -17,6 +17,13 @@ return [
         'magic_link_intro' => 'Нажмите на кнопку ниже, чтобы войти в приложение:',
         'magic_link_cta' => 'Войти',
     ],
+    'redirect' => [
+        'title' => 'Открываем приложение',
+        'opening' => 'Секунду, переключаемся в Veloria Client…',
+        'button' => 'Открыть приложение вручную',
+        'code_hint' => 'Если приложение не открылось само, введите этот код на экране входа:',
+        'no_app' => 'Приложения ещё нет на телефоне? Установите Veloria Client и войдите по email ещё раз.',
+    ],
     'booking' => [
         'slot_unavailable' => 'Это время уже занято.',
         'master_notification_title' => 'Новая запись (Client Portal)',

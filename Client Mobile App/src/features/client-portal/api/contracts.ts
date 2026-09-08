@@ -16,9 +16,19 @@ export type OtpStartPayload = {
   expires_in: number;
 };
 
+export type ApiMasterBranding = {
+  app_display_name: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+  logo_url: string | null;
+};
+
 export type ApiMaster = {
   id: number;
   name: string | null;
+  avatar_url?: string | null;
+  has_custom_branding?: boolean;
+  branding?: ApiMasterBranding | null;
 };
 
 export type VerifyAuthPayload = {
@@ -81,6 +91,15 @@ export type AppointmentDto = {
 
 export type WaitlistEntryPayload = {
   waitlist_entry_id: number;
+};
+
+export type AppointmentListItemDto = {
+  id: number;
+  status: string;
+  service_label: string;
+  date: string | null;
+  time: string | null;
+  is_upcoming: boolean;
 };
 
 export type StartLoginBody = {

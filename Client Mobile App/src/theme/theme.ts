@@ -78,8 +78,62 @@ export const darkTheme: AppTheme = {
   },
 };
 
-export function useAppTheme() {
-  const scheme = useColorScheme();
+// Deliberately just the two colors a master can set (Setting.branding's
+// `primary_color`/`secondary_color`) — kept separate from the client-portal
+// feature's MasterBranding DTO so this shared UI primitive doesn't depend on
+// a feature's API shape; the two are structurally compatible by design.
+export type ThemeBrandingOverride = {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+};
 
-  return scheme === 'dark' ? darkTheme : lightTheme;
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+function isValidHexColor(value: unknown): value is string {
+  return typeof value === 'string' && HEX_COLOR_PATTERN.test(value);
+}
+
+function shade(hex: string, amount: number): string {
+  const clamp = (value: number) => Math.min(255, Math.max(0, value));
+  const num = parseInt(hex.slice(1), 16);
+  const r = clamp(((num >> 16) & 0xff) + amount);
+  const g = clamp(((num >> 8) & 0xff) + amount);
+  const b = clamp((num & 0xff) + amount);
+
+  return `#${(0x1000000 + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function applyBranding(base: AppTheme, branding?: ThemeBrandingOverride | null): AppTheme {
+  const primary = isValidHexColor(branding?.primaryColor) ? branding.primaryColor : null;
+  const secondary = isValidHexColor(branding?.secondaryColor) ? branding.secondaryColor : null;
+
+  if (!primary && !secondary) {
+    return base;
+  }
+
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      ...(primary
+        ? {
+            primary,
+            // Darken by the same amount in both modes — the hand-picked default
+            // palette's own pressed state is darker than its base color in light
+            // AND in dark mode (e.g. dark's #ff4dfd -> #db19d8), not lighter.
+            primaryPressed: shade(primary, -40),
+            accent: primary,
+            heroBackground: primary,
+          }
+        : null),
+      ...(secondary ? { heroSecondary: secondary } : null),
+    },
+  };
+}
+
+export function useAppTheme(branding?: ThemeBrandingOverride | null): AppTheme {
+  const scheme = useColorScheme();
+  const base = scheme === 'dark' ? darkTheme : lightTheme;
+
+  return applyBranding(base, branding);
 }

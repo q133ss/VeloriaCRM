@@ -11,7 +11,8 @@ import {
 import { Alert } from 'react-native';
 
 import { sessionStorage } from '../../../shared/api/sessionStorage';
-import { ClientServiceDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
+import { formatDateLabel } from '../../../shared/format/ruDate';
+import { ApiMaster, AppointmentListItemDto, ClientServiceDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
 import { buildMockHomeFeed } from '../mocks/mockClientPortal';
 import {
@@ -20,11 +21,17 @@ import {
   PendingAuth,
   PendingSelection,
   SessionUser,
+  UpcomingAppointmentSummary,
 } from './types';
 
 type ClientPortalContextValue = {
   bootstrapping: boolean;
   authBusy: boolean;
+  // Raw token for screens that call clientPortalApi themselves (booking,
+  // appointments) instead of going through a provider action — everything
+  // login-related stays encapsulated above, this is just for authed reads/writes
+  // that are screen-local state, not shared app state.
+  token: string | null;
   master: AuthMaster | null;
   home: HomeFeed | null;
   session: SessionUser | null;
@@ -35,6 +42,7 @@ type ClientPortalContextValue = {
   confirmLoginCode: (code: string) => Promise<void>;
   selectMaster: (masterId: number) => Promise<void>;
   resetPendingAuth: () => void;
+  refreshHomeFeed: () => Promise<void>;
 };
 
 const ClientPortalContext = createContext<ClientPortalContextValue | null>(null);
@@ -59,10 +67,23 @@ function mapClientToSessionUser(client: {
   };
 }
 
-function mapMaster(master: { id: number; name: string | null }): AuthMaster {
+function mapMaster(master: ApiMaster): AuthMaster {
+  const hasCustomBranding = Boolean(master.has_custom_branding);
+  const branding = hasCustomBranding && master.branding
+    ? {
+        appDisplayName: master.branding.app_display_name,
+        primaryColor: master.branding.primary_color,
+        secondaryColor: master.branding.secondary_color,
+        logoUrl: master.branding.logo_url,
+      }
+    : null;
+
   return {
     id: master.id,
     name: master.name?.trim() || 'Мастер',
+    avatarUrl: master.avatar_url ?? null,
+    hasCustomBranding,
+    branding,
   };
 }
 
@@ -75,54 +96,94 @@ function mapServicesToHomeCards(services: ClientServiceDto[]) {
   }));
 }
 
+function pickNextUpcomingAppointment(appointments: AppointmentListItemDto[]): UpcomingAppointmentSummary | null {
+  const upcoming = appointments.filter(
+    (item): item is AppointmentListItemDto & { date: string; time: string } =>
+      item.is_upcoming && item.date !== null && item.time !== null,
+  );
+
+  if (upcoming.length === 0) {
+    return null;
+  }
+
+  // The list comes back newest-scheduled-first (furthest in the future first),
+  // so the soonest upcoming one is whichever sorts lowest by date+time, not
+  // simply the last upcoming entry — comparing as strings works because both
+  // fields are already zero-padded ISO (YYYY-MM-DD / HH:MM).
+  const soonest = upcoming.reduce((closest, item) =>
+    `${item.date}T${item.time}` < `${closest.date}T${closest.time}` ? item : closest,
+  );
+
+  return {
+    id: soonest.id,
+    serviceLabel: soonest.service_label,
+    dateLabel: formatDateLabel(soonest.date),
+    timeLabel: soonest.time,
+    statusLabel: soonest.status === 'scheduled' ? 'Подтверждено' : soonest.status,
+  };
+}
+
 export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
   const [bootstrapping, setBootstrapping] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const [master, setMaster] = useState<AuthMaster | null>(null);
   const [home, setHome] = useState<HomeFeed | null>(null);
   const [session, setSession] = useState<SessionUser | null>(null);
   const [pendingAuth, setPendingAuth] = useState<PendingAuth | null>(null);
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
 
-  const loadHomeFeed = useCallback(async (token: string, clientName: string) => {
+  const loadHomeFeed = useCallback(async (feedToken: string, clientName: string) => {
+    let services;
     try {
-      const servicesResponse = await clientPortalApi.getServices(token);
-      const services = mapServicesToHomeCards(servicesResponse.data.services);
-
-      setHome(buildMockHomeFeed(clientName, services.length > 0 ? services : undefined));
+      const servicesResponse = await clientPortalApi.getServices(feedToken);
+      const mapped = mapServicesToHomeCards(servicesResponse.data.services);
+      services = mapped.length > 0 ? mapped : undefined;
     } catch {
-      setHome(buildMockHomeFeed(clientName));
+      services = undefined;
     }
+
+    let nextAppointment: UpcomingAppointmentSummary | null = null;
+    try {
+      const appointmentsResponse = await clientPortalApi.getAppointments(feedToken);
+      nextAppointment = pickNextUpcomingAppointment(appointmentsResponse.data.appointments);
+    } catch {
+      nextAppointment = null;
+    }
+
+    setHome({ ...buildMockHomeFeed(clientName, services), nextAppointment });
   }, []);
 
-  const hydrateFromToken = useCallback(async (token: string) => {
-    const meResponse = await clientPortalApi.getMe(token);
+  const hydrateFromToken = useCallback(async (nextToken: string) => {
+    const meResponse = await clientPortalApi.getMe(nextToken);
     const nextSession = mapClientToSessionUser(meResponse.data.client);
+    const nextMaster = mapMaster(meResponse.data.master);
 
+    setToken(nextToken);
     setSession(nextSession);
+    setMaster(nextMaster);
 
-    const storedMaster = await sessionStorage.getClientMaster();
-    if (storedMaster) {
-      setMaster(storedMaster);
-    }
-
-    await loadHomeFeed(token, nextSession.name);
+    await loadHomeFeed(nextToken, nextSession.name);
   }, [loadHomeFeed]);
 
+  const refreshHomeFeed = useCallback(async () => {
+    if (!token || !session) {
+      return;
+    }
+
+    await loadHomeFeed(token, session.name);
+  }, [loadHomeFeed, token, session]);
+
   const applyAuthPayload = useCallback(async (payload: VerifyAuthPayload) => {
-    const nextSession = mapClientToSessionUser(payload.client);
-    const nextMaster = mapMaster(payload.master);
-
     await sessionStorage.setClientToken(payload.token);
-    await sessionStorage.setClientMaster(nextMaster);
-
-    setMaster(nextMaster);
-    setSession(nextSession);
     setPendingAuth(null);
     setPendingSelection(null);
 
-    await loadHomeFeed(payload.token, nextSession.name);
-  }, [loadHomeFeed]);
+    // Sourced from `/client/me`, not `payload.client`/`payload.master`: branding
+    // (and anything else resolved server-side) then comes from the same single
+    // place on both a fresh login and a session restored from a stored token.
+    await hydrateFromToken(payload.token);
+  }, [hydrateFromToken]);
 
   const applyVerifyResult = useCallback(async (data: VerifyLoginResponseData, email: string) => {
     if (isMasterSelectionRequired(data)) {
@@ -158,18 +219,19 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
 
     async function bootstrap() {
       try {
-        const token = await sessionStorage.getClientToken();
+        const storedToken = await sessionStorage.getClientToken();
 
-        if (!token || !mounted) {
+        if (!storedToken || !mounted) {
           return;
         }
 
         try {
-          await hydrateFromToken(token);
+          await hydrateFromToken(storedToken);
         } catch {
           await sessionStorage.clearClientToken();
           await sessionStorage.clearClientMaster();
           if (mounted) {
+            setToken(null);
             setSession(null);
             setHome(null);
             setMaster(null);
@@ -193,9 +255,15 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     function handleUrl(url: string) {
       const parsed = Linking.parse(url);
 
-      // A custom-scheme URL like `veloriaclient://auth/verify` is parsed via WHATWG URL
-      // rules: "auth" lands in `hostname` (authority), and "verify" is what's left of `path`.
-      if (parsed.hostname !== 'auth' || parsed.path !== 'verify') {
+      // Two URL shapes reach here: the Android App Link the magic-link email actually
+      // sends (`https://<host>/auth/verify`, "auth/verify" lands whole in `path`) and the
+      // `veloriaclient://auth/verify` custom scheme the App Link's browser fallback page
+      // (and a cold Android-App-Link open) redirects to — there "auth" is the WHATWG
+      // authority, so it lands in `hostname` and only "verify" is left in `path`.
+      const isAppLinkShape = parsed.path === 'auth/verify';
+      const isCustomSchemeShape = parsed.hostname === 'auth' && parsed.path === 'verify';
+
+      if (!isAppLinkShape && !isCustomSchemeShape) {
         return;
       }
 
@@ -304,6 +372,7 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     () => ({
       bootstrapping,
       authBusy,
+      token,
       master,
       home,
       session,
@@ -314,6 +383,7 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       confirmLoginCode,
       selectMaster,
       resetPendingAuth,
+      refreshHomeFeed,
     }),
     [
       authBusy,
@@ -323,11 +393,13 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       master,
       pendingAuth,
       pendingSelection,
+      refreshHomeFeed,
       requestLoginCode,
       requestMagicLink,
       resetPendingAuth,
       selectMaster,
       session,
+      token,
     ],
   );
 

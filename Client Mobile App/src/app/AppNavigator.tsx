@@ -2,7 +2,10 @@ import { NavigationContainer, Theme as NavigationTheme } from '@react-navigation
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
+import { AppointmentsScreen } from '../features/client-portal/screens/AppointmentsScreen';
 import { AuthScreen } from '../features/client-portal/screens/AuthScreen';
+import { BookingConfirmationScreen } from '../features/client-portal/screens/BookingConfirmationScreen';
+import { BookingScreen } from '../features/client-portal/screens/BookingScreen';
 import { HomeScreen } from '../features/client-portal/screens/HomeScreen';
 import { SplashScreen } from '../features/client-portal/screens/SplashScreen';
 import { useClientPortal } from '../features/client-portal/model/clientPortalContext';
@@ -65,6 +68,9 @@ function AuthedNavigator({ theme }: { theme: AppTheme }) {
   return (
     <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions(theme)}>
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Booking" component={BookingScreen} />
+      <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
+      <Stack.Screen name="Appointments" component={AppointmentsScreen} />
     </Stack.Navigator>
   );
 }

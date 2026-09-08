@@ -1,8 +1,15 @@
+export type BookingConfirmationParams = {
+  serviceId: number | null;
+  serviceLabel: string;
+  date: string;
+  time: string;
+};
+
 export type RootStackParamList = {
   Auth: undefined;
   Home: undefined;
-  Booking: undefined;
-  BookingConfirmation: undefined;
+  Booking: { serviceId?: number } | undefined;
+  BookingConfirmation: BookingConfirmationParams;
   Appointments: undefined;
   News: undefined;
   NewsDetail: undefined;

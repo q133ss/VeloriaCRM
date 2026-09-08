@@ -849,6 +849,74 @@
                     </div>
                 </div>
 
+                <div class="card mb-6 settings-card" id="settings-branding">
+                    <div class="card-body p-5 p-lg-6">
+                        <div class="settings-section-title">
+                            <div>
+                                <h5 class="mb-1">Клиентское приложение</h5>
+                                <p class="text-muted mb-0">Логотип, цвета и название, которые увидят ваши клиенты в мобильном приложении Veloria Client.</p>
+                            </div>
+                            <span class="settings-meta-chip"><i class="icon-base ri ri-smartphone-line"></i> Брендинг</span>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <div class="settings-feature-card p-4 d-none" id="branding-pro">
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                        <span class="badge bg-label-primary">Pro / Elite</span>
+                                        <span class="badge bg-label-secondary">Мобильное приложение</span>
+                                    </div>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="text" class="form-control" id="branding_app_display_name" name="branding_app_display_name" maxlength="60" placeholder="Veloria Client" />
+                                                <label for="branding_app_display_name">Название в приложении</label>
+                                            </div>
+                                            <small class="text-muted">Показывается клиенту вместо «Veloria». Оставьте пустым, чтобы использовать имя по умолчанию.</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating form-floating-outline">
+                                                <input type="url" class="form-control" id="branding_logo_url" name="branding_logo_url" placeholder="https://..." />
+                                                <label for="branding_logo_url">Ссылка на логотип</label>
+                                            </div>
+                                            <small class="text-muted">Прямая ссылка на квадратное изображение (PNG или JPG).</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold" for="branding_primary_color">Основной цвет</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text p-1">
+                                                    <input type="color" class="form-control form-control-color" id="branding_primary_color_picker" value="#ff00fc" />
+                                                </span>
+                                                <input type="text" class="form-control" id="branding_primary_color" name="branding_primary_color" placeholder="#FF00FC" maxlength="7" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold" for="branding_secondary_color">Дополнительный цвет</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text p-1">
+                                                    <input type="color" class="form-control form-control-color" id="branding_secondary_color_picker" value="#ff62fb" />
+                                                </span>
+                                                <input type="text" class="form-control" id="branding_secondary_color" name="branding_secondary_color" placeholder="#FF62FB" maxlength="7" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-3">Изменения появятся в приложении клиента после следующего входа — обновлять и переустанавливать приложение не нужно.</small>
+                                </div>
+                            </div>
+                            <div class="col-12 d-none" id="branding-locked-shared">
+                                @include('components.elite-lock-card', [
+                                    'wrapperClass' => 'settings-feature-lock p-4',
+                                    'badge' => 'Pro / Elite',
+                                    'title' => 'Брендинг клиентского приложения',
+                                    'description' => 'Свой логотип, цвета и название в мобильном приложении для клиентов доступны на тарифах Pro и Elite.',
+                                    'cta' => 'Открыть тарифы',
+                                    'buttonClass' => 'btn btn-outline-primary',
+                                ])
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- «Сбросить» was a native type="reset": it emptied the name, the
                      email and the phone and set the timezone to Africa/Abidjan,
                      without asking, because the values are filled in by script and
@@ -1049,6 +1117,26 @@
             select.appendChild(option);
         });
     }
+    const hexColorPattern = /^#[0-9A-Fa-f]{6}$/;
+    function syncBrandingColorPicker(textId, pickerId) {
+        const text = document.getElementById(textId);
+        const picker = document.getElementById(pickerId);
+        if (!text || !picker) return;
+        if (hexColorPattern.test(text.value)) {
+            picker.value = text.value;
+        }
+    }
+    ['branding_primary_color', 'branding_secondary_color'].forEach((textId) => {
+        const pickerId = `${textId}_picker`;
+        const text = document.getElementById(textId);
+        const picker = document.getElementById(pickerId);
+        if (!text || !picker) return;
+        picker.addEventListener('input', () => {
+            text.value = picker.value;
+            text.dispatchEvent(new Event('input'));
+        });
+        text.addEventListener('input', () => syncBrandingColorPicker(textId, pickerId));
+    });
     function setReminderFieldsDisabled(disabled) {
         ['allergy_reminder_enabled', 'allergy_reminder_minutes', 'allergy_reminder_service_exclusions', 'allergy_reminder_allergy_exclusions'].forEach(id => {
             const element = document.getElementById(id);
@@ -1121,6 +1209,22 @@
         if (dailyIdeasPreferences) {
             dailyIdeasPreferences.value = dailyIdeasFeature.preferences || '';
         }
+        const brandingFeature = data.settings.features?.branding || {};
+        const hasBrandingAccess = Boolean(brandingFeature.available);
+        const brandingCard = document.getElementById('branding-pro');
+        const brandingLockedCard = document.getElementById('branding-locked-shared');
+        if (brandingCard) {
+            brandingCard.classList.toggle('d-none', !hasBrandingAccess);
+        }
+        if (brandingLockedCard) {
+            brandingLockedCard.classList.toggle('d-none', hasBrandingAccess);
+        }
+        document.getElementById('branding_app_display_name').value = brandingFeature.app_display_name || '';
+        document.getElementById('branding_logo_url').value = brandingFeature.logo_url || '';
+        document.getElementById('branding_primary_color').value = brandingFeature.primary_color || '';
+        document.getElementById('branding_secondary_color').value = brandingFeature.secondary_color || '';
+        syncBrandingColorPicker('branding_primary_color', 'branding_primary_color_picker');
+        syncBrandingColorPicker('branding_secondary_color', 'branding_secondary_color_picker');
         const scheduleRules = data.settings.schedule_rules || {};
         const modeInput = document.querySelector(`input[name="schedule_mode"][value="${scheduleRules.mode || 'weekly'}"]`);
         if (modeInput) {
@@ -1226,6 +1330,15 @@
                 services: Array.from(document.getElementById('allergy_reminder_service_exclusions').selectedOptions || [])
                     .map(option => parseInt(option.value, 10))
                     .filter(Number.isFinite),
+            };
+        }
+        const brandingCard = document.getElementById('branding-pro');
+        if (brandingCard && !brandingCard.classList.contains('d-none')) {
+            payload.branding = {
+                app_display_name: document.getElementById('branding_app_display_name').value || null,
+                primary_color: document.getElementById('branding_primary_color').value || null,
+                secondary_color: document.getElementById('branding_secondary_color').value || null,
+                logo_url: document.getElementById('branding_logo_url').value || null,
             };
         }
         const legacySchedule = buildLegacyScheduleFromRules(payload.schedule_rules);

@@ -15,6 +15,7 @@ type RequestOptions = {
 type ErrorPayload = {
   message?: string;
   error?: {
+    code?: string;
     message?: string;
   };
   errors?: Record<string, string[]>;

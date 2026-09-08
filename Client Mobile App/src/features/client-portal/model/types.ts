@@ -8,19 +8,37 @@ export type ClientServiceCard = {
   badge?: string;
 };
 
+export type MasterBranding = {
+  appDisplayName: string | null;
+  primaryColor: string | null;
+  secondaryColor: string | null;
+  logoUrl: string | null;
+};
+
 export type AuthMaster = {
   id: number;
   name: string;
+  avatarUrl: string | null;
+  // Server-computed from the master's plan tier (App\Models\User::hasProAccess()) —
+  // a Lite master's `branding` is always null here even if something is stored,
+  // so this app never has to re-derive the plan gate on its own.
+  hasCustomBranding: boolean;
+  branding: MasterBranding | null;
+};
+
+export type UpcomingAppointmentSummary = {
+  id: number;
+  serviceLabel: string;
+  dateLabel: string;
+  timeLabel: string;
+  statusLabel: string;
 };
 
 export type HomeFeed = {
   clientName: string;
-  nextAppointment: {
-    service: string;
-    dateLabel: string;
-    timeLabel: string;
-    status: string;
-  };
+  // null once a real appointment fetch comes back empty — there is no fake
+  // placeholder appointment to fall back to, unlike `services` below.
+  nextAppointment: UpcomingAppointmentSummary | null;
   services: ClientServiceCard[];
   updates: Array<{
     id: string;
@@ -28,6 +46,20 @@ export type HomeFeed = {
     excerpt: string;
     date: string;
   }>;
+};
+
+export type BookingCategoryOption = {
+  id: number;
+  name: string;
+};
+
+export type BookingServiceOption = {
+  id: number;
+  categoryId: number | null;
+  name: string;
+  durationLabel: string;
+  priceLabel: string;
+  durationMin: number | null;
 };
 
 export type PendingAuth = {

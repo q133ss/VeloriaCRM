@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Mail\ClientMagicLinkMail;
 use App\Mail\ClientOtpCodeMail;
+use App\Models\Appointment;
 use App\Models\Client;
+use App\Models\Plan;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\Setting;
@@ -183,6 +185,77 @@ class ClientPortalAuthAndBookingTest extends TestCase
         $this->assertSame(0.0, (float) $order->total_price);
     }
 
+    public function test_client_can_list_own_appointments_split_into_upcoming_and_past(): void
+    {
+        $master = User::factory()->create(['timezone' => 'Europe/Moscow']);
+
+        $service = Service::create([
+            'user_id' => $master->id,
+            'name' => 'Manicure',
+            'base_price' => 2000,
+            'cost' => 600,
+            'duration_min' => 60,
+        ]);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Client',
+            'email' => 'appointments@example.com',
+            'phone' => '79518677096',
+        ]);
+
+        $otherClient = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Other client',
+            'email' => 'other@example.com',
+            'phone' => '79518677095',
+        ]);
+
+        $future = Appointment::create([
+            'user_id' => $master->id,
+            'client_id' => $client->id,
+            'service_ids' => [$service->id],
+            'starts_at' => Carbon::now('Europe/Moscow')->addDay()->setTime(10, 0),
+            'ends_at' => Carbon::now('Europe/Moscow')->addDay()->setTime(11, 0),
+            'status' => 'scheduled',
+            'meta' => ['service_label' => 'Manicure', 'service_specified' => true],
+        ]);
+
+        $past = Appointment::create([
+            'user_id' => $master->id,
+            'client_id' => $client->id,
+            'service_ids' => [],
+            'starts_at' => Carbon::now('Europe/Moscow')->subDay()->setTime(9, 0),
+            'ends_at' => Carbon::now('Europe/Moscow')->subDay()->setTime(10, 0),
+            'status' => 'scheduled',
+            'meta' => ['service_label' => 'Услуга уточняется', 'service_specified' => false],
+        ]);
+
+        // Belongs to a different client of the same master — must never leak in.
+        Appointment::create([
+            'user_id' => $master->id,
+            'client_id' => $otherClient->id,
+            'service_ids' => [],
+            'starts_at' => Carbon::now('Europe/Moscow')->addDay()->setTime(12, 0),
+            'ends_at' => Carbon::now('Europe/Moscow')->addDay()->setTime(13, 0),
+            'status' => 'scheduled',
+            'meta' => [],
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $response = $this->getJson('/api/v1/client/appointments');
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data.appointments')
+            ->assertJsonPath('data.appointments.0.id', $future->id)
+            ->assertJsonPath('data.appointments.0.is_upcoming', true)
+            ->assertJsonPath('data.appointments.0.service_label', 'Manicure')
+            ->assertJsonPath('data.appointments.1.id', $past->id)
+            ->assertJsonPath('data.appointments.1.is_upcoming', false)
+            ->assertJsonPath('data.appointments.1.service_label', 'Услуга уточняется');
+    }
+
     public function test_client_can_login_via_email_code_when_client_exists(): void
     {
         $master = User::factory()->create();
@@ -314,11 +387,21 @@ class ClientPortalAuthAndBookingTest extends TestCase
             return true;
         });
         $this->assertNotEmpty($link);
-        $this->assertStringStartsWith('veloriaclient://auth/verify', $link);
+        $this->assertStringStartsWith(
+            'https://' . config('services.client_portal.app_link_host') . '/auth/verify',
+            $link,
+        );
 
         parse_str((string) parse_url($link, PHP_URL_QUERY), $params);
         $this->assertSame($verificationId, $params['vid']);
         $this->assertNotEmpty($params['code']);
+
+        // The link's own path is the browser-fallback redirect page, not the API —
+        // Android opens the app directly only once the App Link is verified.
+        $redirect = $this->get('/auth/verify?vid=' . $params['vid'] . '&code=' . $params['code']);
+        $redirect->assertOk()
+            ->assertSee('veloriaclient://auth/verify?vid=' . $params['vid'] . '&code=' . $params['code'])
+            ->assertSee($params['code']);
 
         $verify = $this->postJson('/api/v1/client/login/verify', [
             'verification_id' => $params['vid'],
@@ -328,6 +411,104 @@ class ClientPortalAuthAndBookingTest extends TestCase
         $verify->assertOk()
             ->assertJsonPath('data.client.email', 'client@example.com')
             ->assertJsonPath('data.master.id', $master->id);
+    }
+
+    public function test_assetlinks_json_exposes_the_android_package(): void
+    {
+        config(['services.client_portal.android_package' => 'ru.veloria.client']);
+        config(['services.client_portal.android_sha256_fingerprints' => 'AA:BB, CC:DD']);
+
+        $response = $this->getJson('/.well-known/assetlinks.json');
+
+        $response->assertOk()
+            ->assertJsonPath('0.target.package_name', 'ru.veloria.client')
+            ->assertJsonPath('0.target.sha256_cert_fingerprints', ['AA:BB', 'CC:DD']);
+    }
+
+    public function test_me_endpoint_returns_the_resolved_master(): void
+    {
+        $master = User::factory()->create(['name' => 'Mira']);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Client',
+            'email' => 'client@example.com',
+            'phone' => '79518677099',
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $this->getJson('/api/v1/client/me')
+            ->assertOk()
+            ->assertJsonPath('data.master.id', $master->id)
+            ->assertJsonPath('data.master.name', 'Mira');
+    }
+
+    public function test_me_endpoint_exposes_branding_for_a_pro_master(): void
+    {
+        $master = User::factory()->create(['name' => 'Mira']);
+        $plan = Plan::create(['name' => 'pro', 'price' => 999]);
+        $master->plans()->attach($plan->id, ['ends_at' => Carbon::now()->addMonth()]);
+
+        Setting::create([
+            'user_id' => $master->id,
+            'branding' => [
+                'app_display_name' => 'Mira Beauty',
+                'primary_color' => '#FF00FC',
+                'secondary_color' => '#111111',
+                'logo_url' => 'https://cdn.example.com/mira-logo.png',
+            ],
+        ]);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Client',
+            'email' => 'client-pro@example.com',
+            'phone' => '79518677098',
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $this->getJson('/api/v1/client/me')
+            ->assertOk()
+            ->assertJsonPath('data.master.has_custom_branding', true)
+            ->assertJsonPath('data.master.branding.app_display_name', 'Mira Beauty')
+            ->assertJsonPath('data.master.branding.primary_color', '#FF00FC')
+            ->assertJsonPath('data.master.branding.logo_url', 'https://cdn.example.com/mira-logo.png');
+    }
+
+    /**
+     * A Lite master's clients see the default look no matter what is stored —
+     * hasProAccess() gates this here, not just in the settings UI, so a
+     * downgrade takes effect for clients immediately.
+     */
+    public function test_me_endpoint_hides_branding_for_a_lite_master_even_if_stored(): void
+    {
+        $master = User::factory()->create(['name' => 'Lite Master']);
+
+        Setting::create([
+            'user_id' => $master->id,
+            'branding' => [
+                'app_display_name' => 'Should not leak',
+                'primary_color' => '#000000',
+                'secondary_color' => '#000000',
+                'logo_url' => 'https://cdn.example.com/leaked-logo.png',
+            ],
+        ]);
+
+        $client = Client::create([
+            'user_id' => $master->id,
+            'name' => 'Client',
+            'email' => 'client-lite@example.com',
+            'phone' => '79518677097',
+        ]);
+
+        Sanctum::actingAs($client);
+
+        $this->getJson('/api/v1/client/me')
+            ->assertOk()
+            ->assertJsonPath('data.master.has_custom_branding', false)
+            ->assertJsonPath('data.master.branding', null);
     }
 
     public function test_magic_link_rejects_unknown_email(): void

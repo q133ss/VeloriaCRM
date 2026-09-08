@@ -60,11 +60,39 @@ class AuthController extends Controller
     {
         /** @var Client $client */
         $client = $request->user();
+        $client->loadMissing('user.setting');
 
         return response()->json([
             'data' => [
                 'client' => $client,
+                'master' => $this->resolveMasterPayload($client),
             ],
         ]);
+    }
+
+    /**
+     * A Lite master's clients always see the default Veloria look regardless of
+     * whatever is stored in `Setting.branding` — branding is a Pro/Elite perk
+     * (Phase 10 gating table), and `hasProAccess()` decides that here, not just
+     * in the settings UI, so a downgrade takes effect immediately for clients.
+     */
+    private function resolveMasterPayload(Client $client): array
+    {
+        $master = $client->user;
+        $hasCustomBranding = (bool) $master?->hasProAccess();
+        $branding = $master?->setting?->branding ?? [];
+
+        return [
+            'id' => $client->user_id,
+            'name' => $master?->name,
+            'avatar_url' => $master?->avatar_url,
+            'has_custom_branding' => $hasCustomBranding,
+            'branding' => $hasCustomBranding ? [
+                'app_display_name' => $branding['app_display_name'] ?? null,
+                'primary_color' => $branding['primary_color'] ?? null,
+                'secondary_color' => $branding['secondary_color'] ?? null,
+                'logo_url' => $branding['logo_url'] ?? null,
+            ] : null,
+        ];
     }
 }

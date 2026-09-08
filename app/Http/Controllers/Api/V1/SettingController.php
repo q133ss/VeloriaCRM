@@ -72,6 +72,10 @@ class SettingController extends Controller
                         'required_plan' => 'elite',
                         'upgrade_url' => url('/subscription'),
                     ],
+                    'branding' => array_merge(
+                        ['available' => $hasProAccess, 'required_plan' => 'pro', 'upgrade_url' => url('/subscription')],
+                        $this->brandingPayload($settings, $hasProAccess),
+                    ),
                 ],
             ],
         ]);
@@ -144,6 +148,19 @@ class SettingController extends Controller
             $settingsAttributes['daily_post_ideas_enabled'] = (bool) ($data['daily_post_ideas_enabled'] ?? false);
             $settingsAttributes['daily_post_ideas_channel'] = $data['daily_post_ideas_channel'] ?? 'both';
             $settingsAttributes['daily_post_ideas_preferences'] = $data['daily_post_ideas_preferences'] ?? null;
+        }
+
+        // Gated server-side, not just hidden in the UI: a Lite master posting
+        // `branding` directly to the API must not be able to set it, since a
+        // Lite master's clients are meant to always see the default app look
+        // (App\Http\Controllers\Api\V1\Client\AuthController::me()).
+        if ($hasProAccess) {
+            $settingsAttributes['branding'] = [
+                'app_display_name' => $data['branding']['app_display_name'] ?? null,
+                'primary_color' => $data['branding']['primary_color'] ?? null,
+                'secondary_color' => $data['branding']['secondary_color'] ?? null,
+                'logo_url' => $data['branding']['logo_url'] ?? null,
+            ];
         }
 
         if (array_key_exists('integrations', $data)) {
@@ -373,6 +390,21 @@ class SettingController extends Controller
         }
 
         return ['lat' => (float) $lat, 'lng' => (float) $lng];
+    }
+
+    /**
+     * @return array{app_display_name: ?string, primary_color: ?string, secondary_color: ?string, logo_url: ?string}
+     */
+    protected function brandingPayload(?Setting $settings, bool $hasProAccess): array
+    {
+        $branding = $hasProAccess ? ($settings?->branding ?? []) : [];
+
+        return [
+            'app_display_name' => $branding['app_display_name'] ?? null,
+            'primary_color' => $branding['primary_color'] ?? null,
+            'secondary_color' => $branding['secondary_color'] ?? null,
+            'logo_url' => $branding['logo_url'] ?? null,
+        ];
     }
 
     protected function userHasEliteAccess(User $user): bool

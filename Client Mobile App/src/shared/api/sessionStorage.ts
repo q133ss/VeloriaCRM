@@ -2,12 +2,10 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 const CLIENT_TOKEN_KEY = 'veloria.client.token';
+// Retained only so clearClientMaster() can wipe a key earlier builds wrote —
+// master info (including branding) is always re-fetched from `/client/me`
+// now, never cached locally, so nothing writes this key anymore.
 const CLIENT_MASTER_KEY = 'veloria.client.master';
-
-type StoredMaster = {
-  id: number;
-  name: string;
-};
 
 function getWebStorage() {
   if (typeof window === 'undefined') {
@@ -54,24 +52,6 @@ export const sessionStorage = {
 
   async clearClientToken() {
     await removeItem(CLIENT_TOKEN_KEY);
-  },
-
-  async getClientMaster(): Promise<StoredMaster | null> {
-    const raw = await getItem(CLIENT_MASTER_KEY);
-
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(raw) as StoredMaster;
-    } catch {
-      return null;
-    }
-  },
-
-  async setClientMaster(master: StoredMaster) {
-    await setItem(CLIENT_MASTER_KEY, JSON.stringify(master));
   },
 
   async clearClientMaster() {

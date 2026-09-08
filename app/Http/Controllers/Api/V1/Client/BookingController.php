@@ -111,6 +111,45 @@ class BookingController extends Controller
         ]);
     }
 
+    /**
+     * Newest-scheduled first, in the master's own timezone — the same one
+     * `book()`'s slots are already quoted in, so a client sees the same
+     * 10:00 they picked, not a UTC-shifted time.
+     */
+    public function appointments(): JsonResponse
+    {
+        /** @var Client $client */
+        $client = request()->user();
+        $masterId = (int) $client->user_id;
+        $masterTimezone = $this->resolveMasterTimezone($masterId);
+        $now = Carbon::now($masterTimezone);
+
+        $appointments = Appointment::query()
+            ->where('user_id', $masterId)
+            ->where('client_id', $client->id)
+            ->orderByDesc('starts_at')
+            ->get();
+
+        $payload = $appointments->map(function (Appointment $appointment) use ($masterTimezone, $now) {
+            $startsAt = $appointment->starts_at?->copy()->timezone($masterTimezone);
+
+            return [
+                'id' => $appointment->id,
+                'status' => $appointment->status,
+                'service_label' => Arr::get($appointment->meta, 'service_label', self::UNSPECIFIED_SERVICE_LABEL),
+                'date' => $startsAt?->toDateString(),
+                'time' => $startsAt?->format('H:i'),
+                'is_upcoming' => $startsAt !== null && $startsAt->greaterThanOrEqualTo($now),
+            ];
+        });
+
+        return response()->json([
+            'data' => [
+                'appointments' => $payload,
+            ],
+        ]);
+    }
+
     public function slots(Service $service, ClientPortalSlotsRequest $request): JsonResponse
     {
         /** @var Client $client */

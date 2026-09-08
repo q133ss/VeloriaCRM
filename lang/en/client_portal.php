@@ -17,6 +17,13 @@ return [
         'magic_link_intro' => 'Tap the button below to log in to the app:',
         'magic_link_cta' => 'Log in',
     ],
+    'redirect' => [
+        'title' => 'Opening the app',
+        'opening' => 'One second, switching to Veloria Client…',
+        'button' => 'Open the app manually',
+        'code_hint' => "If the app didn't open on its own, enter this code on the login screen:",
+        'no_app' => "Don't have the app yet? Install Veloria Client and log in with your email again.",
+    ],
     'booking' => [
         'slot_unavailable' => 'This time is no longer available.',
         'master_notification_title' => 'New booking from client portal',

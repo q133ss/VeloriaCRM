@@ -50,15 +50,14 @@ const defaultUpdates = [
     },
   ];
 
-export function buildMockHomeFeed(clientName = 'Клиент', services: ClientServiceCard[] = defaultServices): HomeFeed {
+// `nextAppointment` isn't here: unlike the services/news placeholders below —
+// harmless filler until a master has real ones — a fake upcoming appointment
+// would be a lie about the client's own booking. HomeScreen always sources it
+// from GET /client/appointments (ClientPortalProvider.loadHomeFeed), null when
+// there isn't one.
+export function buildMockHomeFeed(clientName = 'Клиент', services: ClientServiceCard[] = defaultServices): Omit<HomeFeed, 'nextAppointment'> {
   return {
     clientName,
-    nextAppointment: {
-      service: 'Маникюр + укрепление',
-      dateLabel: '21 марта',
-      timeLabel: '18:30',
-      status: 'Подтверждено',
-    },
     services,
     updates: defaultUpdates,
   };

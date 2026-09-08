@@ -225,6 +225,90 @@ class IntegrationSettingsTest extends TestCase
         );
     }
 
+    public function test_pro_user_can_save_client_app_branding(): void
+    {
+        $plan = Plan::query()->create(['name' => 'pro', 'price' => 999]);
+
+        $user = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+        ]);
+        $user->plans()->attach($plan->id, ['ends_at' => Carbon::now()->addMonth()]);
+
+        Setting::query()->create(['user_id' => $user->id]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->patchJson('/api/v1/settings', [
+            'name' => 'Pro Master',
+            'email' => 'pro-branding@example.com',
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+            'notifications' => ['email' => true, 'telegram' => false, 'sms' => false],
+            'holidays' => [],
+            'branding' => [
+                'app_display_name' => 'Mira Beauty',
+                'primary_color' => '#FF00FC',
+                'secondary_color' => '#111111',
+                'logo_url' => 'https://cdn.example.com/mira-logo.png',
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('settings.features.branding.available', true)
+            ->assertJsonPath('settings.features.branding.app_display_name', 'Mira Beauty')
+            ->assertJsonPath('settings.features.branding.primary_color', '#FF00FC')
+            ->assertJsonPath('settings.features.branding.logo_url', 'https://cdn.example.com/mira-logo.png');
+
+        $this->assertSame(
+            [
+                'app_display_name' => 'Mira Beauty',
+                'primary_color' => '#FF00FC',
+                'secondary_color' => '#111111',
+                'logo_url' => 'https://cdn.example.com/mira-logo.png',
+            ],
+            $user->fresh()->setting->branding,
+        );
+    }
+
+    /**
+     * The write endpoint has to enforce the plan gate itself: a Lite master
+     * posting `branding` directly to the API (not just clicking through the
+     * settings UI) must not be able to set it, since App\Http\Controllers\
+     * Api\V1\Client\AuthController::me() promises Lite clients the default
+     * app look no matter what.
+     */
+    public function test_lite_user_cannot_save_client_app_branding(): void
+    {
+        $user = User::factory()->create([
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+        ]);
+
+        Setting::query()->create(['user_id' => $user->id]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->patchJson('/api/v1/settings', [
+            'name' => 'Lite Master',
+            'email' => 'lite-branding@example.com',
+            'timezone' => 'Europe/Moscow',
+            'time_format' => '24h',
+            'notifications' => ['email' => true, 'telegram' => false, 'sms' => false],
+            'holidays' => [],
+            'branding' => [
+                'app_display_name' => 'Should not save',
+                'primary_color' => '#000000',
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('settings.features.branding.available', false)
+            ->assertJsonPath('settings.features.branding.app_display_name', null);
+
+        $this->assertNull($user->fresh()->setting->branding);
+    }
+
     /**
      * The page promised that secret keys are not shown to anyone and then
      * refilled them into visible text inputs on every load.

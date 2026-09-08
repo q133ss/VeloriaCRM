@@ -52,6 +52,17 @@ return [
 
     'client_portal' => [
         'mobile_scheme' => env('CLIENT_PORTAL_MOBILE_SCHEME', 'veloriaclient'),
+        // Android App Link host for the magic-link email. Must match the domain
+        // verified in the mobile app's intentFilters (Client Mobile App/app.json)
+        // and the fingerprints below, or Android will only fall back to the
+        // in-browser redirect page instead of opening the app directly.
+        'app_link_host' => env('CLIENT_PORTAL_APP_LINK_HOST', parse_url((string) env('APP_URL', ''), PHP_URL_HOST) ?: 'veloria.io'),
+        'android_package' => env('CLIENT_PORTAL_ANDROID_PACKAGE', 'ru.veloria.client'),
+        // Comma-separated SHA-256 signing certificate fingerprints, required for
+        // Android to verify the App Link via /.well-known/assetlinks.json. Empty
+        // until a real release keystore exists — the link still works via the
+        // browser-redirect fallback, just without the seamless one-tap open.
+        'android_sha256_fingerprints' => env('CLIENT_PORTAL_ANDROID_SHA256_FINGERPRINTS', ''),
     ],
 
     'yandex' => [

@@ -118,9 +118,14 @@ class ClientPortalAuthService extends BaseService
 
     private function buildMagicLink(string $verificationId, string $code): string
     {
+        // An https Android App Link, not the bare `veloriaclient://` scheme: a custom
+        // scheme link is unreliable when tapped from inside an email client (Gmail in
+        // particular often refuses to open it). This URL opens the app directly when
+        // the App Link is verified, and otherwise falls back to /auth/verify, which
+        // redirects into the app itself.
         return sprintf(
-            '%s://auth/verify?vid=%s&code=%s',
-            config('services.client_portal.mobile_scheme'),
+            'https://%s/auth/verify?vid=%s&code=%s',
+            config('services.client_portal.app_link_host'),
             $verificationId,
             $code,
         );
