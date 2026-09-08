@@ -50,6 +50,10 @@ return [
         'version' => env('VKONTAKTE_API_VERSION', '5.131'),
     ],
 
+    'client_portal' => [
+        'mobile_scheme' => env('CLIENT_PORTAL_MOBILE_SCHEME', 'veloriaclient'),
+    ],
+
     'yandex' => [
         'client_id' => env('YANDEX_CLIENT_ID'),
         'client_secret' => env('YANDEX_CLIENT_SECRET'),

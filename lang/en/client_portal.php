@@ -13,6 +13,9 @@ return [
         'otp_subject' => 'Your verification code',
         'otp_intro' => 'Use this code to continue:',
         'otp_expires' => 'This code expires in :minutes minutes.',
+        'magic_link_subject' => 'Your login link',
+        'magic_link_intro' => 'Tap the button below to log in to the app:',
+        'magic_link_cta' => 'Log in',
     ],
     'booking' => [
         'slot_unavailable' => 'This time is no longer available.',

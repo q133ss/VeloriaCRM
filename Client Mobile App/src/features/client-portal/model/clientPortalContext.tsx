@@ -1,3 +1,4 @@
+import * as Linking from 'expo-linking';
 import {
   ReactNode,
   createContext,
@@ -7,27 +8,32 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { Alert } from 'react-native';
 
 import { sessionStorage } from '../../../shared/api/sessionStorage';
-import { ClientServiceDto } from '../api/contracts';
+import { ClientServiceDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
 import { buildMockHomeFeed } from '../mocks/mockClientPortal';
 import {
+  AuthMaster,
   HomeFeed,
-  MasterLanding,
   PendingAuth,
+  PendingSelection,
   SessionUser,
 } from './types';
 
 type ClientPortalContextValue = {
   bootstrapping: boolean;
   authBusy: boolean;
-  master: MasterLanding | null;
+  master: AuthMaster | null;
   home: HomeFeed | null;
   session: SessionUser | null;
   pendingAuth: PendingAuth | null;
+  pendingSelection: PendingSelection | null;
   requestLoginCode: (email: string) => Promise<void>;
+  requestMagicLink: (email: string) => Promise<void>;
   confirmLoginCode: (code: string) => Promise<void>;
+  selectMaster: (masterId: number) => Promise<void>;
   resetPendingAuth: () => void;
 };
 
@@ -53,6 +59,13 @@ function mapClientToSessionUser(client: {
   };
 }
 
+function mapMaster(master: { id: number; name: string | null }): AuthMaster {
+  return {
+    id: master.id,
+    name: master.name?.trim() || 'Мастер',
+  };
+}
+
 function mapServicesToHomeCards(services: ClientServiceDto[]) {
   return services.slice(0, 4).map((service) => ({
     id: String(service.id),
@@ -65,41 +78,86 @@ function mapServicesToHomeCards(services: ClientServiceDto[]) {
 export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
   const [bootstrapping, setBootstrapping] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
-  const [master, setMaster] = useState<MasterLanding | null>(null);
+  const [master, setMaster] = useState<AuthMaster | null>(null);
   const [home, setHome] = useState<HomeFeed | null>(null);
   const [session, setSession] = useState<SessionUser | null>(null);
   const [pendingAuth, setPendingAuth] = useState<PendingAuth | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
 
-  const hydrateAuthorizedState = useCallback(async (token: string) => {
-    const meResponse = await clientPortalApi.getMe(token);
-    const client = meResponse.data.client;
-    const nextSession = mapClientToSessionUser(client);
-
-    setSession(nextSession);
-
+  const loadHomeFeed = useCallback(async (token: string, clientName: string) => {
     try {
       const servicesResponse = await clientPortalApi.getServices(token);
       const services = mapServicesToHomeCards(servicesResponse.data.services);
 
-      setHome(buildMockHomeFeed(nextSession.name, services.length > 0 ? services : undefined));
+      setHome(buildMockHomeFeed(clientName, services.length > 0 ? services : undefined));
     } catch {
-      setHome(buildMockHomeFeed(nextSession.name));
+      setHome(buildMockHomeFeed(clientName));
     }
   }, []);
+
+  const hydrateFromToken = useCallback(async (token: string) => {
+    const meResponse = await clientPortalApi.getMe(token);
+    const nextSession = mapClientToSessionUser(meResponse.data.client);
+
+    setSession(nextSession);
+
+    const storedMaster = await sessionStorage.getClientMaster();
+    if (storedMaster) {
+      setMaster(storedMaster);
+    }
+
+    await loadHomeFeed(token, nextSession.name);
+  }, [loadHomeFeed]);
+
+  const applyAuthPayload = useCallback(async (payload: VerifyAuthPayload) => {
+    const nextSession = mapClientToSessionUser(payload.client);
+    const nextMaster = mapMaster(payload.master);
+
+    await sessionStorage.setClientToken(payload.token);
+    await sessionStorage.setClientMaster(nextMaster);
+
+    setMaster(nextMaster);
+    setSession(nextSession);
+    setPendingAuth(null);
+    setPendingSelection(null);
+
+    await loadHomeFeed(payload.token, nextSession.name);
+  }, [loadHomeFeed]);
+
+  const applyVerifyResult = useCallback(async (data: VerifyLoginResponseData, email: string) => {
+    if (isMasterSelectionRequired(data)) {
+      setPendingAuth(null);
+      setPendingSelection({
+        selectionToken: data.selection_token,
+        email,
+        masters: data.masters.map((choice) => ({
+          masterId: choice.master_id,
+          masterName: choice.master_name,
+          clientId: choice.client_id,
+        })),
+      });
+      return;
+    }
+
+    await applyAuthPayload(data);
+  }, [applyAuthPayload]);
+
+  const confirmMagicLink = useCallback(async (verificationId: string, code: string) => {
+    setAuthBusy(true);
+
+    try {
+      const response = await clientPortalApi.verifyLogin({ verification_id: verificationId, code });
+      await applyVerifyResult(response.data, pendingAuth?.email ?? '');
+    } finally {
+      setAuthBusy(false);
+    }
+  }, [applyVerifyResult, pendingAuth]);
 
   useEffect(() => {
     let mounted = true;
 
     async function bootstrap() {
       try {
-        const landing = await clientPortalApi.getMasterLanding();
-
-        if (!mounted) {
-          return;
-        }
-
-        setMaster(landing);
-
         const token = await sessionStorage.getClientToken();
 
         if (!token || !mounted) {
@@ -107,12 +165,14 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
         }
 
         try {
-          await hydrateAuthorizedState(token);
+          await hydrateFromToken(token);
         } catch {
           await sessionStorage.clearClientToken();
+          await sessionStorage.clearClientMaster();
           if (mounted) {
             setSession(null);
             setHome(null);
+            setMaster(null);
           }
         }
       } finally {
@@ -127,20 +187,49 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     return () => {
       mounted = false;
     };
-  }, [hydrateAuthorizedState]);
+  }, [hydrateFromToken]);
 
-  const requestLoginCode = useCallback(async (email: string) => {
-    if (!master) {
-      throw new Error('Профиль мастера еще не загружен.');
+  useEffect(() => {
+    function handleUrl(url: string) {
+      const parsed = Linking.parse(url);
+
+      // A custom-scheme URL like `veloriaclient://auth/verify` is parsed via WHATWG URL
+      // rules: "auth" lands in `hostname` (authority), and "verify" is what's left of `path`.
+      if (parsed.hostname !== 'auth' || parsed.path !== 'verify') {
+        return;
+      }
+
+      const vid = typeof parsed.queryParams?.vid === 'string' ? parsed.queryParams.vid : null;
+      const code = typeof parsed.queryParams?.code === 'string' ? parsed.queryParams.code : null;
+
+      if (!vid || !code) {
+        return;
+      }
+
+      confirmMagicLink(vid, code).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Не удалось подтвердить вход по ссылке.';
+        Alert.alert('Ошибка', message);
+      });
     }
 
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleUrl(url);
+      }
+    });
+
+    const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+
+    return () => {
+      subscription.remove();
+    };
+  }, [confirmMagicLink]);
+
+  const requestLoginCode = useCallback(async (email: string) => {
     setAuthBusy(true);
 
     try {
-      const response = await clientPortalApi.startLogin({
-        master_id: master.id,
-        email,
-      });
+      const response = await clientPortalApi.startLogin({ email });
 
       setPendingAuth({
         verificationId: response.data.verification_id,
@@ -150,7 +239,23 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     } finally {
       setAuthBusy(false);
     }
-  }, [master]);
+  }, []);
+
+  const requestMagicLink = useCallback(async (email: string) => {
+    setAuthBusy(true);
+
+    try {
+      const response = await clientPortalApi.startMagicLink({ email });
+
+      setPendingAuth({
+        verificationId: response.data.verification_id,
+        email,
+        mode: 'magic-link',
+      });
+    } finally {
+      setAuthBusy(false);
+    }
+  }, []);
 
   const confirmLoginCode = useCallback(async (code: string) => {
     if (!pendingAuth) {
@@ -165,18 +270,34 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
         code,
       });
 
-      const { token, client } = response.data;
-      await sessionStorage.setClientToken(token);
-      await hydrateAuthorizedState(token);
-      setSession(mapClientToSessionUser(client));
-      setPendingAuth(null);
+      await applyVerifyResult(response.data, pendingAuth.email);
     } finally {
       setAuthBusy(false);
     }
-  }, [hydrateAuthorizedState, pendingAuth]);
+  }, [applyVerifyResult, pendingAuth]);
+
+  const selectMaster = useCallback(async (masterId: number) => {
+    if (!pendingSelection) {
+      throw new Error('Нет доступных данных для выбора мастера.');
+    }
+
+    setAuthBusy(true);
+
+    try {
+      const response = await clientPortalApi.verifyLogin({
+        selection_token: pendingSelection.selectionToken,
+        master_id: masterId,
+      });
+
+      await applyVerifyResult(response.data, pendingSelection.email);
+    } finally {
+      setAuthBusy(false);
+    }
+  }, [applyVerifyResult, pendingSelection]);
 
   const resetPendingAuth = useCallback(() => {
     setPendingAuth(null);
+    setPendingSelection(null);
   }, []);
 
   const value = useMemo<ClientPortalContextValue>(
@@ -187,11 +308,27 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       home,
       session,
       pendingAuth,
+      pendingSelection,
       requestLoginCode,
+      requestMagicLink,
       confirmLoginCode,
+      selectMaster,
       resetPendingAuth,
     }),
-    [authBusy, bootstrapping, confirmLoginCode, home, master, pendingAuth, requestLoginCode, resetPendingAuth, session],
+    [
+      authBusy,
+      bootstrapping,
+      confirmLoginCode,
+      home,
+      master,
+      pendingAuth,
+      pendingSelection,
+      requestLoginCode,
+      requestMagicLink,
+      resetPendingAuth,
+      selectMaster,
+      session,
+    ],
   );
 
   return <ClientPortalContext.Provider value={value}>{children}</ClientPortalContext.Provider>;

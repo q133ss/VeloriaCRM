@@ -28,6 +28,18 @@ class AuthController extends Controller
         ]);
     }
 
+    public function loginMagicLink(ClientPortalLoginRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $result = $this->auth->startMagicLink((string) $validated['email']);
+
+        return response()->json([
+            'message' => __('client_portal.auth.code_sent'),
+            'data' => $result,
+        ]);
+    }
+
     public function verifyLogin(ClientPortalVerifyRequest $request): JsonResponse
     {
         $validated = $request->validated();

@@ -2,6 +2,7 @@
 
 namespace App\Services\ClientPortal;
 
+use App\Mail\ClientMagicLinkMail;
 use App\Mail\ClientOtpCodeMail;
 use App\Models\Client;
 use App\Services\BaseService;
@@ -25,7 +26,35 @@ class ClientPortalAuthService extends BaseService
             $this->throwError('not_found', __('client_portal.auth.client_not_found'), [], 404);
         }
 
-        return $this->startOtpFlow('login', $email);
+        [$verificationId, $code] = $this->issueOtp('login', $email);
+
+        Mail::to($email)->send(new ClientOtpCodeMail($code, self::CODE_TTL_MINUTES));
+
+        return [
+            'verification_id' => $verificationId,
+            'expires_in' => self::CODE_TTL_MINUTES * 60,
+        ];
+    }
+
+    public function startMagicLink(string $email): array
+    {
+        $email = $this->normalizeEmail($email);
+
+        if ($this->findClientsByEmail($email)->isEmpty()) {
+            $this->throwError('not_found', __('client_portal.auth.client_not_found'), [], 404);
+        }
+
+        [$verificationId, $code] = $this->issueOtp('login', $email);
+
+        Mail::to($email)->send(new ClientMagicLinkMail(
+            $this->buildMagicLink($verificationId, $code),
+            self::CODE_TTL_MINUTES,
+        ));
+
+        return [
+            'verification_id' => $verificationId,
+            'expires_in' => self::CODE_TTL_MINUTES * 60,
+        ];
     }
 
     public function verifyLogin(?string $verificationId, ?string $code, ?string $selectionToken = null, ?int $masterId = null): array
@@ -62,7 +91,10 @@ class ClientPortalAuthService extends BaseService
         ];
     }
 
-    private function startOtpFlow(string $type, string $email): array
+    /**
+     * @return array{0: string, 1: string} [$verificationId, $code]
+     */
+    private function issueOtp(string $type, string $email): array
     {
         $throttleKey = 'client_portal:otp_throttle:' . sha1($type . '|' . $email);
         if (Cache::has($throttleKey)) {
@@ -81,12 +113,17 @@ class ClientPortalAuthService extends BaseService
             'attempts' => 0,
         ], now()->addMinutes(self::CODE_TTL_MINUTES));
 
-        Mail::to($email)->send(new ClientOtpCodeMail($code, self::CODE_TTL_MINUTES));
+        return [$verificationId, $code];
+    }
 
-        return [
-            'verification_id' => $verificationId,
-            'expires_in' => self::CODE_TTL_MINUTES * 60,
-        ];
+    private function buildMagicLink(string $verificationId, string $code): string
+    {
+        return sprintf(
+            '%s://auth/verify?vid=%s&code=%s',
+            config('services.client_portal.mobile_scheme'),
+            $verificationId,
+            $code,
+        );
     }
 
     private function consumeOtp(string $expectedType, string $verificationId, string $code): array

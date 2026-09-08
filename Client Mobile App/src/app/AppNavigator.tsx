@@ -43,11 +43,37 @@ function buildNavigationTheme(theme: AppTheme): NavigationTheme {
   };
 }
 
+function screenOptions(theme: AppTheme) {
+  return {
+    headerShown: false,
+    contentStyle: {
+      backgroundColor: theme.colors.appBackground,
+    },
+    animation: 'slide_from_right' as const,
+  };
+}
+
+function GuestNavigator({ theme }: { theme: AppTheme }) {
+  return (
+    <Stack.Navigator initialRouteName="Auth" screenOptions={screenOptions(theme)}>
+      <Stack.Screen name="Auth" component={AuthScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AuthedNavigator({ theme }: { theme: AppTheme }) {
+  return (
+    <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions(theme)}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export function AppNavigator() {
   const theme = useAppTheme();
-  const { bootstrapping, master, session } = useClientPortal();
+  const { bootstrapping, session } = useClientPortal();
 
-  if (bootstrapping || !master) {
+  if (bootstrapping) {
     return (
       <>
         <StatusBar style={theme.isDark ? 'light' : 'dark'} />
@@ -59,20 +85,7 @@ export function AppNavigator() {
   return (
     <NavigationContainer theme={buildNavigationTheme(theme)}>
       <StatusBar style={theme.isDark ? 'light' : 'dark'} />
-      <Stack.Navigator
-        key={session ? 'authorized' : 'guest'}
-        initialRouteName={session ? 'Home' : 'Auth'}
-        screenOptions={{
-          headerShown: false,
-          contentStyle: {
-            backgroundColor: theme.colors.appBackground,
-          },
-          animation: 'slide_from_right',
-        }}
-      >
-        <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-      </Stack.Navigator>
+      {session ? <AuthedNavigator key="authorized" theme={theme} /> : <GuestNavigator key="guest" theme={theme} />}
     </NavigationContainer>
   );
 }

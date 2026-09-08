@@ -1,38 +1,4 @@
-import { ClientServiceCard, HomeFeed, MasterLanding } from '../model/types';
-
-export const masterLandingMock: MasterLanding = {
-  id: 148,
-  slug: 'mira-beauty-room',
-  studioName: 'Mira Beauty Room',
-  masterName: 'Мира Соколова',
-  cityLabel: 'Патриаршие пруды',
-  focusLabel: 'Натуральный маникюр, укрепление, быстрые дневные окна',
-  heroNote: 'Тихий салон без спешки. Запись занимает меньше минуты.',
-  trustNote: 'Все свободные окна синхронизированы с CRM мастера и не требуют переписки в мессенджере.',
-  accentTag: 'Вечерние слоты на этой неделе',
-  servicePreview: [
-    {
-      id: 'svc-1',
-      title: 'Маникюр express',
-      duration: '50 мин',
-      price: 'от 2 200 ₽',
-      badge: 'Быстро',
-    },
-    {
-      id: 'svc-2',
-      title: 'Маникюр + покрытие',
-      duration: '1 ч 40 мин',
-      price: 'от 3 300 ₽',
-    },
-    {
-      id: 'svc-3',
-      title: 'Укрепление гелем',
-      duration: '2 ч',
-      price: 'от 3 900 ₽',
-      badge: 'Топ',
-    },
-  ],
-};
+import { ClientServiceCard, HomeFeed } from '../model/types';
 
 const defaultServices: ClientServiceCard[] = [
   {

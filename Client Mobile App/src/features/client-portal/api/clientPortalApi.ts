@@ -12,34 +12,12 @@ import {
   OtpStartPayload,
   ServiceCategoryDto,
   StartLoginBody,
-  StartRegisterBody,
-  VerifyAuthPayload,
-  VerifyCodeBody,
+  VerifyLoginBody,
+  VerifyLoginResponseData,
   WaitlistEntryPayload,
 } from './contracts';
-import { masterLandingMock } from '../mocks/mockClientPortal';
 
 export const clientPortalApi = {
-  async getMasterLanding() {
-    return masterLandingMock;
-  },
-
-  startRegister(body: StartRegisterBody) {
-    return httpRequest<ApiEnvelope<OtpStartPayload>>({
-      method: 'POST',
-      path: '/client/register',
-      body,
-    });
-  },
-
-  verifyRegister(body: VerifyCodeBody) {
-    return httpRequest<ApiEnvelope<VerifyAuthPayload>>({
-      method: 'POST',
-      path: '/client/register/verify',
-      body,
-    });
-  },
-
   startLogin(body: StartLoginBody) {
     return httpRequest<ApiEnvelope<OtpStartPayload>>({
       method: 'POST',
@@ -48,8 +26,16 @@ export const clientPortalApi = {
     });
   },
 
-  verifyLogin(body: VerifyCodeBody) {
-    return httpRequest<ApiEnvelope<VerifyAuthPayload>>({
+  startMagicLink(body: StartLoginBody) {
+    return httpRequest<ApiEnvelope<OtpStartPayload>>({
+      method: 'POST',
+      path: '/client/login/magic-link',
+      body,
+    });
+  },
+
+  verifyLogin(body: VerifyLoginBody) {
+    return httpRequest<ApiEnvelope<VerifyLoginResponseData>>({
       method: 'POST',
       path: '/client/login/verify',
       body,

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ClientMagicLinkMail;
 use App\Mail\ClientOtpCodeMail;
 use App\Models\Client;
 use App\Models\Service;
@@ -282,6 +283,62 @@ class ClientPortalAuthAndBookingTest extends TestCase
             ->assertJsonPath('data.client.email', 'client@example.com')
             ->assertJsonPath('data.master.id', $secondMaster->id)
             ->assertJsonPath('data.master.name', 'Olga');
+    }
+
+    public function test_client_can_login_via_magic_link(): void
+    {
+        $master = User::factory()->create();
+
+        Client::create([
+            'user_id' => $master->id,
+            'name' => 'Client',
+            'email' => 'client@example.com',
+            'phone' => '79518677099',
+        ]);
+
+        Mail::fake();
+
+        $response = $this->postJson('/api/v1/client/login/magic-link', [
+            'email' => 'client@example.com',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.expires_in', 600);
+
+        $verificationId = $response->json('data.verification_id');
+        $this->assertNotEmpty($verificationId);
+
+        $link = null;
+        Mail::assertSent(ClientMagicLinkMail::class, function (ClientMagicLinkMail $mail) use (&$link) {
+            $link = $mail->link;
+            return true;
+        });
+        $this->assertNotEmpty($link);
+        $this->assertStringStartsWith('veloriaclient://auth/verify', $link);
+
+        parse_str((string) parse_url($link, PHP_URL_QUERY), $params);
+        $this->assertSame($verificationId, $params['vid']);
+        $this->assertNotEmpty($params['code']);
+
+        $verify = $this->postJson('/api/v1/client/login/verify', [
+            'verification_id' => $params['vid'],
+            'code' => $params['code'],
+        ]);
+
+        $verify->assertOk()
+            ->assertJsonPath('data.client.email', 'client@example.com')
+            ->assertJsonPath('data.master.id', $master->id);
+    }
+
+    public function test_magic_link_rejects_unknown_email(): void
+    {
+        Mail::fake();
+
+        $this->postJson('/api/v1/client/login/magic-link', [
+            'email' => 'nobody@example.com',
+        ])->assertNotFound();
+
+        Mail::assertNothingSent();
     }
 
     public function test_client_register_routes_are_not_available(): void

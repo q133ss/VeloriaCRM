@@ -16,10 +16,37 @@ export type OtpStartPayload = {
   expires_in: number;
 };
 
+export type ApiMaster = {
+  id: number;
+  name: string | null;
+};
+
 export type VerifyAuthPayload = {
   client: ApiClient;
+  master: ApiMaster;
   token: string;
 };
+
+export type MasterSelectionChoiceDto = {
+  master_id: number;
+  master_name: string;
+  client_id: number;
+};
+
+export type MasterSelectionRequiredPayload = {
+  requires_master_selection: true;
+  selection_token: string;
+  expires_in: number;
+  masters: MasterSelectionChoiceDto[];
+};
+
+export type VerifyLoginResponseData = VerifyAuthPayload | MasterSelectionRequiredPayload;
+
+export function isMasterSelectionRequired(
+  data: VerifyLoginResponseData,
+): data is MasterSelectionRequiredPayload {
+  return 'requires_master_selection' in data && data.requires_master_selection === true;
+}
 
 export type ServiceCategoryDto = {
   id: number;
@@ -56,15 +83,7 @@ export type WaitlistEntryPayload = {
   waitlist_entry_id: number;
 };
 
-export type StartRegisterBody = {
-  master_id: number;
-  name: string;
-  email: string;
-  phone: string;
-};
-
 export type StartLoginBody = {
-  master_id: number;
   email: string;
 };
 
@@ -72,6 +91,13 @@ export type VerifyCodeBody = {
   verification_id: string;
   code: string;
 };
+
+export type SelectMasterBody = {
+  selection_token: string;
+  master_id: number;
+};
+
+export type VerifyLoginBody = VerifyCodeBody | SelectMasterBody;
 
 export type GetServicesQuery = {
   category_id?: number;

@@ -28,7 +28,7 @@ export function HomeScreen({}: Props) {
         style={styles.header}
       >
         <Text style={styles.greeting}>Здравствуйте, {session?.name ?? home.clientName}</Text>
-        <Text style={styles.headerTitle}>Запись к {master.masterName}</Text>
+        <Text style={styles.headerTitle}>Запись к {master.name}</Text>
         <Text style={styles.headerSubtitle}>
           Все ключевые действия собраны здесь: ближайший визит, услуги и новости мастера.
         </Text>

@@ -3,6 +3,7 @@
     "name": "Veloria Client MVP",
     "slug": "veloria-client-mvp",
     "version": "1.0.0",
+    "scheme": "veloriaclient",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

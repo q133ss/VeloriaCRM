@@ -12,27 +12,46 @@ import { useAppTheme } from '../../../theme/theme';
 import { useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
-type AuthStep = 'credentials' | 'otp';
+type AuthStep = 'credentials' | 'otp' | 'magic-link-sent' | 'select-master';
 
 export function AuthScreen({ navigation }: Props) {
   const theme = useAppTheme();
-  const { authBusy, master, pendingAuth, requestLoginCode, confirmLoginCode, resetPendingAuth } = useClientPortal();
+  const {
+    authBusy,
+    pendingAuth,
+    pendingSelection,
+    requestLoginCode,
+    requestMagicLink,
+    confirmLoginCode,
+    selectMaster,
+    resetPendingAuth,
+  } = useClientPortal();
 
-  const [step, setStep] = useState<AuthStep>('credentials');
+  const [step, setStep] = useState<AuthStep>(() => {
+    if (pendingSelection) {
+      return 'select-master';
+    }
+    if (pendingAuth?.mode === 'magic-link') {
+      return 'magic-link-sent';
+    }
+    if (pendingAuth?.mode === 'login') {
+      return 'otp';
+    }
+    return 'credentials';
+  });
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
 
+  // A magic-link deep link can resolve to a master-selection prompt while this
+  // screen is already mounted (app was backgrounded on Auth) — keep the step in
+  // sync instead of only reading pendingSelection once at mount.
   useEffect(() => {
-    setStep('credentials');
-    setCode('');
-    resetPendingAuth();
-  }, [resetPendingAuth]);
+    if (pendingSelection) {
+      setStep('select-master');
+    }
+  }, [pendingSelection]);
 
   const codeDigits = useMemo(() => code.padEnd(6, ' ').slice(0, 6).split(''), [code]);
-
-  if (!master) {
-    return null;
-  }
 
   const canRequestCode = email.includes('@');
   const canConfirmCode = code.trim().length >= 6;
@@ -48,18 +67,63 @@ export function AuthScreen({ navigation }: Props) {
     }
   };
 
+  const handleRequestMagicLink = async () => {
+    try {
+      await requestMagicLink(email.trim());
+
+      setStep('magic-link-sent');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Не удалось отправить ссылку.';
+      Alert.alert('Ошибка', message);
+    }
+  };
+
   const handleConfirmOtp = async () => {
     try {
       await confirmLoginCode(code.trim());
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Home' }],
-      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Не удалось подтвердить код.';
       Alert.alert('Ошибка', message);
     }
   };
+
+  const handleSelectMaster = async (masterId: number) => {
+    try {
+      await selectMaster(masterId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Не удалось выбрать мастера.';
+      Alert.alert('Ошибка', message);
+    }
+  };
+
+  const handleChangeEmail = () => {
+    setStep('credentials');
+    setCode('');
+    resetPendingAuth();
+  };
+
+  const heroCopy = {
+    credentials: {
+      eyebrow: 'Login',
+      title: 'Вход в клиентский кабинет Veloria',
+      body: 'Введите email, который мастер уже привязал к вашему профилю в CRM.',
+    },
+    otp: {
+      eyebrow: 'Email verification',
+      title: 'Подтвердите вход',
+      body: 'Введите код из письма, чтобы открыть свои записи, свободные окна и новости мастера.',
+    },
+    'magic-link-sent': {
+      eyebrow: 'Magic link',
+      title: 'Проверьте почту',
+      body: 'Мы отправили ссылку для входа. Откройте письмо на этом устройстве и нажмите «Войти» — приложение откроется само.',
+    },
+    'select-master': {
+      eyebrow: 'Выбор мастера',
+      title: 'У вас несколько мастеров',
+      body: 'Этот email привязан к нескольким мастерам. Выберите, к кому хотите войти.',
+    },
+  }[step];
 
   return (
     <ScreenContainer theme={theme}>
@@ -84,15 +148,9 @@ export function AuthScreen({ navigation }: Props) {
           <View style={styles.heroGlowLarge} />
           <View style={styles.heroGlowSmall} />
 
-          <Text style={styles.heroEyebrow}>{step === 'otp' ? 'Email verification' : 'Login'}</Text>
-          <Text style={styles.heroTitle}>
-            {step === 'otp' ? 'Подтвердите вход' : 'Вход в клиентский кабинет Veloria'}
-          </Text>
-          <Text style={styles.heroBody}>
-            {step === 'otp'
-              ? 'Введите код из письма, чтобы открыть свои записи, свободные окна и новости мастера.'
-              : `Только вход. Клиент уже должен быть добавлен мастером в CRM ${master.studioName}.`}
-          </Text>
+          <Text style={styles.heroEyebrow}>{heroCopy.eyebrow}</Text>
+          <Text style={styles.heroTitle}>{heroCopy.title}</Text>
+          <Text style={styles.heroBody}>{heroCopy.body}</Text>
 
           <View style={styles.heroDots}>
             <View style={styles.heroDotActive} />
@@ -138,11 +196,22 @@ export function AuthScreen({ navigation }: Props) {
                 style={styles.primaryButton}
               />
 
+              <PrimaryButton
+                disabled={!canRequestCode || authBusy}
+                onPress={handleRequestMagicLink}
+                theme={theme}
+                title="Прислать ссылку для входа"
+                variant="secondary"
+                style={styles.secondaryButtonSpacing}
+              />
+
               <Text style={[styles.helperText, { color: theme.colors.textMuted }]}>
                 Если письма нет, значит мастер еще не добавил этот email в вашу карточку.
               </Text>
             </>
-          ) : (
+          ) : null}
+
+          {step === 'otp' ? (
             <>
               <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Email verification</Text>
               <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
@@ -186,20 +255,75 @@ export function AuthScreen({ navigation }: Props) {
                 style={styles.primaryButton}
               />
 
-              <Pressable
-                onPress={() => {
-                  setStep('credentials');
-                  setCode('');
-                  resetPendingAuth();
-                }}
-                style={styles.secondaryAction}
-              >
+              <Pressable onPress={handleChangeEmail} style={styles.secondaryAction}>
                 <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
                   Изменить email
                 </Text>
               </Pressable>
             </>
-          )}
+          ) : null}
+
+          {step === 'magic-link-sent' ? (
+            <>
+              <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Ссылка отправлена</Text>
+              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
+                Письмо ушло на {pendingAuth?.email ?? email}. Откройте его и нажмите на кнопку внутри — вход
+                произойдет автоматически.
+              </Text>
+
+              <PrimaryButton
+                disabled={authBusy}
+                onPress={handleRequestMagicLink}
+                theme={theme}
+                title={authBusy ? 'Отправляем...' : 'Отправить ссылку еще раз'}
+                style={styles.primaryButton}
+              />
+
+              <Pressable onPress={handleChangeEmail} style={styles.secondaryAction}>
+                <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
+                  Изменить email
+                </Text>
+              </Pressable>
+            </>
+          ) : null}
+
+          {step === 'select-master' && pendingSelection ? (
+            <>
+              <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Выберите мастера</Text>
+              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
+                {pendingSelection.email
+                  ? `Email ${pendingSelection.email} привязан к нескольким мастерам.`
+                  : 'Этот email привязан к нескольким мастерам.'}
+              </Text>
+
+              <View style={styles.masterList}>
+                {pendingSelection.masters.map((choice) => (
+                  <Pressable
+                    key={choice.masterId}
+                    disabled={authBusy}
+                    onPress={() => handleSelectMaster(choice.masterId)}
+                    style={[
+                      styles.masterRow,
+                      {
+                        borderColor: theme.colors.borderSoft,
+                        backgroundColor: theme.colors.inputBackground,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.masterRowText, { color: theme.colors.textPrimary }]}>
+                      {choice.masterName}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Pressable onPress={handleChangeEmail} style={styles.secondaryAction}>
+                <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
+                  Изменить email
+                </Text>
+              </Pressable>
+            </>
+          ) : null}
         </View>
       </View>
     </ScreenContainer>
@@ -325,6 +449,9 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: 20,
   },
+  secondaryButtonSpacing: {
+    marginTop: 12,
+  },
   helperText: {
     fontSize: 13,
     lineHeight: 20,
@@ -348,6 +475,20 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 24,
     fontWeight: '800',
+  },
+  masterList: {
+    gap: 12,
+    marginTop: 22,
+  },
+  masterRow: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  masterRowText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   secondaryAction: {
     alignItems: 'center',

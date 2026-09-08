@@ -38,6 +38,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
 
     Route::prefix('client')->group(function () {
         Route::post('/login', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'login']);
+        Route::post('/login/magic-link', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'loginMagicLink']);
         Route::post('/login/verify', [\App\Http\Controllers\Api\V1\Client\AuthController::class, 'verifyLogin']);
 
         Route::middleware(['auth:sanctum', 'token.client'])->group(function () {

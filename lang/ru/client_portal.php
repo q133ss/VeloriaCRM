@@ -13,6 +13,9 @@ return [
         'otp_subject' => 'Код подтверждения',
         'otp_intro' => 'Используйте этот код, чтобы продолжить:',
         'otp_expires' => 'Код действует :minutes мин.',
+        'magic_link_subject' => 'Ссылка для входа',
+        'magic_link_intro' => 'Нажмите на кнопку ниже, чтобы войти в приложение:',
+        'magic_link_cta' => 'Войти',
     ],
     'booking' => [
         'slot_unavailable' => 'Это время уже занято.',

@@ -1,12 +1,4 @@
-export type AuthMode = 'login';
-
-export type ServicePreviewCard = {
-  id: string;
-  title: string;
-  duration: string;
-  price: string;
-  badge?: string;
-};
+export type AuthMode = 'login' | 'magic-link';
 
 export type ClientServiceCard = {
   id: string;
@@ -16,17 +8,9 @@ export type ClientServiceCard = {
   badge?: string;
 };
 
-export type MasterLanding = {
+export type AuthMaster = {
   id: number;
-  slug: string;
-  studioName: string;
-  masterName: string;
-  cityLabel: string;
-  focusLabel: string;
-  heroNote: string;
-  trustNote: string;
-  accentTag: string;
-  servicePreview: ServicePreviewCard[];
+  name: string;
 };
 
 export type HomeFeed = {
@@ -46,15 +30,22 @@ export type HomeFeed = {
   }>;
 };
 
-export type AuthRequest = {
-  mode: AuthMode;
-  email: string;
-};
-
 export type PendingAuth = {
   verificationId: string;
   email: string;
   mode: AuthMode;
+};
+
+export type MasterChoice = {
+  masterId: number;
+  masterName: string;
+  clientId: number;
+};
+
+export type PendingSelection = {
+  selectionToken: string;
+  email: string;
+  masters: MasterChoice[];
 };
 
 export type SessionUser = {
