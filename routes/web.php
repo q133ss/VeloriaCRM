@@ -3,18 +3,14 @@
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\AdminPageController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LandingRequestController;
 use App\Http\Controllers\LocaleController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('set.locale')->group(function () {
-    Route::get('/', function () {
-        return view('welcome', [
-            'isAuthenticated' => Auth::guard('sanctum')->check(),
-        ]);
-    });
+    Route::get('/', HomeController::class)->name('home');
 
     Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
@@ -22,6 +18,18 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/l/{slug}/request', LandingRequestController::class)
         ->middleware('throttle:10,1')
         ->name('landings.request');
+
+    // Обе ссылки стоят в футере каждой страницы кабинета и вели в 404.
+    foreach (['terms', 'policy'] as $document) {
+        Route::get('/' . $document, function () use ($document) {
+            return view('legal', [
+                'title' => __('legal.' . $document . '.title'),
+                'body' => __('legal.' . $document . '.body'),
+                'updatedAt' => '8 сентября 2026',
+                'contactEmail' => config('mail.from.address', 'hello@veloria.ru'),
+            ]);
+        })->name($document);
+    }
 
     Route::view('/login', 'auth.login')->name('login');
     Route::view('/register', 'auth.register')->name('register.form');
@@ -84,19 +92,30 @@ Route::middleware('set.locale')->group(function () {
             return view('services.index');
         })->name('services.index');
 
-        Route::get('/landings', function () {
-            return view('landings.index');
-        })->name('landings.index');
+        // Сайт мастера переехал в бесплатный тариф: им клиенток привлекают, а не
+        // удерживают, и держать его за замком — значит закрывать вход в продукт.
+        // Ограничение осталось, но по количеству сайтов, а не по тарифу —
+        // LandingController::ensureWithinLandingLimit().
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('/landings', function () {
+                return view('landings.index');
+            })->name('landings.index');
 
-        Route::get('/landings/create', function () {
-            return view('landings.create');
-        })->name('landings.create');
+            Route::get('/landings/create', function () {
+                return view('landings.create');
+            })->name('landings.create');
 
-        Route::get('/landings/{landing}/edit', function ($landing) {
-            return view('landings.edit', ['landingId' => $landing]);
-        })->name('landings.edit');
+            Route::get('/landings/{landing}/edit', function ($landing) {
+                return view('landings.edit', ['landingId' => $landing]);
+            })->name('landings.edit');
+        });
 
-        Route::view('/marketing', 'marketing.index')->name('marketing');
+        // Рассылки платные и остаются платными: ими клиенток возвращают.
+        // Раньше на Lite экран отдавал 200 и полноценный интерфейс с нулями в
+        // счётчиках, за которым API возвращал 403.
+        Route::middleware(['auth:sanctum', 'plan:pro'])->group(function () {
+            Route::view('/marketing', 'marketing.index')->name('marketing');
+        });
         Route::view('/help', 'help.index')->name('help');
         Route::view('/notifications', 'notifications.index')->name('notifications.index');
 

@@ -170,7 +170,7 @@ return [
         'url_invalid' => 'Enter a valid URL.',
     ],
     'errors' => [
-        'plan_required' => 'Landing Pages are available on Pro and Elite plans.',
+        'free_limit' => 'The free plan includes one site. Edit the one you have, or upgrade to Master to add more.',
     ],
     'public' => [
         'preview_badge' => 'Preview mode',

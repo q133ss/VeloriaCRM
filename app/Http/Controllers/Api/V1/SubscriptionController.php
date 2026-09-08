@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -273,15 +274,29 @@ class SubscriptionController extends Controller
         }
 
         $now = Carbon::now();
+
+        // Cancelling means "do not renew", not "cut me off now". The pivot used
+        // to be stamped with the current moment, so a master who cancelled on
+        // day two of a paid month lost the other twenty-eight — while the very
+        // same timestamp was formatted into a message promising access until
+        // that date.
+        $paidUntil = $currentPlan->pivot?->ends_at;
+
+        if ($paidUntil && ! $paidUntil instanceof Carbon) {
+            $paidUntil = Carbon::parse($paidUntil);
+        }
+
+        $endsAt = $paidUntil && $paidUntil->isFuture() ? $paidUntil : $now;
+
         $user->plans()->updateExistingPivot($currentPlan->getKey(), [
-            'ends_at' => $now,
+            'ends_at' => $endsAt,
         ]);
 
         return response()->json([
             'message' => trans('subscription.alerts.cancel_success', [
-                'date' => $now->locale(app()->getLocale())->isoFormat('D MMMM YYYY'),
+                'date' => $endsAt->locale(app()->getLocale())->isoFormat('D MMMM YYYY'),
             ]),
-            'ends_at' => $now->toIso8601String(),
+            'ends_at' => $endsAt->toIso8601String(),
         ]);
     }
 }

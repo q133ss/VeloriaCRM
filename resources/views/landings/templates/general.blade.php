@@ -1,7 +1,8 @@
 @php
     $serviceNames = $settings['service_names'] ?? $featuredServices->pluck('name')->all();
-    $generalDescription = filled($settings['greeting']) && mb_strlen(trim((string) $settings['greeting'])) > 12
-        ? $settings['greeting']
+    $greeting = $settings['greeting'] ?? null;
+    $generalDescription = filled($greeting) && mb_strlen(trim((string) $greeting)) > 12
+        ? $greeting
         : __('landings.templates.general.default_description');
 @endphp
 

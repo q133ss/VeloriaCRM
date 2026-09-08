@@ -1358,6 +1358,12 @@
                 ? 'записей нет'
                 : today.total + ' ' + pluralOrders(today.total));
 
+            // Иначе строка «записей нет» стоит прямо над отменённой записью на
+            // сегодня, и это читается как ошибка, а не как отмена.
+            if (today.called_off) {
+                parts.push(today.called_off + ' ' + pluralCalledOff(today.called_off));
+            }
+
             if (today.next) {
                 const when = today.next.is_today
                     ? ('в ' + today.next.time)
@@ -1367,6 +1373,18 @@
             }
 
             ordersTodayLine.innerHTML = parts.join(' · ');
+        }
+
+        function pluralCalledOff(count) {
+            const tail = count % 100;
+            if (tail > 10 && tail < 20) return 'отменённых';
+            switch (count % 10) {
+                case 1: return 'отменённая';
+                case 2:
+                case 3:
+                case 4: return 'отменённые';
+                default: return 'отменённых';
+            }
         }
 
         function pluralOrders(count) {

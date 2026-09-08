@@ -26,7 +26,7 @@ class SupportTicketStoreRequest extends BaseRequest
     {
         return [
             'subject' => ['required', 'string', 'max:' . config('help.limits.subject_max', 255)],
-            'message' => ['required', 'string', 'min:' . config('help.limits.message_min', 10)],
+            'message' => ['required', 'string', 'min:' . config('help.limits.message_min', 10), 'max:' . config('help.limits.message_max', 5000)],
             'attachment' => [
                 'nullable',
                 'file',

@@ -524,13 +524,13 @@
                             </div>
                             <div class="d-none d-lg-inline-block">
                                 <a href="/terms" target="_blank" class="footer-link me-4"
-                                >Пользовательское соглашение</a
+                                >{{ __('legal.terms.title') }}</a
                                 >
                                 <a
                                     href="/policy"
                                     target="_blank"
                                     class="footer-link me-4"
-                                >Политика конфиденциальности</a
+                                >{{ __('legal.policy.title') }}</a
                                 >
                             </div>
                         </div>
@@ -600,8 +600,9 @@ document.addEventListener('DOMContentLoaded', function () {
         menuItem('orders', '/orders', 'ri-calendar-check-line'),
         menuItem('clients', '/clients', 'ri-user-3-line'),
         menuItem('services', '/services', 'ri-scissors-2-line'),
-        menuItem('invoices', '/invoices', 'ri-bill-line'),
-        menuItem('messages', '/messages', 'ri-message-3-line'),
+        // «Инвойсы» и «Сообщения» вели на /invoices и /messages, которых нет:
+        // вторым и третьим пунктом меню мастер попадал на 404. Вернуть, когда
+        // за ними появятся страницы.
         menuItem('analytics', '/analytics', 'ri-bar-chart-line'),
         menuItem('useful', '/useful', 'ri-compass-3-line'),
         menuItem('integrations', '/integrations', 'ri-puzzle-line'),
@@ -617,8 +618,8 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
         elite: [
             menuItem('landings', '/landings', 'ri-layout-4-line'),
-            menuItem('marketing', '/marketing', 'ri-megaphone-line'),
-            menuItem('automations', '/automations', 'ri-magic-line')
+            menuItem('marketing', '/marketing', 'ri-megaphone-line')
+            // «Автоматизации» (/automations) — тоже 404, тоже до появления страницы.
         ]
     };
 

@@ -444,7 +444,7 @@ class ClientController extends Controller
             return response()->json([
                 'error' => [
                     'code' => 'feature_unavailable',
-                    'message' => 'Аналитика доступна только в тарифах PRO и Elite.',
+                    'message' => 'Аналитика по клиенту доступна на тарифе Elite.',
                 ],
             ], 403);
         }
@@ -504,7 +504,7 @@ class ClientController extends Controller
             return response()->json([
                 'error' => [
                     'code' => 'feature_unavailable',
-                    'message' => 'Рекомендации доступны только в тарифах PRO и Elite.',
+                    'message' => 'Рекомендации доступны на тарифе Elite.',
                 ],
             ], 403);
         }
@@ -1817,37 +1817,11 @@ PROMPT;
 
     protected function userHasProAccess(): bool
     {
-        $user = Auth::guard('sanctum')->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->plans()
-            ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return (bool) Auth::guard('sanctum')->user()?->hasProAccess();
     }
 
     protected function userHasEliteAccess(): bool
     {
-        $user = Auth::guard('sanctum')->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->plans()
-            ->whereIn('name', ['elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return (bool) Auth::guard('sanctum')->user()?->hasEliteAccess();
     }
 }

@@ -140,9 +140,6 @@ class UsefulDigestService
     {
         $query = User::query()
             ->with('setting')
-            ->whereHas('plans', function ($planQuery) {
-                $planQuery->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE']);
-            })
             ->whereHas('setting', function ($settingQuery) {
                 $settingQuery->where('weekly_useful_digest_enabled', true);
             });
@@ -151,7 +148,10 @@ class UsefulDigestService
             $query->whereKey($userId);
         }
 
-        $users = $query->get();
+        // Was a seventh private copy of the tier check, written as a subquery on
+        // plan names. One rule now, the same one the middleware and the settings
+        // screen use.
+        $users = $query->get()->filter(fn (User $user) => $user->hasProAccess())->values();
         $items = [];
         $sent = 0;
         $skipped = 0;
@@ -716,13 +716,6 @@ class UsefulDigestService
 
     protected function userHasProAccess(User $user): bool
     {
-        return $user->plans()
-            ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return $user->hasProAccess();
     }
 }

@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'errors' => [
+        'plan_required' => 'This section is part of the :plan plan. Upgrade your subscription to unlock it.',
+    ],
     'title' => 'Subscription',
     'subtitle' => 'Manage your Veloria CRM plan and billing',
     'current_plan' => [
@@ -13,45 +16,65 @@ return [
     ],
     'plans' => [
         'lite' => [
-            'name' => 'Lite',
-            'tagline' => 'Start quickly and test ideas',
-            'description' => 'Core scheduling tools and customer records for everyday work.',
+            'name' => 'Start',
+            'tagline' => 'So the notebook can finally go',
+            'description' => 'Your workspace, a booking site and an app for your clients — everything that brings clients in.',
             'badge' => 'Your plan',
             'features' => [
-                'Online booking and calendar',
-                'Client CRM cards',
-                'Automatic SMS and email reminders',
+                'Calendar, client records and services',
+                'Booking site and Telegram bot',
+                'App for your clients',
+                'Waitlist and reminders',
             ],
         ],
         'pro' => [
-            'name' => 'Pro',
-            'tagline' => 'Grow your team and marketing',
-            'description' => 'Landing pages, automations and analytics to scale faster.',
+            'name' => 'Master',
+            'tagline' => 'So clients come back on their own',
+            'description' => 'Campaigns, offers and reports — everything that brings clients back.',
             'badge' => 'Most popular',
             'features' => [
-                'Everything from Lite',
-                'Landing page builder',
-                'Automated campaigns and segmentation',
-                'Advanced analytics and dashboards',
+                'Everything from Start',
+                'Campaigns and client segments',
+                'A/B tested messages and cashback offers',
+                'Advanced statistics and reports',
             ],
         ],
         'elite' => [
-            'name' => 'Elite',
-            'tagline' => 'Maximum automation and support',
-            'description' => 'Premium support, AI insights and tailored workflows.',
+            'name' => 'Maximum',
+            'tagline' => 'So decisions rest on numbers',
+            'description' => 'Win-back journeys, smart insights and a read on every client card.',
             'badge' => 'Best value',
             'features' => [
-                'Everything from Pro',
-                'AI analytics and forecasts',
-                '24/7 premium support',
-                'Custom automations and integrations',
+                'Everything from Master',
+                'Win-back journeys',
+                'Peak hours and smart insights',
+                'A content idea every day',
+                'Priority support',
             ],
         ],
     ],
     'comparison' => [
         [
-            'feature' => 'Landing pages',
-            'description' => 'Build and publish promo pages for services and offers.',
+            'feature' => 'Booking site',
+            'description' => 'Your own address, your services, requests landing straight in your workspace. One site on the free plan.',
+            'plans' => [
+                'lite' => true,
+                'pro' => true,
+                'elite' => true,
+            ],
+        ],
+        [
+            'feature' => 'App for your clients',
+            'description' => 'Booking from a phone, under your name.',
+            'plans' => [
+                'lite' => true,
+                'pro' => true,
+                'elite' => true,
+            ],
+        ],
+        [
+            'feature' => 'Campaigns and segments',
+            'description' => 'Messages to sleeping, new and regular clients.',
             'plans' => [
                 'lite' => false,
                 'pro' => true,
@@ -59,8 +82,8 @@ return [
             ],
         ],
         [
-            'feature' => 'Automated campaigns',
-            'description' => 'Communication workflows and drip sequences.',
+            'feature' => 'Cashback offers',
+            'description' => 'A percentage back or a free service, with usage tracked.',
             'plans' => [
                 'lite' => false,
                 'pro' => true,
@@ -68,8 +91,17 @@ return [
             ],
         ],
         [
-            'feature' => 'AI analytics',
-            'description' => 'Revenue predictions and smart recommendations.',
+            'feature' => 'Advanced statistics',
+            'description' => 'Revenue, retention, LTV and service mix.',
+            'plans' => [
+                'lite' => false,
+                'pro' => true,
+                'elite' => true,
+            ],
+        ],
+        [
+            'feature' => 'Win-back journeys and smart insights',
+            'description' => 'Return scenarios, peak hours and client forecasts.',
             'plans' => [
                 'lite' => false,
                 'pro' => false,
@@ -77,17 +109,8 @@ return [
             ],
         ],
         [
-            'feature' => 'Advanced statistics',
-            'description' => 'Deep reports by team members, services and channels.',
-            'plans' => [
-                'lite' => false,
-                'pro' => true,
-                'elite' => true,
-            ],
-        ],
-        [
             'feature' => 'Core features',
-            'description' => 'Scheduling, CRM and reminders.',
+            'description' => 'Scheduling, clients and reminders.',
             'plans' => [
                 'lite' => true,
                 'pro' => true,
@@ -123,7 +146,7 @@ return [
     ],
     'alerts' => [
         'upgrade_error' => 'Unable to create a payment. Please try again later or contact support.',
-        'cancel_success' => 'Subscription will be disabled on :date. Until then all features remain available.',
+        'cancel_success' => 'Your subscription ends on :date — everything keeps working until then. Bookings, clients and history stay where they are, and you can come back to the plan at any time.',
     ],
     'cancel' => [
         'title' => 'What happens after cancellation',
@@ -132,13 +155,14 @@ return [
         'lose_title' => '⛔ You lose access to:',
         'keep' => [
             'All client data and appointment history.',
-            'Access to core tools (calendar, CRM).',
+            'Your workspace, calendar and client records.',
+            'Your booking site and the app for your clients.',
         ],
         'lose' => [
-            'Landing page builder (published pages will stop working).',
-            'AI analytics and forecasts.',
-            'Automated campaigns.',
+            'Campaigns and segments.',
+            'Cashback offers.',
             'Advanced reports.',
+            'Win-back journeys and smart insights.',
         ],
         'note' => 'You can upgrade again at any time — your data stays safe.',
     ],

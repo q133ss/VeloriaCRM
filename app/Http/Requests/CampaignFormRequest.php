@@ -39,6 +39,7 @@ class CampaignFormRequest extends BaseRequest
     public function rules(): array
     {
         $availableChannels = $this->availableChannelValues();
+        $userId = $this->user('sanctum')?->id ?? 0;
 
         return [
             'template_id' => ['nullable', 'integer', 'exists:message_templates,id'],
@@ -49,14 +50,18 @@ class CampaignFormRequest extends BaseRequest
             ),
             'segment' => ['required', 'string', 'in:all,new,loyal,sleeping,by_service,by_master,custom,selected'],
             'segment_filters' => ['nullable', 'array'],
+            // Scoped to the owner, the way OrderFormRequest and
+            // WaitlistStoreRequest already do it. A bare `exists:` accepted
+            // another master's clients: the campaign saved, showed a segment,
+            // and then quietly went out to nobody.
             'segment_filters.service_ids' => ['nullable', 'array'],
-            'segment_filters.service_ids.*' => ['integer', 'exists:services,id'],
+            'segment_filters.service_ids.*' => ['integer', Rule::exists('services', 'id')->where(fn ($query) => $query->where('user_id', $userId))],
             'segment_filters.master_ids' => ['nullable', 'array'],
-            'segment_filters.master_ids.*' => ['integer', 'exists:users,id'],
+            'segment_filters.master_ids.*' => ['integer', Rule::in([$userId])],
             'segment_filters.tags' => ['nullable', 'array'],
             'segment_filters.tags.*' => ['string'],
             'segment_filters.client_ids' => ['nullable', 'array'],
-            'segment_filters.client_ids.*' => ['integer', 'exists:clients,id'],
+            'segment_filters.client_ids.*' => ['integer', Rule::exists('clients', 'id')->where(fn ($query) => $query->where('user_id', $userId))],
             'is_ab_test' => ['nullable', 'boolean'],
             'status' => ['nullable', 'string', 'max:50'],
             'scheduled_at' => ['nullable', 'date'],

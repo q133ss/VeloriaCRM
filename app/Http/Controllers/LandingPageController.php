@@ -7,6 +7,7 @@ use App\Models\Service;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LandingPageController extends Controller
 {
@@ -14,7 +15,11 @@ class LandingPageController extends Controller
     {
         $landing = Landing::query()->where('slug', $slug)->firstOrFail();
 
-        $isPreview = $request->boolean('preview');
+        // Preview skips the published check, so it has to be the owner asking.
+        // It used to be enough to append ?preview=1: an unpublished promotion,
+        // prices and all, was one guessed slug away from anyone at all.
+        $isPreview = $request->boolean('preview')
+            && optional(Auth::guard('sanctum')->user())->getKey() === $landing->user_id;
 
         if (! $landing->is_active && ! $isPreview) {
             abort(404);

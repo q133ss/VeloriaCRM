@@ -17,7 +17,7 @@ class UpdateSettingsRequest extends BaseRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($this->user()->id)],
             'phone' => ['nullable', 'string', 'max:255'],
-            'timezone' => ['required', 'string', 'max:255'],
+            'timezone' => ['required', 'string', 'max:255', 'timezone'],
             'time_format' => ['required', Rule::in(['12h','24h'])],
             'current_password' => ['nullable', 'required_with:new_password', 'current_password'],
             'new_password' => ['nullable', 'min:8', 'confirmed'],
@@ -75,6 +75,16 @@ class UpdateSettingsRequest extends BaseRequest
             'daily_post_ideas_enabled' => ['nullable', 'boolean'],
             'daily_post_ideas_channel' => ['nullable', Rule::in(['telegram', 'platform', 'both'])],
             'daily_post_ideas_preferences' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            // Без этого правила подходила любая строка: «Марс/Олимп» сохранялся,
+            // а календарь после него отдавал 500 и не открывался, пока пояс не
+            // поправят обратно.
+            'timezone.timezone' => 'Такого часового пояса нет — выберите его из списка.',
         ];
     }
 }

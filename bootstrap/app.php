@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'token.client' => \App\Http\Middleware\EnsureSanctumTokenIsClient::class,
             'admin.access' => \App\Http\Middleware\EnsureAdminAccess::class,
             'user.active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'plan' => \App\Http\Middleware\EnsurePlanAccess::class,
         ]);
 
         $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);

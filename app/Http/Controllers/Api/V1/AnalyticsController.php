@@ -25,7 +25,7 @@ use Throwable;
 class AnalyticsController extends Controller
 {
     private const ORDER_REVENUE_STATUSES = ['completed', 'in_progress', 'confirmed'];
-    private const PAYMENT_REVENUE_STATUSES = ['succeeded', 'paid'];
+    private const PAYMENT_REVENUE_STATUSES = ['succeeded'];
 
     /**
      * A booking whose time has passed and which was neither cancelled nor
@@ -185,7 +185,7 @@ class AnalyticsController extends Controller
                 $serviceShare,
                 $ltv,
                 $transactionsCurrent,
-                $funnel,
+                $outcomes,
                 $persona
             ) {
                 return $this->generateAiInsights([
@@ -472,14 +472,7 @@ class AnalyticsController extends Controller
             return false;
         }
 
-        return $user->plans()
-            ->whereIn('plans.name', ['elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return $user->hasEliteAccess();
     }
 
     protected function activePlanSlug(): string
@@ -490,16 +483,7 @@ class AnalyticsController extends Controller
             return 'lite';
         }
 
-        $plan = $user->plans()
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->orderByDesc('plan_user.created_at')
-            ->first();
-
-        return strtolower((string) ($plan?->slug ?: 'lite'));
+        return $user->activePlanSlug();
     }
 
     protected function lockedSmartInsightsPayload(): array
@@ -564,7 +548,10 @@ class AnalyticsController extends Controller
             ];
         });
 
-        return $orderTransactions->merge($paymentTransactions);
+        // Both sides are lists of plain arrays. Left as Eloquent collections they
+        // are not: merge() on one of those looks up getKey() on every item, so a
+        // master with payments and no bookings crashed the whole page.
+        return $orderTransactions->toBase()->merge($paymentTransactions->toBase());
     }
 
     /**

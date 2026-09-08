@@ -7,6 +7,7 @@ use App\Http\Requests\CalendarDayRequest;
 use App\Http\Requests\CalendarEventRequest;
 use App\Models\Client;
 use App\Models\Order;
+use App\Services\UserClock;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\AvailabilityService;
@@ -217,7 +218,7 @@ class CalendarController extends Controller
                     'phone' => $order->client?->phone,
                 ],
                 'services' => $serviceNames,
-                'scheduled_at_formatted' => $start?->format('d.m.Y H:i'),
+                'scheduled_at_formatted' => app(UserClock::class)->dateTime($start),
             ],
         ];
     }
@@ -251,8 +252,8 @@ class CalendarController extends Controller
         return [
             'id' => $order->id,
             'scheduled_at' => $order->scheduled_at?->toIso8601String(),
-            'scheduled_at_formatted' => $order->scheduled_at?->format('H:i'),
-            'ends_at_formatted' => $order->scheduled_at?->copy()->addMinutes($duration)->format('H:i'),
+            'scheduled_at_formatted' => app(UserClock::class)->time($order->scheduled_at),
+            'ends_at_formatted' => app(UserClock::class)->time($order->scheduled_at?->copy()->addMinutes($duration)),
             'duration' => $duration,
             'status' => $order->status,
             'status_label' => $order->status_label,

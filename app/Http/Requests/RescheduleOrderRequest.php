@@ -12,7 +12,7 @@ class RescheduleOrderRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'scheduled_at' => ['required', 'date'],
+            'scheduled_at' => ['required', 'date', 'before:+2 years'],
         ];
     }
 
@@ -21,6 +21,7 @@ class RescheduleOrderRequest extends BaseRequest
         return [
             'scheduled_at.required' => 'Укажите новую дату и время.',
             'scheduled_at.date' => 'Дата указана в неверном формате.',
+            'scheduled_at.before' => 'Дата записи слишком далеко: выберите день в пределах ближайших двух лет.',
         ];
     }
 }

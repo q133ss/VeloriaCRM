@@ -23,7 +23,6 @@
 @endphp
 
 @section('meta')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css">
     @include('components.veloria-datetime-picker-styles')
     @include('components.booking-phrase-input-styles')
     <style>
@@ -736,6 +735,18 @@
                 min-height: 3.4rem;
             }
 
+            /* Ячейка месяца на телефоне шириной в полсотни пикселей вмещает одно
+               из двух, и «09:00» отвечало не на тот вопрос: глядя на месяц,
+               мастер хочет знать, кто придёт, а точное время — одно касание
+               вниз, в панели дня. */
+            #crm-calendar .fc-daygrid-event .fc-event-time {
+                display: none;
+            }
+
+            #crm-calendar .fc-daygrid-event .fc-event-title {
+                font-weight: 600;
+            }
+
             .calendar-day {
                 padding: 1rem;
             }
@@ -1183,8 +1194,12 @@
     @include('components.veloria-datetime-picker-script')
     @include('components.message-sheet-script')
     @include('components.booking-phrase-input-script')
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
+    {{-- Лежит рядом, а не на стороннем CDN: календарь — основной экран, и он не
+         должен зависеть от чужой доступности. Адрес locales-all вдобавок был
+         неверный для шестой версии и отдавал 404, из-за чего русская локаль
+         FullCalendar не подхватывалась вовсе. --}}
+    <script src="/assets/vendor/libs/fullcalendar/index.global.min.js"></script>
+    <script src="/assets/vendor/libs/fullcalendar/locales-all.global.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const locale = '{{ str_replace('_', '-', app()->getLocale()) }}';

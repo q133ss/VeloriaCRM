@@ -23,6 +23,7 @@ use App\Services\Booking\OrderDurationResolver;
 use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\ClientIdentityService;
 use App\Services\Orders\OrderActionPolicy;
+use App\Services\UserClock;
 use App\Services\OrderService;
 use App\Services\WaitlistMatchService;
 use Carbon\CarbonImmutable;
@@ -56,7 +57,6 @@ class OrderController extends Controller
         $filters['period'] = $filters['period'] ?? 'this_week';
         $filters['status'] = $filters['status'] ?? 'all';
         $perPage = (int) ($filters['per_page'] ?? 12);
-        $perPage = max(1, min($perPage, 50));
 
         $now = Carbon::now();
 
@@ -437,6 +437,14 @@ class OrderController extends Controller
     {
         $this->ensureOrderBelongsToCurrentUser($order);
 
+        if ($blocked = $this->ensureOrderIsOpen(
+            $order,
+            'complete_unavailable',
+            'Эта запись уже закрыта: визит завершён, отменён или отмечен как несостоявшийся.',
+        )) {
+            return $blocked;
+        }
+
         // A visit closed with nothing in it is a hole in the takings and in the
         // history the recommendations are built from. The sum is not checked —
         // a free visit is a real thing.
@@ -538,6 +546,15 @@ class OrderController extends Controller
     public function start(Order $order, Request $request): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        if ($blocked = $this->ensureOrderIsOpen(
+            $order,
+            'start_unavailable',
+            'Эта запись уже закрыта: визит завершён, отменён или отмечен как несостоявшийся.',
+        )) {
+            return $blocked;
+        }
+
         $now = Carbon::now();
 
         $startedAt = $request->input('started_at');
@@ -572,6 +589,16 @@ class OrderController extends Controller
     public function remind(Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        if ($blocked = $this->ensureActionAllowed(
+            $order,
+            'can_remind',
+            'remind_unavailable',
+            'Напоминать о визите, который уже прошёл, отменён или не состоялся, поздно.',
+        )) {
+            return $blocked;
+        }
+
         $settings = $this->resolveUserSettings();
         $reminderMessage = optional($settings)->reminder_message;
 
@@ -603,6 +630,16 @@ class OrderController extends Controller
     public function cancel(CancelOrderRequest $request, Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        if ($blocked = $this->ensureActionAllowed(
+            $order,
+            'can_cancel',
+            'cancel_unavailable',
+            'Эту запись уже нельзя отменить: визит завершён или отменён раньше.',
+        )) {
+            return $blocked;
+        }
+
         $validated = $request->validated();
         $previousSlot = $order->scheduled_at?->copy();
         $serviceId = collect($order->services ?? [])->pluck('id')->filter()->map(fn ($id) => (int) $id)->first();
@@ -629,6 +666,16 @@ class OrderController extends Controller
     public function reschedule(RescheduleOrderRequest $request, Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        if ($blocked = $this->ensureActionAllowed(
+            $order,
+            'can_reschedule',
+            'reschedule_unavailable',
+            'Переносить завершённую или отменённую запись уже некуда.',
+        )) {
+            return $blocked;
+        }
+
         $validated = $request->validated();
 
         $previousDate = $order->scheduled_at;
@@ -1019,7 +1066,7 @@ class OrderController extends Controller
             'phone' => $client->phone,
             'email' => $client->email,
             'last_visit_at' => $lastVisitAt?->toIso8601String(),
-            'last_visit_at_formatted' => $lastVisitAt?->format('d.m.Y H:i'),
+            'last_visit_at_formatted' => $this->clock()->dateTime($lastVisitAt),
         ];
     }
 
@@ -1031,7 +1078,7 @@ class OrderController extends Controller
             'phone' => $client->phone,
             'email' => $client->email,
             'last_visit_at' => $client->last_visit_at?->toIso8601String(),
-            'last_visit_at_formatted' => $client->last_visit_at?->format('d.m.Y H:i'),
+            'last_visit_at_formatted' => $this->clock()->dateTime($client->last_visit_at),
         ];
     }
 
@@ -2024,8 +2071,8 @@ PROMPT;
         }
 
         $start = $conflict['starts_at'] instanceof Carbon
-            ? $conflict['starts_at']->format('d.m.Y H:i')
-            : $scheduledAt->format('d.m.Y H:i');
+            ? $this->clock()->dateTime($conflict['starts_at'])
+            : $this->clock()->dateTime($scheduledAt);
 
         throw ValidationException::withMessages([
             'scheduled_at' => 'Это время уже занято. Ближайший конфликт начинается в ' . $start . '.',
@@ -2116,6 +2163,15 @@ PROMPT;
             ->whereNotIn('status', ['cancelled', 'no_show'])
             ->count();
 
+        // The line said «записей нет» while a cancelled booking for today sat in
+        // the table right underneath it. The counter is right — a cancelled visit
+        // is not a booking — but silence about it read as a bug.
+        $todayCalledOff = Order::query()
+            ->where('master_id', $userId)
+            ->whereBetween('scheduled_at', [$now->copy()->startOfDay(), $now->copy()->endOfDay()])
+            ->whereIn('status', ['cancelled', 'no_show'])
+            ->count();
+
         $next = Order::query()
             ->with('client')
             ->where('master_id', $userId)
@@ -2127,10 +2183,11 @@ PROMPT;
         return [
             'date_label' => $now->copy()->locale('ru')->isoFormat('D MMMM'),
             'total' => $todayTotal,
+            'called_off' => $todayCalledOff,
             'next' => $next ? [
                 'id' => $next->id,
                 'client_name' => $next->client?->name,
-                'time' => $next->scheduled_at?->format('H:i'),
+                'time' => $this->clock()->time($next->scheduled_at),
                 'is_today' => (bool) $next->scheduled_at?->isSameDay($now),
                 'day_label' => $next->scheduled_at?->copy()->locale('ru')->isoFormat('D MMMM'),
                 'services' => collect($next->services ?? [])
@@ -2200,7 +2257,7 @@ PROMPT;
             ],
             'services' => $services,
             'scheduled_at' => optional($order->scheduled_at)->toIso8601String(),
-            'scheduled_at_formatted' => optional($order->scheduled_at)->format('d.m.Y H:i'),
+            'scheduled_at_formatted' => $this->clock()->dateTime($order->scheduled_at),
             'actual_started_at' => optional($order->actual_started_at)->toIso8601String(),
             'actual_finished_at' => optional($order->actual_finished_at)->toIso8601String(),
             'duration' => $order->duration,
@@ -2228,7 +2285,7 @@ PROMPT;
         $events = [
             [
                 'label' => 'Создано',
-                'time' => optional($order->created_at)->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->created_at),
                 'description' => 'Запись создана вручную.',
             ],
         ];
@@ -2236,7 +2293,7 @@ PROMPT;
         if ($order->confirmed_at) {
             $events[] = [
                 'label' => 'Подтверждено',
-                'time' => $order->confirmed_at->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->confirmed_at),
                 'description' => 'Клиент подтвердил визит.',
             ];
         }
@@ -2244,7 +2301,7 @@ PROMPT;
         if ($order->reminded_at) {
             $events[] = [
                 'label' => 'Напоминание',
-                'time' => $order->reminded_at->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->reminded_at),
                 'description' => 'Отправлено автоматическое напоминание.',
             ];
         }
@@ -2252,7 +2309,7 @@ PROMPT;
         if ($order->actual_started_at) {
             $events[] = [
                 'label' => 'Начало работы',
-                'time' => $order->actual_started_at->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->actual_started_at),
                 'description' => 'Мастер начал обслуживание.',
             ];
         }
@@ -2260,7 +2317,7 @@ PROMPT;
         if ($order->actual_finished_at) {
             $events[] = [
                 'label' => 'Завершено',
-                'time' => $order->actual_finished_at->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->actual_finished_at),
                 'description' => 'Визит завершён.',
             ];
         }
@@ -2268,7 +2325,7 @@ PROMPT;
         if ($order->cancelled_at) {
             $events[] = [
                 'label' => 'Отменено',
-                'time' => $order->cancelled_at->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->cancelled_at),
                 'description' => $order->cancellation_reason ?: 'Отменено мастером.',
             ];
         }
@@ -2276,12 +2333,66 @@ PROMPT;
         if ($order->reschedule_count > 0 && $order->rescheduled_from) {
             $events[] = [
                 'label' => 'Перенос',
-                'time' => $order->rescheduled_from->format('d.m.Y H:i'),
+                'time' => $this->clock()->dateTime($order->rescheduled_from),
                 'description' => 'Запись была перенесена.',
             ];
         }
 
         return $events;
+    }
+
+    /** The master's own clock: her timezone, her 24h/12h choice. */
+    protected function clock(): UserClock
+    {
+        return app(UserClock::class);
+    }
+
+    /** A booking nothing more can happen to. */
+    protected const CLOSED_STATUSES = ['completed', 'cancelled', 'no_show'];
+
+    /**
+     * Refuses an action on a booking that is already over.
+     *
+     * Narrower on purpose than the UI policy: OrderActionPolicy also answers
+     * "is it today" and "is it confirmed", which decide whether a button is
+     * worth showing — a master closing a visit she never marked confirmed is
+     * ordinary, and OrderWithoutServiceTest says so. What must not happen is a
+     * finished visit being cancelled out of a closed month.
+     */
+    protected function ensureOrderIsOpen(Order $order, string $code, string $message): ?JsonResponse
+    {
+        if (! in_array($order->status, self::CLOSED_STATUSES, true)) {
+            return null;
+        }
+
+        return response()->json([
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+            ],
+        ], 422);
+    }
+
+    /**
+     * The same answer the list and the card already show as an enabled button.
+     *
+     * OrderActionPolicy was pulled out of this controller so the calendar could
+     * ask it too, but the write endpoints kept trusting the caller: the buttons
+     * were hidden and the routes stayed open, so a finished visit could still be
+     * cancelled and its takings vanished from a closed month.
+     */
+    protected function ensureActionAllowed(Order $order, string $ability, string $code, string $message): ?JsonResponse
+    {
+        if (app(OrderActionPolicy::class)->for($order)[$ability] ?? false) {
+            return null;
+        }
+
+        return response()->json([
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+            ],
+        ], 422);
     }
 
     protected function buildActionAvailability(Order $order): array

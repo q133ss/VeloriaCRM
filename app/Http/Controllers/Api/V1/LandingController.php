@@ -17,10 +17,13 @@ use Illuminate\Support\Str;
 
 class LandingController extends Controller
 {
+    /**
+     * Сколько сайтов держит бесплатный тариф.
+     */
+    private const FREE_LANDING_LIMIT = 1;
+
     public function index(): JsonResponse
     {
-        $this->ensureProAccess();
-
         $userId = $this->currentUserId();
 
         $landings = Landing::forUser($userId)
@@ -36,9 +39,9 @@ class LandingController extends Controller
 
     public function store(LandingStoreRequest $request): JsonResponse
     {
-        $this->ensureProAccess();
-
         $userId = $this->currentUserId();
+        $this->ensureWithinLandingLimit($userId);
+
         $type = $request->input('type');
         $template = $request->input('landing') ?: $this->defaultTemplateForType($type);
         $slug = $this->generateSlug($request->input('slug'), $request->input('title'));
@@ -62,7 +65,6 @@ class LandingController extends Controller
 
     public function show(Landing $landing): JsonResponse
     {
-        $this->ensureProAccess();
         $this->ensureLandingBelongsToUser($landing);
 
         $landing->loadCount('requests')->loadMax('requests', 'created_at');
@@ -72,7 +74,6 @@ class LandingController extends Controller
 
     public function update(LandingUpdateRequest $request, Landing $landing): JsonResponse
     {
-        $this->ensureProAccess();
         $this->ensureLandingBelongsToUser($landing);
 
         $payload = $request->only(['title', 'type', 'landing', 'settings']);
@@ -102,7 +103,6 @@ class LandingController extends Controller
 
     public function destroy(Landing $landing): JsonResponse
     {
-        $this->ensureProAccess();
         $this->ensureLandingBelongsToUser($landing);
 
         $landing->delete();
@@ -114,8 +114,6 @@ class LandingController extends Controller
 
     public function options(): JsonResponse
     {
-        $this->ensureProAccess();
-
         $userId = $this->currentUserId();
 
         $services = Service::query()
@@ -244,16 +242,30 @@ class LandingController extends Controller
         }
     }
 
-    protected function ensureProAccess(): void
+    /**
+     * Сайт мастера входит в бесплатный тариф: он клиенток приводит, а не
+     * удерживает, и держать его за замком — значит закрывать вход в продукт.
+     *
+     * Поэтому ограничиваем количество, а не доступ. Упереться в лимит того,
+     * чем уже пользуешься, понятнее, чем открыть раздел и получить 403 на
+     * первой же кнопке.
+     */
+    protected function ensureWithinLandingLimit(int $userId): void
     {
-        if (! $this->userHasProAccess()) {
-            abort(response()->json([
-                'error' => [
-                    'code' => 'plan_required',
-                    'message' => __('landings.errors.plan_required'),
-                ],
-            ], 403));
+        if ($this->userHasProAccess()) {
+            return;
         }
+
+        if (Landing::forUser($userId)->count() < self::FREE_LANDING_LIMIT) {
+            return;
+        }
+
+        abort(response()->json([
+            'error' => [
+                'code' => 'landing_limit_reached',
+                'message' => __('landings.errors.free_limit', ['limit' => self::FREE_LANDING_LIMIT]),
+            ],
+        ], 403));
     }
 
     protected function currentUserId(): int
@@ -269,19 +281,6 @@ class LandingController extends Controller
 
     protected function userHasProAccess(): bool
     {
-        $user = Auth::guard('sanctum')->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return $user->plans()
-            ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return (bool) Auth::guard('sanctum')->user()?->hasProAccess();
     }
 }

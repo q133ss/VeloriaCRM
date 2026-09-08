@@ -32,8 +32,8 @@ class ServiceFormRequest extends BaseRequest
         $this->merge([
             'name' => $this->filled('name') ? trim((string) $this->input('name')) : null,
             'category_id' => $this->filled('category_id') ? (int) $this->input('category_id') : null,
-            'base_price' => $this->filled('base_price') ? (float) $this->input('base_price') : null,
-            'cost' => $this->filled('cost') ? (float) $this->input('cost') : null,
+            'base_price' => $this->filled('base_price') ? $this->normalizeNumeric($this->input('base_price')) : null,
+            'cost' => $this->filled('cost') ? $this->normalizeNumeric($this->input('cost')) : null,
             'duration_min' => $this->filled('duration_min') ? (int) $this->input('duration_min') : null,
             'upsell_suggestions' => $upsell,
         ]);

@@ -78,9 +78,13 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    // Veloria is a Russian-first product: every screen, every validation
+    // message and every notification is written in Russian. English exists as an
+    // opt-in, so the default the framework falls back to — on an error page for
+    // an unmatched route, in a queued job, in a console command — has to be ru.
+    'locale' => env('APP_LOCALE', 'ru'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'ru'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 

@@ -5,6 +5,15 @@
 @section('meta')
     <style>
         /* Order header actions: keep title full-width and move actions below it. */
+        /* Bootstrap объявляет .d-flex как display:flex !important, и атрибут
+           hidden против него бессилен: панель действий была видна всегда — и
+           пока запись грузится, и когда её не удалось загрузить вовсе. */
+        #order-action-buttons[hidden],
+        #order-body[hidden],
+        #order-missing[hidden] {
+            display: none !important;
+        }
+
         #order-action-buttons .btn {
             white-space: nowrap;
         }
@@ -92,7 +101,20 @@
 
         <div id="order-alerts"></div>
 
-        <div class="row g-4">
+        {{-- Показывается вместо карточки, когда записи нет или она чужая. Раньше
+             экран оставался «живым»: заголовок «Запись», полный ряд кнопок и
+             прочерки во всех полях, а о том, что случилось, сообщала одна
+             строчка посреди страницы. --}}
+        <div id="order-missing" class="card" hidden>
+            <div class="card-body text-center py-5">
+                <i class="ri ri-calendar-close-line icon-48px text-muted mb-3 d-block"></i>
+                <h5 class="mb-2" id="order-missing-title">Запись не найдена</h5>
+                <p class="text-muted mb-4" id="order-missing-text">Возможно, её удалили или ссылка устарела.</p>
+                <a href="/orders" class="btn btn-primary">Ко всем записям</a>
+            </div>
+        </div>
+
+        <div class="row g-4" id="order-body">
             <div class="col-lg-8">
                 <div class="card mb-4">
                     <div class="card-header d-flex align-items-center justify-content-between">
@@ -607,6 +629,31 @@
             actionAnalytics.disabled = !canSeeAnalytics;
         }
 
+        function showOrderMissing(status) {
+            const missing = document.getElementById('order-missing');
+            const body = document.getElementById('order-body');
+            const title = document.getElementById('order-missing-title');
+            const text = document.getElementById('order-missing-text');
+            const subtitle = document.getElementById('order-subtitle');
+            const actions = document.getElementById('order-action-buttons');
+
+            if (status === 403) {
+                title.textContent = 'Эта запись не ваша';
+                text.textContent = 'Она принадлежит другому мастеру, поэтому открыть её нельзя.';
+            } else if (status === 404) {
+                title.textContent = 'Запись не найдена';
+                text.textContent = 'Возможно, её удалили или ссылка устарела.';
+            } else {
+                title.textContent = 'Не удалось открыть запись';
+                text.textContent = 'Что-то пошло не так на нашей стороне. Попробуйте обновить страницу через минуту.';
+            }
+
+            if (subtitle) subtitle.textContent = '';
+            if (actions) actions.hidden = true;
+            if (body) body.hidden = true;
+            if (missing) missing.hidden = false;
+        }
+
         async function loadOrder() {
             const response = await fetch(`/api/v1/orders/${orderId}`, {
                 headers: authHeaders(),
@@ -614,7 +661,7 @@
             });
 
             if (!response.ok) {
-                showAlert('danger', 'Не удалось загрузить запись.');
+                showOrderMissing(response.status);
                 return;
             }
 

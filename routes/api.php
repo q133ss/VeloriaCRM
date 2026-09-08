@@ -117,7 +117,10 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
         Route::get('/landings/options', [LandingController::class, 'options']);
         Route::apiResource('landings', LandingController::class);
-        Route::prefix('marketing')->group(function () {
+        // Campaigns and promotions are a paid section; the guard sits on the
+        // group so the next endpoint added here inherits it instead of having to
+        // remember its own check.
+        Route::prefix('marketing')->middleware('plan:pro')->group(function () {
             Route::get('/campaigns', [MarketingCampaignController::class, 'index']);
             Route::post('/campaigns', [MarketingCampaignController::class, 'store']);
             Route::get('/campaigns/options', [MarketingCampaignController::class, 'options']);
@@ -143,8 +146,13 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::delete('/service-categories/{category}', [ServiceCategoryController::class, 'destroy']);
 
         Route::get('/useful/overview', [UsefulController::class, 'overview']);
-        Route::patch('/useful/preferences', [UsefulController::class, 'updatePreferences']);
-        Route::post('/useful/test-digest', [UsefulController::class, 'sendTestDigest']);
+        // Лента открыта всем тарифам, доставка дайджеста — нет. Раньше отказ
+        // приходил как 500 с текстом исключения, а включение настройки на Lite
+        // отвечало «сохранено», ничего не сохранив.
+        Route::middleware('plan:pro')->group(function () {
+            Route::patch('/useful/preferences', [UsefulController::class, 'updatePreferences']);
+            Route::post('/useful/test-digest', [UsefulController::class, 'sendTestDigest']);
+        });
         Route::post('/useful/posts/{article}/read', [UsefulController::class, 'markRead']);
         Route::get('/trends/overview', [TrendsController::class, 'overview']);
 
@@ -163,21 +171,36 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::get('/overview', [AdminOverviewController::class, 'index']);
             Route::get('/audit', [AdminAuditController::class, 'index']);
             Route::get('/users', [ApiAdminUserController::class, 'index']);
-            Route::post('/users', [ApiAdminUserController::class, 'store']);
             Route::get('/users/{user}', [ApiAdminUserController::class, 'show']);
-            Route::patch('/users/{user}', [ApiAdminUserController::class, 'update']);
-            Route::delete('/users/{user}', [ApiAdminUserController::class, 'destroy']);
-            Route::post('/users/{user}/subscription', [ApiAdminUserController::class, 'updateSubscription']);
+
+            // Creating accounts, editing them and handing out admin roles is the
+            // super administrator's alone: support used to be able to mint itself
+            // a second super admin through this very route.
+            Route::middleware('admin.access:super_admin')->group(function () {
+                Route::post('/users', [ApiAdminUserController::class, 'store']);
+                Route::patch('/users/{user}', [ApiAdminUserController::class, 'update']);
+                Route::delete('/users/{user}', [ApiAdminUserController::class, 'destroy']);
+            });
+
+            // Money is finance's room as well.
+            Route::post('/users/{user}/subscription', [ApiAdminUserController::class, 'updateSubscription'])
+                ->middleware('admin.access:super_admin,finance');
 
             Route::get('/support/tickets', [AdminSupportTicketController::class, 'index']);
             Route::get('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'show']);
-            Route::patch('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'update']);
-            Route::post('/support/tickets/{ticket}/reply', [AdminSupportTicketController::class, 'reply']);
+            Route::middleware('admin.access:super_admin,support')->group(function () {
+                Route::patch('/support/tickets/{ticket}', [AdminSupportTicketController::class, 'update']);
+                Route::post('/support/tickets/{ticket}/reply', [AdminSupportTicketController::class, 'reply']);
+            });
 
             Route::get('/useful/posts', [AdminUsefulPostController::class, 'index']);
-            Route::post('/useful/posts', [AdminUsefulPostController::class, 'store']);
             Route::get('/useful/posts/{article}', [AdminUsefulPostController::class, 'show']);
-            Route::patch('/useful/posts/{article}', [AdminUsefulPostController::class, 'update']);
-            Route::delete('/useful/posts/{article}', [AdminUsefulPostController::class, 'destroy']);
+
+            // Anything published here shows up in every master's feed.
+            Route::middleware('admin.access:super_admin')->group(function () {
+                Route::post('/useful/posts', [AdminUsefulPostController::class, 'store']);
+                Route::patch('/useful/posts/{article}', [AdminUsefulPostController::class, 'update']);
+                Route::delete('/useful/posts/{article}', [AdminUsefulPostController::class, 'destroy']);
+            });
         });
 });

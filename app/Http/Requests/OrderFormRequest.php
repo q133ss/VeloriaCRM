@@ -8,9 +8,27 @@ use Illuminate\Validation\Rule;
 
 class OrderFormRequest extends BaseRequest
 {
+    /**
+     * Ownership is settled here rather than in the controller: the form request
+     * runs first, so editing someone else's booking used to answer 422 about the
+     * fields instead of 403 about access — and that difference alone told the
+     * caller whether the booking existed.
+     */
     public function authorize(): bool
     {
-        return $this->user('sanctum') !== null;
+        $user = $this->user('sanctum');
+
+        if (! $user) {
+            return false;
+        }
+
+        $order = $this->route('order');
+
+        if ($order instanceof Order && $order->master_id !== $user->id) {
+            return false;
+        }
+
+        return true;
     }
 
     public function rules(): array
@@ -24,7 +42,7 @@ class OrderFormRequest extends BaseRequest
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
             'waitlist_entry_id' => ['nullable', 'integer', 'exists:waitlist_entries,id'],
-            'scheduled_at' => ['required', 'date'],
+            'scheduled_at' => ['required', 'date', 'before:+2 years'],
             'services' => ['nullable', 'array'],
             'services.*' => [
                 'integer',
@@ -55,6 +73,7 @@ class OrderFormRequest extends BaseRequest
             'client_email.max' => __('orders.validation.client_email.max'),
             'scheduled_at.required' => __('orders.validation.scheduled_at.required'),
             'scheduled_at.date' => __('orders.validation.scheduled_at.date'),
+            'scheduled_at.before' => 'Дата записи слишком далеко: выберите день в пределах ближайших двух лет.',
             'services.array' => __('orders.validation.services.array'),
             'services.*.integer' => __('orders.validation.services.integer'),
             'services.*.exists' => __('orders.validation.services.exists'),

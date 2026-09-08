@@ -22,7 +22,7 @@ class QuickOrderRequest extends BaseRequest
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
             'waitlist_entry_id' => ['nullable', 'integer', 'exists:waitlist_entries,id'],
-            'scheduled_at' => ['required', 'date'],
+            'scheduled_at' => ['required', 'date', 'before:+2 years'],
             'note' => ['nullable', 'string', 'max:1000'],
             'services' => ['nullable', 'array'],
             'services.*' => [
@@ -48,6 +48,7 @@ class QuickOrderRequest extends BaseRequest
             'client_email.max' => __('orders.validation.client_email.max'),
             'scheduled_at.required' => __('orders.validation.scheduled_at.required'),
             'scheduled_at.date' => __('orders.validation.scheduled_at.date'),
+            'scheduled_at.before' => 'Дата записи слишком далеко: выберите день в пределах ближайших двух лет.',
             'note.string' => __('orders.validation.note.string'),
             'note.max' => __('orders.validation.note.max'),
             'services.array' => __('orders.validation.services.array'),

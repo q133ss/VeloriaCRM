@@ -59,6 +59,17 @@ class UsefulController extends Controller
             'preferences' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        // Choosing Telegram without a linked account subscribed the master to a
+        // digest that had nowhere to arrive, and nothing said so.
+        if (in_array($data['channel'], ['telegram', 'both'], true) && ! $request->user()->telegram_id) {
+            return response()->json([
+                'error' => [
+                    'code' => 'telegram_not_linked',
+                    'message' => 'Телеграм ещё не подключён — привяжите его в интеграциях, иначе дайджесту некуда прийти.',
+                ],
+            ], 422);
+        }
+
         return response()->json([
             'data' => $this->usefulDigestService->updatePreferences($request->user(), $data),
             'message' => 'Useful digest preferences updated.',

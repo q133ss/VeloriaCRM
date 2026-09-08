@@ -377,25 +377,11 @@ class SettingController extends Controller
 
     protected function userHasEliteAccess(User $user): bool
     {
-        return $user->plans()
-            ->whereIn('name', ['elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return $user->hasEliteAccess();
     }
 
     protected function userHasProAccess(User $user): bool
     {
-        return $user->plans()
-            ->whereIn('name', ['pro', 'Pro', 'PRO', 'elite', 'Elite', 'ELITE'])
-            ->where(function ($query) {
-                $query
-                    ->whereNull('plan_user.ends_at')
-                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
-            })
-            ->exists();
+        return $user->hasProAccess();
     }
 }

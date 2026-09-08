@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 use App\Models\Plan;
 use App\Models\SubscriptionTransaction;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -150,6 +151,40 @@ class User extends Authenticatable
             self::ADMIN_ROLE_FINANCE,
             self::ADMIN_ROLE_ANALYST,
         ];
+    }
+
+    /**
+     * Which paid tier the master is on right now, as a lowercase slug.
+     *
+     * This question used to be answered independently in five controllers —
+     * Settings, Analytics, Landings, Marketing and Clients — each with its own
+     * copy of the same `whereIn('name', ['pro','Pro','PRO', ...])` and its own
+     * idea of what an expired `ends_at` means. Whoever forgot to call their copy
+     * shipped an open door: campaigns and promotions had no tier check at all.
+     */
+    public function activePlanSlug(): string
+    {
+        $plan = $this->plans()
+            ->where(function ($query) {
+                $query
+                    ->whereNull('plan_user.ends_at')
+                    ->orWhere('plan_user.ends_at', '>', Carbon::now());
+            })
+            ->orderByDesc('plans.price')
+            ->first();
+
+        return strtolower((string) ($plan?->name ?: 'lite'));
+    }
+
+    /** Pro and Elite both count: Elite is Pro plus more. */
+    public function hasProAccess(): bool
+    {
+        return in_array($this->activePlanSlug(), ['pro', 'elite'], true);
+    }
+
+    public function hasEliteAccess(): bool
+    {
+        return $this->activePlanSlug() === 'elite';
     }
 
     public function getStatusLabelAttribute(): string

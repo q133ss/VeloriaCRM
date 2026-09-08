@@ -15,6 +15,17 @@ class OrderService
     /** How long after it she is asked whether the visit began at all. */
     private const START_REMINDER_DELAY_SECONDS = 300;
 
+    /**
+     * The furthest ahead a reminder is worth queueing.
+     *
+     * `jobs.available_at` is a 32-bit integer, so a delay landing past January
+     * 2038 is rejected by the database — and because the dispatch happens after
+     * the booking is saved, the master saw a 500 over a booking that had in fact
+     * been created. Two years is well past anything a salon books and far short
+     * of the ceiling.
+     */
+    private const MAX_REMINDER_HORIZON_SECONDS = 63072000;
+
     public function scheduleStartReminder(Order $order): void
     {
         if (! $this->shouldScheduleStartReminder($order)) {
@@ -24,6 +35,10 @@ class OrderService
         $scheduledAt = $order->scheduled_at->copy();
         $scheduledTimestamp = $scheduledAt->getTimestamp();
         $nowTimestamp = Carbon::now()->getTimestamp();
+
+        if ($scheduledTimestamp - $nowTimestamp > self::MAX_REMINDER_HORIZON_SECONDS) {
+            return;
+        }
 
         // Ten minutes before: "your next client is due, start the timer?"
         SendOrderStartPromptJob::dispatch(

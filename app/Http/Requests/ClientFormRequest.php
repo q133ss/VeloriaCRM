@@ -41,7 +41,7 @@ class ClientFormRequest extends BaseRequest
                 'max:255',
                 Rule::unique('clients', 'email')->where(fn ($query) => $query->where('user_id', $userId))->ignore($clientId),
             ],
-            'birthday' => ['nullable', 'date'],
+            'birthday' => ['nullable', 'date', 'before_or_equal:today'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['nullable', 'string', 'max:100'],
             'allergies' => ['nullable', 'array'],
@@ -58,6 +58,7 @@ class ClientFormRequest extends BaseRequest
     {
         return [
             'name.required' => 'Укажите имя клиента.',
+            'birthday.before_or_equal' => 'День рождения не может быть в будущем.',
             'name.string' => 'Имя клиента должно быть строкой.',
             'name.max' => 'Имя клиента не должно превышать :max символов.',
             'phone.required' => 'Добавьте телефон клиента.',
