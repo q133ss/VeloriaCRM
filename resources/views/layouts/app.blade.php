@@ -990,15 +990,48 @@ document.addEventListener('DOMContentLoaded', function () {
         polling: false,
     };
 
+    // Browsers only let a page play audio through a context that was created
+    // (or resumed) inside a real user gesture — one built later, from a
+    // setInterval poll callback, starts 'suspended' and stays silent with no
+    // error at all. So this is created once, on the master's first click/key/
+    // touch on the page, and reused from inside the poll from then on.
+    var chatAudioContext = null;
+
+    function ensureChatAudioContext() {
+        if (chatAudioContext) return chatAudioContext;
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        chatAudioContext = new Ctx();
+        return chatAudioContext;
+    }
+
+    // Same rule applies to Notification.requestPermission(): most browsers
+    // silently ignore it unless it's called synchronously from inside a real
+    // user gesture handler — calling it from a setInterval poll's callback
+    // (async, no gesture on the stack) never actually shows the prompt.
+    ['click', 'keydown', 'touchstart'].forEach(function (eventName) {
+        document.addEventListener(eventName, function initChatAudioOnce() {
+            var ctx = ensureChatAudioContext();
+            if (ctx && ctx.state === 'suspended') ctx.resume();
+
+            if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+
+            ['click', 'keydown', 'touchstart'].forEach(function (name) {
+                document.removeEventListener(name, initChatAudioOnce);
+            });
+        }, { once: true });
+    });
+
     // A short two-tone ping synthesised with Web Audio — no sound asset to
-    // source/license, and it only ever plays after the master has already
-    // interacted with the page (login, clicking around), which satisfies
-    // browsers' autoplay-needs-a-user-gesture rule.
+    // source/license.
     function playChatPing() {
         try {
-            var Ctx = window.AudioContext || window.webkitAudioContext;
-            if (!Ctx) return;
-            var ctx = new Ctx();
+            var ctx = ensureChatAudioContext();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') ctx.resume();
+
             var now = ctx.currentTime;
 
             [880, 1320].forEach(function (freq, index) {
@@ -1015,20 +1048,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 oscillator.start(start);
                 oscillator.stop(start + 0.18);
             });
-
-            setTimeout(function () { ctx.close(); }, 400);
         } catch (error) {
             // Autoplay blocked or Web Audio unavailable — the badge still updates.
         }
     }
 
-    // Asked only once real unread chat messages exist, not on every login —
-    // a permission prompt firing before the master has any reason to want
-    // one is the kind of thing that gets "Block" clicked reflexively.
-    function maybeRequestNotificationPermission() {
-        if (typeof Notification === 'undefined') return;
-        if (Notification.permission !== 'default') return;
-        Notification.requestPermission();
+    // Only outside the chat itself: not while the master is already looking
+    // at /messages in a focused tab (a ping for a conversation she can see
+    // updating live in front of her is just noise).
+    function shouldPlayChatSound() {
+        return document.hidden || window.location.pathname !== '/messages';
     }
 
     function showChatPushNotification(count) {
@@ -1071,8 +1100,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateChatBadge(count);
 
                 if (count > chatUnreadState.count) {
-                    playChatPing();
-                    maybeRequestNotificationPermission();
+                    if (shouldPlayChatSound()) playChatPing();
                     showChatPushNotification(count);
                 }
 
