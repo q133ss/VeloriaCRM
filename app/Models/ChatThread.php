@@ -60,6 +60,20 @@ class ChatThread extends Model
         return $query->where('user_id', $userId);
     }
 
+    /**
+     * SQL mirror of isUnreadForMaster() — used for the sidebar badge/poll,
+     * where loading every thread just to filter in PHP would be wasteful.
+     */
+    public function scopeUnreadForMaster($query, int $userId)
+    {
+        return $query->forMaster($userId)
+            ->where('last_message_sender_type', self::SENDER_CLIENT)
+            ->where(function ($q) {
+                $q->whereNull('master_read_at')
+                    ->orWhereColumn('last_message_at', '>', 'master_read_at');
+            });
+    }
+
     public function recordMessage(string $senderType, ?Carbon $date = null): void
     {
         $date ??= now();

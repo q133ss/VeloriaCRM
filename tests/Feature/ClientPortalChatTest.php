@@ -116,4 +116,25 @@ class ClientPortalChatTest extends TestCase
 
         $this->postJson('/api/v1/client/chat/messages', [])->assertStatus(422);
     }
+
+    public function test_unread_count_reflects_unread_threads_and_drops_on_read(): void
+    {
+        $master = User::factory()->create();
+        $firstClient = $this->makeClient($master, ['email' => 'first@example.com', 'phone' => '79518677001']);
+        $secondClient = $this->makeClient($master, ['email' => 'second@example.com', 'phone' => '79518677002']);
+
+        Sanctum::actingAs($firstClient);
+        $this->postJson('/api/v1/client/chat/messages', ['body' => 'Привет от первой'])->assertCreated();
+
+        Sanctum::actingAs($secondClient);
+        $this->postJson('/api/v1/client/chat/messages', ['body' => 'Привет от второй'])->assertCreated();
+
+        Sanctum::actingAs($master);
+        $this->getJson('/api/v1/chat/unread-count')->assertOk()->assertJsonPath('unread_count', 2);
+
+        $firstThreadId = ChatThread::where('client_id', $firstClient->id)->value('id');
+        $this->getJson("/api/v1/chat/threads/{$firstThreadId}")->assertOk();
+
+        $this->getJson('/api/v1/chat/unread-count')->assertOk()->assertJsonPath('unread_count', 1);
+    }
 }

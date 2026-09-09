@@ -954,6 +954,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 a.className = 'menu-link';
                 a.href = item.href;
                 a.innerHTML = '<i class="menu-icon icon-base ri ' + item.icon + '"></i><div>' + item.label + '</div>';
+                if (item.href === '/messages') {
+                    a.innerHTML += '<span class="badge bg-danger rounded-pill ms-auto d-none" data-chat-unread-badge></span>';
+                }
                 if (window.location.pathname === item.href) {
                     li.classList.add('active');
                 }
@@ -970,6 +973,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 loadUnreadNotifications();
                 subscribeToNotifications(user.id);
+                startChatUnreadPolling();
             }
         })
         .catch(function () {
@@ -977,6 +981,119 @@ document.addEventListener('DOMContentLoaded', function () {
                 notificationsRoot.classList.add('d-none');
             }
         });
+
+    // ---------- chat: sidebar badge, sound, browser push ----------
+    // Scoped to /api/v1/chat/unread-count specifically — the general
+    // notification bell above is unrelated and untouched by any of this.
+    var chatUnreadState = {
+        count: 0,
+        polling: false,
+    };
+
+    // A short two-tone ping synthesised with Web Audio — no sound asset to
+    // source/license, and it only ever plays after the master has already
+    // interacted with the page (login, clicking around), which satisfies
+    // browsers' autoplay-needs-a-user-gesture rule.
+    function playChatPing() {
+        try {
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            var ctx = new Ctx();
+            var now = ctx.currentTime;
+
+            [880, 1320].forEach(function (freq, index) {
+                var oscillator = ctx.createOscillator();
+                var gain = ctx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.value = freq;
+                var start = now + index * 0.11;
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+                oscillator.start(start);
+                oscillator.stop(start + 0.18);
+            });
+
+            setTimeout(function () { ctx.close(); }, 400);
+        } catch (error) {
+            // Autoplay blocked or Web Audio unavailable — the badge still updates.
+        }
+    }
+
+    // Asked only once real unread chat messages exist, not on every login —
+    // a permission prompt firing before the master has any reason to want
+    // one is the kind of thing that gets "Block" clicked reflexively.
+    function maybeRequestNotificationPermission() {
+        if (typeof Notification === 'undefined') return;
+        if (Notification.permission !== 'default') return;
+        Notification.requestPermission();
+    }
+
+    function showChatPushNotification(count) {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+        if (!document.hidden) return; // master is already looking at the tab
+
+        try {
+            var notification = new Notification('Новое сообщение в чате', {
+                body: count > 1 ? count + ' непрочитанных диалогов' : 'У вас непрочитанный диалог',
+                icon: '/logo.svg',
+                tag: 'veloria-chat-unread',
+            });
+            notification.onclick = function () {
+                window.focus();
+                window.location.href = '/messages';
+                notification.close();
+            };
+        } catch (error) {
+            // Some browsers (notably iOS Safari) don't support the constructor at all.
+        }
+    }
+
+    function updateChatBadge(count) {
+        var badge = document.querySelector('[data-chat-unread-badge]');
+        if (!badge) return;
+
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : String(count);
+            badge.classList.remove('d-none');
+        } else {
+            badge.classList.add('d-none');
+        }
+    }
+
+    function pollChatUnread() {
+        fetch('/api/v1/chat/unread-count', { headers: headers })
+            .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+            .then(function (payload) {
+                var count = payload.unread_count || 0;
+                updateChatBadge(count);
+
+                if (count > chatUnreadState.count) {
+                    playChatPing();
+                    maybeRequestNotificationPermission();
+                    showChatPushNotification(count);
+                }
+
+                chatUnreadState.count = count;
+            })
+            .catch(function () {
+                // Best-effort — the badge just keeps its last known value.
+            });
+    }
+
+    function startChatUnreadPolling() {
+        if (chatUnreadState.polling) return;
+        chatUnreadState.polling = true;
+
+        pollChatUnread();
+        setInterval(pollChatUnread, 15000);
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') pollChatUnread();
+        });
+    }
 
     var logoutButton = document.querySelector('[data-logout-button]');
     if (logoutButton) {

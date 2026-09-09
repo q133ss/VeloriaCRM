@@ -164,6 +164,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         });
         // The CRM's chat inbox for talking to clients through the mobile app —
         // open on every plan, unlike marketing/master-posts above.
+        Route::get('/chat/unread-count', [ChatController::class, 'unreadCount']);
         Route::get('/chat/threads', [ChatController::class, 'index']);
         Route::post('/chat/threads', [ChatController::class, 'store']);
         Route::get('/chat/threads/{thread}', [ChatController::class, 'show']);

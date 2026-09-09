@@ -19,6 +19,18 @@ class ChatController extends Controller
     {
     }
 
+    /**
+     * Cheap, dashboard-wide poll target for the sidebar badge — the full
+     * index() above pulls client names and last-message previews for every
+     * thread, more than a badge on every page load needs.
+     */
+    public function unreadCount(): JsonResponse
+    {
+        $count = ChatThread::unreadForMaster($this->currentUserId())->count();
+
+        return response()->json(['unread_count' => $count]);
+    }
+
     public function index(): JsonResponse
     {
         $threads = ChatThread::forMaster($this->currentUserId())
