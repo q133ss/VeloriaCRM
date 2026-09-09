@@ -5,6 +5,7 @@ import {
   ApiMaster,
   AppointmentDto,
   AppointmentListItemDto,
+  ChatThreadDto,
   ClientNotificationDto,
   ClientServiceDto,
   ClientSlotsDto,
@@ -14,6 +15,7 @@ import {
   OtpStartPayload,
   PromotionDto,
   RegisterDeviceTokenBody,
+  SendChatMessageBody,
   ServiceCategoryDto,
   StartLoginBody,
   VerifyLoginBody,
@@ -147,6 +149,22 @@ export const clientPortalApi = {
       path: '/client/notifications/mark-as-read',
       token,
       body: ids ? { ids } : undefined,
+    });
+  },
+
+  getChat(token: string) {
+    return httpRequest<ApiEnvelope<ChatThreadDto>>({
+      path: '/client/chat',
+      token,
+    });
+  },
+
+  sendChatMessage(token: string, body: SendChatMessageBody) {
+    return httpRequest<ApiEnvelope<ChatThreadDto>>({
+      method: 'POST',
+      path: '/client/chat/messages',
+      token,
+      body,
     });
   },
 };

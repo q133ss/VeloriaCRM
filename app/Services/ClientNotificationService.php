@@ -74,6 +74,16 @@ class ClientNotificationService
         );
     }
 
+    public function notifyChatMessage(Client $client, string $masterName, string $preview): void
+    {
+        $this->sendToClient(
+            $client,
+            __('client_portal.notifications.chat_message_title', ['master' => $masterName]),
+            $preview,
+            '/chat',
+        );
+    }
+
     /**
      * Fans out to every client of the master who published the post — the
      * feed itself (Client\ContentController::posts()) already only shows

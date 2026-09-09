@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Client;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,11 +22,16 @@ class EnsurePlanAccess
 {
     public function handle(Request $request, Closure $next, string $plan = 'pro'): Response
     {
-        $user = $request->user();
+        $actor = $request->user();
 
-        $allowed = $user !== null && match ($plan) {
-            'elite' => $user->hasEliteAccess(),
-            default => $user->hasProAccess(),
+        // A `Client` token's own plan is meaningless — chat/news-authoring are
+        // gated on the master she belongs to, the same tier the branding and
+        // master-posts-feed checks already key off of.
+        $planHolder = $actor instanceof Client ? $actor->user : $actor;
+
+        $allowed = $planHolder instanceof User && match ($plan) {
+            'elite' => $planHolder->hasEliteAccess(),
+            default => $planHolder->hasProAccess(),
         };
 
         if ($allowed) {

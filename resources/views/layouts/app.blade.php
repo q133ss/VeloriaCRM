@@ -606,6 +606,7 @@ document.addEventListener('DOMContentLoaded', function () {
         menuItem('analytics', '/analytics', 'ri-bar-chart-line'),
         menuItem('useful', '/useful', 'ri-compass-3-line'),
         menuItem('integrations', '/integrations', 'ri-puzzle-line'),
+        menuItem('messages', '/messages', 'ri-message-3-line'),
         menuItem('settings', '/settings', 'ri-settings-3-line'),
         menuItem('help', '/help', 'ri-question-line')
     ];

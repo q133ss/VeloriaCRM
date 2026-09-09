@@ -38,5 +38,6 @@ return [
         'appointment_reminder_title' => 'Напоминание о записи',
         'appointment_reminder_message' => 'Не забудьте: ":service" завтра, :datetime.',
         'new_post_title' => 'Новость от мастера',
+        'chat_message_title' => 'Сообщение от :master',
     ],
 ];

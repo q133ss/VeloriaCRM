@@ -23,6 +23,10 @@ export type AuthMaster = {
   // a Lite master's `branding` is always null here even if something is stored,
   // so this app never has to re-derive the plan gate on its own.
   hasCustomBranding: boolean;
+  // Unlike branding, chat is open on every plan — the server always sends
+  // `true` here. Field kept (rather than hardcoding the entry point) in case
+  // that changes again.
+  hasChat: boolean;
   branding: MasterBranding | null;
 };
 

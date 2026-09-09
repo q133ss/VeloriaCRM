@@ -38,5 +38,6 @@ return [
         'appointment_reminder_title' => 'Appointment reminder',
         'appointment_reminder_message' => 'Don\'t forget: ":service" tomorrow, :datetime.',
         'new_post_title' => 'News from your master',
+        'chat_message_title' => 'Message from :master',
     ],
 ];

@@ -121,6 +121,8 @@ Route::middleware('set.locale')->group(function () {
         Route::middleware(['auth:sanctum', 'plan:pro'])->group(function () {
             Route::view('/marketing', 'marketing.index')->name('marketing');
         });
+        // Chat is open on every plan — no `plan:pro` gate here.
+        Route::view('/messages', 'chat.index')->name('messages');
         Route::view('/help', 'help.index')->name('help');
         Route::view('/notifications', 'notifications.index')->name('notifications.index');
 

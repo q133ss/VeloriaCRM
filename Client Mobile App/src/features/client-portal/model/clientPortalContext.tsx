@@ -85,6 +85,7 @@ function mapMaster(master: ApiMaster): AuthMaster {
     name: master.name?.trim() || 'Мастер',
     avatarUrl: master.avatar_url ?? null,
     hasCustomBranding,
+    hasChat: Boolean(master.has_chat),
     branding,
   };
 }

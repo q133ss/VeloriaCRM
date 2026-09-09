@@ -48,9 +48,16 @@ export function HomeScreen({ navigation }: Props) {
           logoUrl={master.branding?.logoUrl}
           displayName={master.branding?.appDisplayName}
         />
-        <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}>
-          <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Уведомления</Text>
-        </Pressable>
+        <View style={styles.headerLinks}>
+          {master.hasChat ? (
+            <Pressable onPress={() => navigation.navigate('Chat')} hitSlop={8}>
+              <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Чат</Text>
+            </Pressable>
+          ) : null}
+          <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}>
+            <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Уведомления</Text>
+          </Pressable>
+        </View>
       </View>
 
       <LinearGradient
@@ -219,6 +226,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     marginBottom: 4,
+  },
+  headerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   header: {
     margin: 16,

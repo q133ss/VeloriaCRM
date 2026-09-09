@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\V1\CalendarController;
+use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\ClientController as ApiClientController;
 use App\Http\Controllers\Api\V1\OrderController as ApiOrderController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -56,6 +57,11 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::post('/device-token', [\App\Http\Controllers\Api\V1\Client\DeviceController::class, 'store']);
             Route::get('/notifications', [\App\Http\Controllers\Api\V1\Client\NotificationController::class, 'index']);
             Route::post('/notifications/mark-as-read', [\App\Http\Controllers\Api\V1\Client\NotificationController::class, 'markAsRead']);
+
+            // Chat is open on every plan (unlike branding/news authoring) —
+            // deliberately not behind `plan:pro`.
+            Route::get('/chat', [\App\Http\Controllers\Api\V1\Client\ChatController::class, 'show']);
+            Route::post('/chat/messages', [\App\Http\Controllers\Api\V1\Client\ChatController::class, 'send']);
         });
     });
 
@@ -156,6 +162,12 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::patch('/master-posts/{masterPost}', [MasterPostController::class, 'update']);
             Route::delete('/master-posts/{masterPost}', [MasterPostController::class, 'destroy']);
         });
+        // The CRM's chat inbox for talking to clients through the mobile app —
+        // open on every plan, unlike marketing/master-posts above.
+        Route::get('/chat/threads', [ChatController::class, 'index']);
+        Route::post('/chat/threads', [ChatController::class, 'store']);
+        Route::get('/chat/threads/{thread}', [ChatController::class, 'show']);
+        Route::post('/chat/threads/{thread}/messages', [ChatController::class, 'reply']);
         Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
         Route::post('/service-categories', [ServiceCategoryController::class, 'store']);
         Route::patch('/service-categories/{category}', [ServiceCategoryController::class, 'update']);

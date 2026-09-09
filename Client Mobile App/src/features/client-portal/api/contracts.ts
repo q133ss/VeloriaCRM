@@ -28,6 +28,7 @@ export type ApiMaster = {
   name: string | null;
   avatar_url?: string | null;
   has_custom_branding?: boolean;
+  has_chat?: boolean;
   branding?: ApiMasterBranding | null;
 };
 
@@ -176,4 +177,23 @@ export type ClientNotificationDto = {
 
 export type RegisterDeviceTokenBody = {
   expo_push_token: string;
+};
+
+export type ChatMessageDto = {
+  id: number;
+  from_me: boolean;
+  sender_type: 'master' | 'client';
+  body: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  created_at: string;
+};
+
+export type ChatThreadDto = {
+  id: number;
+  messages: ChatMessageDto[];
+};
+
+export type SendChatMessageBody = {
+  body?: string;
 };

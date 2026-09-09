@@ -87,6 +87,10 @@ class AuthController extends Controller
             'name' => $master?->name,
             'avatar_url' => $master?->avatar_url,
             'has_custom_branding' => $hasCustomBranding,
+            // Unlike branding, chat is open on every plan — the field stays
+            // (the app already reads it to show/hide the Chat entry point)
+            // but it's no longer tied to hasProAccess().
+            'has_chat' => true,
             'branding' => $hasCustomBranding ? [
                 'app_display_name' => $branding['app_display_name'] ?? null,
                 'primary_color' => $branding['primary_color'] ?? null,

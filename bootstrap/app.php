@@ -12,7 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        channels: __DIR__.'/../routes/channels.php',
+    )
+    // withRouting()'s own `channels:` param registers `/broadcasting/auth`
+    // with only the `web` middleware (no auth guard at all) via an
+    // `$app->booted()` callback that runs *after* every provider's boot() —
+    // including BroadcastServiceProvider's own `Broadcast::routes(['middleware'
+    // => ['auth:sanctum']])`, which it silently overwrote (same method+URI,
+    // last registration wins). Every private channel auth request 403'd
+    // before ever reaching routes/channels.php's closures. Registering it
+    // here, once, with the real guard, is the fix.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
