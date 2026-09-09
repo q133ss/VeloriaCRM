@@ -5,6 +5,14 @@ export type BookingConfirmationParams = {
   time: string;
 };
 
+export type NewsDetailParams = {
+  id: number;
+  title: string;
+  body: string;
+  imageUrl: string | null;
+  date: string;
+};
+
 export type RootStackParamList = {
   Auth: undefined;
   Home: undefined;
@@ -12,7 +20,7 @@ export type RootStackParamList = {
   BookingConfirmation: BookingConfirmationParams;
   Appointments: undefined;
   News: undefined;
-  NewsDetail: undefined;
+  NewsDetail: NewsDetailParams;
   Chat: undefined;
   Reviews: undefined;
   Deposit: undefined;

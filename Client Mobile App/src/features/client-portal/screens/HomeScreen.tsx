@@ -48,6 +48,9 @@ export function HomeScreen({ navigation }: Props) {
           logoUrl={master.branding?.logoUrl}
           displayName={master.branding?.appDisplayName}
         />
+        <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}>
+          <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Уведомления</Text>
+        </Pressable>
       </View>
 
       <LinearGradient
@@ -178,17 +181,30 @@ export function HomeScreen({ navigation }: Props) {
       <View style={styles.section}>
         <View style={styles.rowBetween}>
           <Text style={[styles.blockTitle, { color: theme.colors.textPrimary }]}>Новости мастера</Text>
-          <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Смотреть все</Text>
+          <Pressable onPress={() => navigation.navigate('News')}>
+            <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Смотреть все</Text>
+          </Pressable>
         </View>
 
-        {home.updates.map((item) => (
-          <SectionCard key={item.id} theme={theme}>
-            <View style={styles.rowBetween}>
-              <Text style={[styles.newsTitle, { color: theme.colors.textPrimary }]}>{item.title}</Text>
-              <Text style={[styles.newsDate, { color: theme.colors.textMuted }]}>{item.date}</Text>
-            </View>
-            <Text style={[styles.newsExcerpt, { color: theme.colors.textSecondary }]}>{item.excerpt}</Text>
-          </SectionCard>
+        {home.updates.slice(0, 3).map((item) => (
+          <Pressable
+            key={item.id}
+            onPress={() => navigation.navigate('NewsDetail', {
+              id: item.id,
+              title: item.title,
+              body: item.body,
+              imageUrl: item.imageUrl,
+              date: item.date,
+            })}
+          >
+            <SectionCard theme={theme}>
+              <View style={styles.rowBetween}>
+                <Text style={[styles.newsTitle, { color: theme.colors.textPrimary }]}>{item.title}</Text>
+                <Text style={[styles.newsDate, { color: theme.colors.textMuted }]}>{item.date}</Text>
+              </View>
+              <Text style={[styles.newsExcerpt, { color: theme.colors.textSecondary }]}>{item.excerpt}</Text>
+            </SectionCard>
+          </Pressable>
         ))}
       </View>
     </ScreenContainer>
@@ -197,6 +213,9 @@ export function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   brandRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 12,
     marginBottom: 4,

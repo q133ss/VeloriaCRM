@@ -47,7 +47,14 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ff00fc"
+        }
+      ]
     ]
   }
 }

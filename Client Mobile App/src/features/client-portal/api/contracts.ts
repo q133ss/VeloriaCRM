@@ -146,3 +146,34 @@ export type CreateWaitlistBody = {
   flexibility_days?: number;
   notes?: string;
 };
+
+export type MasterPostDto = {
+  id: number;
+  title: string;
+  body: string;
+  image_url: string | null;
+  published_at: string | null;
+};
+
+export type PromotionDto = {
+  id: number;
+  name: string;
+  type: string;
+  percent: number | null;
+  gift_description: string | null;
+  promo_code: string | null;
+  ends_at: string | null;
+};
+
+export type ClientNotificationDto = {
+  id: number;
+  title: string;
+  message: string;
+  action_url: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
+export type RegisterDeviceTokenBody = {
+  expo_push_token: string;
+};

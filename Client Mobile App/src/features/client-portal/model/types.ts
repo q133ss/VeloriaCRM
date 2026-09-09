@@ -34,18 +34,22 @@ export type UpcomingAppointmentSummary = {
   statusLabel: string;
 };
 
+export type NewsPostSummary = {
+  id: number;
+  title: string;
+  excerpt: string;
+  body: string;
+  imageUrl: string | null;
+  date: string;
+};
+
 export type HomeFeed = {
   clientName: string;
   // null once a real appointment fetch comes back empty — there is no fake
   // placeholder appointment to fall back to, unlike `services` below.
   nextAppointment: UpcomingAppointmentSummary | null;
   services: ClientServiceCard[];
-  updates: Array<{
-    id: string;
-    title: string;
-    excerpt: string;
-    date: string;
-  }>;
+  updates: NewsPostSummary[];
 };
 
 export type BookingCategoryOption = {

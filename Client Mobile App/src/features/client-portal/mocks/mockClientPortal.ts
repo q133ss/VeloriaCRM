@@ -1,4 +1,4 @@
-import { ClientServiceCard, HomeFeed } from '../model/types';
+import { ClientServiceCard, HomeFeed, NewsPostSummary } from '../model/types';
 
 const defaultServices: ClientServiceCard[] = [
   {
@@ -29,23 +29,32 @@ const defaultServices: ClientServiceCard[] = [
   },
 ];
 
-const defaultUpdates = [
+// Negative ids: real posts from GET /client/posts are always positive, so
+// these can never collide with a real post's id if a mock item is tapped
+// through to NewsDetailScreen.
+const defaultUpdates: NewsPostSummary[] = [
     {
-      id: 'upd-1',
+      id: -1,
       title: 'Открылось два окна на пятницу',
       excerpt: 'Освободились места после 17:00. Можно записаться прямо из приложения.',
+      body: 'Освободились места после 17:00. Можно записаться прямо из приложения.',
+      imageUrl: null,
       date: 'Сегодня',
     },
     {
-      id: 'upd-2',
+      id: -2,
       title: 'Весенняя палитра уже в студии',
       excerpt: 'Добавила 12 спокойных оттенков и несколько полупрозрачных баз.',
+      body: 'Добавила 12 спокойных оттенков и несколько полупрозрачных баз.',
+      imageUrl: null,
       date: '14 марта',
     },
     {
-      id: 'upd-3',
+      id: -3,
       title: 'Как держать покрытие дольше',
       excerpt: 'Короткая памятка по уходу после процедуры без сложных правил.',
+      body: 'Короткая памятка по уходу после процедуры без сложных правил.',
+      imageUrl: null,
       date: '11 марта',
     },
   ];
@@ -55,10 +64,14 @@ const defaultUpdates = [
 // would be a lie about the client's own booking. HomeScreen always sources it
 // from GET /client/appointments (ClientPortalProvider.loadHomeFeed), null when
 // there isn't one.
-export function buildMockHomeFeed(clientName = 'Клиент', services: ClientServiceCard[] = defaultServices): Omit<HomeFeed, 'nextAppointment'> {
+export function buildMockHomeFeed(
+  clientName = 'Клиент',
+  services: ClientServiceCard[] = defaultServices,
+  updates: NewsPostSummary[] = defaultUpdates,
+): Omit<HomeFeed, 'nextAppointment'> {
   return {
     clientName,
     services,
-    updates: defaultUpdates,
+    updates,
   };
 }

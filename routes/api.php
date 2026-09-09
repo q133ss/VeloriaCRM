@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminAuditController;
 use App\Http\Controllers\Api\V1\Admin\AdminSupportTicketController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController as ApiAdminUserController;
 use App\Http\Controllers\Api\V1\LandingController;
+use App\Http\Controllers\Api\V1\MasterPostController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\TrendsController;
 use App\Http\Controllers\Api\V1\UsefulController;
@@ -50,6 +51,11 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::get('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'appointments']);
             Route::post('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'book']);
             Route::post('/waitlist', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'waitlist']);
+            Route::get('/posts', [\App\Http\Controllers\Api\V1\Client\ContentController::class, 'posts']);
+            Route::get('/promotions', [\App\Http\Controllers\Api\V1\Client\ContentController::class, 'promotions']);
+            Route::post('/device-token', [\App\Http\Controllers\Api\V1\Client\DeviceController::class, 'store']);
+            Route::get('/notifications', [\App\Http\Controllers\Api\V1\Client\NotificationController::class, 'index']);
+            Route::post('/notifications/mark-as-read', [\App\Http\Controllers\Api\V1\Client\NotificationController::class, 'markAsRead']);
         });
     });
 
@@ -141,6 +147,14 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::post('/promotions/{promotion}/usage', [PromotionController::class, 'recordUsage']);
 
             Route::get('/warmup', [WarmupController::class, 'index']);
+        });
+        // The client app's news feed; authoring is a Pro/Elite perk, same guard
+        // pattern as the /marketing group above, just not itself "marketing".
+        Route::middleware('plan:pro')->group(function () {
+            Route::get('/master-posts', [MasterPostController::class, 'index']);
+            Route::post('/master-posts', [MasterPostController::class, 'store']);
+            Route::patch('/master-posts/{masterPost}', [MasterPostController::class, 'update']);
+            Route::delete('/master-posts/{masterPost}', [MasterPostController::class, 'destroy']);
         });
         Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
         Route::post('/service-categories', [ServiceCategoryController::class, 'store']);

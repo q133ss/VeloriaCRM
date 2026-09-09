@@ -16,6 +16,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\AvailabilityService;
 use App\Services\Booking\BookingConflictService;
+use App\Services\ClientNotificationService;
 use App\Services\NotificationService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
@@ -33,6 +34,7 @@ class BookingController extends Controller
         private readonly AvailabilityService $availability,
         private readonly BookingConflictService $conflicts,
         private readonly NotificationService $notifications,
+        private readonly ClientNotificationService $clientNotifications,
         private readonly OrderService $orderService,
     ) {}
 
@@ -260,6 +262,7 @@ class BookingController extends Controller
         ]);
 
         $this->notifyMaster($masterId, $client, $serviceLabel, $startsAtLocal);
+        $this->clientNotifications->notifyBookingConfirmed($client, $serviceLabel, $startsAtLocal);
 
         return response()->json([
             'data' => [

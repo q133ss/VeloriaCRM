@@ -29,4 +29,14 @@ return [
         'master_notification_title' => 'New booking from client portal',
         'master_notification_message' => 'Client :client booked ":service" for :datetime.',
     ],
+    'device' => [
+        'token_saved' => 'Device token saved.',
+    ],
+    'notifications' => [
+        'booking_confirmed_title' => 'Booking confirmed',
+        'booking_confirmed_message' => 'You are booked for ":service" on :datetime.',
+        'appointment_reminder_title' => 'Appointment reminder',
+        'appointment_reminder_message' => 'Don\'t forget: ":service" tomorrow, :datetime.',
+        'new_post_title' => 'News from your master',
+    ],
 ];

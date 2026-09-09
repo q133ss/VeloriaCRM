@@ -29,4 +29,14 @@ return [
         'master_notification_title' => 'Новая запись (Client Portal)',
         'master_notification_message' => 'Клиент :client записался(лась) на ":service" на :datetime.',
     ],
+    'device' => [
+        'token_saved' => 'Токен устройства сохранён.',
+    ],
+    'notifications' => [
+        'booking_confirmed_title' => 'Запись подтверждена',
+        'booking_confirmed_message' => 'Вы записаны на ":service" на :datetime.',
+        'appointment_reminder_title' => 'Напоминание о записи',
+        'appointment_reminder_message' => 'Не забудьте: ":service" завтра, :datetime.',
+        'new_post_title' => 'Новость от мастера',
+    ],
 ];

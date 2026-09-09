@@ -7,6 +7,7 @@ use App\Services\Ai\AiGateway;
 use App\Services\Ai\LocalAiService;
 use App\Services\Clients\ClientVisitStats;
 use App\Services\AllergyReminderService;
+use App\Services\AppointmentReminderService;
 use App\Services\DailyPostIdeaService;
 use App\Services\Marketing\MarketingCampaignService;
 use App\Services\SubscriptionPaymentSyncService;
@@ -195,6 +196,23 @@ Artisan::command('alerts:send-allergy-reminders {userId?}', function (?int $user
     }
 })->purpose('Send in-app allergy reminders before appointments for Pro and Elite users');
 
+Artisan::command('alerts:send-appointment-reminders', function () {
+    /** @var AppointmentReminderService $service */
+    $service = app(AppointmentReminderService::class);
+    $result = $service->dispatchDueReminders(now());
+
+    $this->info(sprintf(
+        'Processed: %d, sent: %d, skipped: %d',
+        $result['processed'],
+        $result['sent'],
+        $result['skipped']
+    ));
+
+    foreach ($result['items'] as $item) {
+        $this->line(json_encode($item, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+})->purpose('Push a client-app reminder the day before their appointment');
+
 Artisan::command('ai:ping {prompt?}', function (?string $prompt = null) {
     /** @var LocalAiService $local */
     $local = app(LocalAiService::class);
@@ -246,6 +264,7 @@ Artisan::command('clients:refresh-visits {--master= : Only this master\'s client
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
 Schedule::command('alerts:send-allergy-reminders')->everyMinute();
+Schedule::command('alerts:send-appointment-reminders')->hourly();
 Schedule::command('content:send-daily-ideas')->dailyAt('09:00');
 Schedule::command('content:send-weekly-useful')->weeklyOn(1, '09:00');
 Schedule::command('clients:refresh-visits')->dailyAt('03:20');

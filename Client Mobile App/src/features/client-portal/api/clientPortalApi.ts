@@ -5,18 +5,22 @@ import {
   ApiMaster,
   AppointmentDto,
   AppointmentListItemDto,
+  ClientNotificationDto,
   ClientServiceDto,
   ClientSlotsDto,
   CreateAppointmentBody,
   CreateWaitlistBody,
-  GetServicesQuery,
-  GetSlotsQuery,
+  MasterPostDto,
   OtpStartPayload,
+  PromotionDto,
+  RegisterDeviceTokenBody,
   ServiceCategoryDto,
   StartLoginBody,
   VerifyLoginBody,
   VerifyLoginResponseData,
   WaitlistEntryPayload,
+  GetServicesQuery,
+  GetSlotsQuery,
 } from './contracts';
 
 export const clientPortalApi = {
@@ -104,6 +108,45 @@ export const clientPortalApi = {
       path: '/client/waitlist',
       token,
       body,
+    });
+  },
+
+  getPosts(token: string) {
+    return httpRequest<ApiEnvelope<{ posts: MasterPostDto[] }>>({
+      path: '/client/posts',
+      token,
+    });
+  },
+
+  getPromotions(token: string) {
+    return httpRequest<ApiEnvelope<{ promotions: PromotionDto[] }>>({
+      path: '/client/promotions',
+      token,
+    });
+  },
+
+  registerDeviceToken(token: string, body: RegisterDeviceTokenBody) {
+    return httpRequest<{ message: string }>({
+      method: 'POST',
+      path: '/client/device-token',
+      token,
+      body,
+    });
+  },
+
+  getNotifications(token: string) {
+    return httpRequest<ApiEnvelope<{ notifications: ClientNotificationDto[] }>>({
+      path: '/client/notifications',
+      token,
+    });
+  },
+
+  markNotificationsRead(token: string, ids?: number[]) {
+    return httpRequest<{ updated: number }>({
+      method: 'POST',
+      path: '/client/notifications/mark-as-read',
+      token,
+      body: ids ? { ids } : undefined,
     });
   },
 };

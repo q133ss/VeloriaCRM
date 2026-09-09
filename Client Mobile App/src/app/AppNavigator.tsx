@@ -7,6 +7,9 @@ import { AuthScreen } from '../features/client-portal/screens/AuthScreen';
 import { BookingConfirmationScreen } from '../features/client-portal/screens/BookingConfirmationScreen';
 import { BookingScreen } from '../features/client-portal/screens/BookingScreen';
 import { HomeScreen } from '../features/client-portal/screens/HomeScreen';
+import { NewsDetailScreen } from '../features/client-portal/screens/NewsDetailScreen';
+import { NewsScreen } from '../features/client-portal/screens/NewsScreen';
+import { NotificationsScreen } from '../features/client-portal/screens/NotificationsScreen';
 import { SplashScreen } from '../features/client-portal/screens/SplashScreen';
 import { useClientPortal } from '../features/client-portal/model/clientPortalContext';
 import { RootStackParamList } from '../navigation/types';
@@ -71,6 +74,9 @@ function AuthedNavigator({ theme }: { theme: AppTheme }) {
       <Stack.Screen name="Booking" component={BookingScreen} />
       <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
       <Stack.Screen name="Appointments" component={AppointmentsScreen} />
+      <Stack.Screen name="News" component={NewsScreen} />
+      <Stack.Screen name="NewsDetail" component={NewsDetailScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 }

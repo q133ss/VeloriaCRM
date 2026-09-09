@@ -12,12 +12,14 @@ import { Alert } from 'react-native';
 
 import { sessionStorage } from '../../../shared/api/sessionStorage';
 import { formatDateLabel } from '../../../shared/format/ruDate';
-import { ApiMaster, AppointmentListItemDto, ClientServiceDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
+import { registerForPushNotificationsAsync } from '../../../shared/notifications/pushRegistration';
+import { ApiMaster, AppointmentListItemDto, ClientServiceDto, MasterPostDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
 import { buildMockHomeFeed } from '../mocks/mockClientPortal';
 import {
   AuthMaster,
   HomeFeed,
+  NewsPostSummary,
   PendingAuth,
   PendingSelection,
   SessionUser,
@@ -87,6 +89,17 @@ function mapMaster(master: ApiMaster): AuthMaster {
   };
 }
 
+function mapPostsToUpdates(posts: MasterPostDto[]): NewsPostSummary[] {
+  return posts.map((post) => ({
+    id: post.id,
+    title: post.title,
+    excerpt: post.body.length > 140 ? `${post.body.slice(0, 140).trimEnd()}…` : post.body,
+    body: post.body,
+    imageUrl: post.image_url,
+    date: post.published_at ? formatDateLabel(post.published_at.slice(0, 10)) : '',
+  }));
+}
+
 function mapServicesToHomeCards(services: ClientServiceDto[]) {
   return services.slice(0, 4).map((service) => ({
     id: String(service.id),
@@ -151,7 +164,16 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       nextAppointment = null;
     }
 
-    setHome({ ...buildMockHomeFeed(clientName, services), nextAppointment });
+    let updates;
+    try {
+      const postsResponse = await clientPortalApi.getPosts(feedToken);
+      const mapped = mapPostsToUpdates(postsResponse.data.posts);
+      updates = mapped.length > 0 ? mapped : undefined;
+    } catch {
+      updates = undefined;
+    }
+
+    setHome({ ...buildMockHomeFeed(clientName, services, updates), nextAppointment });
   }, []);
 
   const hydrateFromToken = useCallback(async (nextToken: string) => {
@@ -164,6 +186,19 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     setMaster(nextMaster);
 
     await loadHomeFeed(nextToken, nextSession.name);
+
+    // Fire-and-forget: push is a nice-to-have, never something login/home
+    // should wait on or fail over (registerForPushNotificationsAsync already
+    // never throws, resolving null wherever push isn't available yet).
+    registerForPushNotificationsAsync()
+      .then((expoPushToken) => {
+        if (!expoPushToken) {
+          return undefined;
+        }
+
+        return clientPortalApi.registerDeviceToken(nextToken, { expo_push_token: expoPushToken });
+      })
+      .catch(() => undefined);
   }, [loadHomeFeed]);
 
   const refreshHomeFeed = useCallback(async () => {
