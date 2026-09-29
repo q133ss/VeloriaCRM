@@ -57,7 +57,8 @@ HTML);
         File::put($this->fixture . '/images/logo.png', 'png');
         File::put($this->fixture . '/images/pattern.png', 'png');
         File::put($this->fixture . '/images/unused.jpg', 'jpg');
-        File::put($this->fixture . '/js/app.js', 'console.log(1);');
+        File::put($this->fixture . '/js/app.js', "\$('#date').datetimepicker({});
+console.log(1);");
         File::put($this->fixture . '/LICENSE.txt', 'Original license text');
     }
 
@@ -147,6 +148,7 @@ HTML);
         $this->assertStringContainsString('<form>', $output);
         $this->assertStringContainsString('Placeholder text', $output);
         $this->assertStringContainsString('maps.googleapis', $output, 'the removed script is reported');
+        $this->assertStringContainsString('js/app.js calls datetimepicker', $output, 'a call to a plugin that is not loaded');
     }
 
     public function test_it_refuses_without_a_license_or_a_credit_link_and_never_overwrites(): void

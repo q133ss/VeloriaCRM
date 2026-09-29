@@ -1,0 +1,36 @@
+/* Veloria additions on top of the original Barber X stylesheet. */
+
+/* The booking form sits on the dark block: the widget's own text is light there. */
+.contact-form { --lb-text: #fff; }
+.contact .lb-picker { background: rgba(255, 255, 255, .06); padding: 1rem 1.1rem; }
+.contact .lb-day, .contact .lb-time { border-radius: 0; }
+.contact .contact-form .form-control { color: #ffffff; }
+.contact .contact-form select.form-control option { color: #212529; }
+
+/* Editable inline text must not pick up generic span/bdi colours. */
+bdi { color: inherit; }
+
+/* A long name must not break the top bar. */
+.navbar-brand { max-width: calc(100% - 70px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 992px) { .navbar-brand { max-width: 420px; } }
+
+/* Questions block: a card with one text, no date and category line. */
+.blog .blog-item .blog-text p { margin-bottom: 0; }
+
+/* The brand keeps its full line height (overflow: hidden above would clip the letters). */
+.navbar-brand { line-height: 1.35; padding-top: .2rem; padding-bottom: .2rem; }
+
+/* The service select looks like the template's other fields: transparent, a line underneath. */
+.contact .contact-form select.form-control {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 0;
+    color: #ffffff;
+    padding-left: 0;
+    box-shadow: none;
+}
+
+/* The template sets line-height: 0 on the brand; a user's name needs a real line box (and a size that fits). */
+.navbar .navbar-brand { line-height: 1.35; font-size: 30px; padding: .2rem 0; }
+@media (max-width: 991.98px) { .navbar .navbar-brand { font-size: 24px; } }

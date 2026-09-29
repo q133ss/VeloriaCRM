@@ -514,6 +514,18 @@ PHP;
         if (preg_match_all('~<form\b~i', $html, $forms)) {
             $this->warn('  ' . count($forms[0]) . ' <form> found: keep one, name the fields client_name/client_phone/service_id/message, use the request-* ids.');
         }
+        // A plugin the page calls in its own script but that we do not load (or must not) stops that
+        // script with a TypeError, and everything after the call (carousels, menus) silently dies.
+        foreach (array_keys($copied) as $rel) {
+            if (! str_ends_with($rel, '.js') || preg_match('~\.min\.js$|/lib/|jquery|bootstrap~i', $rel)) {
+                continue;
+            }
+            $code = (string) @file_get_contents(public_path("landing-templates/{$slug}/{$rel}"));
+            if (preg_match_all('~\.(datetimepicker|datepicker|timepicker|counterUp|animateNumber|magnificPopup|stellar|isotope|lightbox|validate|jqBootstrapValidation)\s*\(~', $code, $calls)) {
+                $this->warn("  {$rel} calls " . implode(', ', array_unique($calls[1])) . ': load the plugin or delete the call, otherwise the rest of the script stops.');
+            }
+        }
+
         if (preg_match('~lorem ipsum|far far away|clita erat|dolor sit amet~i', $html)) {
             $this->warn('  Placeholder text found: replace it with data or lang strings.');
         }

@@ -1,0 +1,27 @@
+/* Veloria additions on top of the original SPA Center stylesheet. */
+
+/* The original Poppins has no Cyrillic; Montserrat does. */
+:root { --font-family-sans-serif: "Montserrat", sans-serif; }
+body, h1, h2, h3, h4, h5, h6, .btn, .form-control, .custom-select { font-family: "Montserrat", sans-serif; }
+
+/* The booking form sits on a dark photo block. */
+.bg-appointment { --lb-text: #fff; }
+.bg-appointment .lb-picker { background: rgba(255, 255, 255, .08); padding: 1rem 1.1rem; }
+.bg-appointment .form-control, .bg-appointment .custom-select { color: #fff; }
+.bg-appointment .form-control::placeholder { color: rgba(255, 255, 255, .8); }
+.bg-appointment .custom-select option { color: #212529; }
+
+/* Editable inline text must not pick up generic span/bdi colours. */
+bdi { color: inherit; }
+
+/* A long name must not break the top bar. */
+.navbar .navbar-brand { max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.navbar .navbar-brand h1 { font-size: 1.8rem; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 992px) { .navbar .navbar-brand { max-width: 380px; } }
+
+/* Service cards: long names wrap. */
+.service-item h4 { overflow-wrap: anywhere; }
+
+/* Price cards: the amount stays on one line, long names wrap next to it. */
+.pricing-carousel h1 { white-space: nowrap; }
+.pricing-carousel h5 { font-size: .95rem; }

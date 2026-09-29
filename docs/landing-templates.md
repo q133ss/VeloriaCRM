@@ -27,6 +27,7 @@ service, season, consultation) is chosen on the next step and defaults to the se
 
 - `salone`: warm golden tones (HTML Codex, CC BY 4.0).
 - `pretty`: light page with a pink booking block (Colorlib via ThemeWagon, CC BY 3.0).
+- `haircut`, `barberx`, `spacenter`, `sparlex`: HTML Codex, CC BY 4.0 (hair and barber, barber, spa, beauty and spa).
 
 The former classic layout (`landings.templates.*`) was retired; pages that still pointed at it fall back
 to the default template (`TemplateRegistry::DEFAULT_LAYOUT`) and a migration moved the stored values.
@@ -52,6 +53,16 @@ What is left by hand: map the sections to data (below), replace texts and photos
 `<x-landing.text>` / `<x-landing.image>` / `<x-landing.bg>`, use the booking form ids
 (`request-form`, `request-submit`, `request-message`, `request-service`, `request-picker`), list the
 keys in `fields` and photos in `images`, then run the tests.
+
+Two dev checks close the loop (Playwright, app running):
+
+```bash
+node scripts/landing-thumbs.mjs <slug>|--all   # preview.jpg + QA screenshots (desktop, phone) in output/qa/
+node scripts/landing-smoke.mjs [slug]          # phone width: overflow, JS errors, 404s; exit 1 on trouble
+```
+
+Watch for a template script that calls a plugin the page no longer loads (`.datetimepicker(`, `.counterUp(`):
+the call throws and the rest of that script (carousels, menus) silently stops. The importer warns about it.
 
 ### Page data: do not recompute it in the template
 

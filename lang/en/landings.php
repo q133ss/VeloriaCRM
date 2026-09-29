@@ -623,4 +623,11 @@ return [
         'book' => 'Book now',
         'appointment' => 'Book online',
     ],
+
+    'haircare' => [
+        'for_men' => 'For men',
+        'for_women' => 'For women',
+        'see_services' => 'See services',
+        'welcome' => 'Welcome',
+    ],
 ];
