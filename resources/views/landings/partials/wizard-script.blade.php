@@ -7,24 +7,16 @@
 
         const TYPES = ['general', 'promotion', 'service', 'seasonal', 'consultation'];
         const LAYOUTS = cfg.layouts || [];
-        const DEFAULT_LAYOUT = (LAYOUTS[0] || {}).slug;
+        const CATEGORIES = cfg.categories || [];
 
         function layout() {
-            return LAYOUTS.find(function (item) { return item.slug === state.layout; }) || LAYOUTS[0] || { templates: {}, full_page: false };
+            return LAYOUTS.find(function (item) { return item.slug === state.layout; }) || LAYOUTS[0] || { templates: {} };
         }
-        const THEMES = [
-            { key: 'lilac', color: '#7f5af0', primary: 'indigo', bg: 'preset', dark: false, grad: 'linear-gradient(160deg, #fffaf8 0%, #f7eef2 60%, #f3efe9 100%)' },
-            { key: 'rose', color: '#c2557a', primary: 'rose', bg: 'rose', dark: false, grad: 'linear-gradient(160deg, #fffafb 0%, #fbeaf0 60%, #f6eef0 100%)' },
-            { key: 'peach', color: '#d86f52', primary: 'sunset', bg: 'sunset', dark: false, grad: 'linear-gradient(160deg, #fff7f1 0%, #fde8de 60%, #f8efe8 100%)' },
-            { key: 'sage', color: '#1b8f74', primary: 'emerald', bg: 'emerald', dark: false, grad: 'linear-gradient(160deg, #fbfffd 0%, #eefaf5 60%, #edf4ef 100%)' },
-            { key: 'night', color: '#8d7ad6', primary: 'midnight', bg: 'midnight', dark: true, grad: 'linear-gradient(160deg, #211f33 0%, #322f4d 60%, #5e597f 100%)' },
-        ];
-
         const state = {
             step: 1,
-            type: null,
-            theme: 'lilac',
-            layout: DEFAULT_LAYOUT,
+            type: 'general',
+            layout: null,
+            category: 'all',
             services: [],
             promotions: [],
             optionsLoaded: false,
@@ -47,7 +39,7 @@
         const nextBtn = $('lw-next');
         const nav = $('lw-nav');
         const alerts = $('lw-alerts');
-        const totalSteps = 4;
+        const totalSteps = 3;
 
         /* ---------- helpers ---------- */
         function esc(value) {
@@ -72,10 +64,6 @@
             const headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
             if (token) headers.Authorization = 'Bearer ' + token;
             return headers;
-        }
-
-        function theme() {
-            return THEMES.find(function (item) { return item.key === state.theme; }) || THEMES[0];
         }
 
         function showAlert(kind, html) {
@@ -107,76 +95,54 @@
             return (state.season === '__custom' ? state.seasonCustom : state.season).trim();
         }
 
-        /* ---------- mini mock ---------- */
-        function mockHtml(type, themeKey, opts) {
-            const t = THEMES.find(function (item) { return item.key === themeKey; }) || THEMES[0];
-            opts = opts || {};
-            const name = opts.name || '';
-            const titles = {
-                general: W.goal.types.general.title,
-                promotion: W.goal.types.promotion.title,
-                service: W.goal.types.service.title,
-                seasonal: W.goal.types.seasonal.title,
-                consultation: W.goal.types.consultation.title,
-            };
-            let body = '<div class="lw-mock-line"></div><div class="lw-mock-line short"></div>';
-            let badge = '';
-            if (type === 'promotion') badge = '<span class="lw-mock-badge">−20%</span>';
-            if (type === 'general' || type === 'seasonal') {
-                body += '<div class="lw-mock-row"><span class="lw-mock-chip">' + esc('•••') + '</span><span class="lw-mock-chip">1 500 ₽</span><span class="lw-mock-chip">60 мин</span></div>';
-            }
-            if (type === 'service') {
-                body += '<div class="lw-mock-row"><span class="lw-mock-chip">от 1 500 ₽</span><span class="lw-mock-chip">90 мин</span></div>';
-            }
-            if (type === 'promotion') {
-                body += '<div class="lw-mock-row"><span class="lw-mock-chip">PROMO</span></div>';
-            }
-            const brand = name || W.about.name_ph.replace(/^[^:]*:\s*/, '');
-            const title = titles[type];
-            return '<div class="lw-mock' + (t.dark ? ' is-dark' : '') + '" style="--lw-c:' + t.color + ';--lw-bg:' + t.grad + '">' +
-                '<div class="lw-mock-brand"><span class="lw-mock-mark">' + esc((brand || 'V').charAt(0).toUpperCase()) + '</span>' + esc(brand) + '</div>' +
-                badge + '<div class="lw-mock-title">' + esc(title) + '</div>' + body +
-                '<span class="lw-mock-btn">' + esc(W.copy.cta) + '</span></div>';
+        /* ---------- step 1: template gallery ---------- */
+        function renderCategories() {
+            const chips = [{ slug: 'all', label: W.all }].concat(CATEGORIES);
+            $('lw-cats').innerHTML = chips.map(function (chip) {
+                return '<button type="button" class="lw-cat' + (state.category === chip.slug ? ' is-active' : '') + '" data-category="' + esc(chip.slug) + '" aria-pressed="' + (state.category === chip.slug) + '">' + esc(chip.label) + '</button>';
+            }).join('');
         }
 
-        /* ---------- step 1 ---------- */
-        function renderGoals() {
-            $('lw-goals').innerHTML = TYPES.map(function (type) {
+        function renderLayouts() {
+            const visible = LAYOUTS.filter(function (item) {
+                return state.category === 'all' || (item.categories || []).indexOf(state.category) !== -1;
+            });
+
+            if (!visible.length) {
+                $('lw-layouts').innerHTML = '<div class="lw-empty-note" style="grid-column: 1 / -1">' + esc(W.no_templates) + '</div>';
+                return;
+            }
+
+            const labels = {};
+            CATEGORIES.forEach(function (c) { labels[c.slug] = c.label; });
+
+            $('lw-layouts').innerHTML = visible.map(function (item) {
+                const selected = state.layout === item.slug;
+                const tags = (item.categories || []).map(function (c) { return '<span>' + esc(labels[c] || c) + '</span>'; }).join('');
+                return '<article class="lw-layout' + (selected ? ' is-selected' : '') + '">' +
+                    '<span class="lw-layout-thumb"><img src="' + esc(item.thumb) + '" alt="" loading="lazy" /></span>' +
+                    '<div class="lw-layout-body"><strong>' + esc(item.title) + '</strong><span class="lw-layout-desc">' + esc(item.description) + '</span>' +
+                    (tags ? '<div class="lw-layout-tags">' + tags + '</div>' : '') + '</div>' +
+                    '<div class="lw-layout-actions">' +
+                    '<button type="button" class="btn btn-primary" data-layout="' + esc(item.slug) + '">' + esc(W.choose) + '</button>' +
+                    '<a class="btn btn-outline-secondary" href="' + esc(item.demo_url) + '" target="_blank" rel="noopener">' + esc(W.view) + '</a>' +
+                    '</div></article>';
+            }).join('');
+        }
+
+        /* ---------- step 2: what the page shows ---------- */
+        function renderTypes() {
+            $('lw-types').innerHTML = TYPES.map(function (type) {
                 const info = W.goal.types[type];
                 const selected = state.type === type;
-                return '<label class="lw-goal' + (selected ? ' is-selected' : '') + '">' +
+                return '<label class="lw-type' + (selected ? ' is-selected' : '') + '">' +
                     '<input type="radio" name="lw-type" value="' + type + '"' + (selected ? ' checked' : '') + ' />' +
-                    mockHtml(type, state.theme) +
-                    '<h6>' + esc(info.title) + '</h6>' +
-                    '<p>' + esc(info.desc) + '</p>' +
-                    '<div class="lw-goal-example">' + esc(info.example) + '</div>' +
-                    '<span class="lw-goal-cta">' + esc(selected ? '✓ ' + W.chosen : W.choose) + '</span>' +
-                    '</label>';
+                    '<span class="lw-type-dot" aria-hidden="true"></span>' +
+                    '<span><strong>' + esc(info.title) + '</strong><small>' + esc(info.desc) + '</small></span></label>';
             }).join('');
         }
 
-        /* ---------- step 2 ---------- */
-        function renderLayouts() {
-            $('lw-layouts').innerHTML = LAYOUTS.map(function (item) {
-                const selected = state.layout === item.slug;
-                const thumb = item.thumb
-                    ? '<img src="' + esc(item.thumb) + '" alt="" />'
-                    : mockHtml(state.type || 'general', state.theme);
-                return '<label class="lw-layout' + (selected ? ' is-selected' : '') + '">' +
-                    '<input type="radio" name="lw-layout" value="' + esc(item.slug) + '"' + (selected ? ' checked' : '') + ' />' +
-                    '<span class="lw-layout-thumb">' + thumb + '</span>' +
-                    '<span><strong>' + esc(item.title) + '</strong><span class="lw-layout-desc">' + esc(item.description) + '</span></span></label>';
-            }).join('');
-        }
-
-        function renderStyleMock() {
-            const current = layout();
-            $('lw-style-mock').innerHTML = current.thumb
-                ? '<img class="lw-salone-shot" src="' + esc(current.thumb) + '" alt="" />'
-                : mockHtml(state.type || 'general', state.theme, { big: true, name: $('lw-name').value.trim() });
-        }
-
-        /* ---------- step 3 ---------- */
+        /* ---------- step 2 fields ---------- */
         function servicesEmptyHtml() {
             return '<div class="lw-empty"><p>' + esc(W.about.services_none) + '</p><a class="btn btn-outline-primary" href="' + esc(cfg.servicesUrl) + '">' + esc(W.about.services_open) + '</a></div>';
         }
@@ -320,13 +286,12 @@
             const name = $('lw-name').value.trim();
             const phone = $('lw-phone').value.trim();
             const digits = phoneDigits(phone);
-            const th = theme();
             const c = W.copy;
 
             const settings = {
-                primary_color: th.primary,
+                primary_color: 'indigo',
                 background_type: 'preset',
-                background_value: th.bg,
+                background_value: 'preset',
                 cta_label: c.cta,
                 secondary_cta_label: c.secondary,
                 booking_hint: c.booking_hint,
@@ -424,15 +389,14 @@
             });
             nav.classList.toggle('is-hidden', state.step === totalSteps);
             prevBtn.style.visibility = state.step === 1 ? 'hidden' : 'visible';
-            nextBtn.textContent = state.step === 3 ? (state.saving ? W.creating : W.create) : W.next;
-            nextBtn.disabled = state.saving || (state.step === 1 && !state.type);
+            nextBtn.textContent = state.step === 2 ? (state.saving ? W.creating : W.create) : W.next;
+            nextBtn.disabled = state.saving || (state.step === 1 && !state.layout);
         }
 
         function go(step) {
             state.step = step;
             clearAlert();
-            if (step === 2) renderStyleMock();
-            if (step === 3) renderTypeBlock();
+            if (step === 2) { renderTypes(); renderTypeBlock(); }
             updateChrome();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -504,16 +468,15 @@
             const shareText = W.done.share_text;
             $('lw-share-tg').href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(shareText);
             $('lw-share-wa').href = 'https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + url);
-            go(4);
+            go(3);
             fitPreview();
         }
 
         /* ---------- events ---------- */
         prevBtn.addEventListener('click', function () { if (state.step > 1) go(state.step - 1); });
         nextBtn.addEventListener('click', function () {
-            if (state.step === 1 && state.type) return go(2);
-            if (state.step === 2) return go(3);
-            if (state.step === 3) return submit();
+            if (state.step === 1 && state.layout) return go(2);
+            if (state.step === 2) return submit();
         });
 
         root.addEventListener('change', function (event) {
@@ -524,17 +487,13 @@
                 state.serviceId = '';
                 state.promotionId = '';
                 state.season = '';
-                renderGoals();
-                updateChrome();
+                renderTypes();
+                renderTypeBlock();
             } else if (target.name === 'lw-preview-mode') {
                 previewMode = target.value;
                 $('lw-preview').classList.toggle('is-phone', previewMode === 'phone');
                 $('lw-preview').classList.toggle('is-desktop', previewMode === 'desktop');
                 fitPreview();
-            } else if (target.name === 'lw-layout') {
-                state.layout = target.value;
-                renderLayouts();
-                renderStyleMock();
             } else if (target.name === 'lw-scope') {
                 state.allServices = target.value === 'all';
                 const wrap = $('lw-pick-wrap');
@@ -556,6 +515,24 @@
                     ends: promo && promo.ends_at ? promo.ends_at : '',
                 };
                 renderTypeBlock();
+            }
+        });
+
+        root.addEventListener('click', function (event) {
+            const cat = event.target.closest && event.target.closest('[data-category]');
+            if (cat) {
+                state.category = cat.getAttribute('data-category');
+                renderCategories();
+                renderLayouts();
+                return;
+            }
+
+            const pick = event.target.closest && event.target.closest('[data-layout]');
+            if (pick) {
+                state.layout = pick.getAttribute('data-layout');
+                renderLayouts();
+                updateChrome();
+                go(2);
             }
         });
 
@@ -607,9 +584,9 @@
         window.addEventListener('resize', fitPreview);
 
         /* ---------- boot ---------- */
-        renderGoals();
+        renderCategories();
         renderLayouts();
-        renderStyleMock();
+        renderTypes();
         updateChrome();
 
         fetch('/api/v1/landings/options', { headers: authHeaders() })
@@ -621,7 +598,7 @@
             .catch(function () { state.optionsFailed = true; })
             .finally(function () {
                 state.optionsLoaded = true;
-                if (state.step === 3) renderTypeBlock();
+                if (state.step === 2) renderTypeBlock();
             });
     });
 </script>

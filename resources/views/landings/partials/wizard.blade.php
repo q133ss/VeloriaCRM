@@ -18,59 +18,36 @@
     .lw-step > h5 { font-size: 1.5rem; margin-bottom: .35rem; }
     .lw-hint { color: rgba(var(--bs-body-color-rgb), .72); margin-bottom: 1.5rem; }
 
-    .lw-goals { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; }
-    .lw-goal { position: relative; display: flex; flex-direction: column; border: 2px solid rgba(var(--bs-body-color-rgb), .12); border-radius: 1.25rem; padding: 1rem; background: rgba(var(--bs-body-bg-rgb), .9); cursor: pointer; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-    .lw-goal:hover { transform: translateY(-2px); border-color: rgba(var(--bs-primary-rgb), .5); }
-    .lw-goal:focus-within { outline: 3px solid rgba(var(--bs-primary-rgb), .35); outline-offset: 2px; }
-    .lw-goal.is-selected { border-color: rgb(var(--bs-primary-rgb)); box-shadow: 0 14px 32px rgba(var(--bs-primary-rgb), .16); background: rgba(var(--bs-primary-rgb), .05); }
-    .lw-goal input { position: absolute; opacity: 0; pointer-events: none; }
-    .lw-goal h6 { font-size: 1.1rem; margin: .9rem 0 .3rem; }
-    .lw-goal p { margin: 0 0 .5rem; color: rgba(var(--bs-body-color-rgb), .75); font-size: .95rem; }
-    .lw-goal-example { font-size: .85rem; color: rgba(var(--bs-body-color-rgb), .6); font-style: italic; margin-bottom: .9rem; }
-    .lw-goal-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 999px; font-weight: 600; background: rgba(var(--bs-body-color-rgb), .08); color: var(--bs-body-color); }
-    .lw-goal.is-selected .lw-goal-cta { background: rgb(var(--bs-primary-rgb)); color: #fff; }
-
-    /* mini mock of the public page */
-    .lw-mock { --lw-c: #7f5af0; --lw-bg: linear-gradient(160deg, #fffaf8, #f7eef2); border-radius: 1rem; padding: .85rem; background: var(--lw-bg); border: 1px solid rgba(0, 0, 0, .06); color: #2b2733; min-height: 9.5rem; overflow: hidden; }
-    .lw-mock.is-dark { color: #f4f1fa; }
-    .lw-mock-brand { display: flex; align-items: center; gap: .4rem; font-weight: 700; font-size: .8rem; margin-bottom: .6rem; }
-    .lw-mock-mark { width: 1.2rem; height: 1.2rem; border-radius: .4rem; background: var(--lw-c); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: .65rem; }
-    .lw-mock-title { font-weight: 700; font-size: .95rem; line-height: 1.2; margin-bottom: .35rem; }
-    .lw-mock-line { height: .35rem; border-radius: 99px; background: currentColor; opacity: .16; margin-bottom: .3rem; }
-    .lw-mock-line.short { width: 60%; }
-    .lw-mock-row { display: flex; gap: .3rem; flex-wrap: wrap; margin: .5rem 0; }
-    .lw-mock-chip { font-size: .62rem; font-weight: 600; padding: .15rem .45rem; border-radius: 99px; background: rgba(255, 255, 255, .7); color: var(--lw-c); border: 1px solid var(--lw-c); }
-    .lw-mock.is-dark .lw-mock-chip { background: rgba(255, 255, 255, .1); }
-    .lw-mock-badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: .15rem .5rem; border-radius: 99px; background: var(--lw-c); color: #fff; margin-bottom: .4rem; }
-    .lw-mock-btn { display: inline-block; margin-top: .25rem; font-size: .68rem; font-weight: 700; padding: .3rem .8rem; border-radius: 99px; background: var(--lw-c); color: #fff; }
-
-    .lw-subhead { font-size: 1rem; margin-bottom: .6rem; }
-    .lw-layouts { display: grid; gap: .75rem; max-width: 460px; }
-    .lw-layout { position: relative; display: flex; gap: .85rem; align-items: center; padding: .7rem; border: 2px solid rgba(var(--bs-body-color-rgb), .12); border-radius: 1rem; cursor: pointer; background: rgba(var(--bs-body-bg-rgb), .9); }
-    .lw-layout input { position: absolute; opacity: 0; pointer-events: none; }
-    .lw-layout:focus-within { outline: 3px solid rgba(var(--bs-primary-rgb), .35); outline-offset: 2px; }
-    .lw-layout.is-selected { border-color: rgb(var(--bs-primary-rgb)); box-shadow: 0 10px 24px rgba(var(--bs-primary-rgb), .14); }
-    .lw-layout-thumb { width: 5.5rem; height: 5.5rem; flex: none; border-radius: .7rem; overflow: hidden; background: #f3efe9; }
+    /* ---- step 1: template gallery ---- */
+    .lw-chips-filter { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+    .lw-cat { min-height: 2.5rem; padding: 0 1rem; border-radius: 999px; border: 1px solid rgba(var(--bs-body-color-rgb), .18); background: transparent; color: inherit; font-weight: 600; cursor: pointer; }
+    .lw-cat.is-active { background: rgb(var(--bs-primary-rgb)); border-color: transparent; color: #fff; }
+    .lw-cat:focus-visible { outline: 3px solid rgba(var(--bs-primary-rgb), .35); outline-offset: 2px; }
+    .lw-layouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; }
+    .lw-layout { display: flex; flex-direction: column; border: 2px solid rgba(var(--bs-body-color-rgb), .12); border-radius: 1.25rem; overflow: hidden; background: rgba(var(--bs-body-bg-rgb), .9); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+    .lw-layout:hover { transform: translateY(-2px); border-color: rgba(var(--bs-primary-rgb), .5); box-shadow: 0 14px 32px rgba(0, 0, 0, .08); }
+    .lw-layout.is-selected { border-color: rgb(var(--bs-primary-rgb)); box-shadow: 0 14px 32px rgba(var(--bs-primary-rgb), .18); }
+    .lw-layout-thumb { display: block; aspect-ratio: 3 / 2; overflow: hidden; background: #f3efe9; }
     .lw-layout-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-    .lw-layout-thumb .lw-mock { min-height: 0; height: 100%; border-radius: 0; padding: .4rem; }
-    .lw-layout strong { display: block; margin-bottom: .15rem; }
-    .lw-layout span.lw-layout-desc { font-size: .875rem; color: rgba(var(--bs-body-color-rgb), .72); }
-    .lw-themes.is-locked { opacity: .4; pointer-events: none; }
-    .lw-phone img.lw-salone-shot { width: 100%; display: block; border-radius: 1.2rem; }
-    .lw-style { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 2rem; align-items: start; }
-    .lw-themes { display: grid; gap: .75rem; max-width: 360px; }
-    .lw-theme { position: relative; display: flex; align-items: center; gap: .7rem; min-height: 3.5rem; padding: .6rem .85rem; border: 2px solid rgba(var(--bs-body-color-rgb), .12); border-radius: 1rem; cursor: pointer; background: rgba(var(--bs-body-bg-rgb), .9); font-weight: 600; }
-    .lw-theme input { position: absolute; opacity: 0; pointer-events: none; }
-    .lw-theme:focus-within { outline: 3px solid rgba(var(--bs-primary-rgb), .35); outline-offset: 2px; }
-    .lw-theme.is-selected { border-color: rgb(var(--bs-primary-rgb)); box-shadow: 0 10px 24px rgba(var(--bs-primary-rgb), .14); }
-    .lw-swatch { width: 1.75rem; height: 1.75rem; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .55), 0 0 0 1px rgba(0, 0, 0, .12); }
-    .lw-phone { border: .5rem solid rgba(var(--bs-body-color-rgb), .85); border-radius: 1.75rem; padding: .25rem; background: rgba(var(--bs-body-bg-rgb), 1); }
-    .lw-phone .lw-mock { min-height: 17rem; border-radius: 1.2rem; padding: 1.1rem; }
-    .lw-phone .lw-mock-title { font-size: 1.15rem; }
-    .lw-phone .lw-mock-brand { font-size: .9rem; margin-bottom: 1rem; }
-    .lw-phone .lw-mock-btn { font-size: .8rem; padding: .5rem 1.1rem; }
-    .lw-phone .lw-mock-chip { font-size: .72rem; }
-    .lw-phone .lw-mock-line { height: .45rem; margin-bottom: .4rem; }
+    .lw-layout-body { padding: 1rem 1rem .5rem; flex: 1; }
+    .lw-layout-body strong { display: block; font-size: 1.1rem; margin-bottom: .3rem; }
+    .lw-layout-desc { font-size: .9rem; color: rgba(var(--bs-body-color-rgb), .72); }
+    .lw-layout-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .7rem; }
+    .lw-layout-tags span { font-size: .75rem; padding: .15rem .55rem; border-radius: 999px; background: rgba(var(--bs-body-color-rgb), .08); }
+    .lw-layout-actions { display: flex; gap: .5rem; padding: .75rem 1rem 1rem; }
+    .lw-layout-actions .btn { flex: 1; min-height: 2.75rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+    .lw-empty-note { padding: 2rem 1rem; text-align: center; color: rgba(var(--bs-body-color-rgb), .65); border: 1px dashed rgba(var(--bs-body-color-rgb), .25); border-radius: 1rem; }
+
+    /* ---- step 2: what the page shows ---- */
+    .lw-types { display: grid; gap: .5rem; }
+    .lw-type { position: relative; display: flex; align-items: flex-start; gap: .8rem; padding: .75rem .9rem; border: 1px solid rgba(var(--bs-body-color-rgb), .16); border-radius: .9rem; cursor: pointer; margin: 0; }
+    .lw-type input { position: absolute; opacity: 0; pointer-events: none; }
+    .lw-type-dot { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .15rem; border-radius: 50%; border: 2px solid rgba(var(--bs-body-color-rgb), .35); }
+    .lw-type strong { display: block; font-size: 1rem; }
+    .lw-type small { display: block; color: rgba(var(--bs-body-color-rgb), .65); font-size: .85rem; line-height: 1.3; }
+    .lw-type.is-selected { border-color: rgb(var(--bs-primary-rgb)); background: rgba(var(--bs-primary-rgb), .06); }
+    .lw-type.is-selected .lw-type-dot { border-color: rgb(var(--bs-primary-rgb)); background: radial-gradient(circle, rgb(var(--bs-primary-rgb)) 0 45%, transparent 50%); }
+    .lw-type:focus-within { outline: 3px solid rgba(var(--bs-primary-rgb), .35); outline-offset: 2px; }
 
     .lw-card { border: 1px solid rgba(var(--bs-body-color-rgb), .12); border-radius: 1.25rem; padding: 1.25rem; background: rgba(var(--bs-body-bg-rgb), .9); }
     .lw-form { display: grid; gap: 1.1rem; max-width: 640px; }
@@ -163,36 +140,29 @@
 
     <div class="lw-progress-label" id="lw-progress-label" aria-live="polite"></div>
     <div class="lw-progress" id="lw-progress" aria-hidden="true">
-        <span class="lw-progress-step"></span><span class="lw-progress-step"></span><span class="lw-progress-step"></span><span class="lw-progress-step"></span>
+        <span class="lw-progress-step"></span><span class="lw-progress-step"></span><span class="lw-progress-step"></span>
     </div>
 
     <div id="lw-alerts" role="alert"></div>
 
-    {{-- Step 1: goal --}}
+    {{-- Step 1: template --}}
     <section class="lw-step" data-step="1" aria-labelledby="lw-h1">
-        <h5 id="lw-h1">{{ $w['goal']['title'] }}</h5>
-        <p class="lw-hint">{{ $w['goal']['hint'] }}</p>
-        <div class="lw-goals" id="lw-goals" role="radiogroup" aria-labelledby="lw-h1"></div>
-    </section>
-
-    {{-- Step 2: look --}}
-    <section class="lw-step" data-step="2" aria-labelledby="lw-h2">
-        <h5 id="lw-h2">{{ $w['style']['title'] }}</h5>
+        <h5 id="lw-h1">{{ $w['style']['title'] }}</h5>
         <p class="lw-hint">{{ $w['style']['hint'] }}</p>
-        <div class="lw-style">
-            <div>
-                <h6 class="lw-subhead" id="lw-layout-h">{{ $w['style']['layout_title'] }}</h6>
-                <div class="lw-layouts" id="lw-layouts" role="radiogroup" aria-labelledby="lw-layout-h"></div>
-            </div>
-            <div class="lw-phone" aria-hidden="true"><div id="lw-style-mock"></div></div>
-        </div>
+        <div class="lw-chips-filter" id="lw-cats" role="group" aria-label="{{ $w['style']['layout_title'] }}"></div>
+        <div class="lw-layouts" id="lw-layouts"></div>
     </section>
 
-    {{-- Step 3: about --}}
-    <section class="lw-step" data-step="3" aria-labelledby="lw-h3">
+    {{-- Step 2: about, with what the page shows --}}
+    <section class="lw-step" data-step="2" aria-labelledby="lw-h3">
         <h5 id="lw-h3">{{ $w['about']['title'] }}</h5>
         <p class="lw-hint">{{ $w['about']['hint'] }}</p>
         <form class="lw-form" id="lw-about-form" novalidate autocomplete="off">
+            <div class="lw-field" data-field="type">
+                <span class="lw-label" id="lw-type-label">{{ $w['about']['what_title'] }}</span>
+                <div class="lw-types" id="lw-types" role="radiogroup" aria-labelledby="lw-type-label"></div>
+            </div>
+
             <div class="lw-field" data-field="name">
                 <label class="lw-label" for="lw-name">{{ $w['about']['name'] }}</label>
                 <input type="text" class="form-control" id="lw-name" maxlength="120" placeholder="{{ $w['about']['name_ph'] }}" />
@@ -224,8 +194,8 @@
         </form>
     </section>
 
-    {{-- Step 4: done --}}
-    <section class="lw-step" data-step="4" aria-labelledby="lw-h4">
+    {{-- Step 3: done --}}
+    <section class="lw-step" data-step="3" aria-labelledby="lw-h4">
         <div class="lw-done-head">
             <div class="lw-done-check" aria-hidden="true">✓</div>
             <div>

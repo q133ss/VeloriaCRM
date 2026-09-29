@@ -13,7 +13,8 @@
             listUrl: '{{ route('landings.index') }}',
             servicesUrl: '{{ url('/services') }}',
             marketingUrl: '{{ url('/marketing') }}',
-            layouts: @json(app(\App\Services\Landing\TemplateRegistry::class)->forWizard())
+            layouts: @json(app(\App\Services\Landing\TemplateRegistry::class)->forWizard()),
+            categories: @json(app(\App\Services\Landing\TemplateRegistry::class)->categoryChips())
         };
     </script>
     @include('components.phone-mask-script')

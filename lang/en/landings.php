@@ -294,7 +294,7 @@ return [
     'wizard' => [
         'title' => 'New booking page',
         'step_of' => 'Step :current of :total',
-        'steps' => ['Goal', 'Look', 'About you', 'Done'],
+        'steps' => ['Template', 'About you', 'Done'],
         'next' => 'Next',
         'back' => 'Back',
         'choose' => 'Choose',
@@ -316,7 +316,7 @@ return [
         ],
         'style' => [
             'title' => 'Choose a page template',
-            'hint' => 'On the right: how the chosen template looks. You can change texts and photos later by clicking right on the page.',
+            'hint' => 'Press Choose and the rest fills in by itself. Preview opens a live example.',
             'layout_title' => 'Template',
             'layout_hint' => 'How the whole page will look.',
             'layouts' => [
@@ -325,6 +325,7 @@ return [
             ],
         ],
         'about' => [
+            'what_title' => 'What should the page show?',
             'title' => 'Tell us about you',
             'hint' => 'A few lines are enough. The rest fills in automatically.',
             'name' => 'What is your studio or your name?',
@@ -356,6 +357,18 @@ return [
             'promo_ends' => 'Valid until',
             'options_failed' => 'Could not load services and offers. Please refresh.',
         ],
+        'categories' => [
+            'nails' => 'Nails',
+            'brows' => 'Brows & lashes',
+            'hair' => 'Hair',
+            'barber' => 'Barber',
+            'spa' => 'Massage & spa',
+            'cosmetology' => 'Cosmetology',
+            'makeup' => 'Makeup',
+        ],
+        'all' => 'All',
+        'view' => 'Preview',
+        'no_templates' => 'No templates in this category yet. Pick "All".',
         'errors' => [
             'name' => 'Enter a name — it becomes the page title.',
             'phone' => 'Add a phone so clients can reach you.',
@@ -504,7 +517,7 @@ return [
             'phone_required' => 'Enter the full phone number.',
             'sending' => 'Sending…',
             'failed' => 'Could not send. Please try again.',
-            'editing' => 'Booking is disabled in edit mode.',
+            'editing' => 'Booking is disabled in preview and edit mode.',
             'booked_title' => 'You are booked!',
             'booked_text' => 'We are waiting for you :when.',
             'booked_service' => 'Service',
@@ -557,5 +570,18 @@ return [
         'footer_contacts' => 'Contacts',
         'credit' => 'template made with',
         'days' => ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'],
+    ],
+
+    'demo' => [
+        'title' => 'Beauty studio',
+        'phone' => '+1 555 000 0000',
+        'address' => '10 Main Street',
+        'services' => [
+            ['Gel manicure', 2200, 90],
+            ['Brow shaping', 1200, 45],
+            ['Lash extensions', 6000, 120],
+            ['Pedicure', 2400, 90],
+        ],
+        'note' => 'This is the template with sample data. Your services, prices and contacts are filled in automatically.',
     ],
 ];

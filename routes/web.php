@@ -6,6 +6,7 @@ use App\Http\Controllers\ClientPortal\MagicLinkRedirectController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LandingBookingController;
+use App\Http\Controllers\LandingDemoController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LandingRequestController;
 use App\Http\Controllers\LocaleController;
@@ -20,6 +21,7 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/l/{slug}/request', LandingRequestController::class)
         ->middleware('throttle:10,1')
         ->name('landings.request');
+    Route::get('/template-demo/{layout}', LandingDemoController::class)->name('landings.demo');
     Route::get('/l/{slug}/availability', [LandingBookingController::class, 'availability'])
         ->middleware('throttle:60,1')
         ->name('landings.availability');

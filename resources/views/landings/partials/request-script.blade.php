@@ -26,7 +26,7 @@
         ],
         'i18n' => __('landings.booking.ui'),
         'failed' => __('landings.public.request_failed'),
-        'editing' => ! empty($isEdit),
+        'editing' => ! empty($isEdit) || ! empty($isDemo),
     ];
 @endphp
 <link rel="stylesheet" href="{{ asset('landing-booking/booking.css') }}?v={{ filemtime(public_path('landing-booking/booking.css')) }}">

@@ -88,6 +88,34 @@ class LandingEditorTest extends TestCase
         }
     }
 
+    public function test_every_template_declares_categories_the_wizard_can_filter_by(): void
+    {
+        $registry = app(TemplateRegistry::class);
+
+        foreach ($registry->layouts() as $layout) {
+            $this->assertNotEmpty($layout['categories'], "{$layout['slug']} has no categories");
+        }
+
+        $chips = collect($registry->categoryChips());
+        $this->assertNotEmpty($chips);
+        $this->assertSame($chips->pluck('slug')->all(), array_values(array_intersect(TemplateRegistry::CATEGORIES, $chips->pluck('slug')->all())));
+        $this->assertNotContains('wizard.categories.nails', $chips->pluck('label')->all(), 'category labels are translated');
+    }
+
+    public function test_every_template_has_a_demo_page_with_sample_data_and_no_booking(): void
+    {
+        foreach (app(TemplateRegistry::class)->layouts() as $layout) {
+            $this->get('/template-demo/' . $layout['slug'])
+                ->assertOk()
+                ->assertDontSee('data-lf-key', false)
+                ->assertSee(__('landings.demo.title'))
+                ->assertSee('"editing":true', false);
+        }
+
+        $this->get('/template-demo/nope')->assertNotFound();
+        $this->assertSame(0, Landing::query()->count(), 'a demo never stores a landing');
+    }
+
     public function test_landing_cannot_point_at_an_arbitrary_view(): void
     {
         Sanctum::actingAs($user = User::factory()->create());

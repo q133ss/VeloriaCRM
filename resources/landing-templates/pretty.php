@@ -28,6 +28,8 @@ return [
         'work_image_2' => 'landing-templates/pretty/images/work-2.jpg',
         'work_image_3' => 'landing-templates/pretty/images/work-3.jpg',
     ],
+    // What the template is good for; the wizard filters by these.
+    'categories' => ['nails', 'brows', 'makeup', 'cosmetology'],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'faq_items_text', 'master_role', 'master_bio',

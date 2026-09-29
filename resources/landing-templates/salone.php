@@ -25,6 +25,8 @@ return [
         'hero_image_3' => 'landing-templates/salone/img/hero-slider-3.jpg',
         'about_image' => 'landing-templates/salone/img/about.jpg',
     ],
+    // What the template is good for; the wizard filters by these.
+    'categories' => ['hair', 'barber', 'spa', 'cosmetology'],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text',

@@ -15,6 +15,14 @@ resources/views/components/landing/        <x-landing.text>, <x-landing.image>
 public/landing-editor/editor.{js,css}      the editor itself, loaded only for the owner
 ```
 
+## How masters pick a template
+
+The first wizard step is a gallery of every registered template with category chips (built from the
+`categories` in the manifests) and two buttons: **Choose** and **Preview**. Preview opens
+`/template-demo/{slug}`, the template filled with sample data (`landings.demo` in the lang files);
+nothing is stored there and booking is disabled. What the page shows (services, promotion, one
+service, season, consultation) is chosen on the next step and defaults to the services list.
+
 ## Templates now available
 
 - `salone`: warm golden tones (HTML Codex, CC BY 4.0).
@@ -71,6 +79,7 @@ return [
     'description' => 'One line for the wizard',
     'full_page' => true,                     // every template is a whole page with its own <html>
     'thumb' => 'landing-templates/spa-soft/preview.jpg',
+    'categories' => ['nails', 'brows'],      // wizard filter chips: nails, brows, hair, barber, spa, cosmetology, makeup
     'templates' => ['general' => $view, 'promotion' => $view, /* … every type */],
     'images' => ['hero_image_1' => 'landing-templates/spa-soft/img/hero.jpg'],   // stock photo per slot
     'keys' => ['hero_text' => ['general' => 'subtitle']],   // optional: where a virtual key is stored
