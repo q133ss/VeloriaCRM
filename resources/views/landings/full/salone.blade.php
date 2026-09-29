@@ -7,22 +7,10 @@
     that posts to the landing request route, and the sections with made-up people and numbers removed.
 --}}
 @php
-    $settings = $landing->settings ?? [];
+    extract(app(\App\Services\Landing\PageData::class)->for($landing, $featuredServices));
+
     $asset = fn (string $path) => asset('landing-templates/salone/' . $path);
-
-    $content = app(\App\Services\Landing\LandingContent::class);
-    $editing = $content->editing();
-    $heroText = $content->text('hero_text');
-
-    $proofItems = collect($content->items('proof_items_text'));
-    $phone = trim((string) ($settings['phone'] ?? ''));
-    $phoneHref = $phone !== '' ? 'tel:' . preg_replace('/[^0-9+]+/', '', $phone) : null;
-    $address = trim((string) ($settings['address'] ?? ''));
-    $telegram = $settings['telegram_url'] ?? null;
-    $whatsapp = $settings['whatsapp_url'] ?? null;
-
     $serviceIcons = ['haircut', 'makeup', 'manicure', 'pedicure', 'massage', 'skin-care'];
-    $services = $featuredServices->values();
     $serviceNames = collect($settings['service_names'] ?? []);
 @endphp
 <!DOCTYPE html>

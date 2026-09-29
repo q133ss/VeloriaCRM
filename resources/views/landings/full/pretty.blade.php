@@ -11,35 +11,10 @@
     them in the click editor. The appointment form is the shared booking widget.
 --}}
 @php
-    $settings = $landing->settings ?? [];
-    $content = app(\App\Services\Landing\LandingContent::class);
-    $editing = $content->editing();
+    extract(app(\App\Services\Landing\PageData::class)->for($landing, $featuredServices));
+
     $asset = fn (string $path) => asset('landing-templates/pretty/' . $path);
-
-    $phone = trim((string) ($settings['phone'] ?? ''));
-    $phoneHref = $phone !== '' ? 'tel:' . preg_replace('/[^0-9+]+/', '', $phone) : null;
-    $address = trim((string) ($settings['address'] ?? ''));
-    $telegram = $settings['telegram_url'] ?? null;
-    $whatsapp = $settings['whatsapp_url'] ?? null;
-    $heroText = $content->text('hero_text');
-    $proofItems = collect($content->items('proof_items_text'));
-    $faqItems = collect($content->items('faq_items_text'));
-    $hours = app(\App\Services\Landing\WorkingHours::class)->forUser($landing->user_id);
-
-    $stats = app(\App\Services\Landing\PageStats::class)->forUser($landing->user_id);
-    $showCounters = app(\App\Services\Landing\PageStats::class)->worthShowing($stats);
-
-    $services = $featuredServices->values();
-    $cards = $services->isNotEmpty()
-        ? $services->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'price' => $s->base_price, 'duration' => $s->duration_min])
-        : collect($settings['service_names'] ?? [])->map(fn ($n) => ['id' => null, 'name' => $n, 'price' => null, 'duration' => null]);
-    $priced = $cards->filter(fn ($c) => ! empty($c['price']))->take(4)->values();
     $icons = ['flaticon-facial-treatment', 'flaticon-cosmetics', 'flaticon-curl', 'flaticon-flower'];
-
-    $hasOffer = $landing->type === 'promotion' && ! empty($settings['discount_percent']);
-    $endsAt = ! empty($settings['ends_at']) ? \Illuminate\Support\Carbon::parse($settings['ends_at'])->format('d.m.Y') : null;
-    $ctaDefault = __('landings.salone.book');
-    $hasInfo = $address !== '' || $phoneHref || $hours || $editing;
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -184,9 +159,9 @@
             <div class="container">
                 <div class="row justify-content-end">
                     <div class="col-md-5 discount ftco-animate">
-                        <h3>{{ __('landings.pretty.offer_kicker', ['percent' => rtrim(rtrim(number_format((float) $settings['discount_percent'], 1, '.', ''), '0'), '.')]) }}</h3>
-                        @if(!empty($settings['promo_code']))
-                            <h2 class="mb-4">{{ __('landings.pretty.offer_code', ['code' => strtoupper($settings['promo_code'])]) }}</h2>
+                        <h3>{{ __('landings.pretty.offer_kicker', ['percent' => $offerPercent]) }}</h3>
+                        @if($promoCode)
+                            <h2 class="mb-4">{{ __('landings.pretty.offer_code', ['code' => $promoCode]) }}</h2>
                         @endif
                         <p class="mb-4">
                             @if($endsAt)

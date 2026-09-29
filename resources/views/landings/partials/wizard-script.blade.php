@@ -8,6 +8,7 @@
         const TYPES = ['general', 'promotion', 'service', 'seasonal', 'consultation'];
         const LAYOUTS = cfg.layouts || [];
         const CATEGORIES = cfg.categories || [];
+        const PURPOSES = cfg.purposes || [];
 
         function layout() {
             return LAYOUTS.find(function (item) { return item.slug === state.layout; }) || LAYOUTS[0] || { templates: {} };
@@ -17,6 +18,7 @@
             type: 'general',
             layout: null,
             category: 'all',
+            purpose: 'all',
             services: [],
             promotions: [],
             optionsLoaded: false,
@@ -96,17 +98,29 @@
         }
 
         /* ---------- step 1: template gallery ---------- */
-        function renderCategories() {
-            const chips = [{ slug: 'all', label: W.all }].concat(CATEGORIES);
-            $('lw-cats').innerHTML = chips.map(function (chip) {
-                return '<button type="button" class="lw-cat' + (state.category === chip.slug ? ' is-active' : '') + '" data-category="' + esc(chip.slug) + '" aria-pressed="' + (state.category === chip.slug) + '">' + esc(chip.label) + '</button>';
+        function chipsHtml(list, current, attr) {
+            return [{ slug: 'all', label: W.all }].concat(list).map(function (chip) {
+                return '<button type="button" class="lw-cat' + (current === chip.slug ? ' is-active' : '') + '" ' + attr + '="' + esc(chip.slug) + '" aria-pressed="' + (current === chip.slug) + '">' + esc(chip.label) + '</button>';
             }).join('');
         }
 
-        function renderLayouts() {
-            const visible = LAYOUTS.filter(function (item) {
-                return state.category === 'all' || (item.categories || []).indexOf(state.category) !== -1;
+        function renderCategories() {
+            $('lw-cats').innerHTML = chipsHtml(CATEGORIES, state.category, 'data-category');
+            // The goal row only earns its place when templates differ by goal.
+            $('lw-purpose-row').hidden = PURPOSES.length < 2;
+            $('lw-purposes').innerHTML = chipsHtml(PURPOSES, state.purpose, 'data-purpose');
+        }
+
+        function visibleLayouts() {
+            return LAYOUTS.filter(function (item) {
+                return (state.category === 'all' || (item.categories || []).indexOf(state.category) !== -1)
+                    && (state.purpose === 'all' || (item.purposes || []).indexOf(state.purpose) !== -1);
             });
+        }
+
+        function renderLayouts() {
+            const visible = visibleLayouts();
+            $('lw-shown').textContent = fmt(W.shown, { shown: visible.length, total: LAYOUTS.length });
 
             if (!visible.length) {
                 $('lw-layouts').innerHTML = '<div class="lw-empty-note" style="grid-column: 1 / -1">' + esc(W.no_templates) + '</div>';
@@ -522,6 +536,14 @@
             const cat = event.target.closest && event.target.closest('[data-category]');
             if (cat) {
                 state.category = cat.getAttribute('data-category');
+                renderCategories();
+                renderLayouts();
+                return;
+            }
+
+            const purpose = event.target.closest && event.target.closest('[data-purpose]');
+            if (purpose) {
+                state.purpose = purpose.getAttribute('data-purpose');
                 renderCategories();
                 renderLayouts();
                 return;

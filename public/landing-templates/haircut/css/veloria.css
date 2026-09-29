@@ -1,0 +1,17 @@
+/* Veloria additions on top of the original HairCut stylesheet. */
+
+/* The booking form sits on the dark block: the widget's own text is light there. */
+#booking form { --lb-text: #fff; }
+#booking .lb-picker { background: rgba(255, 255, 255, .06); border-radius: 0; padding: 1rem 1.1rem; }
+#booking .lb-day, #booking .lb-time { border-radius: 0; }
+
+/* Editable inline text must not pick up the template's generic span/bdi colours. */
+bdi { color: inherit; }
+
+/* A long name must not break the top bar. */
+.navbar-brand { max-width: calc(100% - 80px); }
+.navbar-brand h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.6rem; }
+@media (min-width: 992px) { .navbar-brand { max-width: 420px; } }
+
+/* Long service names wrap instead of pushing the plus button out. */
+.service-item h3 { overflow-wrap: anywhere; }

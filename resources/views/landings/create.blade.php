@@ -14,7 +14,8 @@
             servicesUrl: '{{ url('/services') }}',
             marketingUrl: '{{ url('/marketing') }}',
             layouts: @json(app(\App\Services\Landing\TemplateRegistry::class)->forWizard()),
-            categories: @json(app(\App\Services\Landing\TemplateRegistry::class)->categoryChips())
+            categories: @json(app(\App\Services\Landing\TemplateRegistry::class)->categoryChips()),
+            purposes: @json(app(\App\Services\Landing\TemplateRegistry::class)->purposeChips())
         };
     </script>
     @include('components.phone-mask-script')

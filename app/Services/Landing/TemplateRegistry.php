@@ -17,6 +17,12 @@ class TemplateRegistry
     /** What a template is good for; the wizard shows a chip for each one in use. */
     public const CATEGORIES = ['nails', 'brows', 'hair', 'barber', 'spa', 'cosmetology', 'makeup'];
 
+    /** What the page is for: a normal booking page, an offer, an advert, a showcase of work. */
+    public const PURPOSES = ['booking', 'promo', 'ads', 'portfolio'];
+
+    /** Licenses we accept for third-party templates. */
+    public const LICENSES = ['CC-BY-3.0', 'CC-BY-4.0', 'free-commercial'];
+
     /** @var Collection<string, array>|null */
     private ?Collection $layouts = null;
 
@@ -91,6 +97,22 @@ class TemplateRegistry
             ->all();
     }
 
+    /**
+     * Purposes that at least one template serves, in a stable order, with their labels.
+     *
+     * @return array<int, array{slug: string, label: string}>
+     */
+    public function purposeChips(): array
+    {
+        $used = $this->layouts()->flatMap(fn (array $layout) => $layout['purposes'])->unique()->all();
+
+        return collect(self::PURPOSES)
+            ->filter(fn (string $slug) => in_array($slug, $used, true))
+            ->map(fn (string $slug) => ['slug' => $slug, 'label' => __('landings.wizard.purposes.' . $slug)])
+            ->values()
+            ->all();
+    }
+
     /** What the wizard shows in "page layout". */
     public function forWizard(): array
     {
@@ -100,6 +122,7 @@ class TemplateRegistry
             'description' => __($layout['description']),
             // filemtime keeps browsers from showing an old preview after it is replaced
             'categories' => $layout['categories'],
+            'purposes' => $layout['purposes'],
             'demo_url' => route('landings.demo', ['layout' => $layout['slug']]),
             'thumb' => $layout['thumb'] ? asset($layout['thumb']) . '?v=' . (@filemtime(public_path($layout['thumb'])) ?: 1) : null,
             'templates' => $layout['templates'],
@@ -120,6 +143,12 @@ class TemplateRegistry
         $manifest['images'] = $manifest['images'] ?? [];
         $manifest['keys'] = $manifest['keys'] ?? [];
         $manifest['categories'] = array_values(array_intersect((array) ($manifest['categories'] ?? []), self::CATEGORIES));
+        $manifest['purposes'] = array_values(array_intersect((array) ($manifest['purposes'] ?? []), self::PURPOSES)) ?: ['booking'];
+        // Where the template came from and under what terms; `attribution` is the credit link the
+        // license makes us keep in the page (checked by tests).
+        $manifest['source'] = $manifest['source'] ?? null;
+        $manifest['license'] = $manifest['license'] ?? null;
+        $manifest['attribution'] = $manifest['attribution'] ?? null;
 
         return $manifest;
     }

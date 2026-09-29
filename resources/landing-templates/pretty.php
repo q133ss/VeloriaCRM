@@ -29,6 +29,10 @@ return [
         'work_image_3' => 'landing-templates/pretty/images/work-3.jpg',
     ],
     // What the template is good for; the wizard filters by these.
+    'purposes' => ['booking', 'portfolio'],
+    'source' => 'https://themewagon.com/themes/free-bootstrap-4-html5-beauty-salon-website-template-pretty/',
+    'license' => 'CC-BY-3.0',
+    'attribution' => 'https://colorlib.com',
     'categories' => ['nails', 'brows', 'makeup', 'cosmetology'],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',

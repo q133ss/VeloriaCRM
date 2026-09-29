@@ -26,6 +26,10 @@ return [
         'about_image' => 'landing-templates/salone/img/about.jpg',
     ],
     // What the template is good for; the wizard filters by these.
+    'purposes' => ['booking'],
+    'source' => 'https://htmlcodex.com/beauty-salon-website-template/',
+    'license' => 'CC-BY-4.0',
+    'attribution' => 'https://htmlcodex.com',
     'categories' => ['hair', 'barber', 'spa', 'cosmetology'],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',

@@ -102,6 +102,44 @@ class LandingEditorTest extends TestCase
         $this->assertNotContains('wizard.categories.nails', $chips->pluck('label')->all(), 'category labels are translated');
     }
 
+    public function test_every_template_records_its_source_and_license_and_keeps_the_credit_link(): void
+    {
+        $registry = app(TemplateRegistry::class);
+
+        foreach ($registry->layouts() as $layout) {
+            $slug = $layout['slug'];
+
+            $this->assertNotEmpty($layout['source'], "{$slug} has no source URL");
+            $this->assertContains($layout['license'], TemplateRegistry::LICENSES, "{$slug} has no known license");
+            $this->assertFileExists(public_path("landing-templates/{$slug}/LICENSE.txt"), "{$slug} ships no license text");
+
+            // A license that asks for a credit link: the page has to carry it.
+            if (str_starts_with((string) $layout['license'], 'CC-BY')) {
+                $this->assertNotEmpty($layout['attribution'], "{$slug} is CC BY but names no credit link");
+            }
+
+            if ($layout['attribution']) {
+                $this->get('/template-demo/' . $slug)
+                    ->assertOk()
+                    ->assertSee('href="' . $layout['attribution'], false);
+            }
+        }
+    }
+
+    public function test_purposes_are_known_and_have_labels(): void
+    {
+        $registry = app(TemplateRegistry::class);
+
+        foreach ($registry->layouts() as $layout) {
+            $this->assertNotEmpty($layout['purposes']);
+            $this->assertSame([], array_diff($layout['purposes'], TemplateRegistry::PURPOSES));
+        }
+
+        foreach ($registry->purposeChips() as $chip) {
+            $this->assertNotSame('landings.wizard.purposes.' . $chip['slug'], $chip['label'], 'purpose label is translated');
+        }
+    }
+
     public function test_every_template_has_a_demo_page_with_sample_data_and_no_booking(): void
     {
         foreach (app(TemplateRegistry::class)->layouts() as $layout) {

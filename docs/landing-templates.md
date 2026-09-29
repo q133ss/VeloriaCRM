@@ -31,6 +31,57 @@ service, season, consultation) is chosen on the next step and defaults to the se
 The former classic layout (`landings.templates.*`) was retired; pages that still pointed at it fall back
 to the default template (`TemplateRegistry::DEFAULT_LAYOUT`) and a migration moved the stored values.
 
+## Importing a downloaded template (the fast way)
+
+```bash
+# put the unzipped template inside the project so the container can see it, e.g. storage/import/spa-soft
+docker compose exec app php artisan landing:import-template storage/import/spa-soft spa-soft   --source-url=https://example.com/spa-soft --license=CC-BY-4.0 --attribution=https://example.com   --categories=spa,cosmetology --purposes=booking,ads --name="Spa Soft"
+node scripts/landing-thumbs.mjs spa-soft      # preview.jpg for the wizard + QA screenshots in output/qa/
+```
+
+The command copies only the files the page (and its stylesheets) really use, scales big photos to
+1600px, skips Internet Explorer font fallbacks, rewrites paths to `$asset()`, drops maps/analytics
+scripts and links to the template's other pages, adds the booking widget, the click editor and the
+phone mask, and writes the manifest and `LICENSE.txt`. It then prints a report of what still needs
+a person: fake-content blocks (people, reviews, blog, partners, counters, pricing, forms) with what to
+put there instead, fonts without Cyrillic, placeholder text, the heaviest files, external hosts.
+It refuses a license outside `TemplateRegistry::LICENSES`, a CC BY template without `--attribution`,
+and never overwrites without `--force`.
+
+What is left by hand: map the sections to data (below), replace texts and photos with
+`<x-landing.text>` / `<x-landing.image>` / `<x-landing.bg>`, use the booking form ids
+(`request-form`, `request-submit`, `request-message`, `request-service`, `request-picker`), list the
+keys in `fields` and photos in `images`, then run the tests.
+
+### Page data: do not recompute it in the template
+
+Every template starts with
+
+```blade
+@php
+    extract(app(\App\Services\Landing\PageData::class)->for($landing, $featuredServices));
+    $asset = fn (string $path) => asset('landing-templates/<slug>/' . $path);
+@endphp
+```
+
+which gives it `$settings $content $editing $phone $phoneHref $address $telegram $whatsapp $heroText
+$proofItems $faqItems $hours $stats $showCounters $services $cards $priced $hasOffer $offerPercent
+$promoCode $endsAt $ctaDefault $hasInfo`. A fix or a new field goes into `PageData` once.
+
+### Replacement dictionary for fake blocks
+
+| Block in the source | Use instead |
+|---|---|
+| team / experts | one master card: `master_photo`, `master_role`, `master_bio` |
+| testimonials / reviews | nothing (no data source), remove |
+| blog / news | the master's questions and answers (`$faqItems`, key `faq_items_text`) |
+| partner logos, newsletter | remove |
+| pricing | services from the catalog (`$priced`) |
+| counters | real figures (`$stats`, shown when `$showCounters`) or remove |
+| gallery / portfolio | photo slots `work_image_N` (stock photos are not her work) |
+| map | the address as text |
+| appointment / contact form | the shared booking widget |
+
 ## Add a template
 
 ```bash
@@ -79,6 +130,10 @@ return [
     'description' => 'One line for the wizard',
     'full_page' => true,                     // every template is a whole page with its own <html>
     'thumb' => 'landing-templates/spa-soft/preview.jpg',
+    'purposes' => ['booking'],                // booking, promo, ads, portfolio (the wizard's second chip row)
+    'source' => 'https://example.com/spa-soft',
+    'license' => 'CC-BY-4.0',                 // CC-BY-3.0, CC-BY-4.0, free-commercial
+    'attribution' => 'https://example.com',   // credit link the license makes us keep; a test checks the page carries it
     'categories' => ['nails', 'brows'],      // wizard filter chips: nails, brows, hair, barber, spa, cosmetology, makeup
     'templates' => ['general' => $view, 'promotion' => $view, /* … every type */],
     'images' => ['hero_image_1' => 'landing-templates/spa-soft/img/hero.jpg'],   // stock photo per slot

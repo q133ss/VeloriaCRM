@@ -20,6 +20,10 @@
 
     /* ---- step 1: template gallery ---- */
     .lw-chips-filter { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+    .lw-filter-row { display: flex; align-items: baseline; gap: .75rem; }
+    .lw-filter-row .lw-chips-filter { flex: 1; margin-bottom: .6rem; }
+    .lw-filter-label { flex: none; min-width: 6.5rem; font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: rgba(var(--bs-body-color-rgb), .55); }
+    .lw-shown { font-size: .85rem; color: rgba(var(--bs-body-color-rgb), .6); margin: .25rem 0 1rem; }
     .lw-cat { min-height: 2.5rem; padding: 0 1rem; border-radius: 999px; border: 1px solid rgba(var(--bs-body-color-rgb), .18); background: transparent; color: inherit; font-weight: 600; cursor: pointer; }
     .lw-cat.is-active { background: rgb(var(--bs-primary-rgb)); border-color: transparent; color: #fff; }
     .lw-cat:focus-visible { outline: 3px solid rgba(var(--bs-primary-rgb), .35); outline-offset: 2px; }
@@ -36,6 +40,7 @@
     .lw-layout-tags span { font-size: .75rem; padding: .15rem .55rem; border-radius: 999px; background: rgba(var(--bs-body-color-rgb), .08); }
     .lw-layout-actions { display: flex; gap: .5rem; padding: .75rem 1rem 1rem; }
     .lw-layout-actions .btn { flex: 1; min-height: 2.75rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+    @media (max-width: 575.98px) { .lw-filter-row { flex-direction: column; gap: .25rem; } }
     .lw-empty-note { padding: 2rem 1rem; text-align: center; color: rgba(var(--bs-body-color-rgb), .65); border: 1px dashed rgba(var(--bs-body-color-rgb), .25); border-radius: 1rem; }
 
     /* ---- step 2: what the page shows ---- */
@@ -149,7 +154,9 @@
     <section class="lw-step" data-step="1" aria-labelledby="lw-h1">
         <h5 id="lw-h1">{{ $w['style']['title'] }}</h5>
         <p class="lw-hint">{{ $w['style']['hint'] }}</p>
-        <div class="lw-chips-filter" id="lw-cats" role="group" aria-label="{{ $w['style']['layout_title'] }}"></div>
+        <div class="lw-filter-row"><span class="lw-filter-label">{{ $w['row_niche'] }}</span><div class="lw-chips-filter" id="lw-cats" role="group" aria-label="{{ $w['row_niche'] }}"></div></div>
+        <div class="lw-filter-row" id="lw-purpose-row"><span class="lw-filter-label">{{ $w['row_purpose'] }}</span><div class="lw-chips-filter" id="lw-purposes" role="group" aria-label="{{ $w['row_purpose'] }}"></div></div>
+        <div class="lw-shown" id="lw-shown" aria-live="polite"></div>
         <div class="lw-layouts" id="lw-layouts"></div>
     </section>
 
