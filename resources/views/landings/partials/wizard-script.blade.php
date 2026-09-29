@@ -7,7 +7,7 @@
 
         const TYPES = ['general', 'promotion', 'service', 'seasonal', 'consultation'];
         const LAYOUTS = cfg.layouts || [];
-        const DEFAULT_LAYOUT = (LAYOUTS.find(function (l) { return !l.full_page; }) || LAYOUTS[0] || {}).slug;
+        const DEFAULT_LAYOUT = (LAYOUTS[0] || {}).slug;
 
         function layout() {
             return LAYOUTS.find(function (item) { return item.slug === state.layout; }) || LAYOUTS[0] || { templates: {}, full_page: false };
@@ -156,18 +156,6 @@
         }
 
         /* ---------- step 2 ---------- */
-        function renderThemes() {
-            $('lw-themes').innerHTML = THEMES.map(function (item) {
-                const selected = state.theme === item.key;
-                return '<label class="lw-theme' + (selected ? ' is-selected' : '') + '">' +
-                    '<input type="radio" name="lw-theme" value="' + item.key + '"' + (selected ? ' checked' : '') + ' />' +
-                    '<span class="lw-swatch" style="background:' + item.color + '"></span>' +
-                    '<span>' + esc(W.style.themes[item.key]) + '</span></label>';
-            }).join('');
-            renderLayouts();
-            renderStyleMock();
-        }
-
         function renderLayouts() {
             $('lw-layouts').innerHTML = LAYOUTS.map(function (item) {
                 const selected = state.layout === item.slug;
@@ -183,9 +171,6 @@
 
         function renderStyleMock() {
             const current = layout();
-            const locked = current.full_page;
-            $('lw-themes').classList.toggle('is-locked', locked);
-            $('lw-colors-locked').hidden = !locked;
             $('lw-style-mock').innerHTML = current.thumb
                 ? '<img class="lw-salone-shot" src="' + esc(current.thumb) + '" alt="" />'
                 : mockHtml(state.type || 'general', state.theme, { big: true, name: $('lw-name').value.trim() });
@@ -550,9 +535,6 @@
                 state.layout = target.value;
                 renderLayouts();
                 renderStyleMock();
-            } else if (target.name === 'lw-theme') {
-                state.theme = target.value;
-                renderThemes();
             } else if (target.name === 'lw-scope') {
                 state.allServices = target.value === 'all';
                 const wrap = $('lw-pick-wrap');
@@ -626,7 +608,8 @@
 
         /* ---------- boot ---------- */
         renderGoals();
-        renderThemes();
+        renderLayouts();
+        renderStyleMock();
         updateChrome();
 
         fetch('/api/v1/landings/options', { headers: authHeaders() })

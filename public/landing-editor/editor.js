@@ -226,7 +226,8 @@
 
     function applyImage(key, url, custom) {
         all(key).forEach(function (n) {
-            n.src = url;
+            if (n.tagName === 'IMG') n.src = url;
+            else n.style.backgroundImage = 'url("' + url + '")';
             n.setAttribute('data-lf-custom', custom ? '1' : '0');
         });
     }
@@ -290,11 +291,11 @@
 
         if (target.closest('.lf-bar, .lf-pop')) return;
 
-        var img = target.closest('img[data-lf-kind="image"]');
-        if (img) { e.preventDefault(); e.stopPropagation(); openImagePop(img); return; }
+        // The nearest editable element decides: a heading inside a photo background is text.
+        var el = target.closest('[data-lf-key]');
+        if (el && el.getAttribute('data-lf-kind') === 'image') { e.preventDefault(); e.stopPropagation(); openImagePop(el); return; }
         closePop();
 
-        var el = target.closest('[data-lf-key]');
         if (el && TEXT_KINDS.indexOf(el.getAttribute('data-lf-kind')) !== -1) {
             e.preventDefault();
             e.stopPropagation();

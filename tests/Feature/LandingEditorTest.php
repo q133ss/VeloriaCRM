@@ -65,6 +65,8 @@ class LandingEditorTest extends TestCase
 
         $this->assertNotEmpty($registry->layouts());
         $this->assertContains('landings.full.salone', $registry->templateIds());
+        $this->assertContains('landings.full.pretty', $registry->templateIds());
+        $this->assertNotContains('landings.templates.general', $registry->templateIds());
 
         foreach ($registry->layouts() as $layout) {
             foreach ($layout['fields'] as $key) {
@@ -128,6 +130,15 @@ class LandingEditorTest extends TestCase
         }
     }
 
+    public function test_a_page_on_the_retired_classic_layout_falls_back_to_the_default_template(): void
+    {
+        $owner = User::factory()->create();
+        $landing = $this->landing($owner);
+        $landing->update(['landing' => 'landings.templates.general']);
+
+        $this->get('/l/' . $landing->slug)->assertOk()->assertSee('landing-templates/salone', false);
+    }
+
     public function test_edit_mode_does_not_count_a_view(): void
     {
         Sanctum::actingAs($owner = User::factory()->create());
@@ -188,17 +199,17 @@ class LandingEditorTest extends TestCase
     {
         Sanctum::actingAs($owner = User::factory()->create());
         $salone = $this->landing($owner, 'salone', 'general');
-        $classic = $this->landing($owner, 'classic', 'general');
+        $pretty = $this->landing($owner, 'pretty', 'general');
         $service = $this->landing($owner, 'salone', 'service');
 
-        foreach ([$salone, $classic, $service] as $landing) {
+        foreach ([$salone, $pretty, $service] as $landing) {
             $this->patchJson("/api/v1/landings/{$landing->id}/content", [
                 'changes' => [['key' => 'hero_text', 'value' => 'Новый текст']],
             ])->assertOk();
         }
 
         $this->assertSame('Новый текст', $salone->fresh()->settings['greeting']);
-        $this->assertSame('Новый текст', $classic->fresh()->settings['subtitle']);
+        $this->assertSame('Новый текст', $pretty->fresh()->settings['greeting']);
         $this->assertSame('Новый текст', $service->fresh()->settings['service_description']);
     }
 

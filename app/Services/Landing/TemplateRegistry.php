@@ -12,7 +12,7 @@ class TemplateRegistry
 {
     public const TYPES = ['general', 'promotion', 'service', 'seasonal', 'consultation'];
 
-    public const DEFAULT_LAYOUT = 'classic';
+    public const DEFAULT_LAYOUT = 'salone';
 
     /** @var Collection<string, array>|null */
     private ?Collection $layouts = null;
@@ -52,14 +52,17 @@ class TemplateRegistry
         return $this->layouts()->first(fn (array $layout) => in_array($template, $layout['templates'], true));
     }
 
-    public function isFullPage(?string $template): bool
+    /** The view to render for a stored value: itself when it is a known template, otherwise the default. */
+    public function resolve(?string $template, string $type): string
     {
-        return (bool) ($this->layoutForTemplate($template)['full_page'] ?? false);
+        return $template && in_array($template, $this->templateIds(), true)
+            ? $template
+            : $this->defaultTemplate($type);
     }
 
     public function templateFor(string $layoutSlug, string $type): string
     {
-        $layout = $this->layout($layoutSlug) ?? $this->layout(self::DEFAULT_LAYOUT);
+        $layout = $this->layout($layoutSlug) ?? $this->layout(self::DEFAULT_LAYOUT) ?? $this->layouts()->first();
 
         return $layout['templates'][$type] ?? $layout['templates']['general'];
     }
@@ -76,8 +79,8 @@ class TemplateRegistry
             'slug' => $layout['slug'],
             'title' => __($layout['name']),
             'description' => __($layout['description']),
-            'full_page' => $layout['full_page'],
-            'thumb' => $layout['thumb'] ? asset($layout['thumb']) : null,
+            // filemtime keeps browsers from showing an old preview after it is replaced
+            'thumb' => $layout['thumb'] ? asset($layout['thumb']) . '?v=' . (@filemtime(public_path($layout['thumb'])) ?: 1) : null,
             'templates' => $layout['templates'],
         ])->values()->all();
     }

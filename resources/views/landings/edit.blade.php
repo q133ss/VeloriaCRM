@@ -16,11 +16,7 @@
             typeLabels: @json(__('landings.types')),
             statusLabels: @json(__('landings.statuses')),
             defaultTemplate: {
-                general: 'landings.templates.general',
-                promotion: 'landings.templates.promotion',
-                service: 'landings.templates.service',
-                seasonal: 'landings.templates.seasonal',
-                consultation: 'landings.templates.consultation'
+                general: '{{ app(\App\Services\Landing\TemplateRegistry::class)->defaultTemplate('general') }}'
             }
         };
     </script>

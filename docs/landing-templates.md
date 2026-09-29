@@ -15,6 +15,14 @@ resources/views/components/landing/        <x-landing.text>, <x-landing.image>
 public/landing-editor/editor.{js,css}      the editor itself, loaded only for the owner
 ```
 
+## Templates now available
+
+- `salone`: warm golden tones (HTML Codex, CC BY 4.0).
+- `pretty`: light page with a pink booking block (Colorlib via ThemeWagon, CC BY 3.0).
+
+The former classic layout (`landings.templates.*`) was retired; pages that still pointed at it fall back
+to the default template (`TemplateRegistry::DEFAULT_LAYOUT`) and a migration moved the stored values.
+
 ## Add a template
 
 ```bash
@@ -61,7 +69,7 @@ return [
     'slug' => 'spa-soft',
     'name' => 'Spa Soft',                    // or a lang key
     'description' => 'One line for the wizard',
-    'full_page' => true,                     // true: own <html>; false: sections inside the shared shell
+    'full_page' => true,                     // every template is a whole page with its own <html>
     'thumb' => 'landing-templates/spa-soft/preview.jpg',
     'templates' => ['general' => $view, 'promotion' => $view, /* … every type */],
     'images' => ['hero_image_1' => 'landing-templates/spa-soft/img/hero.jpg'],   // stock photo per slot

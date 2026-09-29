@@ -159,22 +159,16 @@
             });
         }
 
-        function setTemplateForType(type) {
-            // A full-page template (e.g. Salone) is picked in the wizard, not here:
-            // keep it as long as the type stays the same, or saving would silently
-            // swap the page back to the classic layout.
+        // Every template supports every type, so the template belongs to the page and
+        // is chosen in the wizard; changing the type here must not swap it.
+        function setTemplateForType() {
             const saved = state.landing && state.landing.landing;
-            if (typeof saved === 'string' && saved.indexOf('landings.full.') === 0 && state.landing.type === type) {
-                templateInput.value = saved;
-                return;
-            }
-            const input = typeRadios.find(function (radio) { return radio.value === type; });
-            templateInput.value = input?.dataset.template || defaultTemplates[type] || ('landings.templates.' + type);
+            templateInput.value = saved || defaultTemplates.general || '';
         }
 
         function updateTemplateAndSelection(type) {
             toggleSections(type);
-            setTemplateForType(type);
+            setTemplateForType();
             syncScenarioCards();
         }
 

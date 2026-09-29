@@ -1,0 +1,52 @@
+/* Veloria additions on top of the original Pretty stylesheet. */
+
+/* The booking form sits on the pink block: give the widget's own text white. */
+.ftco-appointment { --lb-text: #fff; }
+.ftco-appointment .appointment p { color: rgba(255, 255, 255, .9); }
+.ftco-appointment .appointment-form select.form-control option { color: #212529; }
+
+/* Editable inline text is rendered as <bdi> so the template's global `span` grey never hits it. */
+bdi { color: inherit; }
+
+/* The template's outline buttons lose their label on hover (white text on a
+   transparent !important background); keep them filled and readable. */
+.btn.btn-primary.btn-outline-primary:hover,
+.btn.btn-primary.btn-outline-primary:focus {
+  background: #fa5bdd !important;
+  border-color: #fa5bdd;
+  color: #fff !important;
+}
+
+/* A long name must not break the top bar: one line, cut with an ellipsis. */
+.ftco-navbar-light .navbar-brand {
+  display: block;
+  max-width: calc(100% - 120px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ftco-navbar-light > .container { flex-wrap: nowrap; }
+@media (max-width: 991.98px) {
+  .ftco-navbar-light .navbar-brand { font-size: 16px; }
+  .ftco-navbar-light > .container { flex-wrap: wrap; }
+  .ftco-navbar-light .navbar-toggler { flex: none; }
+}
+
+/* Pricing cards keep a stable height whatever the service is called. */
+.pricing-entry h3 { overflow-wrap: anywhere; }
+.pricing-entry ul:empty { display: none; }
+
+/* Booking block: the time picker sits on a soft card so it reads on the pink background. */
+.ftco-appointment .lb-picker { background: rgba(255, 255, 255, .14); border-radius: 16px; padding: 1rem 1.1rem; }
+.ftco-appointment .lb-day, .ftco-appointment .lb-time { background: #fff; }
+.ftco-appointment .lb-day-top { opacity: .7; }
+.ftco-appointment .appointment-form .form-control { color: #fff; }
+.ftco-appointment .appointment-form .form-control::placeholder { color: rgba(255, 255, 255, .85); }
+.ftco-footer a { color: rgba(255, 255, 255, .7); }
+.ftco-footer a:hover { color: #fa5bdd; }
+
+/* The template greys the pricing buttons out (#ccc on white) until hover; keep them readable. */
+.pricing-entry .button .btn.btn-outline-primary { color: #fa5bdd; border-color: #fa5bdd; background: #fff; }
+.pricing-entry:hover .button .btn.btn-outline-primary,
+.pricing-entry .button .btn.btn-outline-primary:hover,
+.pricing-entry.active .button .btn.btn-outline-primary { background: #fa5bdd !important; border-color: #fa5bdd !important; color: #fff !important; }

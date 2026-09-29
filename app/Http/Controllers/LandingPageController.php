@@ -35,32 +35,16 @@ class LandingPageController extends Controller
 
         app(LandingContent::class)->bind($landing, $isEdit);
 
-        $template = $landing->landing ?: $this->defaultTemplateForType($landing->type);
+        // A stored template that no longer exists (a retired layout) falls back to the default.
+        $template = app(TemplateRegistry::class)->resolve($landing->landing, $landing->type);
 
-        if (! view()->exists($template)) {
-            $template = $this->defaultTemplateForType($landing->type);
-        }
-
-        $data = [
+        return view($template, [
             'landing' => $landing,
             'template' => $template,
             'isPreview' => $isPreview,
             'isEdit' => $isEdit,
             'featuredServices' => $this->resolveFeaturedServices($landing),
-        ];
-
-        // A full-page template brings its own layout, so it replaces the shell
-        // instead of being included into it.
-        if (Landing::isFullPageTemplate($template)) {
-            return view($template, $data);
-        }
-
-        return view('landings.public', $data);
-    }
-
-    protected function defaultTemplateForType(string $type): string
-    {
-        return app(TemplateRegistry::class)->defaultTemplate($type);
+        ]);
     }
 
     protected function resolveFeaturedServices(Landing $landing): Collection

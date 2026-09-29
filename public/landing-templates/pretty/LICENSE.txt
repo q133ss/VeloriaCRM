@@ -1,0 +1,15 @@
+Pretty - Free Bootstrap 4 HTML5 beauty salon website template
+Design: Colorlib (https://colorlib.com)
+Distributed by ThemeWagon: https://themewagon.com/themes/free-bootstrap-4-html5-beauty-salon-website-template-pretty/
+Source: https://github.com/themewagon/pretty
+
+License: Creative Commons Attribution 3.0 (CC BY 3.0) - https://creativecommons.org/licenses/by/3.0/
+You may use and modify the template, including commercially, but the link back to
+Colorlib in the footer must stay ("Link back to Colorlib can't be removed").
+
+Icon font "Flaticon": see fonts/flaticon/license/license.pdf (attribution required).
+
+Changes made for Veloria CRM: the page markup was rebuilt as a Blade view that shows the
+master's own data, the placeholder people, figures, blog and partner logos were removed,
+main.js was trimmed to the parts the page uses, and the booking form was replaced by
+the shared booking widget.

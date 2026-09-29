@@ -85,7 +85,7 @@ class MakeLandingTemplate extends Command
 <?php
 
 /**
- * See resources/landing-templates/classic.php for the manifest contract.
+ * See resources/landing-templates/salone.php for the manifest contract.
  * Source: {$this->option('source')} ({$this->option('license')})
  */
 \$view = 'landings.full.{$slug}';

@@ -136,31 +136,31 @@
         <div class="card-body">
             <div class="landing-scenario-grid" id="landing-scenario-grid">
                 <label class="landing-scenario-card" data-scenario-option>
-                    <input class="visually-hidden" type="radio" name="type" value="general" data-template="landings.templates.general" checked />
+                    <input class="visually-hidden" type="radio" name="type" value="general" checked />
                     <span class="landing-scenario-badge">{{ __('landings.templates.general.card_badge') }}</span>
                     <h6>{{ __('landings.types.general') }}</h6>
                     <p>{{ __('landings.templates.general.card_description') }}</p>
                 </label>
                 <label class="landing-scenario-card" data-scenario-option>
-                    <input class="visually-hidden" type="radio" name="type" value="promotion" data-template="landings.templates.promotion" />
+                    <input class="visually-hidden" type="radio" name="type" value="promotion" />
                     <span class="landing-scenario-badge">{{ __('landings.templates.promotion.card_badge') }}</span>
                     <h6>{{ __('landings.types.promotion') }}</h6>
                     <p>{{ __('landings.templates.promotion.card_description') }}</p>
                 </label>
                 <label class="landing-scenario-card" data-scenario-option>
-                    <input class="visually-hidden" type="radio" name="type" value="service" data-template="landings.templates.service" />
+                    <input class="visually-hidden" type="radio" name="type" value="service" />
                     <span class="landing-scenario-badge">{{ __('landings.templates.service.card_badge') }}</span>
                     <h6>{{ __('landings.types.service') }}</h6>
                     <p>{{ __('landings.templates.service.card_description') }}</p>
                 </label>
                 <label class="landing-scenario-card" data-scenario-option>
-                    <input class="visually-hidden" type="radio" name="type" value="seasonal" data-template="landings.templates.seasonal" />
+                    <input class="visually-hidden" type="radio" name="type" value="seasonal" />
                     <span class="landing-scenario-badge">{{ __('landings.templates.seasonal.card_badge') }}</span>
                     <h6>{{ __('landings.types.seasonal') }}</h6>
                     <p>{{ __('landings.templates.seasonal.card_description') }}</p>
                 </label>
                 <label class="landing-scenario-card" data-scenario-option>
-                    <input class="visually-hidden" type="radio" name="type" value="consultation" data-template="landings.templates.consultation" />
+                    <input class="visually-hidden" type="radio" name="type" value="consultation" />
                     <span class="landing-scenario-badge">{{ __('landings.templates.consultation.card_badge') }}</span>
                     <h6>{{ __('landings.types.consultation') }}</h6>
                     <p>{{ __('landings.templates.consultation.card_description') }}</p>

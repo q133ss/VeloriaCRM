@@ -183,9 +183,6 @@
             <div>
                 <h6 class="lw-subhead" id="lw-layout-h">{{ $w['style']['layout_title'] }}</h6>
                 <div class="lw-layouts" id="lw-layouts" role="radiogroup" aria-labelledby="lw-layout-h"></div>
-                <h6 class="lw-subhead mt-4" id="lw-colors-h">{{ $w['style']['colors_title'] }}</h6>
-                <div class="lw-themes" id="lw-themes" role="radiogroup" aria-labelledby="lw-colors-h"></div>
-                <p class="lw-hint mt-2 mb-0" id="lw-colors-locked" hidden>{{ $w['style']['colors_locked'] }}</p>
             </div>
             <div class="lw-phone" aria-hidden="true"><div id="lw-style-mock"></div></div>
         </div>

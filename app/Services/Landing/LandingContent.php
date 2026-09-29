@@ -39,6 +39,12 @@ class LandingContent
         'hero_image_2' => ['kind' => 'image'],
         'hero_image_3' => ['kind' => 'image'],
         'about_image' => ['kind' => 'image'],
+        'master_role' => ['kind' => 'text', 'max' => 120],
+        'master_bio' => ['kind' => 'textarea', 'max' => 500],
+        'master_photo' => ['kind' => 'image'],
+        'work_image_1' => ['kind' => 'image'],
+        'work_image_2' => ['kind' => 'image'],
+        'work_image_3' => ['kind' => 'image'],
     ];
 
     private ?Landing $landing = null;

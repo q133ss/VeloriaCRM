@@ -11,11 +11,6 @@ class Landing extends Model
 {
     use HasFactory;
 
-    public static function isFullPageTemplate(?string $template): bool
-    {
-        return app(\App\Services\Landing\TemplateRegistry::class)->isFullPage($template);
-    }
-
     protected $fillable = [
         'user_id',
         'title',
