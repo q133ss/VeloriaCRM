@@ -7,8 +7,8 @@
 
 <section class="landing-section-card">
     <div class="landing-section-head">
-        <h2>{{ $settings['service_name'] ?? __('landings.templates.service.default_title') }}</h2>
-        <p>{{ $settings['service_description'] ?? __('landings.templates.service.default_description') }}</p>
+        <x-landing.text key="hero_title" tag="h2" :default="__('landings.templates.service.default_title')" :title-fallback="false" />
+        <x-landing.text key="hero_text" tag="p" :default="__('landings.templates.service.default_description')" />
     </div>
 
     <div class="landing-metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
@@ -29,7 +29,7 @@
     @if($benefits->isNotEmpty())
         <ul class="landing-list" style="margin-top: 1rem;">
             @foreach($benefits as $item)
-                <li>{{ $item }}</li>
+                <x-landing.text key="benefit_items_text" :index="$loop->index" tag="li" />
             @endforeach
         </ul>
     @endif

@@ -12,6 +12,7 @@
         const activeInput = document.getElementById('landing-active');
         const statusIndicator = document.getElementById('landing-status-indicator');
         const previewButton = document.getElementById('landing-preview-btn');
+        const inlineEditButton = document.getElementById('landing-inline-edit-btn');
         const requestsCard = document.getElementById('landing-requests-card');
         const requestsList = document.getElementById('landing-requests-list');
         const requestsEmpty = document.getElementById('landing-requests-empty');
@@ -159,6 +160,14 @@
         }
 
         function setTemplateForType(type) {
+            // A full-page template (e.g. Salone) is picked in the wizard, not here:
+            // keep it as long as the type stays the same, or saving would silently
+            // swap the page back to the classic layout.
+            const saved = state.landing && state.landing.landing;
+            if (typeof saved === 'string' && saved.indexOf('landings.full.') === 0 && state.landing.type === type) {
+                templateInput.value = saved;
+                return;
+            }
             const input = typeRadios.find(function (radio) { return radio.value === type; });
             templateInput.value = input?.dataset.template || defaultTemplates[type] || ('landings.templates.' + type);
         }
@@ -362,6 +371,7 @@
             if (previewButton && slugInput.value.trim()) {
                 previewButton.classList.remove('d-none');
             }
+            syncInlineEditButton();
         }
 
         function collectCommonSettings() {
@@ -549,10 +559,20 @@
             if (previewButton) {
                 previewButton.classList.toggle('d-none', !slugInput.value.trim());
             }
+            syncInlineEditButton();
         }
 
         function handleTypeChange(event) {
             updateTemplateAndSelection(event.target.value);
+        }
+
+        // Points at the saved slug: the click editor works on the stored page,
+        // so a slug that was only typed here has nothing to open yet.
+        function syncInlineEditButton() {
+            if (!inlineEditButton) return;
+            const saved = state.landing && state.landing.slug;
+            inlineEditButton.classList.toggle('d-none', !saved);
+            if (saved) inlineEditButton.href = appUrl.replace(/\/$/, '') + '/l/' + saved + '?edit=1';
         }
 
         function openPreview() {

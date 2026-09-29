@@ -47,6 +47,18 @@ return [
             'report' => false,
         ],
 
+        // Photos placed on landing pages. Kept under public/ so no storage:link is
+        // needed (it does not survive Windows bind mounts) and nginx serves them as
+        // plain static files.
+        'landing_media' => [
+            'driver' => 'local',
+            'root' => public_path('uploads'),
+            'url' => '/uploads',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

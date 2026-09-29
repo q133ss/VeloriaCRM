@@ -16,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\Landing\TemplateRegistry::class);
+        // One instance per request: the landing page binds its landing and edit
+        // mode once and the Blade components read them back.
+        $this->app->scoped(\App\Services\Landing\LandingContent::class);
     }
 
     /**

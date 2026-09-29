@@ -78,6 +78,10 @@
             <i class="ri ri-arrow-left-line me-1"></i>
             {{ __('landings.actions.back_to_list') }}
         </a>
+        <a class="btn btn-primary d-none" id="landing-inline-edit-btn" href="#">
+            <i class="ri ri-cursor-line me-1"></i>
+            {{ __('landings.actions.edit_inline') }}
+        </a>
         <button type="button" class="btn btn-outline-primary d-none" id="landing-preview-btn">
             <i class="ri ri-eye-line me-1"></i>
             {{ __('landings.actions.preview') }}

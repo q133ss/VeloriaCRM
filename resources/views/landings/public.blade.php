@@ -5,11 +5,13 @@
         'emerald' => '#1b8f74',
         'sunset' => '#d86f52',
         'midnight' => '#433f72',
+        'rose' => '#c2557a',
     ];
     $backgroundPresets = [
         'preset' => 'radial-gradient(circle at top, rgba(248, 226, 236, 0.95), transparent 34%), linear-gradient(160deg, #fffaf8 0%, #f7eef2 34%, #f3efe9 100%)',
         'midnight' => 'radial-gradient(circle at top, rgba(132, 104, 171, 0.28), transparent 34%), linear-gradient(160deg, #211f33 0%, #322f4d 42%, #5e597f 100%)',
         'sunset' => 'radial-gradient(circle at top, rgba(255, 210, 191, 0.95), transparent 36%), linear-gradient(160deg, #fff7f1 0%, #fde8de 42%, #f8efe8 100%)',
+        'rose' => 'radial-gradient(circle at top, rgba(252, 215, 228, 0.95), transparent 36%), linear-gradient(160deg, #fffafb 0%, #fbeaf0 40%, #f6eef0 100%)',
         'emerald' => 'radial-gradient(circle at top, rgba(202, 245, 229, 0.95), transparent 36%), linear-gradient(160deg, #fbfffd 0%, #eefaf5 38%, #edf4ef 100%)',
     ];
     $primaryColor = $colorMap[$settings['primary_color'] ?? 'indigo'] ?? '#7f5af0';
@@ -32,9 +34,6 @@
         ->values();
     $phone = trim((string) ($settings['phone'] ?? ''));
     $phoneHref = $phone !== '' ? 'tel:' . preg_replace('/[^0-9+]+/', '', $phone) : null;
-    $ctaLabel = $settings['cta_label'] ?? __('landings.public.default_cta');
-    $secondaryCtaLabel = $settings['secondary_cta_label'] ?? __('landings.public.default_secondary_cta');
-    $bookingHint = $settings['booking_hint'] ?? __('landings.public.booking_hint');
     $hasDirectContacts = $phoneHref || !empty($settings['telegram_url']) || !empty($settings['whatsapp_url']);
     $templateTitleMap = [
         'promotion' => $settings['headline'] ?? __('landings.templates.promotion.default_headline'),
@@ -56,6 +55,9 @@
     $heroPoints = $benefitItems->isNotEmpty()
         ? $benefitItems->take(3)
         : ($proofItems->isNotEmpty() ? $proofItems->take(3) : $heroPointDefaults->take(3));
+    // Hero bullets come from benefits, then proof items, then built-in defaults;
+    // only the first two are the owner's own text and can be edited in place.
+    $heroPointKey = $benefitItems->isNotEmpty() ? 'benefit_items_text' : ($proofItems->isNotEmpty() ? 'proof_items_text' : null);
     $flowSteps = collect(trans('landings.public.flow_steps'));
     $showcaseServices = $featuredServices->take(3);
 @endphp
@@ -634,7 +636,9 @@
             }
 
             .landing-hero h1 {
-                font-size: clamp(2.8rem, 16vw, 4.1rem);
+                font-size: clamp(2rem, 9vw, 2.9rem);
+                line-height: 1;
+                max-width: 16ch;
             }
 
             .landing-form-grid {
@@ -667,9 +671,9 @@
             <div class="landing-topbar">
                 <div class="landing-brand">
                     <span class="landing-brand-mark">{{ mb_substr($landing->title, 0, 1) }}</span>
-                    <span>{{ $landing->title }}</span>
+                    <x-landing.text key="title" />
                 </div>
-                @if($isPreview)
+                @if($isPreview && empty($isEdit))
                     <span class="landing-preview-badge">{{ __('landings.public.preview_badge') }}</span>
                 @endif
             </div>
@@ -677,21 +681,25 @@
             <section class="landing-hero">
                 <div class="landing-hero-copy">
                     <span class="landing-kicker">{{ __('landings.types.' . $landing->type) }}</span>
-                    <h1>{{ $heroTitle }}</h1>
-                    <div class="landing-subtitle">{{ $heroDescription }}</div>
+                    <x-landing.text key="hero_title" tag="h1" :default="$heroTitle" :title-fallback="false" />
+                    <x-landing.text key="hero_text" tag="div" class="landing-subtitle" :default="$heroDescription" />
 
                     @if($heroPoints->isNotEmpty())
                         <ul class="landing-point-list">
                             @foreach($heroPoints as $item)
-                                <li>{{ $item }}</li>
+                                @if($heroPointKey)
+                                    <x-landing.text :key="$heroPointKey" :index="$loop->index" tag="li" />
+                                @else
+                                    <li>{{ $item }}</li>
+                                @endif
                             @endforeach
                         </ul>
                     @endif
 
                     <div class="landing-cta-row">
-                        <a href="#booking" class="landing-btn">{{ $ctaLabel }}</a>
+                        <a href="#booking" class="landing-btn"><x-landing.text key="cta_label" :default="__('landings.public.default_cta')" /></a>
                         @if($hasDirectContacts)
-                            <a href="#contacts" class="landing-btn-secondary">{{ $secondaryCtaLabel }}</a>
+                            <a href="#contacts" class="landing-btn-secondary"><x-landing.text key="secondary_cta_label" :default="__('landings.public.default_secondary_cta')" /></a>
                         @endif
                     </div>
 
@@ -707,7 +715,7 @@
                         <p>{{ __('landings.public.booking_text') }}</p>
 
                         <div class="landing-contact-strip">
-                            <span>{{ $bookingHint }}</span>
+                            <x-landing.text key="booking_hint" :default="__('landings.public.booking_hint')" />
                             <span>{{ __('landings.public.form.note') }}</span>
                         </div>
 
@@ -719,7 +727,7 @@
                                 </div>
                                 <div class="landing-field">
                                     <label for="landing-request-phone">{{ __('landings.public.form.phone') }}</label>
-                                    <input type="text" id="landing-request-phone" name="client_phone" required />
+                                    <input type="tel" id="landing-request-phone" name="client_phone" required inputmode="tel" autocomplete="tel" data-phone-mask />
                                 </div>
                                 @if($featuredServices->isNotEmpty())
                                     <div class="landing-field-full">
@@ -733,13 +741,14 @@
                                         <div class="landing-form-helper">{{ __('landings.public.form_service_hint') }}</div>
                                     </div>
                                 @endif
+                                <div class="landing-field-full" id="landing-picker"></div>
                                 <div class="landing-field-full">
                                     <label for="landing-request-message">{{ __('landings.public.form.message') }}</label>
                                     <textarea id="landing-request-message" name="message"></textarea>
                                 </div>
                             </div>
 
-                            <button type="submit" class="landing-btn" style="margin-top: 1rem;">{{ $ctaLabel }}</button>
+                            <button type="submit" class="landing-btn" id="landing-request-submit" style="margin-top: 1rem;"><x-landing.text key="cta_label" :default="__('landings.public.default_cta')" /></button>
                             <div class="landing-form-message" id="landing-request-message-box"></div>
                         </form>
 
@@ -814,7 +823,7 @@
                         <div class="landing-proof-grid">
                             @foreach($proofItems->take(3) as $item)
                                 <article class="landing-proof-card">
-                                    <strong>{{ $item }}</strong>
+                                    <x-landing.text key="proof_items_text" :index="$loop->index" tag="strong" />
                                 </article>
                             @endforeach
                         </div>
@@ -851,7 +860,7 @@
                         </div>
                         <ul class="landing-list">
                             @foreach($faqItems as $item)
-                                <li>{{ $item }}</li>
+                                <x-landing.text key="faq_items_text" :index="$loop->index" tag="li" />
                             @endforeach
                         </ul>
                     </section>
@@ -859,77 +868,12 @@
             </section>
 
             <div class="landing-sticky-cta">
-                <a href="#booking" class="landing-btn">{{ $ctaLabel }}</a>
+                <a href="#booking" class="landing-btn"><x-landing.text key="cta_label" :default="__('landings.public.default_cta')" /></a>
             </div>
         </main>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('landing-request-form');
-            const messageBox = document.getElementById('landing-request-message-box');
-            const submitButton = form ? form.querySelector('button[type="submit"]') : null;
-
-            if (!form || !messageBox || !submitButton) return;
-
-            const getFieldValue = function (name) {
-                const field = form.elements.namedItem(name);
-                return field && 'value' in field ? String(field.value).trim() : '';
-            };
-
-            form.addEventListener('submit', function (event) {
-                event.preventDefault();
-                submitButton.disabled = true;
-                messageBox.className = 'landing-form-message';
-                messageBox.textContent = '';
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-                const payload = {
-                    client_name: getFieldValue('client_name'),
-                    client_phone: getFieldValue('client_phone'),
-                    client_email: null,
-                    preferred_date: null,
-                    message: getFieldValue('message'),
-                    service_id: getFieldValue('service_id') || null,
-                };
-
-                fetch('{{ route('landings.request', ['slug' => $landing->slug]) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                    body: JSON.stringify(payload),
-                })
-                    .then(function (response) {
-                        if (response.status === 422) {
-                            return response.json().then(function (data) { throw data; });
-                        }
-                        if (!response.ok) {
-                            throw new Error('failed');
-                        }
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        form.reset();
-                        messageBox.className = 'landing-form-message is-success';
-                        messageBox.textContent = data.message || '{{ __('landings.public.request_saved') }}';
-                    })
-                    .catch(function (error) {
-                        const fieldErrors = error?.errors || error?.error?.fields;
-                        const text = fieldErrors
-                            ? Object.values(fieldErrors).flat().join(' ')
-                            : '{{ __('landings.public.request_failed') }}';
-                        messageBox.className = 'landing-form-message is-error';
-                        messageBox.textContent = text;
-                    })
-                    .finally(function () {
-                        submitButton.disabled = false;
-                    });
-            });
-        });
-    </script>
+    @include('landings.partials.request-script', ['ids' => ['form' => 'landing-request-form', 'button' => 'landing-request-submit', 'message' => 'landing-request-message-box', 'service' => 'landing-request-service', 'picker' => 'landing-picker'], 'accent' => $primaryColor, 'accentText' => '#fff'])
+    @include('landings.partials.editor-assets')
 </body>
 </html>

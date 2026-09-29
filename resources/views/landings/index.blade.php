@@ -214,8 +214,11 @@
                                 <a href="${landing.urls.public}" target="_blank" class="btn btn-sm btn-outline-secondary">
                                     <i class="ri ri-external-link-line me-1"></i> Открыть
                                 </a>
+                                <a href="/l/${landing.slug}?edit=1" class="btn btn-sm btn-primary">
+                                    <i class="ri ri-cursor-line me-1"></i> {{ __('landings.actions.edit_inline') }}
+                                </a>
                                 <a href="/landings/${landing.id}/edit" class="btn btn-sm btn-outline-primary">
-                                    <i class="ri ri-edit-line me-1"></i> Изменить
+                                    <i class="ri ri-settings-3-line me-1"></i> {{ __('landings.actions.settings') }}
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-delete-landing="${landing.id}">
                                     <i class="ri ri-delete-bin-line me-1"></i> Удалить

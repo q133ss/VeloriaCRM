@@ -43,7 +43,7 @@ class LandingStoreRequest extends BaseRequest
             'title' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', Rule::in(['general', 'promotion', 'service', 'seasonal', 'consultation'])],
             'slug' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+$/', 'unique:landings,slug'],
-            'landing' => ['nullable', 'string', 'max:255'],
+            'landing' => ['nullable', 'string', Rule::in(app(\App\Services\Landing\TemplateRegistry::class)->templateIds())],
             'settings' => ['required', 'array'],
             'settings.primary_color' => ['required', 'string', 'max:50'],
             'settings.background_type' => ['required', 'string', Rule::in(['preset', 'upload'])],

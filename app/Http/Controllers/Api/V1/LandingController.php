@@ -9,6 +9,10 @@ use App\Models\Landing;
 use App\Models\LandingRequest;
 use App\Models\Promotion;
 use App\Models\Service;
+use App\Services\Landing\LandingContent;
+use App\Services\Landing\LandingImageStore;
+use App\Services\Landing\TemplateRegistry;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -101,10 +105,66 @@ class LandingController extends Controller
         ]);
     }
 
-    public function destroy(Landing $landing): JsonResponse
+    /**
+     * Click-editor save: merges the given content keys into the landing.
+     * Keys are limited to what the landing's template lists in its manifest.
+     */
+    public function content(Request $request, Landing $landing, LandingContent $content): JsonResponse
     {
         $this->ensureLandingBelongsToUser($landing);
 
+        $data = $request->validate([
+            'changes' => ['required', 'array', 'min:1', 'max:30'],
+            'changes.*.key' => ['required', 'string', 'max:64'],
+            'changes.*.value' => ['nullable'],
+        ]);
+
+        return response()->json([
+            'data' => ['values' => $content->apply($landing, $data['changes'])],
+        ]);
+    }
+
+    /** Click-editor photo upload: replaces the photo in one slot of the template. */
+    public function uploadImage(Request $request, Landing $landing, LandingContent $content, LandingImageStore $images): JsonResponse
+    {
+        $this->ensureLandingBelongsToUser($landing);
+
+        $data = $request->validate([
+            'key' => ['required', 'string', 'max:64'],
+            'file' => ['required', 'file', 'max:8192', 'mimetypes:image/jpeg,image/png,image/webp', 'dimensions:max_width=9000,max_height=9000'],
+        ], [
+            'file.mimetypes' => __('landings.editor.errors.image_type'),
+            'file.file' => __('landings.editor.errors.image_type'),
+            'file.max' => __('landings.editor.errors.image_size'),
+            'file.uploaded' => __('landings.editor.errors.image_size'),
+            'file.dimensions' => __('landings.editor.errors.image_size'),
+        ]);
+
+        abort_unless(array_key_exists($data['key'], $content->imageDefaults($landing)), 422, __('landings.editor.errors.unknown_key'));
+
+        $url = $images->store($landing, $data['key'], $request->file('file'));
+
+        return response()->json(['data' => ['key' => $data['key'], 'url' => $url]]);
+    }
+
+    /** Puts the template's stock photo back in a slot. */
+    public function resetImage(Landing $landing, string $key, LandingContent $content, LandingImageStore $images): JsonResponse
+    {
+        $this->ensureLandingBelongsToUser($landing);
+
+        $defaults = $content->imageDefaults($landing);
+        abort_unless(isset($defaults[$key]), 404);
+
+        $images->remove($landing, $key);
+
+        return response()->json(['data' => ['key' => $key, 'url' => asset($defaults[$key])]]);
+    }
+
+    public function destroy(Landing $landing, LandingImageStore $images): JsonResponse
+    {
+        $this->ensureLandingBelongsToUser($landing);
+
+        $images->removeAll($landing);
         $landing->delete();
 
         return response()->json([
@@ -119,21 +179,26 @@ class LandingController extends Controller
         $services = Service::query()
             ->where('user_id', $userId)
             ->orderBy('name')
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'base_price', 'duration_min'])
             ->map(fn (Service $service) => [
                 'id' => $service->id,
                 'name' => $service->name,
+                'price' => $service->base_price !== null ? (float) $service->base_price : null,
+                'duration' => $service->duration_min !== null ? (int) $service->duration_min : null,
             ])
             ->all();
 
         $promotions = Promotion::query()
             ->forUser($userId)
             ->orderBy('name')
-            ->get(['id', 'name', 'promo_code'])
+            ->get(['id', 'name', 'promo_code', 'percent', 'ends_at', 'service_id'])
             ->map(fn (Promotion $promotion) => [
                 'id' => $promotion->id,
                 'name' => $promotion->name,
                 'promo_code' => $promotion->promo_code,
+                'percent' => $promotion->percent,
+                'ends_at' => optional($promotion->ends_at)->toDateString(),
+                'service_id' => $promotion->service_id,
             ])
             ->all();
 
@@ -224,15 +289,7 @@ class LandingController extends Controller
 
     protected function defaultTemplateForType(string $type): string
     {
-        $templates = [
-            'general' => 'landings.templates.general',
-            'promotion' => 'landings.templates.promotion',
-            'service' => 'landings.templates.service',
-            'seasonal' => 'landings.templates.seasonal',
-            'consultation' => 'landings.templates.consultation',
-        ];
-
-        return $templates[$type] ?? 'landings.templates.general';
+        return app(TemplateRegistry::class)->defaultTemplate($type);
     }
 
     protected function ensureLandingBelongsToUser(Landing $landing): void

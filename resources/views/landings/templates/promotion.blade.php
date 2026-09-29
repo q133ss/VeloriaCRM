@@ -4,8 +4,8 @@
 
 <section class="landing-section-card">
     <div class="landing-section-head">
-        <h2>{{ $settings['headline'] ?? __('landings.templates.promotion.default_headline') }}</h2>
-        <p>{{ $settings['description'] ?? __('landings.templates.promotion.default_description') }}</p>
+        <x-landing.text key="hero_title" tag="h2" :default="__('landings.templates.promotion.default_headline')" :title-fallback="false" />
+        <x-landing.text key="hero_text" tag="p" :default="__('landings.templates.promotion.default_description')" />
     </div>
 
     <div class="landing-metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">

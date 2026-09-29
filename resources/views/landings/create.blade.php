@@ -3,26 +3,19 @@
 @section('title', __('landings.create.title'))
 
 @section('content')
-    @include('landings.partials.form')
+    @include('landings.partials.wizard')
 @endsection
 
 @section('scripts')
     <script>
-        window.LANDING_FORM_CONFIG = {
-            mode: 'create',
-            landingId: null,
+        window.LANDING_WIZARD_CONFIG = {
             appUrl: '{{ rtrim(config('app.url'), '/') }}',
-            translations: @json(__('landings.notifications')),
-            typeLabels: @json(__('landings.types')),
-            statusLabels: @json(__('landings.statuses')),
-            defaultTemplate: {
-                general: 'landings.templates.general',
-                promotion: 'landings.templates.promotion',
-                service: 'landings.templates.service',
-                seasonal: 'landings.templates.seasonal',
-                consultation: 'landings.templates.consultation'
-            }
+            listUrl: '{{ route('landings.index') }}',
+            servicesUrl: '{{ url('/services') }}',
+            marketingUrl: '{{ url('/marketing') }}',
+            layouts: @json(app(\App\Services\Landing\TemplateRegistry::class)->forWizard())
         };
     </script>
-    @include('landings.partials.form-script')
+    @include('components.phone-mask-script')
+    @include('landings.partials.wizard-script')
 @endsection

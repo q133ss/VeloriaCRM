@@ -80,6 +80,13 @@ Purpose:
 - combine weekly digest, business tips, taxes/rules, ideas, and ready-to-use scripts
 - keep the experience lightweight, practical, and task-first for inexperienced users
 
+### Landings (public booking pages)
+- create: 4-step wizard `resources/views/landings/create.blade.php` + `partials/wizard*.blade.php`
+- pages: `/l/{slug}`; owner edits text and photos in place via `/l/{slug}?edit=1`
+- every layout is a manifest in `resources/landing-templates/`; do not hard-code template lists elsewhere
+- to add a template or make new content editable, follow `docs/landing-templates.md`
+  (`php artisan landing:make-template`); the smoke test in `tests/Feature/LandingEditorTest.php` covers all templates
+
 ### Subscription
 - page: `resources/views/subscription/index.blade.php`
 - API: `app/Http/Controllers/Api/V1/SubscriptionController.php`

@@ -58,7 +58,7 @@ class LandingUpdateRequest extends BaseRequest
                 'regex:/^[a-z0-9-]+$/',
                 Rule::unique('landings', 'slug')->ignore($landingId),
             ],
-            'landing' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'landing' => ['sometimes', 'nullable', 'string', Rule::in(app(\App\Services\Landing\TemplateRegistry::class)->templateIds())],
             'settings' => ['sometimes', 'array'],
             'settings.primary_color' => ['sometimes', 'required', 'string', 'max:50'],
             'settings.background_type' => ['sometimes', 'required', 'string', Rule::in(['preset', 'upload'])],

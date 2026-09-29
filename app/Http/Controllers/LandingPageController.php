@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Landing;
 use App\Models\Service;
+use App\Services\Landing\LandingContent;
+use App\Services\Landing\TemplateRegistry;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -18,8 +20,9 @@ class LandingPageController extends Controller
         // Preview skips the published check, so it has to be the owner asking.
         // It used to be enough to append ?preview=1: an unpublished promotion,
         // prices and all, was one guessed slug away from anyone at all.
-        $isPreview = $request->boolean('preview')
-            && optional(Auth::guard('sanctum')->user())->getKey() === $landing->user_id;
+        $isOwner = optional(Auth::guard('sanctum')->user())->getKey() === $landing->user_id;
+        $isEdit = $request->boolean('edit') && $isOwner;
+        $isPreview = ($request->boolean('preview') && $isOwner) || $isEdit;
 
         if (! $landing->is_active && ! $isPreview) {
             abort(404);
@@ -30,29 +33,34 @@ class LandingPageController extends Controller
             $landing->refresh();
         }
 
+        app(LandingContent::class)->bind($landing, $isEdit);
+
         $template = $landing->landing ?: $this->defaultTemplateForType($landing->type);
 
         if (! view()->exists($template)) {
             $template = $this->defaultTemplateForType($landing->type);
         }
 
-        return view('landings.public', [
+        $data = [
             'landing' => $landing,
             'template' => $template,
             'isPreview' => $isPreview,
+            'isEdit' => $isEdit,
             'featuredServices' => $this->resolveFeaturedServices($landing),
-        ]);
+        ];
+
+        // A full-page template brings its own layout, so it replaces the shell
+        // instead of being included into it.
+        if (Landing::isFullPageTemplate($template)) {
+            return view($template, $data);
+        }
+
+        return view('landings.public', $data);
     }
 
     protected function defaultTemplateForType(string $type): string
     {
-        return match ($type) {
-            'promotion' => 'landings.templates.promotion',
-            'service' => 'landings.templates.service',
-            'seasonal' => 'landings.templates.seasonal',
-            'consultation' => 'landings.templates.consultation',
-            default => 'landings.templates.general',
-        };
+        return app(TemplateRegistry::class)->defaultTemplate($type);
     }
 
     protected function resolveFeaturedServices(Landing $landing): Collection

@@ -6,7 +6,17 @@
         window.__phoneMaskInitialized = true;
 
         function formatPhone(value) {
-            const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+            let digits = (value || '').replace(/\D/g, '');
+
+            // 8 900… and 900… both mean +7 900…: people type a Russian number the
+            // way they dial it, and a mask that keeps the leading 8 stores the wrong country.
+            if (digits[0] === '8') {
+                digits = '7' + digits.slice(1);
+            } else if (digits[0] === '9') {
+                digits = '7' + digits;
+            }
+
+            digits = digits.slice(0, 11);
             if (!digits.length) {
                 return '';
             }

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminPageController;
 use App\Http\Controllers\ClientPortal\MagicLinkRedirectController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LandingBookingController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LandingRequestController;
 use App\Http\Controllers\LocaleController;
@@ -19,6 +20,12 @@ Route::middleware('set.locale')->group(function () {
     Route::post('/l/{slug}/request', LandingRequestController::class)
         ->middleware('throttle:10,1')
         ->name('landings.request');
+    Route::get('/l/{slug}/availability', [LandingBookingController::class, 'availability'])
+        ->middleware('throttle:60,1')
+        ->name('landings.availability');
+    Route::post('/l/{slug}/book', [LandingBookingController::class, 'book'])
+        ->middleware('throttle:10,1')
+        ->name('landings.book');
 
     // Обе ссылки стоят в футере каждой страницы кабинета и вели в 404.
     foreach (['terms', 'policy'] as $document) {

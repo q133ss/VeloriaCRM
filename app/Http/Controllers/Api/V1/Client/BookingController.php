@@ -15,10 +15,8 @@ use App\Models\ServiceCategory;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\AvailabilityService;
-use App\Services\Booking\BookingConflictService;
-use App\Services\ClientNotificationService;
-use App\Services\NotificationService;
-use App\Services\OrderService;
+use App\Services\Booking\ClientBookingService;
+use App\Services\Booking\SlotUnavailableException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -26,16 +24,13 @@ use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
-    private const DEFAULT_BOOKING_DURATION_MINUTES = 60;
+    private const DEFAULT_BOOKING_DURATION_MINUTES = ClientBookingService::DEFAULT_DURATION_MINUTES;
 
-    private const UNSPECIFIED_SERVICE_LABEL = 'Услуга уточняется';
+    private const UNSPECIFIED_SERVICE_LABEL = ClientBookingService::UNSPECIFIED_SERVICE_LABEL;
 
     public function __construct(
         private readonly AvailabilityService $availability,
-        private readonly BookingConflictService $conflicts,
-        private readonly NotificationService $notifications,
-        private readonly ClientNotificationService $clientNotifications,
-        private readonly OrderService $orderService,
+        private readonly ClientBookingService $booking,
     ) {}
 
     public function categories(): JsonResponse
@@ -187,25 +182,20 @@ class BookingController extends Controller
         /** @var Client $client */
         $client = $request->user();
         $masterId = (int) $client->user_id;
-        $masterTimezone = $this->resolveMasterTimezone($masterId);
         $validated = $request->validated();
         $service = $this->resolveBookingService($masterId, Arr::get($validated, 'service_id'));
-        $durationMinutes = (int) ($service?->duration_min ?? self::DEFAULT_BOOKING_DURATION_MINUTES);
-        $serviceLabel = $this->resolveServiceLabel($service);
 
-        $date = (string) $validated['date'];
-        $time = (string) $validated['time'];
-        $setting = Setting::query()->where('user_id', $masterId)->first();
-
-        $available = $this->availability->availableSlotsForDate(
-            $masterId,
-            $service,
-            $date,
-            $setting,
-            $masterTimezone,
-            $durationMinutes,
-        );
-        if (! in_array($time, $available, true)) {
+        try {
+            $booked = $this->booking->book(
+                $masterId,
+                $client,
+                $service,
+                (string) $validated['date'],
+                (string) $validated['time'],
+                $validated['note'] ?? null,
+                'client_portal',
+            );
+        } catch (SlotUnavailableException) {
             return response()->json([
                 'error' => [
                     'code' => 'slot_unavailable',
@@ -213,60 +203,10 @@ class BookingController extends Controller
                 ],
             ], 422);
         }
-
-        $startsAtLocal = Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $time, $masterTimezone);
-        $startsAt = $startsAtLocal->copy()->timezone(config('app.timezone'));
-        $endsAt = $startsAt->copy()->addMinutes($durationMinutes);
-
-        $conflict = $this->conflicts->detectConflict($masterId, $startsAt, $durationMinutes);
-        if ($conflict !== null) {
-            return response()->json([
-                'error' => [
-                    'code' => 'slot_unavailable',
-                    'message' => __('client_portal.booking.slot_unavailable'),
-                ],
-            ], 422);
-        }
-
-        $clientUser = $this->resolveOrCreateClientUser($client);
-
-        // Create order so master sees it in calendar/orders UI (Telegram bot uses orders as canonical bookings).
-        $order = Order::query()->create([
-            'master_id' => $masterId,
-            'client_id' => $clientUser->id,
-            'services' => $this->buildOrderServicePayload($service, $durationMinutes),
-            'scheduled_at' => $startsAtLocal->copy()->timezone(config('app.timezone')),
-            'duration_forecast' => $durationMinutes,
-            'total_price' => $service ? (float) ($service->base_price ?? 0) : 0,
-            'status' => 'new',
-            'note' => $validated['note'] ?? null,
-            'source' => 'client_portal',
-        ]);
-
-        $this->orderService->scheduleStartReminder($order);
-
-        $appointment = Appointment::query()->create([
-            'user_id' => $masterId,
-            'client_id' => $client->id,
-            'service_ids' => $service ? [$service->id] : [],
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-            'status' => 'scheduled',
-            'meta' => [
-                'source' => 'client_portal',
-                'note' => $validated['note'] ?? null,
-                'order_id' => $order->id,
-                'service_label' => $serviceLabel,
-                'service_specified' => $service !== null,
-            ],
-        ]);
-
-        $this->notifyMaster($masterId, $client, $serviceLabel, $startsAtLocal);
-        $this->clientNotifications->notifyBookingConfirmed($client, $serviceLabel, $startsAtLocal);
 
         return response()->json([
             'data' => [
-                'appointment' => $appointment,
+                'appointment' => $booked['appointment'],
             ],
         ], 201);
     }
@@ -289,7 +229,7 @@ class BookingController extends Controller
             ], 403);
         }
 
-        $clientUser = $this->resolveOrCreateClientUser($client);
+        $clientUser = $this->booking->resolveOrCreateClientUser($client);
 
         $entry = \App\Models\WaitlistEntry::query()->create([
             'user_id' => $masterId,
@@ -321,74 +261,6 @@ class BookingController extends Controller
         return $master?->timezone ?: config('app.timezone');
     }
 
-    private function resolveOrCreateClientUser(Client $client): User
-    {
-        $email = $client->email ? trim((string) $client->email) : null;
-        if ($email === '') {
-            $email = null;
-        }
-
-        $normalizedPhone = $this->normalizePhoneForUser((string) $client->phone);
-
-        $user = null;
-
-        if ($email) {
-            $user = User::query()->where('email', $email)->first();
-        }
-
-        if (! $user && $normalizedPhone !== '') {
-            $user = User::query()->where('phone', $normalizedPhone)->first();
-        }
-
-        if (! $user) {
-            $user = User::query()->create([
-                'name' => $client->name ?: 'Client ' . Str::substr($normalizedPhone, -4),
-                'email' => $email,
-                'phone' => $normalizedPhone !== '' ? $normalizedPhone : null,
-                'password' => Str::random(24),
-            ]);
-        } else {
-            $user->forceFill([
-                'name' => $client->name ?: $user->name,
-                'email' => $email ?: $user->email,
-                'phone' => $normalizedPhone !== '' ? $normalizedPhone : $user->phone,
-            ])->save();
-        }
-
-        // Record which account this card belongs to, so the master's dashboard
-        // and analytics can join her cards to the orders booked against them.
-        if ($client->client_user_id !== $user->id) {
-            $client->forceFill(['client_user_id' => $user->id])->save();
-        }
-
-        return $user;
-    }
-
-    private function normalizePhoneForUser(string $phone): string
-    {
-        // Keep consistent with OrderController normalization (RU numbers stored as +7...).
-        $digits = preg_replace('/[^0-9]+/', '', $phone);
-        $digits = is_string($digits) ? $digits : '';
-
-        if ($digits === '') {
-            return '';
-        }
-
-        if (strlen($digits) === 10) {
-            $digits = '7' . $digits;
-        }
-
-        if (strlen($digits) === 11 && str_starts_with($digits, '8')) {
-            $digits = '7' . substr($digits, 1);
-        }
-
-        if (! str_starts_with($digits, '7') && ! str_starts_with($digits, '8')) {
-            $digits = '7' . $digits;
-        }
-
-        return '+' . $digits;
-    }
-
     private function resolveBookingService(int $masterId, mixed $serviceId): ?Service
     {
         $serviceId = is_numeric($serviceId) ? (int) $serviceId : 0;
@@ -400,52 +272,5 @@ class BookingController extends Controller
         return Service::query()
             ->where('user_id', $masterId)
             ->findOrFail($serviceId);
-    }
-
-    /**
-     * A booking with no service chosen keeps an empty snapshot, the same as one
-     * the master makes by hand for a client who has not decided.
-     *
-     * It used to write a stand-in service called «Услуга уточняется», which read
-     * well on screen and lied to everything counting a client's history: the
-     * return-message draft picked it as her usual service and wrote «в прошлый
-     * раз делали "Услуга уточняется"» to her. The fact that no service was named
-     * lives in appointments.meta, where it belongs.
-     *
-     * @return array<int, array{id:int,name:string,price:float,duration:int}>
-     */
-    private function buildOrderServicePayload(?Service $service, int $durationMinutes): array
-    {
-        if (! $service) {
-            return [];
-        }
-
-        return [[
-            'id' => $service->id,
-            'name' => $service->name,
-            'price' => (float) ($service->base_price ?? 0),
-            'duration' => $durationMinutes,
-        ]];
-    }
-
-    private function resolveServiceLabel(?Service $service): string
-    {
-        return $service?->name ?: self::UNSPECIFIED_SERVICE_LABEL;
-    }
-
-    private function notifyMaster(int $masterId, Client $client, string $serviceLabel, Carbon $startsAtLocal): void
-    {
-        $datetime = $startsAtLocal->translatedFormat('d.m.Y H:i');
-
-        $this->notifications->send(
-            $masterId,
-            __('client_portal.booking.master_notification_title'),
-            __('client_portal.booking.master_notification_message', [
-                'client' => $client->name ?: __('calendar.unnamed_client'),
-                'service' => $serviceLabel,
-                'datetime' => $datetime,
-            ]),
-            '/calendar',
-        );
     }
 }

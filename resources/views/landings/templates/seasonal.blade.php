@@ -1,14 +1,14 @@
 <section class="landing-section-card">
     <div class="landing-section-head">
-        <h2>{{ $settings['headline'] ?? __('landings.templates.seasonal.default_headline') }}</h2>
-        <p>{{ $settings['description'] ?? __('landings.templates.seasonal.default_description') }}</p>
+        <x-landing.text key="hero_title" tag="h2" :default="__('landings.templates.seasonal.default_headline')" :title-fallback="false" />
+        <x-landing.text key="hero_text" tag="p" :default="__('landings.templates.seasonal.default_description')" />
     </div>
 
     <div class="landing-metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
         @if(!empty($settings['season_label']))
             <div class="landing-metric">
                 <span>{{ __('landings.templates.seasonal.season_label') }}</span>
-                <strong>{{ $settings['season_label'] }}</strong>
+                <x-landing.text key="season_label" tag="strong" />
             </div>
         @endif
         @if(!empty($settings['ends_at']))

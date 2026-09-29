@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesLandingClient;
 use App\Http\Requests\LandingPublicRequest;
 use App\Models\Client;
 use App\Models\Landing;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class LandingRequestController extends Controller
 {
+    use ResolvesLandingClient;
+
     public function __invoke(LandingPublicRequest $request, string $slug): JsonResponse
     {
         $landing = Landing::query()->where('slug', $slug)->firstOrFail();
@@ -30,7 +33,7 @@ class LandingRequestController extends Controller
             ]);
         }
 
-        $client = $this->resolveClient($landing, $validated);
+        $client = $this->resolveLandingClient($landing, $validated);
 
         $lead = LandingRequest::query()->create([
             'landing_id' => $landing->id,
@@ -89,39 +92,5 @@ class LandingRequestController extends Controller
         }
 
         return (clone $serviceQuery)->orderBy('name')->first();
-    }
-
-    private function resolveClient(Landing $landing, array $validated): ?Client
-    {
-        $phone = trim((string) ($validated['client_phone'] ?? ''));
-        $email = trim((string) ($validated['client_email'] ?? ''));
-
-        if ($phone === '' && $email === '') {
-            return null;
-        }
-
-        $client = Client::query()
-            ->where('user_id', $landing->user_id)
-            ->when($phone !== '', fn ($query) => $query->where('phone', $phone))
-            ->when($phone === '' && $email !== '', fn ($query) => $query->where('email', $email))
-            ->first();
-
-        if ($client) {
-            $client->forceFill([
-                'name' => $validated['client_name'] ?: $client->name,
-                'phone' => $phone !== '' ? $phone : $client->phone,
-                'email' => $email !== '' ? $email : $client->email,
-                'notes' => $client->notes,
-            ])->save();
-
-            return $client;
-        }
-
-        return Client::query()->create([
-            'user_id' => $landing->user_id,
-            'name' => $validated['client_name'],
-            'phone' => $phone,
-            'email' => $email !== '' ? $email : null,
-        ]);
     }
 }
