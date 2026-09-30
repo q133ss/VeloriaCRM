@@ -34,7 +34,7 @@ class ImportLandingTemplate extends Command
 
     /** Fonts known to cover Cyrillic; anything else in a Google Fonts link is flagged. */
     private const CYRILLIC_FONTS = [
-        'montserrat', 'roboto', 'open sans', 'playfair display', 'manrope', 'pt sans', 'pt serif', 'lora', 'raleway',
+        'montserrat', 'roboto', 'open sans', 'prata', 'playfair display', 'manrope', 'pt sans', 'pt serif', 'lora', 'raleway',
         'nunito', 'inter', 'ubuntu', 'cormorant', 'cormorant garamond', 'comfortaa', 'jost', 'marck script', 'caveat',
         'oswald', 'rubik', 'merriweather', 'fira sans', 'noto sans', 'noto serif', 'source sans pro', 'exo 2', 'philosopher',
         'bad script', 'pacifico', 'amatic sc', 'lobster', 'yeseva one', 'tenor sans', 'russo one', 'arsenal', 'golos text',

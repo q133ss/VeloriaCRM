@@ -1,0 +1,6 @@
+Template: Стиль
+Source: https://themewagon.com/themes/free-bootstrap-4-html5-hair-salon-website-template-salon/
+License: CC-BY-4.0
+Credit link that must stay in the page: https://boostraptheme.com
+
+Changes for Veloria CRM: rebuilt as a Blade view showing the master's own data; unused files and sections removed.

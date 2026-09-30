@@ -1,0 +1,30 @@
+/* Veloria additions on top of the original Energen stylesheet. */
+
+bdi { color: inherit; }
+
+/* A long name must not break the top bar. */
+.ftco-navbar-light .navbar-brand { display: block; max-width: calc(100% - 120px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 991.98px) { .ftco-navbar-light > .container { flex-wrap: wrap; } .ftco-navbar-light .navbar-brand { font-size: 20px; } }
+
+/* The hero title may be long. */
+.hero-wrap .slider-text h1 { overflow-wrap: break-word; }
+@media (max-width: 767.98px) { .hero-wrap .slider-text h1 { font-size: 32px; } }
+
+/* Outline button on the hero and cards stays readable. */
+.hero-wrap .btn.btn-outline-primary { color: #fff; border-color: #fff; background: rgba(0, 0, 0, .25); }
+.hero-wrap .btn.btn-outline-primary:hover { background: #fff; color: #111; }
+
+/* Price card and service names wrap. */
+.block-7 .heading, .services h3, .offer-deal h3 { overflow-wrap: break-word; }
+
+/* Booking form on the light block; widget colours follow the page. */
+#booking .lb-picker { background: rgba(0, 0, 0, .04); border-radius: 4px; padding: 1rem 1.1rem; }
+#booking .form-control { border-radius: 0; }
+
+/* Photos in the gallery keep one shape whatever was uploaded. */
+.ftco-gallery .gallery img { width: 100%; height: 300px; object-fit: cover; }
+.blog-entry .text p { margin-bottom: 0; }
+
+/* The hero photo is light: the lead text needs more contrast. */
+.hero-wrap .slider-text p { color: #333; }
+.hero-wrap .slider-text .btn-primary:not(.btn-outline-primary) { color: #fff; }

@@ -1,0 +1,63 @@
+/* Veloria additions on top of the original Hipstyle stylesheet. */
+bdi { color: inherit; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+
+/* A long name must not break the top bar. */
+.hs-brand { font-family: "Playfair Display", serif; font-size: 26px; color: #fff !important; display: block; max-width: calc(100% - 70px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu_fixed .hs-brand { color: #fff !important; }
+@media (max-width: 991.98px) {
+  .main_menu { position: absolute; }
+  .main_menu .navbar { padding: 14px 0; flex-wrap: wrap; }
+  .main_menu .main-menu-item { background: #111; padding: 6px 15px; margin: 8px -15px 0; width: calc(100% + 30px); }
+  .main_menu .main-menu-item ul li .nav-link { padding: 12px 0; color: #fff; }
+}
+.navbar-toggler { border: 0; }
+
+.banner_part .banner_text h1 { overflow-wrap: break-word; font-size: clamp(30px, 5vw, 64px); line-height: 1.15; }
+.banner_part .banner_text .banner_btn a { margin-bottom: 10px; }
+
+.hs-list { margin: 18px 0 0; padding: 0; list-style: none; }
+.hs-list li { margin-bottom: 10px; padding-left: 24px; position: relative; color: #555; line-height: 1.6; }
+.hs-list li::before { content: "\2713"; position: absolute; left: 0; color: #f81c1c; }
+.about_part .about_text { padding-top: 20px; }
+.about_part .about_text h2 { overflow-wrap: break-word; }
+
+/* Price and tile names wrap. */
+.single_pricing_text h5, .single_offer .hover_text h2 { overflow-wrap: anywhere; }
+.hs-link { color: #f81c1c; }
+.hs-link:hover { color: #30383b; }
+.our_offer .single_offer .hover_text p { margin-bottom: 8px; }
+
+/* Booking on the photo block. */
+.hs-book-title { font-family: "Playfair Display", serif; color: #30383b; margin-bottom: 8px; font-size: 30px; }
+.hs-book-hint { color: #555; margin-bottom: 20px; }
+.regervation_part_iner .form-control { height: auto; padding: 13px 16px; }
+.regervation_part_iner textarea.form-control { height: auto; }
+.regervation_part_iner .lb-picker { background: rgba(0, 0, 0, .04); border-radius: 4px; padding: 1rem 1.1rem; }
+.hs-submit { border: 0; cursor: pointer; }
+@media (max-width: 767.98px) { .regervation_part { padding-left: 0; padding-right: 0; } }
+
+/* Questions (in place of the blog). */
+.hs-faq { background: #fff; padding: 26px 24px; margin-bottom: 24px; box-shadow: 0 6px 20px rgba(0, 0, 0, .06); height: calc(100% - 24px); }
+.hs-faq p { margin: 0; color: #555; line-height: 1.7; }
+
+.footer-area .contact_info span { font-size: 22px; }
+.footer-area .contact_info h5 a { color: inherit; }
+.hs-social a { color: #fff; font-size: 22px; margin-right: 14px; }
+.footer-text a { color: #f81c1c; }
+
+/* Booking block is dark: titles must be light. */
+.hs-book-title { color: #fff; }
+.hs-book-hint { color: #cfd3d4; }
+
+/* Tiles: on touch screens there is no hover, so the caption is always shown. */
+@media (hover: none) {
+  .our_offer .single_offer_part .single_offer .hover_text { opacity: 1; }
+  .our_offer .single_offer_part .single_offer:after { width: 100%; height: 100%; opacity: .5; }
+}
+@media (max-width: 767.98px) {
+  .our_offer .single_offer_part { width: 50%; }
+  .our_offer .single_offer_part .single_offer .hover_text h2 { font-size: 18px; }
+  .our_offer .single_offer_part .single_offer .hover_text img { margin-bottom: 10px; }
+  .banner_part .banner_text { padding-right: 0; }
+}

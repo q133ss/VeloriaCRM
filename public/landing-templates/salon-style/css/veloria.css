@@ -1,0 +1,43 @@
+/* Veloria additions on top of the original Beauty and Salon stylesheet. */
+bdi { color: inherit; }
+html { scroll-behavior: smooth; }
+section[id] { scroll-margin-top: 70px; }
+
+.topmenu a { color: inherit; }
+.ss-brand { font-family: 'Lobster', cursive; font-size: 30px; color: #6c757d !important; max-width: calc(100% - 110px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.navbar .navbar-brand { margin-left: 0; }
+
+header .carousel-item .home-content-box .home-content-box-inner .home-heading h3 { overflow-wrap: break-word; font-size: clamp(30px, 6vw, 55px); }
+.ss-hero-text { color: #fff; max-width: 640px; margin: 0 auto 20px; padding: 0 15px; }
+
+/* Service cards: name, price and a book link under the photo. */
+.services .service-cont .service-desc p { margin-bottom: 4px; }
+.services .service-cont .service-desc { overflow-wrap: break-word; }
+.ss-book { display: inline-block; margin-top: 6px; color: #f59f7e; font-size: 14px; }
+.ss-book:hover { color: #6c757d; }
+
+.ss-list { margin: 0 0 18px; padding: 0; list-style: none; color: #6c757d; }
+.ss-list li { margin-bottom: 10px; padding-left: 24px; position: relative; }
+.ss-list li::before { content: "\2713"; position: absolute; left: 0; color: #f59f7e; }
+.ss-hours { color: #6c757d; margin-bottom: 20px; }
+.about h3 { max-width: none; }
+
+/* Gallery photos keep one shape whatever was uploaded. */
+.portfolio .port-cont img { width: 100%; height: 320px; object-fit: cover; }
+
+/* Booking form. */
+.contact .form-control { border-radius: 4px; }
+.ss-select { height: calc(2.25rem + 2px); }
+.contact .lb-picker { background: rgba(0, 0, 0, .04); border-radius: 6px; padding: 1rem 1.1rem; text-align: left; }
+.contact footer .copyright a { color: inherit; text-decoration: underline; }
+
+/* The book link sits on the salmon card: white, not salmon. */
+.ss-book { color: #fff; text-decoration: underline; }
+.ss-book:hover { color: #fff; opacity: .8; }
+
+/* Booking block is salmon with a tools photo at the bottom: keep the form clear of it. */
+.contact { padding-bottom: 0; }
+.contact > .container { padding-bottom: 300px; }
+.contact section .heading h1, .contact .heading h1 { color: #fff; }
+.contact .heading p { color: #fff; }
+@media (max-width: 767.98px) { .contact > .container { padding-bottom: 180px; } }

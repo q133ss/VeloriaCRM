@@ -1,0 +1,16 @@
+Template: Барбершоп
+Source: https://themewagon.com/themes/free-barber-shop-html5-website-template-barber/
+License: CC-BY-3.0
+Credit link that must stay in the page: https://colorlib.com
+
+--- original README.txt ---
+Thank you for using our template!
+
+For more awesome templates please visit https://colorlib.com/wp/templates/
+
+Copyright information for the template can't be altered/removed unless you purchase a license.
+More information about the license is available here: https://colorlib.com/wp/licence/
+
+Removing copyright information without the license will result in suspension of your hosting and/or domain name(s).
+
+Changes for Veloria CRM: rebuilt as a Blade view showing the master's own data; unused files and sections removed.

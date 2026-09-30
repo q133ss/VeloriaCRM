@@ -1,0 +1,58 @@
+/* Veloria additions on top of the original Barber stylesheet. */
+bdi { color: inherit; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+
+/* Own top bar (the original relied on slicknav and jQuery menus). */
+.header-area .main-header-area { padding: 18px 0; }
+.vb-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; }
+.vb-brand { font-family: "Yeseva One", cursive; font-size: 26px; color: #fff; line-height: 1.2; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vb-brand:hover { color: #fff; text-decoration: none; }
+.vb-menu { display: flex; align-items: center; gap: 24px; }
+.vb-menu .main-menu ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 8px; }
+.vb-toggle { display: none; background: none; border: 0; padding: 8px; cursor: pointer; }
+.vb-toggle span { display: block; width: 26px; height: 2px; background: #fff; margin: 5px 0; }
+@media (max-width: 991.98px) {
+  .vb-brand { max-width: calc(100% - 60px); font-size: 22px; }
+  .vb-toggle { display: block; }
+  .vb-menu { display: none; position: absolute; top: 100%; left: -15px; right: -15px; flex-direction: column; align-items: stretch; gap: 0; background: #000; padding: 12px 15px 20px; }
+  .vb-open .vb-menu { display: flex; }
+  .vb-menu .main-menu ul { flex-direction: column; }
+  .vb-menu .main-menu ul li { margin: 0; }
+  .vb-menu .book_btn { margin-top: 12px; }
+  .header-area .main-header-area .main-menu ul li a { display: block; padding: 10px 0; }
+  .header-area .main-header-area .book_room .book_btn a { display: block; text-align: center; }
+}
+
+/* Hero: long titles wrap, no fixed-height carousel. */
+.slider_area .single_slider { min-height: 640px; }
+.slider_area .single_slider .slider_text h3 { overflow-wrap: break-word; font-size: clamp(30px, 5vw, 64px); line-height: 1.15; }
+.slider_area .single_slider .slider_text .boxed-btn3:hover { background: #fff; color: #eb592d; border-color: #fff; }
+
+.about_area .about_info { padding-left: 0; }
+@media (min-width: 768px) { .about_area .about_info { padding-left: 40px; } }
+.vb-list { margin: 12px 0 0; padding: 0; list-style: none; color: #575757; }
+.vb-list li { margin-bottom: 8px; padding-left: 22px; position: relative; }
+.vb-list li::before { content: "\2713"; position: absolute; left: 0; color: #eb592d; }
+.about_thumbs img { max-width: 100%; height: auto; object-fit: cover; }
+
+.single_service .service_content h3 { overflow-wrap: break-word; }
+.single_service .service_content p { margin-bottom: 8px; }
+.vb-link { color: #eb592d; font-weight: 500; }
+.vb-link:hover { color: #252219; }
+
+/* Price rows from the catalog: two columns, no carousel. */
+.prising_area .vb-price { width: auto; padding: 0; margin-bottom: 30px; }
+.prising_area .prise span { overflow-wrap: anywhere; }
+
+/* Booking block. */
+.vb-booking { padding: 90px 0; background: #fdf9f6; }
+.vb-booking .section_title p { color: #575757; }
+.vb-field { width: 100%; border: 1px solid #e3d9d0; background: #fff; padding: 15px 18px; font-family: "Montserrat", sans-serif; font-size: 16px; color: #252219; border-radius: 0; }
+.vb-field:focus { outline: none; border-color: #eb592d; }
+.vb-booking .lb-picker { background: #fff; border: 1px solid #e3d9d0; padding: 1rem 1.1rem; }
+.vb-booking .boxed-btn3 { cursor: pointer; }
+.vb-booking .boxed-btn3:hover { color: #eb592d; }
+
+.footer .footer_logo { margin-bottom: 20px; max-width: 100%; }
+.footer .address_text a { color: inherit; }
+.copy_right a { color: #eb592d; }

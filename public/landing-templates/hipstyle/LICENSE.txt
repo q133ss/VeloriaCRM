@@ -1,0 +1,6 @@
+Template: Хипстер
+Source: https://themewagon.com/themes/hipstyle-barber-free-html5-website-template/
+License: CC-BY-3.0
+Credit link that must stay in the page: https://colorlib.com
+
+Changes for Veloria CRM: rebuilt as a Blade view showing the master's own data; unused files and sections removed.
