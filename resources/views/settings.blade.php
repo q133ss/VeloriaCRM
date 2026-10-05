@@ -22,15 +22,24 @@
 
 @section('content')
     <style>
-        .settings-hero {
-            border: 1px solid rgba(var(--bs-primary-rgb), 0.16);
-            background:
-                radial-gradient(circle at top right, rgba(var(--bs-primary-rgb), 0.16), transparent 28%),
-                linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.02));
-        }
-
         .settings-anchor-nav .nav-link {
             border-radius: 999px;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        /* A tab with edits that are not saved yet. */
+        .settings-tab-dot {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            margin-left: 0.5rem;
+            border-radius: 50%;
+            background: var(--bs-warning);
+        }
+
+        .settings-tab-dot[hidden] {
+            display: none;
         }
 
         .settings-page {
@@ -735,34 +744,24 @@
 
     <div class="row g-6 settings-page">
         <div class="col-12">
-            <div class="card border-0 shadow-sm settings-hero">
-                <div class="card-body p-6 p-lg-8">
-                    <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-5">
-                        <div class="mw-lg-50">
-                            {{-- The three chips here repeated the tabs below under different names. --}}
-                            <h3 class="mb-2">{{ __('menu.settings') }}</h3>
-                            <p class="text-muted mb-0">Профиль, уведомления, график и адрес. Кнопка сохранения всегда внизу экрана.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12">
+            <h3 class="mb-4">{{ __('menu.settings') }}</h3>
             <div class="nav-align-top settings-anchor-nav">
-                {{-- Four full-width rows on a phone; a scrolling row instead. --}}
-                <ul class="nav nav-pills flex-row flex-nowrap overflow-auto mb-0 gap-2 gap-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#settings-account"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}</a>
+                {{-- Tabs, not anchors: one section on screen at a time; the hash keeps the tab on reload. --}}
+                <ul class="nav nav-pills flex-row flex-nowrap overflow-auto mb-0 gap-2" role="tablist" id="settings-tabs">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" href="#settings-account" role="tab" data-settings-tab="settings-account" aria-selected="true"><i class="icon-base ri ri-group-line icon-sm me-2"></i>{{ __('settings.nav_account') }}<span class="settings-tab-dot" hidden></span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#settings-notifications"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}</a>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#settings-notifications" role="tab" data-settings-tab="settings-notifications" aria-selected="false"><i class="icon-base ri ri-notification-4-line icon-sm me-2"></i>{{ __('settings.nav_notifications') }}<span class="settings-tab-dot" hidden></span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#settings-work"><i class="icon-base ri ri-calendar-line icon-sm me-2"></i>{{ __('settings.work_settings') }}</a>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#settings-work" role="tab" data-settings-tab="settings-work" aria-selected="false"><i class="icon-base ri ri-calendar-line icon-sm me-2"></i>{{ __('settings.work_settings') }}<span class="settings-tab-dot" hidden></span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#settings-location"><i class="icon-base ri ri-map-pin-line icon-sm me-2"></i>{{ __('settings.address') }}</a>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#settings-location" role="tab" data-settings-tab="settings-location" aria-selected="false"><i class="icon-base ri ri-map-pin-line icon-sm me-2"></i>{{ __('settings.address') }}<span class="settings-tab-dot" hidden></span></a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#settings-branding" role="tab" data-settings-tab="settings-branding" aria-selected="false"><i class="icon-base ri ri-smartphone-line icon-sm me-2"></i>Приложение<span class="settings-tab-dot" hidden></span></a>
                     </li>
                 </ul>
             </div>
@@ -1412,25 +1411,8 @@
             </form>
         </div>
 
-        <div class="col-xl-4">
-            <div class="card mb-6 settings-card settings-summary-card z-3">
-                <div class="card-body p-5">
-                    <span class="badge bg-label-secondary mb-3">Подсказка</span>
-                    <h5 class="mb-2">Что важно настроить сначала</h5>
-                    <p class="text-muted mb-4">Для старта достаточно профиля, уведомлений и графика. Остальное можно заполнить позже.</p>
-                    <div class="d-flex flex-column gap-3 small">
-                        <div class="settings-compact-note">Проверьте имя, email и телефон.</div>
-                        <div class="settings-compact-note">Выберите каналы уведомлений.</div>
-                        <div class="settings-compact-note">Укажите рабочие дни и часы.</div>
-                        <div class="settings-compact-note">Адрес нужен, если вы принимаете клиентов офлайн.</div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
         {{-- Account deletion used to sit on the first screen, beside the tips. --}}
-        <div class="col-xl-8">
+        <div class="col-xl-8" data-settings-extra="settings-account">
             <div class="card settings-danger-card">
                 <div class="card-body p-5">
                     <h5 class="mb-2">{{ __('settings.delete_account_title') }}</h5>
@@ -1804,7 +1786,7 @@
                 if (!radio) return;
                 radio.checked = true;
                 radio.dispatchEvent(new Event('change', { bubbles: true }));
-                document.getElementById('settings-work').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showSettingsTab('settings-work');
             });
         });
     }
@@ -2380,6 +2362,55 @@
         return payload;
     }
 
+    /* ---------- tabs ---------- */
+
+    const settingsTabIds = Array.from(document.querySelectorAll('[data-settings-tab]')).map(el => el.dataset.settingsTab);
+
+    function showSettingsTab(id, updateHash = true) {
+        if (!settingsTabIds.includes(id)) id = settingsTabIds[0];
+
+        settingsTabIds.forEach(tabId => {
+            const active = tabId === id;
+            document.getElementById(tabId).hidden = !active;
+            document.querySelectorAll('[data-settings-extra="' + tabId + '"]').forEach(el => { el.hidden = !active; });
+            const link = document.querySelector('[data-settings-tab="' + tabId + '"]');
+            link.classList.toggle('active', active);
+            link.setAttribute('aria-selected', active ? 'true' : 'false');
+            if (active) link.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        });
+
+        if (updateHash && location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    }
+
+    document.getElementById('settings-tabs').addEventListener('click', event => {
+        const link = event.target.closest('[data-settings-tab]');
+        if (!link) return;
+        event.preventDefault();
+        showSettingsTab(link.dataset.settingsTab);
+    });
+
+    window.addEventListener('hashchange', () => showSettingsTab(location.hash.slice(1), false));
+    showSettingsTab(location.hash.slice(1), false);
+
+    /* A dot on every tab the reader has edited since the last save. */
+    const touchedTabs = new Set();
+
+    function refreshTabDots() {
+        settingsTabIds.forEach(id => {
+            const dot = document.querySelector('[data-settings-tab="' + id + '"] .settings-tab-dot');
+            dot.hidden = !(touchedTabs.has(id) && isDirty());
+        });
+    }
+
+    document.getElementById('settings-form').addEventListener('input', markTouchedTab);
+    document.getElementById('settings-form').addEventListener('change', markTouchedTab);
+
+    function markTouchedTab(event) {
+        const pane = event.target.closest('.settings-card[id^="settings-"]');
+        if (pane) touchedTabs.add(pane.id);
+        refreshTabDots();
+    }
+
     /* ---------- unsaved changes ---------- */
 
     const state = { baseline: null, blocked: false };
@@ -2410,6 +2441,8 @@
 
         const dirty = isDirty();
         cancelBtn.hidden = !dirty;
+        if (!dirty) touchedTabs.clear();
+        if (typeof refreshTabDots === 'function') refreshTabDots();
 
         if (dirty) {
             setBarState('dirty', 'Есть несохранённые изменения');
@@ -2462,6 +2495,9 @@
 
     function focusField(element) {
         if (!element) return;
+
+        const tabPane = element.closest('.settings-card[id^="settings-"]');
+        if (tabPane) showSettingsTab(tabPane.id);
 
         const details = element.closest('details');
         if (details) details.open = true;
