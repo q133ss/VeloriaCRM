@@ -8,12 +8,14 @@ type ScreenContainerProps = {
   children: ReactNode;
   theme: AppTheme;
   scrollable?: boolean;
+  footer?: ReactNode;
 };
 
 export function ScreenContainer({
   children,
   theme,
   scrollable = true,
+  footer,
 }: ScreenContainerProps) {
   const content = scrollable ? (
     <ScrollView
@@ -29,7 +31,7 @@ export function ScreenContainer({
 
   return (
     <SafeAreaView
-      edges={['top', 'left', 'right']}
+      edges={footer ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
       style={[
         styles.safeArea,
         {
@@ -43,6 +45,7 @@ export function ScreenContainer({
       >
         {content}
       </KeyboardAvoidingView>
+      {footer}
     </SafeAreaView>
   );
 }

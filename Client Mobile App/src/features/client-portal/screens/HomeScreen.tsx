@@ -1,18 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
-import { BrandSignature } from '../../../shared/ui/BrandSignature';
+import { BottomNav } from '../../../shared/ui/BottomNav';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
-import { SectionCard } from '../../../shared/ui/SectionCard';
 import { useAppTheme } from '../../../theme/theme';
 import { useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+const VISIBLE_SERVICES = 4;
 
 // `home.services` falls back to mock cards with non-numeric ids (`'svc-1'`)
 // when the real fetch failed or came back empty (ClientPortalProvider.loadHomeFeed)
@@ -26,6 +27,7 @@ function resolveNumericServiceId(id: string): number | undefined {
 export function HomeScreen({ navigation }: Props) {
   const { home, master, session, refreshHomeFeed } = useClientPortal();
   const theme = useAppTheme(master?.branding);
+  const colors = theme.colors;
 
   // Catches a booking made on BookingConfirmationScreen: coming back to Home
   // should show the new appointment, not the state from before it existed.
@@ -39,339 +41,303 @@ export function HomeScreen({ navigation }: Props) {
     return null;
   }
 
+  const name = session?.name ?? home.clientName;
+  const masterName = master.branding?.appDisplayName?.trim() || master.name;
+  const initial = name.trim().charAt(0).toUpperCase() || 'К';
+  const latestNews = home.updates[0];
+  const appointment = home.nextAppointment;
+
   return (
-    <ScreenContainer theme={theme}>
-      <View style={styles.brandRow}>
-        <BrandSignature
-          compact
+    <ScreenContainer
+      theme={theme}
+      footer={
+        <BottomNav
           theme={theme}
-          logoUrl={master.branding?.logoUrl}
-          displayName={master.branding?.appDisplayName}
+          active="Home"
+          showChat={master.hasChat}
+          onNavigate={(tab) => navigation.navigate(tab)}
         />
-        <View style={styles.headerLinks}>
-          {master.hasChat ? (
-            <Pressable onPress={() => navigation.navigate('Chat')} hitSlop={8}>
-              <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Чат</Text>
-            </Pressable>
-          ) : null}
-          <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8}>
-            <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Уведомления</Text>
-          </Pressable>
+      }
+    >
+      <View style={styles.header}>
+        <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
+          <Text style={[styles.avatarText, { color: colors.primary }]}>{initial}</Text>
         </View>
+        <View style={styles.headerText}>
+          <Text style={[styles.hello, { color: colors.textPrimary }]} numberOfLines={1}>
+            Привет, {name}
+          </Text>
+          <Text style={[styles.helloMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+            Ваш мастер — {masterName}
+          </Text>
+        </View>
+        <Pressable
+          accessibilityLabel="Уведомления"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={() => navigation.navigate('Notifications')}
+          style={[styles.iconButton, { borderColor: colors.borderSoft, backgroundColor: colors.surface }]}
+        >
+          <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+        </Pressable>
       </View>
 
-      <LinearGradient
-        colors={[theme.colors.heroBackground, theme.colors.heroSecondary]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={styles.header}
-      >
-        <Text style={styles.greeting}>Здравствуйте, {session?.name ?? home.clientName}</Text>
-        <Text style={styles.headerTitle}>Запись к {master.name}</Text>
-        <Text style={styles.headerSubtitle}>
-          Все ключевые действия собраны здесь: ближайший визит, услуги и новости мастера.
-        </Text>
-      </LinearGradient>
-
-      <View style={styles.section}>
-        <SectionCard theme={theme}>
-          {home.nextAppointment ? (
-            <>
-              <View style={styles.rowBetween}>
-                <View style={styles.flexOne}>
-                  <Text style={[styles.cardLabel, { color: theme.colors.textMuted }]}>Ближайшая запись</Text>
-                  <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>
-                    {home.nextAppointment.serviceLabel}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusPill,
-                    {
-                      backgroundColor: theme.colors.accentSoft,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.statusText, { color: theme.colors.textPrimary }]}>
-                    {home.nextAppointment.statusLabel}
-                  </Text>
-                </View>
+      <View style={styles.body}>
+        {appointment ? (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}>
+            <View style={styles.cardTop}>
+              <Text style={[styles.eyebrow, { color: colors.textSecondary }]}>Ближайшая запись</Text>
+              <View style={[styles.pill, { backgroundColor: colors.accentSoft }]}>
+                <Text style={[styles.pillText, { color: colors.textPrimary }]}>{appointment.statusLabel}</Text>
               </View>
-
-              <Text style={[styles.cardMeta, { color: theme.colors.textSecondary }]}>
-                {home.nextAppointment.dateLabel} · {home.nextAppointment.timeLabel}
-              </Text>
-
-              <View style={styles.actionsRow}>
+            </View>
+            <Text style={[styles.when, { color: colors.textPrimary }]}>
+              {appointment.dateLabel} · {appointment.timeLabel}
+            </Text>
+            <Text style={[styles.what, { color: colors.textSecondary }]}>{appointment.serviceLabel}</Text>
+            <View style={styles.cardActions}>
+              <PrimaryButton
+                onPress={() => navigation.navigate('Appointments')}
+                theme={theme}
+                title="Все записи"
+                variant="secondary"
+                style={styles.flexButton}
+              />
+              {master.hasChat ? (
                 <PrimaryButton
-                  onPress={() => navigation.navigate('Booking', {})}
+                  onPress={() => navigation.navigate('Chat')}
                   theme={theme}
-                  title="Новая запись"
-                  style={styles.flexButton}
-                />
-                <PrimaryButton
-                  onPress={() => navigation.navigate('Appointments')}
-                  theme={theme}
-                  title="Все записи"
+                  title="Написать мастеру"
                   variant="secondary"
                   style={styles.flexButton}
                 />
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={[styles.cardLabel, { color: theme.colors.textMuted }]}>Ближайшая запись</Text>
-              <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>Пока нет записей</Text>
-              <Text style={[styles.cardMeta, { color: theme.colors.textSecondary }]}>
-                Выберите услугу и удобное время — это займет меньше минуты.
-              </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}>
+            <Text style={[styles.eyebrow, { color: colors.textSecondary }]}>Ближайшая запись</Text>
+            <Text style={[styles.when, { color: colors.textPrimary }]}>Пока нет записей</Text>
+            <Text style={[styles.what, { color: colors.textSecondary }]}>
+              Выберите услугу и удобное время — это займёт меньше минуты.
+            </Text>
+            <PrimaryButton
+              onPress={() => navigation.navigate('Booking', {})}
+              theme={theme}
+              title="Записаться"
+              style={styles.cta}
+            />
+          </View>
+        )}
 
-              <PrimaryButton
-                onPress={() => navigation.navigate('Booking', {})}
-                theme={theme}
-                title="Записаться"
-                style={styles.primaryButtonFull}
-              />
-            </>
-          )}
-        </SectionCard>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.blockTitle, { color: theme.colors.textPrimary }]}>Популярные услуги</Text>
-          <Pressable onPress={() => navigation.navigate('Booking', {})}>
-            <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Все услуги</Text>
+        <View style={styles.sectionHead}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Услуги</Text>
+          <Pressable hitSlop={8} onPress={() => navigation.navigate('Booking', {})}>
+            <Text style={[styles.sectionLink, { color: colors.primary }]}>Все</Text>
           </Pressable>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
-          {home.services.map((service) => (
-            <View
+        <View style={[styles.list, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}>
+          {home.services.slice(0, VISIBLE_SERVICES).map((service, index) => (
+            <Pressable
               key={service.id}
-              style={[
-                styles.serviceCard,
-                {
-                  backgroundColor: theme.colors.surfaceElevated,
-                  borderColor: theme.colors.borderSoft,
-                  shadowColor: theme.colors.shadow,
-                },
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('Booking', { serviceId: resolveNumericServiceId(service.id) })}
+              style={({ pressed }) => [
+                styles.serviceRow,
+                index > 0 ? { borderTopWidth: 1, borderTopColor: colors.borderSoft } : null,
+                pressed ? { backgroundColor: colors.surfaceMuted } : null,
               ]}
             >
-              {service.badge ? (
-                <View
-                  style={[
-                    styles.smallChip,
-                    {
-                      backgroundColor: theme.colors.chipBackground,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.smallChipText, { color: theme.colors.chipText }]}>{service.badge}</Text>
-                </View>
-              ) : null}
-
-              <Text style={[styles.serviceTitle, { color: theme.colors.textPrimary }]}>{service.title}</Text>
-              <Text style={[styles.serviceMeta, { color: theme.colors.textSecondary }]}>{service.duration}</Text>
-              <Text style={[styles.servicePrice, { color: theme.colors.textPrimary }]}>{service.price}</Text>
-              <PrimaryButton
-                onPress={() => navigation.navigate('Booking', { serviceId: resolveNumericServiceId(service.id) })}
-                theme={theme}
-                title="Записаться"
-                style={styles.serviceButton}
-              />
-            </View>
+              <View style={styles.serviceText}>
+                <Text style={[styles.serviceTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                  {service.title}
+                </Text>
+                <Text style={[styles.serviceMeta, { color: colors.textSecondary }]}>
+                  {service.duration} · {service.price}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </Pressable>
           ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.blockTitle, { color: theme.colors.textPrimary }]}>Новости мастера</Text>
-          <Pressable onPress={() => navigation.navigate('News')}>
-            <Text style={[styles.linkLabel, { color: theme.colors.primary }]}>Смотреть все</Text>
-          </Pressable>
         </View>
 
-        {home.updates.slice(0, 3).map((item) => (
-          <Pressable
-            key={item.id}
-            onPress={() => navigation.navigate('NewsDetail', {
-              id: item.id,
-              title: item.title,
-              body: item.body,
-              imageUrl: item.imageUrl,
-              date: item.date,
-            })}
-          >
-            <SectionCard theme={theme}>
-              <View style={styles.rowBetween}>
-                <Text style={[styles.newsTitle, { color: theme.colors.textPrimary }]}>{item.title}</Text>
-                <Text style={[styles.newsDate, { color: theme.colors.textMuted }]}>{item.date}</Text>
-              </View>
-              <Text style={[styles.newsExcerpt, { color: theme.colors.textSecondary }]}>{item.excerpt}</Text>
-            </SectionCard>
-          </Pressable>
-        ))}
+        {latestNews ? (
+          <>
+            <View style={styles.sectionHead}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Новости мастера</Text>
+              <Pressable hitSlop={8} onPress={() => navigation.navigate('News')}>
+                <Text style={[styles.sectionLink, { color: colors.primary }]}>Все</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                navigation.navigate('NewsDetail', {
+                  id: latestNews.id,
+                  title: latestNews.title,
+                  body: latestNews.body,
+                  imageUrl: latestNews.imageUrl,
+                  date: latestNews.date,
+                })
+              }
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}
+            >
+              <Text style={[styles.newsDate, { color: colors.textMuted }]}>{latestNews.date}</Text>
+              <Text style={[styles.newsTitle, { color: colors.textPrimary }]}>{latestNews.title}</Text>
+              <Text style={[styles.what, { color: colors.textSecondary }]} numberOfLines={2}>
+                {latestNews.excerpt}
+              </Text>
+            </Pressable>
+          </>
+        ) : null}
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  brandRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    marginBottom: 4,
-  },
-  headerLinks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
   header: {
-    margin: 16,
-    marginBottom: 20,
-    borderRadius: 32,
-    padding: 22,
-  },
-  greeting: {
-    color: '#d5e3d8',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  headerTitle: {
-    color: '#fffaf2',
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '800',
-  },
-  headerSubtitle: {
-    color: '#d0ddd4',
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 12,
-  },
-  section: {
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 18,
-  },
-  rowBetween: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  flexOne: {
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerText: {
     flex: 1,
   },
-  cardLabel: {
-    fontSize: 13,
+  hello: {
+    fontSize: 18,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: -0.2,
   },
-  cardTitle: {
+  helloMeta: {
+    fontSize: 13,
+    marginTop: 1,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 18,
+  },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  eyebrow: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  pill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  when: {
     fontSize: 22,
-    lineHeight: 26,
-    fontWeight: '800',
+    lineHeight: 28,
+    fontWeight: '700',
+    letterSpacing: -0.3,
     marginTop: 8,
   },
-  cardMeta: {
+  what: {
     fontSize: 15,
-    marginTop: 10,
-    marginBottom: 18,
+    lineHeight: 22,
+    marginTop: 6,
   },
-  statusPill: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  cta: {
+    marginTop: 18,
+    minHeight: 52,
+    borderRadius: 14,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  actionsRow: {
+  cardActions: {
     flexDirection: 'row',
     gap: 10,
-  },
-  primaryButtonFull: {
     marginTop: 18,
   },
   flexButton: {
     flex: 1,
+    minHeight: 48,
+    borderRadius: 14,
   },
-  blockTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 28,
+    marginBottom: 10,
   },
-  linkLabel: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  sectionLink: {
     fontSize: 14,
-    fontWeight: '700',
-    marginTop: 6,
+    fontWeight: '600',
   },
-  horizontalList: {
-    gap: 12,
-    paddingRight: 16,
-  },
-  serviceCard: {
-    width: 244,
+  list: {
     borderWidth: 1,
-    borderRadius: 28,
-    padding: 18,
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 3,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  smallChip: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 18,
+  serviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    minHeight: 64,
   },
-  smallChipText: {
-    fontSize: 12,
-    fontWeight: '700',
+  serviceText: {
+    flex: 1,
   },
   serviceTitle: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '600',
   },
   serviceMeta: {
-    marginTop: 10,
     fontSize: 14,
-  },
-  servicePrice: {
-    marginTop: 4,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  serviceButton: {
-    marginTop: 18,
-  },
-  newsTitle: {
-    flex: 1,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '700',
-  },
-  newsDate: {
-    fontSize: 13,
     marginTop: 2,
   },
-  newsExcerpt: {
-    marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
+  newsDate: {
+    fontSize: 12,
+  },
+  newsTitle: {
+    fontSize: 17,
+    lineHeight: 23,
+    fontWeight: '700',
+    marginTop: 4,
   },
 });

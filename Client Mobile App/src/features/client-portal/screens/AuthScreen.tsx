@@ -1,18 +1,18 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
 import { BrandSignature } from '../../../shared/ui/BrandSignature';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
-import { TextField } from '../../../shared/ui/TextField';
 import { useAppTheme } from '../../../theme/theme';
 import { useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 type AuthStep = 'credentials' | 'otp' | 'magic-link-sent' | 'select-master';
+
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 export function AuthScreen({ navigation }: Props) {
   const theme = useAppTheme();
@@ -41,6 +41,9 @@ export function AuthScreen({ navigation }: Props) {
   });
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const codeInputRef = useRef<TextInput>(null);
 
   // A magic-link deep link can resolve to a master-selection prompt while this
   // screen is already mounted (app was backgrounded on Auth) — keep the step in
@@ -51,277 +54,276 @@ export function AuthScreen({ navigation }: Props) {
     }
   }, [pendingSelection]);
 
-  const codeDigits = useMemo(() => code.padEnd(6, ' ').slice(0, 6).split(''), [code]);
-
-  const canRequestCode = email.includes('@');
   const canConfirmCode = code.trim().length >= 6;
 
+  const fail = (cause: unknown, fallback: string) => {
+    setError(cause instanceof Error && cause.message ? cause.message : fallback);
+  };
+
   const handleRequestOtp = async () => {
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      setError('Проверьте email: похоже, в нём опечатка.');
+      return;
+    }
+    setError(null);
     try {
       await requestLoginCode(email.trim());
-
       setStep('otp');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Не удалось отправить код.';
-      Alert.alert('Ошибка', message);
+    } catch (cause) {
+      fail(cause, 'Не удалось отправить код. Попробуйте ещё раз.');
     }
   };
 
   const handleRequestMagicLink = async () => {
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      setError('Проверьте email: похоже, в нём опечатка.');
+      return;
+    }
+    setError(null);
     try {
       await requestMagicLink(email.trim());
-
       setStep('magic-link-sent');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Не удалось отправить ссылку.';
-      Alert.alert('Ошибка', message);
+    } catch (cause) {
+      fail(cause, 'Не удалось отправить ссылку. Попробуйте ещё раз.');
     }
   };
 
   const handleConfirmOtp = async () => {
+    setError(null);
     try {
       await confirmLoginCode(code.trim());
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Не удалось подтвердить код.';
-      Alert.alert('Ошибка', message);
+    } catch (cause) {
+      fail(cause, 'Код не подошёл. Проверьте письмо и попробуйте ещё раз.');
     }
   };
 
   const handleSelectMaster = async (masterId: number) => {
+    setError(null);
     try {
       await selectMaster(masterId);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Не удалось выбрать мастера.';
-      Alert.alert('Ошибка', message);
+    } catch (cause) {
+      fail(cause, 'Не удалось выбрать мастера.');
     }
   };
 
   const handleChangeEmail = () => {
     setStep('credentials');
     setCode('');
+    setError(null);
     resetPendingAuth();
   };
 
-  const heroCopy = {
+  const sentTo = pendingAuth?.email ?? email;
+
+  const copy = {
     credentials: {
-      eyebrow: 'Login',
-      title: 'Вход в клиентский кабинет Veloria',
-      body: 'Введите email, который мастер уже привязал к вашему профилю в CRM.',
+      title: 'Вход для клиентов',
+      body: 'Введите email, который вы оставляли мастеру. Мы пришлём код — пароль не нужен.',
     },
     otp: {
-      eyebrow: 'Email verification',
-      title: 'Подтвердите вход',
-      body: 'Введите код из письма, чтобы открыть свои записи, свободные окна и новости мастера.',
+      title: 'Введите код',
+      body: `Мы отправили 6 цифр на ${sentTo}.`,
     },
     'magic-link-sent': {
-      eyebrow: 'Magic link',
       title: 'Проверьте почту',
-      body: 'Мы отправили ссылку для входа. Откройте письмо на этом устройстве и нажмите «Войти» — приложение откроется само.',
+      body: `Мы отправили ссылку на ${sentTo}. Откройте письмо на этом телефоне и нажмите «Войти».`,
     },
     'select-master': {
-      eyebrow: 'Выбор мастера',
-      title: 'У вас несколько мастеров',
-      body: 'Этот email привязан к нескольким мастерам. Выберите, к кому хотите войти.',
+      title: 'К какому мастеру войти?',
+      body: 'Ваш email привязан к нескольким мастерам.',
     },
   }[step];
+
+  const errorText = error ? (
+    <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.danger }]}>
+      {error}
+    </Text>
+  ) : null;
+
+  const changeEmailLink = (
+    <Pressable onPress={handleChangeEmail} style={styles.textAction}>
+      <Text style={[styles.textActionLabel, { color: theme.colors.textSecondary }]}>Другой email</Text>
+    </Pressable>
+  );
 
   return (
     <ScreenContainer theme={theme}>
       <View style={styles.root}>
         <View style={styles.topBar}>
+          <BrandSignature compact theme={theme} />
           {navigation.canGoBack() ? (
-            <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
               <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
             </Pressable>
-          ) : (
-            <View style={styles.backSpacer} />
-          )}
-          <BrandSignature compact theme={theme} />
+          ) : null}
         </View>
 
-        <LinearGradient
-          colors={['#ff00fc', '#ff76fd']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroCard}
-        >
-          <View style={styles.heroGlowLarge} />
-          <View style={styles.heroGlowSmall} />
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{copy.title}</Text>
+          <Text style={[styles.body, { color: theme.colors.textSecondary }]}>{copy.body}</Text>
 
-          <Text style={styles.heroEyebrow}>{heroCopy.eyebrow}</Text>
-          <Text style={styles.heroTitle}>{heroCopy.title}</Text>
-          <Text style={styles.heroBody}>{heroCopy.body}</Text>
-
-          <View style={styles.heroDots}>
-            <View style={styles.heroDotActive} />
-            <View style={styles.heroDotIdle} />
-            <View style={styles.heroDotIdle} />
-          </View>
-        </LinearGradient>
-
-        <View
-          style={[
-            styles.formCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.borderSoft,
-              shadowColor: theme.colors.shadow,
-            },
-          ]}
-        >
           {step === 'credentials' ? (
             <>
-              <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Welcome back</Text>
-              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
-                Введите email, который мастер уже привязал к вашему профилю. Регистрации в приложении нет.
-              </Text>
-
-              <View style={styles.fields}>
-                <TextField
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  label="Email"
-                  onChangeText={setEmail}
-                  placeholder="client@veloria.app"
-                  theme={theme}
-                  value={email}
-                />
-              </View>
+              <Text style={[styles.label, { color: theme.colors.textPrimary }]}>Email</Text>
+              <TextInput
+                accessibilityLabel="Email"
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect={false}
+                inputMode="email"
+                keyboardType="email-address"
+                onBlur={() => setEmailFocused(false)}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setError(null);
+                }}
+                onFocus={() => setEmailFocused(true)}
+                onSubmitEditing={handleRequestOtp}
+                placeholder="name@mail.com"
+                placeholderTextColor={theme.colors.textMuted}
+                returnKeyType="go"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.inputBackground,
+                    borderColor: error
+                      ? theme.colors.danger
+                      : emailFocused
+                        ? theme.colors.primary
+                        : theme.colors.borderSoft,
+                    color: theme.colors.textPrimary,
+                  },
+                ]}
+                textContentType="emailAddress"
+                value={email}
+              />
+              {errorText}
 
               <PrimaryButton
-                disabled={!canRequestCode || authBusy}
+                disabled={authBusy}
                 onPress={handleRequestOtp}
                 theme={theme}
-                title={authBusy ? 'Отправляем код...' : 'Войти по email'}
-                style={styles.primaryButton}
+                title={authBusy ? 'Отправляем…' : 'Получить код'}
+                style={styles.cta}
               />
 
-              <PrimaryButton
-                disabled={!canRequestCode || authBusy}
-                onPress={handleRequestMagicLink}
-                theme={theme}
-                title="Прислать ссылку для входа"
-                variant="secondary"
-                style={styles.secondaryButtonSpacing}
-              />
+              <Pressable disabled={authBusy} onPress={handleRequestMagicLink} style={styles.textAction}>
+                <Text style={[styles.textActionLabel, { color: theme.colors.primary }]}>
+                  Лучше пришлите ссылку
+                </Text>
+              </Pressable>
 
-              <Text style={[styles.helperText, { color: theme.colors.textMuted }]}>
-                Если письма нет, значит мастер еще не добавил этот email в вашу карточку.
+              <Text style={[styles.help, { color: theme.colors.textSecondary }]}>
+                Письмо не приходит? Возможно, мастер записал другой адрес — уточните у него.
               </Text>
             </>
           ) : null}
 
           {step === 'otp' ? (
             <>
-              <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Email verification</Text>
-              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
-                Код отправлен на {pendingAuth?.email ?? email}. Введите 6-значный код из письма.
-              </Text>
-
-              <View style={styles.codePreviewRow}>
-                {codeDigits.map((digit, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.codeCell,
-                      {
-                        borderColor: theme.colors.borderSoft,
-                        backgroundColor: theme.colors.inputBackground,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.codeCellText, { color: theme.colors.textPrimary }]}>
-                      {digit.trim() === '' ? '' : digit}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              <TextField
-                keyboardType="number-pad"
-                label="Код из письма"
-                maxLength={6}
-                onChangeText={(value) => setCode(value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="425137"
-                theme={theme}
-                value={code}
-              />
+              <Pressable onPress={() => codeInputRef.current?.focus()} style={styles.codeRow}>
+                {Array.from({ length: 6 }, (_, index) => {
+                  const active = index === Math.min(code.length, 5);
+                  return (
+                    <View
+                      key={index}
+                      style={[
+                        styles.codeCell,
+                        {
+                          backgroundColor: theme.colors.inputBackground,
+                          borderColor: error
+                            ? theme.colors.danger
+                            : active
+                              ? theme.colors.primary
+                              : theme.colors.borderSoft,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.codeDigit, { color: theme.colors.textPrimary }]}>
+                        {code[index] ?? ''}
+                      </Text>
+                    </View>
+                  );
+                })}
+                <TextInput
+                  ref={codeInputRef}
+                  accessibilityLabel="Код из письма"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  caretHidden
+                  inputMode="numeric"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  onChangeText={(value) => {
+                    setCode(value.replace(/\D/g, '').slice(0, 6));
+                    setError(null);
+                  }}
+                  onSubmitEditing={handleConfirmOtp}
+                  style={styles.codeHiddenInput}
+                  textContentType="oneTimeCode"
+                  value={code}
+                />
+              </Pressable>
+              {errorText}
 
               <PrimaryButton
                 disabled={!canConfirmCode || authBusy}
                 onPress={handleConfirmOtp}
                 theme={theme}
-                title={authBusy ? 'Проверяем...' : 'Подтвердить вход'}
-                style={styles.primaryButton}
+                title={authBusy ? 'Проверяем…' : 'Войти'}
+                style={styles.cta}
               />
 
-              <Pressable onPress={handleChangeEmail} style={styles.secondaryAction}>
-                <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
-                  Изменить email
+              <Pressable disabled={authBusy} onPress={handleRequestOtp} style={styles.textAction}>
+                <Text style={[styles.textActionLabel, { color: theme.colors.primary }]}>
+                  Отправить код ещё раз
                 </Text>
               </Pressable>
+              {changeEmailLink}
             </>
           ) : null}
 
           {step === 'magic-link-sent' ? (
             <>
-              <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Ссылка отправлена</Text>
-              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
-                Письмо ушло на {pendingAuth?.email ?? email}. Откройте его и нажмите на кнопку внутри — вход
-                произойдет автоматически.
-              </Text>
-
+              {errorText}
               <PrimaryButton
                 disabled={authBusy}
                 onPress={handleRequestMagicLink}
                 theme={theme}
-                title={authBusy ? 'Отправляем...' : 'Отправить ссылку еще раз'}
-                style={styles.primaryButton}
+                title={authBusy ? 'Отправляем…' : 'Отправить ссылку ещё раз'}
+                variant="secondary"
+                style={styles.cta}
               />
-
-              <Pressable onPress={handleChangeEmail} style={styles.secondaryAction}>
-                <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
-                  Изменить email
-                </Text>
-              </Pressable>
+              {changeEmailLink}
             </>
           ) : null}
 
           {step === 'select-master' && pendingSelection ? (
             <>
-              <Text style={[styles.formTitle, { color: theme.colors.textPrimary }]}>Выберите мастера</Text>
-              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
-                {pendingSelection.email
-                  ? `Email ${pendingSelection.email} привязан к нескольким мастерам.`
-                  : 'Этот email привязан к нескольким мастерам.'}
-              </Text>
-
               <View style={styles.masterList}>
                 {pendingSelection.masters.map((choice) => (
                   <Pressable
                     key={choice.masterId}
+                    accessibilityRole="button"
                     disabled={authBusy}
                     onPress={() => handleSelectMaster(choice.masterId)}
-                    style={[
+                    style={({ pressed }) => [
                       styles.masterRow,
                       {
                         borderColor: theme.colors.borderSoft,
-                        backgroundColor: theme.colors.inputBackground,
+                        backgroundColor: pressed ? theme.colors.surfaceMuted : theme.colors.inputBackground,
                       },
                     ]}
                   >
-                    <Text style={[styles.masterRowText, { color: theme.colors.textPrimary }]}>
+                    <Text style={[styles.masterName, { color: theme.colors.textPrimary }]}>
                       {choice.masterName}
                     </Text>
+                    <Text style={[styles.masterChevron, { color: theme.colors.textMuted }]}>›</Text>
                   </Pressable>
                 ))}
               </View>
-
-              <Pressable onPress={handleChangeEmail} style={styles.secondaryAction}>
-                <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
-                  Изменить email
-                </Text>
-              </Pressable>
+              {errorText}
+              {changeEmailLink}
             </>
           ) : null}
         </View>
@@ -332,170 +334,112 @@ export function AuthScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    gap: 18,
+    paddingHorizontal: 24,
+    paddingTop: 12,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-  },
-  backSpacer: {
-    width: 52,
+    minHeight: 44,
   },
   backText: {
     fontSize: 15,
     fontWeight: '600',
   },
-  heroCard: {
-    overflow: 'hidden',
-    borderRadius: 34,
-    paddingHorizontal: 22,
-    paddingVertical: 28,
-    minHeight: 270,
-    justifyContent: 'flex-end',
+  content: {
+    paddingTop: 48,
   },
-  heroGlowLarge: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    top: -70,
-    right: -40,
-  },
-  heroGlowSmall: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.13)',
-    top: 34,
-    left: -28,
-  },
-  heroEyebrow: {
-    color: '#fff5ff',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  heroTitle: {
-    color: '#ffffff',
-    fontSize: 31,
-    lineHeight: 35,
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
     fontWeight: '800',
-    maxWidth: 280,
+    letterSpacing: -0.6,
   },
-  heroBody: {
-    color: '#fff2ff',
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 14,
-    maxWidth: 290,
-  },
-  heroDots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    marginTop: 22,
-  },
-  heroDotActive: {
-    width: 24,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: '#ffffff',
-  },
-  heroDotIdle: {
-    width: 6,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  formCard: {
-    borderWidth: 1,
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    paddingVertical: 22,
-    shadowOffset: {
-      width: 0,
-      height: 18,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
-    elevation: 5,
-  },
-  formTitle: {
-    fontSize: 28,
-    lineHeight: 30,
-    fontWeight: '800',
-  },
-  formSubtitle: {
-    fontSize: 14,
-    lineHeight: 21,
+  body: {
+    fontSize: 16,
+    lineHeight: 24,
     marginTop: 10,
   },
-  fields: {
-    gap: 14,
-    marginTop: 22,
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 32,
+    marginBottom: 8,
   },
-  primaryButton: {
+  input: {
+    minHeight: 56,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 17,
+  },
+  error: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 10,
+  },
+  cta: {
+    marginTop: 20,
+    minHeight: 56,
+    borderRadius: 16,
+  },
+  textAction: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  textActionLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  help: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
     marginTop: 20,
   },
-  secondaryButtonSpacing: {
-    marginTop: 12,
-  },
-  helperText: {
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 16,
-  },
-  codePreviewRow: {
+  codeRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 22,
-    marginBottom: 18,
+    gap: 10,
+    marginTop: 32,
   },
   codeCell: {
     flex: 1,
-    minHeight: 58,
-    borderRadius: 18,
-    borderWidth: 1,
+    height: 60,
+    borderRadius: 14,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  codeCellText: {
-    fontSize: 24,
-    lineHeight: 24,
-    fontWeight: '800',
+  codeDigit: {
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  codeHiddenInput: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0,
   },
   masterList: {
-    gap: 12,
-    marginTop: 22,
+    gap: 10,
+    marginTop: 28,
   },
   masterRow: {
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  masterRowText: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  secondaryAction: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 18,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    minHeight: 60,
   },
-  secondaryActionText: {
-    fontSize: 14,
-    fontWeight: '700',
+  masterName: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  masterChevron: {
+    fontSize: 24,
   },
 });

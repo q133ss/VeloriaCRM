@@ -10,6 +10,7 @@ import { ChatScreen } from '../features/client-portal/screens/ChatScreen';
 import { HomeScreen } from '../features/client-portal/screens/HomeScreen';
 import { NewsDetailScreen } from '../features/client-portal/screens/NewsDetailScreen';
 import { NewsScreen } from '../features/client-portal/screens/NewsScreen';
+import { ProfileScreen } from '../features/client-portal/screens/ProfileScreen';
 import { NotificationsScreen } from '../features/client-portal/screens/NotificationsScreen';
 import { SplashScreen } from '../features/client-portal/screens/SplashScreen';
 import { useClientPortal } from '../features/client-portal/model/clientPortalContext';
@@ -71,10 +72,11 @@ function GuestNavigator({ theme }: { theme: AppTheme }) {
 function AuthedNavigator({ theme }: { theme: AppTheme }) {
   return (
     <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions(theme)}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ animation: 'none' }} />
       <Stack.Screen name="Booking" component={BookingScreen} />
       <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
-      <Stack.Screen name="Appointments" component={AppointmentsScreen} />
+      <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{ animation: 'none' }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ animation: 'none' }} />
       <Stack.Screen name="News" component={NewsScreen} />
       <Stack.Screen name="NewsDetail" component={NewsDetailScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />

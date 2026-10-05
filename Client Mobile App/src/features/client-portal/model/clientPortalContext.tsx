@@ -45,6 +45,7 @@ type ClientPortalContextValue = {
   selectMaster: (masterId: number) => Promise<void>;
   resetPendingAuth: () => void;
   refreshHomeFeed: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const ClientPortalContext = createContext<ClientPortalContextValue | null>(null);
@@ -404,6 +405,16 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     setPendingSelection(null);
   }, []);
 
+  const signOut = useCallback(async () => {
+    await sessionStorage.clearClientToken();
+    setToken(null);
+    setSession(null);
+    setMaster(null);
+    setHome(null);
+    setPendingAuth(null);
+    setPendingSelection(null);
+  }, []);
+
   const value = useMemo<ClientPortalContextValue>(
     () => ({
       bootstrapping,
@@ -420,6 +431,7 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       selectMaster,
       resetPendingAuth,
       refreshHomeFeed,
+      signOut,
     }),
     [
       authBusy,
@@ -435,6 +447,7 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       resetPendingAuth,
       selectMaster,
       session,
+      signOut,
       token,
     ],
   );

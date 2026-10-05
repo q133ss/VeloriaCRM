@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 
 import { RootStackParamList } from '../../../navigation/types';
 import { formatDateLabel } from '../../../shared/format/ruDate';
+import { BottomNav } from '../../../shared/ui/BottomNav';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
 import { SectionCard } from '../../../shared/ui/SectionCard';
@@ -62,14 +63,20 @@ export function AppointmentsScreen({ navigation }: Props) {
   const visible = (appointments ?? []).filter((item) => (tab === 'upcoming' ? item.is_upcoming : !item.is_upcoming));
 
   return (
-    <ScreenContainer theme={theme}>
+    <ScreenContainer
+      theme={theme}
+      footer={
+        <BottomNav
+          theme={theme}
+          active="Appointments"
+          showChat={master?.hasChat ?? false}
+          onNavigate={(next) => navigation.navigate(next)}
+        />
+      }
+    >
       <View style={styles.root}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
-          </Pressable>
           <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Мои записи</Text>
-          <View style={styles.backSpacer} />
         </View>
 
         <SegmentedControl

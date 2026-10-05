@@ -18,6 +18,7 @@ export type AppTheme = {
     textMuted: string;
     borderSoft: string;
     success: string;
+    danger: string;
     shadow: string;
     overlay: string;
     inputBackground: string;
@@ -29,7 +30,7 @@ export type AppTheme = {
 export const lightTheme: AppTheme = {
   isDark: false,
   colors: {
-    appBackground: '#ffffff',
+    appBackground: '#f6f6f8',
     heroBackground: '#ff00fc',
     heroSecondary: '#ff62fb',
     surface: '#ffffff',
@@ -42,11 +43,12 @@ export const lightTheme: AppTheme = {
     textPrimary: '#16111d',
     textSecondary: '#655d73',
     textMuted: '#9a90a8',
-    borderSoft: '#f0d7f7',
+    borderSoft: '#e6e6ee',
     success: '#1ea672',
+    danger: '#d92d4b',
     shadow: 'rgba(255, 0, 252, 0.12)',
     overlay: 'rgba(255, 255, 255, 0.18)',
-    inputBackground: '#fcf7fd',
+    inputBackground: '#ffffff',
     chipBackground: '#fff1ff',
     chipText: '#7b2d87',
   },
@@ -55,26 +57,27 @@ export const lightTheme: AppTheme = {
 export const darkTheme: AppTheme = {
   isDark: true,
   colors: {
-    appBackground: '#101614',
+    appBackground: '#232333',
     heroBackground: '#860084',
     heroSecondary: '#450044',
-    surface: '#151d1a',
-    surfaceMuted: '#1d2723',
-    surfaceElevated: '#1d2622',
-    primary: '#ff4dfd',
-    primaryPressed: '#db19d8',
-    accent: '#ff4dfd',
-    accentSoft: '#3b173b',
-    textPrimary: '#f4efe7',
-    textSecondary: '#c1c9bf',
-    textMuted: '#95a096',
-    borderSoft: '#2d3833',
+    surface: '#2b2c40',
+    surfaceMuted: '#33344b',
+    surfaceElevated: '#33344b',
+    primary: '#ff3fc0',
+    primaryPressed: '#e400a5',
+    accent: '#ff3fc0',
+    accentSoft: '#432548',
+    textPrimary: '#e4e4ee',
+    textSecondary: '#a5a5bd',
+    textMuted: '#8a8aa3',
+    borderSoft: '#3b3c53',
     success: '#80d8a6',
+    danger: '#ff8a9b',
     shadow: 'rgba(0, 0, 0, 0.32)',
     overlay: 'rgba(255, 255, 255, 0.06)',
-    inputBackground: '#111915',
-    chipBackground: '#22302b',
-    chipText: '#d7d0bf',
+    inputBackground: '#232333',
+    chipBackground: '#33344b',
+    chipText: '#d7d7e6',
   },
 };
 

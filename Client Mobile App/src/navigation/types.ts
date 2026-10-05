@@ -22,6 +22,7 @@ export type RootStackParamList = {
   News: undefined;
   NewsDetail: NewsDetailParams;
   Chat: undefined;
+  Profile: undefined;
   Reviews: undefined;
   Deposit: undefined;
   Referral: undefined;
