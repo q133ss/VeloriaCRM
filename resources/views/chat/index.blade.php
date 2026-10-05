@@ -166,6 +166,7 @@
                 </div>
 
                 <div class="card-footer" id="chat-composer" hidden>
+                    <div class="alert alert-warning d-none" id="chat-not-in-app" role="alert">Этого клиента ещё нет в приложении, поэтому он не увидит сообщение. Чтобы связаться с ним, нажмите «Написать» в <a href="#" id="chat-not-in-app-link">карточке клиента</a>.</div>
                     <div class="alert alert-danger d-none" id="chat-send-alert" role="alert"></div>
                     <form id="chat-composer-form" class="d-flex flex-column gap-2" enctype="multipart/form-data">
                         <div class="d-flex gap-2 align-items-end">
@@ -207,6 +208,8 @@
             var sendButton = document.getElementById('chat-send-button');
             var sendSpinner = document.getElementById('chat-send-spinner');
             var sendAlert = document.getElementById('chat-send-alert');
+            var notInAppAlert = document.getElementById('chat-not-in-app');
+            var notInAppLink = document.getElementById('chat-not-in-app-link');
             var pageEl = document.getElementById('chat-page');
             var welcomeEl = document.getElementById('chat-welcome');
             var pickerEl = document.getElementById('chat-picker');
@@ -382,6 +385,8 @@
                         var thread = payload.data;
                         conversationHeader.innerHTML = '<h6 class="mb-0">' + escapeHtml(thread.client_name || 'Клиент') + '</h6>';
                         composer.hidden = false;
+                        notInAppAlert.classList.toggle('d-none', thread.client_in_app !== false);
+                        notInAppLink.href = '/clients/' + thread.client_id;
                         renderMessages(thread);
                         subscribeToThread(threadId);
 
@@ -444,7 +449,10 @@
                         }
                         pickerResults.innerHTML = '<div class="list-group list-group-flush">' + clients.map(function (client) {
                             return '<button type="button" class="list-group-item list-group-item-action" data-client-id="' + client.id + '">' +
+                                '<div class="d-flex justify-content-between align-items-center gap-2">' +
                                 '<span class="chat-thread-item__name">' + escapeHtml(client.name || 'Клиент') + '</span>' +
+                                '<span class="badge ' + (client.account_id ? 'bg-label-success' : 'bg-label-secondary') + '">' + (client.account_id ? 'В приложении' : 'Нет в приложении') + '</span>' +
+                                '</div>' +
                                 (client.phone ? '<div class="chat-thread-item__preview">' + escapeHtml(client.phone) + '</div>' : '') +
                                 '</button>';
                         }).join('') + '</div>';
@@ -471,6 +479,7 @@
                         });
                     })
                     .catch(function () {
+                        if (pickerEl.hidden) { loadThreads(); return; }
                         pickerResults.insertAdjacentHTML('afterbegin', '<div class="alert alert-danger m-3">Не удалось открыть переписку.</div>');
                     });
             }
@@ -548,7 +557,12 @@
                 if (document.visibilityState === 'visible') loadThreads();
             }, 30000);
 
-            loadThreads();
+            var clientParam = parseInt(new URLSearchParams(location.search).get('client'), 10);
+            if (clientParam) {
+                startThread(clientParam);
+            } else {
+                loadThreads();
+            }
         });
     </script>
 @endpush

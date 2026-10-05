@@ -122,6 +122,8 @@ class ChatController extends Controller
             'id' => $thread->id,
             'client_id' => $thread->client_id,
             'client_name' => $thread->client?->name,
+            // A client without an account in the app never sees what is written here.
+            'client_in_app' => $thread->client?->client_user_id !== null,
             'last_message_at' => optional($thread->last_message_at)->toIso8601String(),
             'last_message_preview' => $lastMessage ? Str::limit((string) $lastMessage->body, 120) : null,
             'unread' => $thread->isUnreadForMaster(),
@@ -134,6 +136,8 @@ class ChatController extends Controller
             'id' => $thread->id,
             'client_id' => $thread->client_id,
             'client_name' => $thread->client?->name,
+            // A client without an account in the app never sees what is written here.
+            'client_in_app' => $thread->client?->client_user_id !== null,
             'messages' => $thread->messages
                 ->map(fn (ChatMessage $message) => $this->transformMessage($message))
                 ->values()

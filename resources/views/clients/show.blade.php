@@ -216,6 +216,10 @@
                             <i class="ri ri-chat-1-line me-1"></i>
                             Написать
                         </button>
+                        <a href="#" class="btn btn-outline-secondary" id="client-chat-link" hidden>
+                            <i class="ri ri-smartphone-line me-1"></i>
+                            Чат в приложении
+                        </a>
                         <a href="#" class="btn btn-primary" id="client-edit-link" hidden>
                             <i class="ri ri-edit-line me-1"></i>
                             Редактировать
@@ -424,6 +428,7 @@
             const aiLock = document.getElementById('client-ai-lock');
             const editLink = document.getElementById('client-edit-link');
             const messageButton = document.getElementById('client-message-btn');
+            const chatLink = document.getElementById('client-chat-link');
             const analyticsButton = document.getElementById('client-analytics-btn');
             const analyticsModalEl = document.getElementById('clientAnalyticsModal');
             const analyticsModal = analyticsModalEl ? new bootstrap.Modal(analyticsModalEl) : null;
@@ -999,6 +1004,11 @@
                     editLink.href = '/clients/' + client.id + '/edit';
                     editLink.hidden = false;
                     messageButton.disabled = false;
+                }
+
+                if (chatLink && client.account_id) {
+                    chatLink.href = '/messages?client=' + client.id;
+                    chatLink.hidden = false;
                 }
             }
 
