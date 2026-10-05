@@ -17,8 +17,8 @@ class TemplateRegistry
     /** What a template is good for; the wizard shows a chip for each one in use. */
     public const CATEGORIES = ['nails', 'brows', 'hair', 'barber', 'spa', 'cosmetology', 'makeup'];
 
-    /** What the page is for: a normal booking page, an offer, an advert, a showcase of work. */
-    public const PURPOSES = ['booking', 'promo', 'ads', 'portfolio'];
+    /** What the page is for: booking, an offer, an advert, a showcase, a master's personal card, courses and workshops, a single service. */
+    public const PURPOSES = ['booking', 'promo', 'ads', 'portfolio', 'card', 'course', 'single'];
 
     /** Licenses we accept for third-party templates. */
     public const LICENSES = ['CC-BY-3.0', 'CC-BY-4.0', 'free-commercial'];

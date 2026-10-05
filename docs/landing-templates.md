@@ -28,6 +28,8 @@ service, season, consultation) is chosen on the next step and defaults to the se
 - `salone`: warm golden tones (HTML Codex, CC BY 4.0).
 - `pretty`: light page with a pink booking block (Colorlib via ThemeWagon, CC BY 3.0).
 - `haircut`, `barberx`, `spacenter`, `sparlex`: HTML Codex, CC BY 4.0 (hair and barber, barber, spa, beauty and spa).
+- `promo-flash` (purpose `promo`: discount, promo code, countdown to `ends_at`) and `ads-one` (purpose `ads`: promise, three benefits, booking form): original Veloria layouts, license `free-commercial`. The demo page shows a promo layout with a sample discount, code and deadline.
+- Page types beyond booking (HTML Codex, CC BY 4.0): `master-card` (purpose `card`: the master's personal page), `masterclass` (`course`: classes and workshops), `one-service` (`single`: one main service with price and countdown), `photo-studio` (`portfolio`: big photos of work), `wellness` (spa and care). Stock photos of people/products show only in the editor and in the demo preview; visitors see a photo block once the master uploads her own.
 
 The former classic layout (`landings.templates.*`) was retired; pages that still pointed at it fall back
 to the default template (`TemplateRegistry::DEFAULT_LAYOUT`) and a migration moved the stored values.

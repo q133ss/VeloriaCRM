@@ -1,0 +1,4 @@
+Template: promo-flash
+Source: original Veloria CRM layout
+License: free-commercial
+Written for Veloria CRM; no third-party code or images. The font (Manrope, SIL OFL) is loaded from Google Fonts.

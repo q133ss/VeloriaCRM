@@ -26,7 +26,7 @@ class ImportLandingTemplate extends Command
         {--license= : One of CC-BY-3.0, CC-BY-4.0, free-commercial}
         {--attribution= : Credit link the license makes us keep (URL)}
         {--categories= : Comma list: nails,brows,hair,barber,spa,cosmetology,makeup}
-        {--purposes=booking : Comma list: booking,promo,ads,portfolio}
+        {--purposes=booking : Comma list: booking,promo,ads,portfolio,card,course,single}
         {--max-mb=2 : Warn when the copied assets weigh more}
         {--force : Overwrite existing files}';
 

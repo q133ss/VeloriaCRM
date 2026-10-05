@@ -22,9 +22,12 @@ class LandingDemoController extends Controller
         $template = $manifest['templates']['general'];
         $sample = (array) __('landings.demo');
 
+        // A promo layout is shown the way it is used: a discount, a code and a deadline.
+        $promo = in_array('promo', $manifest['purposes'], true);
+
         $landing = new Landing([
             'title' => $sample['title'],
-            'type' => 'general',
+            'type' => $promo ? 'promotion' : 'general',
             'landing' => $template,
             'slug' => 'demo-' . $layout,
             'settings' => [
@@ -35,7 +38,11 @@ class LandingDemoController extends Controller
                 'booking_hint' => __('landings.wizard.copy.booking_hint'),
                 'proof_items_text' => __('landings.wizard.copy.proof'),
                 'faq_items_text' => __('landings.wizard.copy.faq'),
-            ],
+            ] + ($promo ? [
+                'discount_percent' => 20,
+                'promo_code' => 'BEAUTY20',
+                'ends_at' => now()->addDays(7)->toDateString(),
+            ] : []),
             'is_active' => true,
         ]);
 

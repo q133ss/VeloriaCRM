@@ -45,6 +45,9 @@ class LandingContent
         'work_image_1' => ['kind' => 'image'],
         'work_image_2' => ['kind' => 'image'],
         'work_image_3' => ['kind' => 'image'],
+        'work_image_4' => ['kind' => 'image'],
+        'work_image_5' => ['kind' => 'image'],
+        'work_image_6' => ['kind' => 'image'],
     ];
 
     private ?Landing $landing = null;
