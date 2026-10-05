@@ -9,6 +9,7 @@ use App\Models\Landing;
 use App\Models\LandingRequest;
 use App\Models\Promotion;
 use App\Models\Service;
+use App\Models\SupportTicket;
 use App\Services\Landing\LandingContent;
 use App\Services\Landing\LandingImageStore;
 use App\Services\Landing\TemplateRegistry;
@@ -25,6 +26,9 @@ class LandingController extends Controller
      * Сколько сайтов держит бесплатный тариф.
      */
     private const FREE_LANDING_LIMIT = 1;
+
+    /** Support-ticket category of an individual template request; the admin filters by it. */
+    private const CUSTOM_DESIGN_CATEGORY = 'custom_design';
 
     public function index(): JsonResponse
     {
@@ -206,9 +210,69 @@ class LandingController extends Controller
             'data' => [
                 'services' => $services,
                 'promotions' => $promotions,
+                'custom_design' => $this->customDesignInfo(Auth::guard('sanctum')->user()),
             ],
         ]);
     }
+
+    /**
+     * «Нужен свой дизайн»: заявка на индивидуальный шаблон. Приходит в админку как обращение в поддержку.
+     * Цена договорная; на Elite первый шаблон бесплатно (метка в тексте обращения, чтобы поддержка видела).
+     */
+    public function customDesign(Request $request): JsonResponse
+    {
+        $user = Auth::guard('sanctum')->user();
+        abort_unless($user, 403);
+
+        $data = $request->validate([
+            'about' => ['required', 'string', 'min:5', 'max:500'],
+            'style' => ['nullable', 'string', 'max:500'],
+            'links' => ['nullable', 'string', 'max:500'],
+            'contact' => ['required', 'string', 'min:3', 'max:120'],
+        ]);
+
+        $free = $this->customDesignInfo($user)['free_available'];
+
+        $lines = [
+            __('landings.custom.ticket_about', ['value' => $data['about']], 'ru'),
+            __('landings.custom.ticket_style', ['value' => $data['style'] ?? '—'], 'ru'),
+            __('landings.custom.ticket_links', ['value' => $data['links'] ?? '—'], 'ru'),
+            __('landings.custom.ticket_contact', ['value' => $data['contact']], 'ru'),
+            __('landings.custom.ticket_plan', ['value' => strtoupper($user->activePlanSlug())], 'ru'),
+            $free ? __('landings.custom.ticket_free', [], 'ru') : __('landings.custom.ticket_paid', [], 'ru'),
+        ];
+
+        $ticket = SupportTicket::create([
+            'user_id' => $user->id,
+            'subject' => __('landings.custom.ticket_subject', [], 'ru'),
+            'status' => SupportTicket::STATUS_WAITING,
+            'category' => self::CUSTOM_DESIGN_CATEGORY,
+            'source' => 'landing_custom_design',
+            'last_message_at' => now(),
+        ]);
+
+        $message = $ticket->messages()->create([
+            'user_id' => $user->id,
+            'sender_type' => 'user',
+            'message' => implode("\n", $lines),
+        ]);
+        $ticket->touchLastMessageAt($message->created_at);
+
+        return response()->json(['message' => __('landings.custom.sent')], 201);
+    }
+
+    /** @return array{plan: string, free_available: bool} */
+    protected function customDesignInfo($user): array
+    {
+        $plan = $user->activePlanSlug();
+        $already = SupportTicket::where('user_id', $user->id)->where('category', self::CUSTOM_DESIGN_CATEGORY)->exists();
+
+        return [
+            'plan' => $plan,
+            'free_available' => $plan === 'elite' && ! $already,
+        ];
+    }
+
 
     protected function transformLanding(Landing $landing, bool $includeRecentRequests = false): array
     {

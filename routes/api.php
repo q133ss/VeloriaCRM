@@ -130,6 +130,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/services/{service}', [ServiceController::class, 'update']);
         Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
         Route::get('/landings/options', [LandingController::class, 'options']);
+        Route::post('/landings/custom-design', [LandingController::class, 'customDesign'])->middleware('throttle:5,1');
         Route::patch('/landings/{landing}/content', [LandingController::class, 'content']);
         Route::post('/landings/{landing}/images', [LandingController::class, 'uploadImage'])->middleware('throttle:30,1');
         Route::delete('/landings/{landing}/images/{key}', [LandingController::class, 'resetImage']);

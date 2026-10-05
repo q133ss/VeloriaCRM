@@ -38,6 +38,8 @@
     .lw-layout-desc { font-size: .9rem; color: rgba(var(--bs-body-color-rgb), .72); }
     .lw-layout-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .7rem; }
     .lw-layout-tags span { font-size: .75rem; padding: .15rem .55rem; border-radius: 999px; background: rgba(var(--bs-body-color-rgb), .08); }
+    .lw-custom { border-style: dashed; justify-content: center; }
+    .lw-custom.is-open { grid-column: 1 / -1; }
     .lw-layout-actions { display: flex; gap: .5rem; padding: .75rem 1rem 1rem; }
     .lw-layout-actions .btn { flex: 1; min-height: 2.75rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
     @media (max-width: 575.98px) { .lw-filter-row { flex-direction: column; gap: .25rem; } }

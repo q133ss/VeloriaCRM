@@ -1,6 +1,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const W = @json(__('landings.wizard'));
+        const C = @json(__('landings.custom'));
         const cfg = window.LANDING_WIZARD_CONFIG || {};
         const root = document.getElementById('lw-root');
         if (!root) return;
@@ -15,6 +16,7 @@
         }
         const state = {
             step: 1,
+            custom: { open: false, sent: false, busy: false, error: '', info: { plan: 'lite', free_available: false }, values: { about: '', style: '', links: '', contact: '' } },
             type: 'general',
             layout: null,
             category: 'all',
@@ -123,7 +125,7 @@
             $('lw-shown').textContent = fmt(W.shown, { shown: visible.length, total: LAYOUTS.length });
 
             if (!visible.length) {
-                $('lw-layouts').innerHTML = '<div class="lw-empty-note" style="grid-column: 1 / -1">' + esc(W.no_templates) + '</div>';
+                $('lw-layouts').innerHTML = '<div class="lw-empty-note" style="grid-column: 1 / -1">' + esc(W.no_templates) + '</div>' + customCardHtml();
                 return;
             }
 
@@ -141,8 +143,54 @@
                     '<button type="button" class="btn btn-primary" data-layout="' + esc(item.slug) + '">' + esc(W.choose) + '</button>' +
                     '<a class="btn btn-outline-secondary" href="' + esc(item.demo_url) + '" target="_blank" rel="noopener">' + esc(W.view) + '</a>' +
                     '</div></article>';
-            }).join('');
+            }).join('') + customCardHtml();
         }
+
+        /* ---------- individual template on order (a card at the end of the gallery) ---------- */
+        function customPriceNote() {
+            return state.custom.info.free_available ? C.price_elite_free : C.price_negotiable;
+        }
+
+        function customCardHtml() {
+            const c = state.custom;
+            if (c.sent) {
+                return '<article class="lw-layout lw-custom is-open"><div class="lw-layout-body"><strong>' + esc(C.card_title) + '</strong>' +
+                    '<div class="alert alert-success mt-2 mb-0" role="status">' + esc(C.sent) + '</div></div></article>';
+            }
+            if (!c.open) {
+                return '<article class="lw-layout lw-custom"><div class="lw-layout-body"><strong>' + esc(C.card_title) + '</strong>' +
+                    '<span class="lw-layout-desc">' + esc(C.card_desc) + '</span>' +
+                    '<span class="lw-layout-desc d-block mt-2"><b>' + esc(customPriceNote()) + '</b></span></div>' +
+                    '<div class="lw-layout-actions"><button type="button" class="btn btn-outline-primary" data-custom-open>' + esc(C.open) + '</button></div></article>';
+            }
+            const v = c.values;
+            function field(id, label, ph, value, extra) {
+                return '<div class="mb-3"><label class="form-label" for="lw-cu-' + id + '">' + esc(label) + '</label>' +
+                    '<input class="form-control" id="lw-cu-' + id + '" data-custom-field="' + id + '" maxlength="' + (id === 'contact' ? 120 : 500) + '" placeholder="' + esc(ph) + '" value="' + esc(value) + '"' + (extra || '') + ' /></div>';
+            }
+            return '<article class="lw-layout lw-custom is-open"><form class="lw-layout-body" id="lw-custom-form" novalidate>' +
+                '<strong>' + esc(C.card_title) + '</strong>' +
+                '<span class="lw-layout-desc d-block mb-3">' + esc(customPriceNote()) + '</span>' +
+                field('about', C.about_label, C.about_ph, v.about, ' required') +
+                field('style', C.style_label, C.style_ph, v.style) +
+                field('links', C.links_label, C.links_ph, v.links) +
+                field('contact', C.contact_label, C.contact_ph, v.contact, ' required') +
+                (c.error ? '<div class="alert alert-danger py-2" role="alert">' + esc(c.error) + '</div>' : '') +
+                '<div class="d-flex gap-2"><button type="submit" class="btn btn-primary"' + (c.busy ? ' disabled' : '') + '>' + esc(c.busy ? C.sending : C.submit) + '</button>' +
+                '<button type="button" class="btn btn-outline-secondary" data-custom-close>' + esc(C.close) + '</button></div>' +
+                '</form></article>';
+        }
+
+        function sendCustom() {
+            const c = state.custom;
+            c.busy = true; c.error = '';
+            renderLayouts();
+            fetch('/api/v1/landings/custom-design', { method: 'POST', headers: authHeaders(), body: JSON.stringify(c.values) })
+                .then(function (response) { if (!response.ok) throw new Error('failed'); c.sent = true; })
+                .catch(function () { c.error = C.error; })
+                .finally(function () { c.busy = false; renderLayouts(); });
+        }
+
 
         /* ---------- step 2: what the page shows ---------- */
         function renderTypes() {
@@ -549,6 +597,9 @@
                 return;
             }
 
+            if (event.target.closest && event.target.closest('[data-custom-open]')) { state.custom.open = true; renderLayouts(); return; }
+            if (event.target.closest && event.target.closest('[data-custom-close]')) { state.custom.open = false; renderLayouts(); return; }
+
             const pick = event.target.closest && event.target.closest('[data-layout]');
             if (pick) {
                 state.layout = pick.getAttribute('data-layout');
@@ -559,6 +610,8 @@
         });
 
         root.addEventListener('input', function (event) {
+            const customField = event.target.getAttribute && event.target.getAttribute('data-custom-field');
+            if (customField) { state.custom.values[customField] = event.target.value; return; }
             const id = event.target.id;
             if (id === 'lw-season-custom') state.seasonCustom = event.target.value;
             if (id === 'lw-promo-percent') state.promo.percent = event.target.value;
@@ -567,6 +620,15 @@
         });
 
         $('lw-about-form').addEventListener('submit', function (event) { event.preventDefault(); submit(); });
+
+        root.addEventListener('submit', function (event) {
+            if (event.target.id !== 'lw-custom-form') return;
+            event.preventDefault();
+            if (state.custom.busy) return;
+            const v = state.custom.values;
+            if (v.about.trim().length < 5 || v.contact.trim().length < 3) { state.custom.error = C.error; renderLayouts(); return; }
+            sendCustom();
+        });
 
         $('lw-copy').addEventListener('click', function () {
             const input = $('lw-link');
@@ -616,6 +678,7 @@
             .then(function (data) {
                 state.services = (data.data && data.data.services) || [];
                 state.promotions = (data.data && data.data.promotions) || [];
+                if (data.data && data.data.custom_design) { state.custom.info = data.data.custom_design; renderLayouts(); }
             })
             .catch(function () { state.optionsFailed = true; })
             .finally(function () {
