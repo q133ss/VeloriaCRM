@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -6,6 +7,7 @@ import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet, Text, Text
 import { RootStackParamList } from '../../../navigation/types';
 import { subscribeToChatThread } from '../../../shared/realtime/chatSocket';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
+import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { useAppTheme } from '../../../theme/theme';
 import { ChatMessageDto } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
@@ -109,20 +111,23 @@ export function ChatScreen({ navigation }: Props) {
   }
 
   const canSend = draft.trim().length > 0 && !sending;
+  const colors = theme.colors;
+  const masterName = master?.branding?.appDisplayName?.trim() || master?.name || 'Мастер';
 
   return (
     <ScreenContainer theme={theme} scrollable={false}>
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
-          </Pressable>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Чат с мастером</Text>
-          <View style={styles.backSpacer} />
+        <View style={styles.header}>
+          <ScreenHeader
+            theme={theme}
+            title={masterName}
+            subtitle="Чат с мастером"
+            onBack={() => navigation.goBack()}
+          />
         </View>
 
         {messages === null && !error ? (
-          <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : (
           <FlatList
             ref={listRef}
@@ -132,46 +137,53 @@ export function ChatScreen({ navigation }: Props) {
             onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
             renderItem={({ item }) => <MessageBubble message={item} theme={theme} />}
             ListEmptyComponent={
-              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                {error || 'Напишите мастеру — здесь начнётся ваш разговор.'}
-              </Text>
+              <View style={styles.empty}>
+                <View style={[styles.emptyIcon, { backgroundColor: colors.accentSoft }]}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={28} color={colors.primary} />
+                </View>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  {error || 'Напишите мастеру — здесь начнётся ваш разговор.'}
+                </Text>
+              </View>
             }
           />
         )}
 
         {error && messages && messages.length > 0 ? (
-          <Text style={[styles.inlineError, { color: theme.colors.textSecondary }]}>{error}</Text>
+          <Text style={[styles.inlineError, { color: colors.danger }]}>{error}</Text>
         ) : null}
 
-        <View style={[styles.composer, { borderColor: theme.colors.borderSoft }]}>
+        <View style={[styles.composer, { borderTopColor: colors.borderSoft, backgroundColor: colors.surface }]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
             placeholder="Сообщение…"
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             multiline
+            numberOfLines={1}
             style={[
               styles.input,
               {
-                backgroundColor: theme.colors.inputBackground,
-                borderColor: theme.colors.borderSoft,
-                color: theme.colors.textPrimary,
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.borderSoft,
+                color: colors.textPrimary,
               },
             ]}
           />
           <Pressable
+            accessibilityLabel="Отправить"
             accessibilityRole="button"
             onPress={handleSend}
             disabled={!canSend}
             style={[
               styles.sendButton,
               {
-                backgroundColor: theme.colors.primary,
-                opacity: canSend ? 1 : 0.5,
+                backgroundColor: colors.primary,
+                opacity: canSend ? 1 : 0.4,
               },
             ]}
           >
-            <Text style={styles.sendButtonText}>Отправить</Text>
+            <Ionicons name="arrow-up" size={22} color="#ffffff" />
           </Pressable>
         </View>
       </View>
@@ -181,19 +193,25 @@ export function ChatScreen({ navigation }: Props) {
 
 function MessageBubble({ message, theme }: { message: ChatMessageDto; theme: ReturnType<typeof useAppTheme> }) {
   const isMine = message.from_me;
+  const colors = theme.colors;
 
   return (
     <View style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
       <View
         style={[
           styles.bubble,
-          {
-            backgroundColor: isMine ? theme.colors.primary : theme.colors.surfaceMuted,
-          },
+          isMine
+            ? { backgroundColor: colors.primary, borderBottomRightRadius: 6 }
+            : {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderSoft,
+                borderWidth: 1,
+                borderBottomLeftRadius: 6,
+              },
         ]}
       >
         {message.body ? (
-          <Text style={[styles.bubbleText, { color: isMine ? '#fffaf2' : theme.colors.textPrimary }]}>
+          <Text style={[styles.bubbleText, { color: isMine ? '#ffffff' : colors.textPrimary }]}>
             {message.body}
           </Text>
         ) : null}
@@ -202,7 +220,7 @@ function MessageBubble({ message, theme }: { message: ChatMessageDto; theme: Ret
             <Text
               style={[
                 styles.attachmentLabel,
-                { color: isMine ? '#fffaf2' : theme.colors.primary },
+                { color: isMine ? '#ffffff' : colors.primary },
               ]}
             >
               {message.attachment_name || 'Вложение'}
@@ -217,35 +235,17 @@ function MessageBubble({ message, theme }: { message: ChatMessageDto; theme: Ret
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    paddingHorizontal: 18,
-    paddingTop: 8,
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-    minWidth: 52,
-  },
-  backSpacer: {
-    minWidth: 52,
-  },
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   loader: {
     marginTop: 24,
   },
   list: {
+    paddingHorizontal: 20,
     paddingVertical: 12,
     gap: 8,
     flexGrow: 1,
@@ -260,26 +260,38 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   bubble: {
-    maxWidth: '78%',
-    borderRadius: 18,
+    maxWidth: '80%',
+    borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   bubbleText: {
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 16,
+    lineHeight: 22,
   },
   attachmentLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 4,
     textDecorationLine: 'underline',
+  },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 56,
+    gap: 12,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
-    paddingTop: 32,
+    paddingHorizontal: 32,
   },
   inlineError: {
     fontSize: 13,
@@ -290,6 +302,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 10,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderTopWidth: 1,
   },
@@ -298,21 +311,16 @@ const styles = StyleSheet.create({
     minHeight: 44,
     maxHeight: 120,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 14,
+    borderRadius: 22,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
   },
   sendButton: {
-    minHeight: 44,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sendButtonText: {
-    color: '#fffaf2',
-    fontSize: 14,
-    fontWeight: '700',
   },
 });

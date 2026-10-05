@@ -113,7 +113,7 @@ export function HomeScreen({ navigation }: Props) {
                 <PrimaryButton
                   onPress={() => navigation.navigate('Chat')}
                   theme={theme}
-                  title="Написать мастеру"
+                  title="Написать"
                   variant="secondary"
                   style={styles.flexButton}
                 />

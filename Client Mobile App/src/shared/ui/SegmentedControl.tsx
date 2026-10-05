@@ -25,8 +25,7 @@ export function SegmentedControl<T extends string>({
       style={[
         styles.root,
         {
-          backgroundColor: theme.colors.surfaceMuted,
-          borderColor: theme.colors.borderSoft,
+          backgroundColor: theme.isDark ? theme.colors.inputBackground : '#ececf1',
         },
       ]}
     >
@@ -36,11 +35,14 @@ export function SegmentedControl<T extends string>({
         return (
           <Pressable
             key={option.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
             onPress={() => onChange(option.value)}
             style={[
               styles.item,
               {
-                backgroundColor: active ? theme.colors.surfaceElevated : 'transparent',
+                backgroundColor: active ? theme.colors.surface : 'transparent',
+                borderColor: active ? theme.colors.borderSoft : 'transparent',
               },
             ]}
           >
@@ -49,6 +51,7 @@ export function SegmentedControl<T extends string>({
                 styles.label,
                 {
                   color: active ? theme.colors.textPrimary : theme.colors.textSecondary,
+                  fontWeight: active ? '700' : '500',
                 },
               ]}
             >
@@ -63,23 +66,21 @@ export function SegmentedControl<T extends string>({
 
 const styles = StyleSheet.create({
   root: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 6,
+    borderRadius: 14,
+    padding: 4,
     flexDirection: 'row',
-    gap: 6,
   },
   item: {
     flex: 1,
-    minHeight: 46,
-    borderRadius: 16,
+    minHeight: 40,
+    borderRadius: 11,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 10,
   },
   label: {
     fontSize: 14,
-    fontWeight: '700',
     textAlign: 'center',
   },
 });

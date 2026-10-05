@@ -14,9 +14,8 @@ export function SectionCard({ children, theme }: SectionCardProps) {
       style={[
         styles.card,
         {
-          backgroundColor: theme.colors.surfaceElevated,
+          backgroundColor: theme.colors.surface,
           borderColor: theme.colors.borderSoft,
-          shadowColor: theme.colors.shadow,
         },
       ]}
     >
@@ -28,14 +27,7 @@ export function SectionCard({ children, theme }: SectionCardProps) {
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 28,
+    borderRadius: 20,
     padding: 18,
-    shadowOffset: {
-      width: 0,
-      height: 14,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 22,
-    elevation: 4,
   },
 });

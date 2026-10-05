@@ -7,10 +7,10 @@ type TextFieldProps = TextInputProps & {
   theme: AppTheme;
 };
 
-export function TextField({ label, theme, ...props }: TextFieldProps) {
+export function TextField({ label, theme, style, ...props }: TextFieldProps) {
   return (
     <View style={styles.group}>
-      <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.label, { color: theme.colors.textPrimary }]}>{label}</Text>
       <TextInput
         placeholderTextColor={theme.colors.textMuted}
         style={[
@@ -20,6 +20,7 @@ export function TextField({ label, theme, ...props }: TextFieldProps) {
             borderColor: theme.colors.borderSoft,
             color: theme.colors.textPrimary,
           },
+          style,
         ]}
         {...props}
       />
@@ -32,14 +33,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
   },
   input: {
-    minHeight: 54,
-    borderWidth: 1,
-    borderRadius: 18,
+    minHeight: 52,
+    borderWidth: 1.5,
+    borderRadius: 14,
     paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
   },
 });

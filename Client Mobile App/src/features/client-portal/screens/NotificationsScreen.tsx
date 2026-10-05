@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback } from 'react';
@@ -6,6 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { RootStackParamList } from '../../../navigation/types';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
+import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SectionCard } from '../../../shared/ui/SectionCard';
 import { useAppTheme } from '../../../theme/theme';
 import { ClientNotificationDto } from '../api/contracts';
@@ -34,45 +36,65 @@ export function NotificationsScreen({ navigation }: Props) {
     }
   }
 
+  const colors = theme.colors;
+
   return (
     <ScreenContainer theme={theme}>
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
-          </Pressable>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Уведомления</Text>
-          <View style={styles.backSpacer} />
-        </View>
-
-        {unreadIds.length > 0 ? (
-          <PrimaryButton
-            onPress={() => void markNotificationsRead(unreadIds)}
-            theme={theme}
-            title="Отметить все как прочитанные"
-            variant="secondary"
-          />
-        ) : null}
+        <ScreenHeader
+          theme={theme}
+          title="Уведомления"
+          onBack={() => navigation.goBack()}
+          right={
+            unreadIds.length > 0 ? (
+              <Pressable hitSlop={8} onPress={() => void markNotificationsRead(unreadIds)}>
+                <Text style={[styles.markAll, { color: colors.primary }]}>Прочитать все</Text>
+              </Pressable>
+            ) : null
+          }
+        />
 
         {notifications === null ? (
-          <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : list.length === 0 ? (
-          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-            Пока нет уведомлений.
-          </Text>
+          <View style={styles.empty}>
+            <View style={[styles.emptyIcon, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="notifications-outline" size={28} color={colors.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Всё спокойно</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              Сообщения мастера и напоминания о записи будут появляться здесь.
+            </Text>
+          </View>
         ) : (
-          <View style={styles.list}>
-            {list.map((item) => (
-              <Pressable key={item.id} accessibilityRole="button" onPress={() => openNotification(item)}>
-              <SectionCard theme={theme}>
-                <View style={styles.rowBetween}>
-                  <Text style={[styles.itemTitle, { color: theme.colors.textPrimary }]}>{item.title}</Text>
-                  {!item.is_read ? (
-                    <View style={[styles.dot, { backgroundColor: theme.colors.primary }]} />
-                  ) : null}
+          <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}>
+            {list.map((item, index) => (
+              <Pressable
+                key={item.id}
+                accessibilityRole="button"
+                onPress={() => openNotification(item)}
+                style={({ pressed }) => [
+                  styles.row,
+                  index > 0 ? { borderTopWidth: 1, borderTopColor: colors.borderSoft } : null,
+                  pressed ? { backgroundColor: colors.surfaceMuted } : null,
+                ]}
+              >
+                <View style={styles.dotSlot}>
+                  {!item.is_read ? <View style={[styles.dot, { backgroundColor: colors.primary }]} /> : null}
                 </View>
-                <Text style={[styles.itemMessage, { color: theme.colors.textSecondary }]}>{item.message}</Text>
-              </SectionCard>
+                <View style={styles.rowText}>
+                  <Text
+                    style={[
+                      styles.itemTitle,
+                      { color: colors.textPrimary, fontWeight: item.is_read ? '500' : '700' },
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.itemMessage, { color: colors.textSecondary }]} numberOfLines={3}>
+                    {item.message}
+                  </Text>
+                </View>
               </Pressable>
             ))}
           </View>
@@ -84,63 +106,71 @@ export function NotificationsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    gap: 16,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    gap: 20,
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-    minWidth: 52,
-  },
-  backSpacer: {
-    minWidth: 52,
-  },
-  backText: {
-    fontSize: 15,
+  markAll: {
+    fontSize: 14,
     fontWeight: '600',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
   },
   loader: {
     marginTop: 24,
   },
-  list: {
-    gap: 12,
+  group: {
+    borderWidth: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  rowBetween: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
+    paddingRight: 18,
+    paddingVertical: 16,
   },
-  itemTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  itemMessage: {
-    marginTop: 8,
-    fontSize: 14,
-    lineHeight: 20,
+  dotSlot: {
+    width: 28,
+    alignItems: 'center',
+    paddingTop: 6,
   },
   dot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    marginTop: 4,
+  },
+  rowText: {
+    flex: 1,
+    gap: 3,
+  },
+  itemTitle: {
+    fontSize: 16,
+  },
+  itemMessage: {
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 56,
+    gap: 10,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   emptyText: {
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
-    paddingTop: 32,
+    paddingHorizontal: 24,
   },
 });

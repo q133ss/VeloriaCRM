@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -62,6 +63,8 @@ export function AppointmentsScreen({ navigation }: Props) {
 
   const visible = (appointments ?? []).filter((item) => (tab === 'upcoming' ? item.is_upcoming : !item.is_upcoming));
 
+  const colors = theme.colors;
+
   return (
     <ScreenContainer
       theme={theme}
@@ -76,9 +79,7 @@ export function AppointmentsScreen({ navigation }: Props) {
       }
     >
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Мои записи</Text>
-        </View>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Мои записи</Text>
 
         <SegmentedControl
           theme={theme}
@@ -91,13 +92,21 @@ export function AppointmentsScreen({ navigation }: Props) {
         />
 
         {appointments === null && !error ? (
-          <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : error ? (
-          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>{error}</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error}</Text>
         ) : visible.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-              {tab === 'upcoming' ? 'Пока нет предстоящих записей.' : 'История записей пока пуста.'}
+            <View style={[styles.emptyIcon, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="calendar-outline" size={28} color={colors.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              {tab === 'upcoming' ? 'Нет предстоящих записей' : 'История пока пуста'}
+            </Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {tab === 'upcoming'
+                ? 'Выберите услугу и удобное время — это займёт меньше минуты.'
+                : 'Здесь появятся ваши прошедшие визиты.'}
             </Text>
             {tab === 'upcoming' ? (
               <PrimaryButton
@@ -111,24 +120,25 @@ export function AppointmentsScreen({ navigation }: Props) {
         ) : (
           <View style={styles.list}>
             {visible.map((appointment) => (
-              <SectionCard key={appointment.id} theme={theme}>
-                <View style={styles.itemRow}>
-                  <View style={styles.flexOne}>
-                    <Text style={[styles.itemTitle, { color: theme.colors.textPrimary }]}>
-                      {appointment.service_label}
-                    </Text>
-                    <Text style={[styles.itemMeta, { color: theme.colors.textSecondary }]}>
-                      {appointment.date ? formatDateLabel(appointment.date) : '—'}
-                      {appointment.time ? ` · ${appointment.time}` : ''}
-                    </Text>
-                  </View>
-                  <View style={[styles.statusPill, { backgroundColor: theme.colors.accentSoft }]}>
-                    <Text style={[styles.statusText, { color: theme.colors.textPrimary }]}>
+              <View
+                key={appointment.id}
+                style={[styles.item, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}
+              >
+                <View style={styles.itemTop}>
+                  <Text style={[styles.itemWhen, { color: colors.textPrimary }]}>
+                    {appointment.date ? formatDateLabel(appointment.date) : '—'}
+                    {appointment.time ? ` · ${appointment.time}` : ''}
+                  </Text>
+                  <View style={[styles.statusPill, { backgroundColor: colors.accentSoft }]}>
+                    <Text style={[styles.statusText, { color: colors.textPrimary }]}>
                       {statusLabel(appointment.status)}
                     </Text>
                   </View>
                 </View>
-              </SectionCard>
+                <Text style={[styles.itemService, { color: colors.textSecondary }]}>
+                  {appointment.service_label}
+                </Text>
+              </View>
             ))}
           </View>
         )}
@@ -139,30 +149,15 @@ export function AppointmentsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    gap: 18,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-    minWidth: 52,
-  },
-  backSpacer: {
-    minWidth: 52,
-  },
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    gap: 20,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   loader: {
     marginTop: 24,
@@ -170,43 +165,60 @@ const styles = StyleSheet.create({
   list: {
     gap: 12,
   },
-  itemRow: {
+  item: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 18,
+    gap: 6,
+  },
+  itemTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
   },
-  flexOne: {
+  itemWhen: {
     flex: 1,
-  },
-  itemTitle: {
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
   },
-  itemMeta: {
-    fontSize: 14,
-    marginTop: 6,
+  itemService: {
+    fontSize: 15,
   },
   statusPill: {
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
-    paddingTop: 32,
-    gap: 16,
+    paddingTop: 40,
+    gap: 10,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   emptyText: {
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
+    paddingHorizontal: 16,
   },
   emptyButton: {
     alignSelf: 'stretch',
+    marginTop: 14,
   },
 });

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
+import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { useAppTheme } from '../../../theme/theme';
 import { useClientPortal } from '../model/clientPortalContext';
 
@@ -17,19 +18,17 @@ export function NewsDetailScreen({ navigation, route }: Props) {
   return (
     <ScreenContainer theme={theme}>
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
-          </Pressable>
-        </View>
+        <ScreenHeader theme={theme} onBack={() => navigation.goBack()} />
 
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
         ) : null}
 
-        <Text style={[styles.date, { color: theme.colors.textMuted }]}>{date}</Text>
-        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{title}</Text>
-        <Text style={[styles.body, { color: theme.colors.textSecondary }]}>{body}</Text>
+        <View style={styles.article}>
+          <Text style={[styles.date, { color: theme.colors.textMuted }]}>{date}</Text>
+          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{title}</Text>
+          <Text style={[styles.body, { color: theme.colors.textSecondary }]}>{body}</Text>
+        </View>
       </View>
     </ScreenContainer>
   );
@@ -37,37 +36,30 @@ export function NewsDetailScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    gap: 14,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-  },
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: 20,
   },
   image: {
     width: '100%',
     height: 220,
     borderRadius: 20,
   },
+  article: {
+    gap: 10,
+  },
   date: {
     fontSize: 13,
   },
   title: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '800',
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    letterSpacing: -0.4,
   },
   body: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 25,
   },
 });

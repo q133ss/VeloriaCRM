@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,6 +7,7 @@ import { RootStackParamList } from '../../../navigation/types';
 import { addDays, formatDateLabel, formatWeekdayShort, toIsoDate } from '../../../shared/format/ruDate';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
+import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { useAppTheme } from '../../../theme/theme';
 import { clientPortalApi } from '../api/clientPortalApi';
 import { useClientPortal } from '../model/clientPortalContext';
@@ -168,110 +170,120 @@ export function BookingScreen({ navigation, route }: Props) {
     });
   };
 
+  const selectedServiceLabel = selectedService === ANY_SERVICE
+    ? 'Любая услуга'
+    : selectedService?.name ?? null;
+  const summary = canContinue
+    ? `${selectedServiceLabel} · ${formatDateLabel(selectedDate)}, ${selectedTime}`
+    : 'Выберите услугу, дату и время';
+
+  const colors = theme.colors;
+
+  const footer = (
+    <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.borderSoft }]}>
+      <Text
+        numberOfLines={1}
+        style={[styles.footerSummary, { color: canContinue ? colors.textPrimary : colors.textSecondary }]}
+      >
+        {summary}
+      </Text>
+      <PrimaryButton
+        disabled={!canContinue}
+        onPress={handleContinue}
+        theme={theme}
+        title="Продолжить"
+      />
+    </View>
+  );
+
+  const renderServiceRow = (key: string, name: string, meta: string, active: boolean, onPress: () => void, index: number) => (
+    <Pressable
+      key={key}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.serviceRow,
+        index > 0 ? { borderTopWidth: 1, borderTopColor: colors.borderSoft } : null,
+        pressed ? { backgroundColor: colors.surfaceMuted } : null,
+      ]}
+    >
+      <View style={styles.serviceText}>
+        <Text style={[styles.serviceName, { color: colors.textPrimary }]}>{name}</Text>
+        <Text style={[styles.serviceMeta, { color: colors.textSecondary }]}>{meta}</Text>
+      </View>
+      <Ionicons
+        name={active ? 'radio-button-on' : 'radio-button-off'}
+        size={24}
+        color={active ? colors.primary : colors.textMuted}
+      />
+    </Pressable>
+  );
+
+  const chip = (label: string, active: boolean, onPress: () => void, key: string) => (
+    <Pressable
+      key={key}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={[
+        styles.chip,
+        {
+          backgroundColor: active ? colors.primary : colors.surface,
+          borderColor: active ? colors.primary : colors.borderSoft,
+        },
+      ]}
+    >
+      <Text style={[styles.chipText, { color: active ? '#ffffff' : colors.textSecondary }]}>{label}</Text>
+    </Pressable>
+  );
+
   return (
-    <ScreenContainer theme={theme}>
+    <ScreenContainer theme={theme} footer={footer}>
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
-          </Pressable>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Новая запись</Text>
-          <View style={styles.backSpacer} />
-        </View>
+        <ScreenHeader theme={theme} title="Новая запись" onBack={() => navigation.goBack()} />
 
         {loadingCatalog ? (
-          <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : catalogError ? (
-          <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>{catalogError}</Text>
+          <Text style={[styles.hintText, { color: colors.textSecondary }]}>{catalogError}</Text>
         ) : (
           <>
-            <View style={styles.blockGap}>
-              <Text style={[styles.blockLabel, { color: theme.colors.textMuted }]}>Услуга</Text>
+            <View style={styles.block}>
+              <Text style={[styles.blockTitle, { color: colors.textPrimary }]}>Услуга</Text>
 
               {categories.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                  <Pressable
-                    onPress={() => setSelectedCategoryId(null)}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: selectedCategoryId === null ? theme.colors.primary : theme.colors.surfaceMuted,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.chipText, { color: selectedCategoryId === null ? '#fffaf2' : theme.colors.textSecondary }]}>
-                      Все
-                    </Text>
-                  </Pressable>
-                  {categories.map((category) => {
-                    const active = selectedCategoryId === category.id;
-
-                    return (
-                      <Pressable
-                        key={category.id}
-                        onPress={() => setSelectedCategoryId(category.id)}
-                        style={[
-                          styles.chip,
-                          { backgroundColor: active ? theme.colors.primary : theme.colors.surfaceMuted },
-                        ]}
-                      >
-                        <Text style={[styles.chipText, { color: active ? '#fffaf2' : theme.colors.textSecondary }]}>
-                          {category.name}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
+                  {chip('Все', selectedCategoryId === null, () => setSelectedCategoryId(null), 'all')}
+                  {categories.map((category) =>
+                    chip(category.name, selectedCategoryId === category.id, () => setSelectedCategoryId(category.id), String(category.id)),
+                  )}
                 </ScrollView>
               ) : null}
 
-              <Pressable
-                onPress={() => setSelectedService(ANY_SERVICE)}
-                style={[
-                  styles.serviceRow,
-                  {
-                    borderColor: selectedService === ANY_SERVICE ? theme.colors.primary : theme.colors.borderSoft,
-                    backgroundColor: theme.colors.surfaceElevated,
-                  },
-                ]}
-              >
-                <Text style={[styles.serviceName, { color: theme.colors.textPrimary }]}>Любая услуга</Text>
-                <Text style={[styles.serviceMeta, { color: theme.colors.textSecondary }]}>
-                  Подберём время на месте
-                </Text>
-              </Pressable>
-
-              {visibleServices.map((service) => {
-                const active = selectedService !== null && selectedService !== ANY_SERVICE && selectedService.id === service.id;
-
-                return (
-                  <Pressable
-                    key={service.id}
-                    onPress={() => setSelectedService(service)}
-                    style={[
-                      styles.serviceRow,
-                      {
-                        borderColor: active ? theme.colors.primary : theme.colors.borderSoft,
-                        backgroundColor: theme.colors.surfaceElevated,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.serviceName, { color: theme.colors.textPrimary }]}>{service.name}</Text>
-                    <Text style={[styles.serviceMeta, { color: theme.colors.textSecondary }]}>
-                      {service.durationLabel} · {service.priceLabel}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}>
+                {renderServiceRow('any', 'Любая услуга', 'Подберём время на месте', selectedService === ANY_SERVICE, () => setSelectedService(ANY_SERVICE), 0)}
+                {visibleServices.map((service, index) =>
+                  renderServiceRow(
+                    String(service.id),
+                    service.name,
+                    `${service.durationLabel} · ${service.priceLabel}`,
+                    selectedService !== null && selectedService !== ANY_SERVICE && selectedService.id === service.id,
+                    () => setSelectedService(service),
+                    index + 1,
+                  ),
+                )}
+              </View>
 
               {visibleServices.length === 0 ? (
-                <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.hintText, { color: colors.textSecondary }]}>
                   В этой категории пока нет услуг.
                 </Text>
               ) : null}
             </View>
 
-            <View style={styles.blockGap}>
-              <Text style={[styles.blockLabel, { color: theme.colors.textMuted }]}>Дата</Text>
+            <View style={styles.block}>
+              <Text style={[styles.blockTitle, { color: colors.textPrimary }]}>Дата</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                 {dates.map((date) => {
                   const active = date === selectedDate;
@@ -279,16 +291,21 @@ export function BookingScreen({ navigation, route }: Props) {
                   return (
                     <Pressable
                       key={date}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
                       onPress={() => setSelectedDate(date)}
                       style={[
                         styles.dateChip,
-                        { backgroundColor: active ? theme.colors.primary : theme.colors.surfaceMuted },
+                        {
+                          backgroundColor: active ? colors.primary : colors.surface,
+                          borderColor: active ? colors.primary : colors.borderSoft,
+                        },
                       ]}
                     >
-                      <Text style={[styles.dateWeekday, { color: active ? '#fffaf2' : theme.colors.textMuted }]}>
+                      <Text style={[styles.dateWeekday, { color: active ? '#ffffff' : colors.textMuted }]}>
                         {formatWeekdayShort(date)}
                       </Text>
-                      <Text style={[styles.dateDay, { color: active ? '#fffaf2' : theme.colors.textPrimary }]}>
+                      <Text style={[styles.dateDay, { color: active ? '#ffffff' : colors.textPrimary }]}>
                         {formatDateLabel(date).split(' ')[0]}
                       </Text>
                     </Pressable>
@@ -297,19 +314,19 @@ export function BookingScreen({ navigation, route }: Props) {
               </ScrollView>
             </View>
 
-            <View style={styles.blockGap}>
-              <Text style={[styles.blockLabel, { color: theme.colors.textMuted }]}>Время</Text>
+            <View style={styles.block}>
+              <Text style={[styles.blockTitle, { color: colors.textPrimary }]}>Время</Text>
 
               {!selectedService ? (
-                <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.hintText, { color: colors.textSecondary }]}>
                   Сначала выберите услугу.
                 </Text>
               ) : loadingSlots ? (
-                <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
+                <ActivityIndicator color={colors.primary} style={styles.loader} />
               ) : slotsError ? (
-                <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>{slotsError}</Text>
+                <Text style={[styles.hintText, { color: colors.textSecondary }]}>{slotsError}</Text>
               ) : slots.length === 0 ? (
-                <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.hintText, { color: colors.textSecondary }]}>
                   На эту дату свободного времени нет — попробуйте другой день.
                 </Text>
               ) : (
@@ -320,16 +337,18 @@ export function BookingScreen({ navigation, route }: Props) {
                     return (
                       <Pressable
                         key={slot}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
                         onPress={() => setSelectedTime(slot)}
                         style={[
                           styles.slotChip,
                           {
-                            backgroundColor: active ? theme.colors.primary : theme.colors.surfaceMuted,
-                            borderColor: active ? theme.colors.primary : theme.colors.borderSoft,
+                            backgroundColor: active ? colors.primary : colors.surface,
+                            borderColor: active ? colors.primary : colors.borderSoft,
                           },
                         ]}
                       >
-                        <Text style={[styles.slotText, { color: active ? '#fffaf2' : theme.colors.textPrimary }]}>
+                        <Text style={[styles.slotText, { color: active ? '#ffffff' : colors.textPrimary }]}>
                           {slot}
                         </Text>
                       </Pressable>
@@ -338,14 +357,6 @@ export function BookingScreen({ navigation, route }: Props) {
                 </View>
               )}
             </View>
-
-            <PrimaryButton
-              disabled={!canContinue}
-              onPress={handleContinue}
-              theme={theme}
-              title="Продолжить"
-              style={styles.continueButton}
-            />
           </>
         )}
       </View>
@@ -355,108 +366,108 @@ export function BookingScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    gap: 22,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-    minWidth: 52,
-  },
-  backSpacer: {
-    minWidth: 52,
-  },
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    gap: 28,
   },
   loader: {
-    marginTop: 24,
+    marginTop: 16,
   },
-  blockGap: {
+  block: {
     gap: 12,
   },
-  blockLabel: {
-    fontSize: 13,
+  blockTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: -0.2,
   },
   chipRow: {
-    gap: 10,
+    gap: 8,
     paddingRight: 8,
   },
   chip: {
     borderRadius: 999,
+    borderWidth: 1,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
   chipText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  serviceRow: {
+  group: {
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 16,
+    overflow: 'hidden',
+  },
+  serviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    gap: 4,
+    minHeight: 64,
+  },
+  serviceText: {
+    flex: 1,
   },
   serviceName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   serviceMeta: {
-    fontSize: 13,
+    fontSize: 14,
+    marginTop: 2,
   },
   dateChip: {
-    borderRadius: 18,
-    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     alignItems: 'center',
     minWidth: 56,
-    gap: 4,
+    gap: 2,
   },
   dateWeekday: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     textTransform: 'uppercase',
   },
   dateDay: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
   },
   slotGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   slotChip: {
+    width: '22.5%',
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderRadius: 12,
     paddingVertical: 12,
+    alignItems: 'center',
   },
   slotText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  continueButton: {
-    marginTop: 4,
-    marginBottom: 24,
-  },
-  errorText: {
+  hintText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  footer: {
+    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+    gap: 10,
+  },
+  footerSummary: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

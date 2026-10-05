@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -7,6 +8,7 @@ import { ApiError } from '../../../shared/api/http';
 import { formatDateLabel } from '../../../shared/format/ruDate';
 import { PrimaryButton } from '../../../shared/ui/PrimaryButton';
 import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
+import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SectionCard } from '../../../shared/ui/SectionCard';
 import { TextField } from '../../../shared/ui/TextField';
 import { useAppTheme } from '../../../theme/theme';
@@ -77,58 +79,93 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
     }
   };
 
+  const colors = theme.colors;
+
   if (stage === 'booked' || stage === 'waitlisted') {
     return (
-      <ScreenContainer theme={theme}>
+      <ScreenContainer theme={theme} scrollable={false}>
         <View style={styles.centeredRoot}>
-          <Text style={[styles.successTitle, { color: theme.colors.textPrimary }]}>
-            {stage === 'booked' ? 'Запись создана' : 'Вы в листе ожидания'}
+          <View style={[styles.successBadge, { backgroundColor: colors.accentSoft }]}>
+            <Ionicons
+              name={stage === 'booked' ? 'checkmark' : 'time-outline'}
+              size={44}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={[styles.successTitle, { color: colors.textPrimary }]}>
+            {stage === 'booked' ? 'Вы записаны' : 'Вы в листе ожидания'}
           </Text>
-          <Text style={[styles.successBody, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.successBody, { color: colors.textSecondary }]}>
             {stage === 'booked'
-              ? `${serviceLabel} · ${formatDateLabel(date)} в ${time}`
+              ? `${serviceLabel}\n${formatDateLabel(date)} в ${time}`
               : 'Мастер свяжется, как только появится подходящее окно.'}
           </Text>
-          <PrimaryButton
-            onPress={() => navigation.navigate('Home')}
-            theme={theme}
-            title="На главный экран"
-            style={styles.successButton}
-          />
+          <View style={styles.successActions}>
+            <PrimaryButton
+              onPress={() => navigation.navigate('Home')}
+              theme={theme}
+              title="На главную"
+            />
+            <PrimaryButton
+              onPress={() => navigation.navigate('Appointments')}
+              theme={theme}
+              title="Мои записи"
+              variant="secondary"
+            />
+          </View>
         </View>
       </ScreenContainer>
     );
   }
 
+  const summaryRows = [
+    { icon: 'sparkles-outline' as const, label: 'Услуга', value: serviceLabel },
+    { icon: 'calendar-outline' as const, label: 'Дата', value: formatDateLabel(date) },
+    { icon: 'time-outline' as const, label: 'Время', value: time },
+  ];
+
+  const footer = stage === 'conflict' ? undefined : (
+    <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.borderSoft }]}>
+      <PrimaryButton
+        disabled={stage === 'submitting'}
+        onPress={handleConfirm}
+        theme={theme}
+        title={stage === 'submitting' ? 'Записываем…' : 'Подтвердить запись'}
+      />
+    </View>
+  );
+
   return (
-    <ScreenContainer theme={theme}>
+    <ScreenContainer theme={theme} footer={footer}>
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Назад</Text>
-          </Pressable>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Подтверждение</Text>
-          <View style={styles.backSpacer} />
+        <ScreenHeader theme={theme} title="Подтверждение" onBack={() => navigation.goBack()} />
+
+        <View style={[styles.summary, { backgroundColor: colors.surface, borderColor: colors.borderSoft }]}>
+          {summaryRows.map((row, index) => (
+            <View
+              key={row.label}
+              style={[
+                styles.summaryRow,
+                index > 0 ? { borderTopWidth: 1, borderTopColor: colors.borderSoft } : null,
+              ]}
+            >
+              <View style={[styles.summaryIcon, { backgroundColor: colors.accentSoft }]}>
+                <Ionicons name={row.icon} size={20} color={colors.primary} />
+              </View>
+              <View style={styles.summaryText}>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{row.label}</Text>
+                <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{row.value}</Text>
+              </View>
+            </View>
+          ))}
         </View>
-
-        <SectionCard theme={theme}>
-          <Text style={[styles.summaryLabel, { color: theme.colors.textMuted }]}>Услуга</Text>
-          <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>{serviceLabel}</Text>
-
-          <Text style={[styles.summaryLabel, styles.summarySpacing, { color: theme.colors.textMuted }]}>
-            Дата и время
-          </Text>
-          <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
-            {formatDateLabel(date)} · {time}
-          </Text>
-        </SectionCard>
 
         {stage === 'conflict' ? (
           <SectionCard theme={theme}>
-            <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
-              Это время уже заняли, пока вы выбирали.
+            <Text style={[styles.conflictTitle, { color: colors.textPrimary }]}>
+              Это время только что заняли
             </Text>
-            <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.errorText, { color: colors.textSecondary }]}>
               {serviceId !== null
                 ? 'Можно встать в лист ожидания на эту услугу — мастер свяжется, если появится окно.'
                 : 'Выберите другое время.'}
@@ -139,41 +176,32 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
                   onPress={handleJoinWaitlist}
                   theme={theme}
                   title="В лист ожидания"
-                  style={styles.flexButton}
                 />
               ) : null}
               <PrimaryButton
                 onPress={() => navigation.goBack()}
                 theme={theme}
-                title="Другое время"
+                title="Выбрать другое время"
                 variant="secondary"
-                style={styles.flexButton}
               />
             </View>
           </SectionCard>
         ) : (
           <>
             <TextField
-              label="Комментарий мастеру (необязательно)"
+              label="Комментарий мастеру"
               multiline
               numberOfLines={3}
               onChangeText={setNote}
-              placeholder="Например: аллергия на определенный лак"
+              placeholder="Необязательно. Например: аллергия на определённый лак"
+              style={styles.noteInput}
               theme={theme}
               value={note}
             />
 
             {stage === 'error' && errorMessage ? (
-              <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>{errorMessage}</Text>
+              <Text style={[styles.errorText, { color: colors.danger }]}>{errorMessage}</Text>
             ) : null}
-
-            <PrimaryButton
-              disabled={stage === 'submitting'}
-              onPress={handleConfirm}
-              theme={theme}
-              title={stage === 'submitting' ? 'Записываем...' : 'Подтвердить запись'}
-              style={styles.confirmButton}
-            />
           </>
         )}
       </View>
@@ -183,62 +211,62 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    gap: 18,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    gap: 20,
   },
-  topBar: {
+  summary: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+  },
+  summaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 14,
+    paddingVertical: 14,
   },
-  backButton: {
-    paddingVertical: 10,
-    paddingRight: 8,
-    minWidth: 52,
+  summaryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backSpacer: {
-    minWidth: 52,
-  },
-  backText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
+  summaryText: {
+    flex: 1,
   },
   summaryLabel: {
     fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  summarySpacing: {
-    marginTop: 16,
   },
   summaryValue: {
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '800',
-    marginTop: 6,
+    fontSize: 17,
+    lineHeight: 23,
+    fontWeight: '600',
+    marginTop: 1,
   },
-  confirmButton: {
-    marginTop: 4,
-    marginBottom: 24,
+  noteInput: {
+    minHeight: 96,
+    textAlignVertical: 'top',
   },
   errorText: {
     fontSize: 14,
     lineHeight: 20,
-    marginTop: 10,
+    marginTop: 8,
+  },
+  conflictTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   conflictActions: {
-    flexDirection: 'row',
     gap: 10,
     marginTop: 16,
   },
-  flexButton: {
-    flex: 1,
+  footer: {
+    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   centeredRoot: {
     flex: 1,
@@ -247,18 +275,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  successBadge: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
   successTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.4,
     textAlign: 'center',
   },
   successBody: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 24,
     textAlign: 'center',
   },
-  successButton: {
-    marginTop: 20,
+  successActions: {
     alignSelf: 'stretch',
+    gap: 10,
+    marginTop: 28,
   },
 });

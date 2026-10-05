@@ -27,6 +27,7 @@ export function PrimaryButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
@@ -42,7 +43,7 @@ export function PrimaryButton({
                 : theme.colors.surface
               : 'transparent',
           borderColor: isPrimary ? 'transparent' : theme.colors.borderSoft,
-          opacity: disabled ? 0.55 : 1,
+          opacity: disabled ? 0.45 : 1,
         },
         style,
       ]}
@@ -51,7 +52,7 @@ export function PrimaryButton({
         style={[
           styles.label,
           {
-            color: isPrimary ? '#fffaf2' : theme.colors.textPrimary,
+            color: isPrimary ? '#ffffff' : theme.colors.textPrimary,
           },
         ]}
       >
@@ -63,8 +64,8 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 54,
-    borderRadius: 18,
+    minHeight: 52,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -72,7 +73,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontWeight: '600',
   },
 });
