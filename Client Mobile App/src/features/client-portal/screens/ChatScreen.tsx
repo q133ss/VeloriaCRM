@@ -9,7 +9,7 @@ import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
 import { useAppTheme } from '../../../theme/theme';
 import { ChatMessageDto } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
-import { useClientPortal } from '../model/clientPortalContext';
+import { CHAT_ACTION_URL, useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -19,7 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 const POLL_INTERVAL_MS = 5000;
 
 export function ChatScreen({ navigation }: Props) {
-  const { token, master } = useClientPortal();
+  const { token, master, notifications, markNotificationsRead } = useClientPortal();
   const theme = useAppTheme(master?.branding);
 
   const [threadId, setThreadId] = useState<number | null>(null);
@@ -56,6 +56,17 @@ export function ChatScreen({ navigation }: Props) {
       return () => clearInterval(interval);
     }, [load]),
   );
+
+  // Opening the dialog is what "reads" the master's message notifications.
+  useEffect(() => {
+    const unreadChatIds = (notifications ?? [])
+      .filter((item) => !item.is_read && item.action_url === CHAT_ACTION_URL)
+      .map((item) => item.id);
+
+    if (unreadChatIds.length > 0) {
+      void markNotificationsRead(unreadChatIds);
+    }
+  }, [notifications, markNotificationsRead]);
 
   useEffect(() => {
     if (!token || !threadId) {

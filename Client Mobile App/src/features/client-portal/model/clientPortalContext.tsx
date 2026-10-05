@@ -13,7 +13,7 @@ import { Alert } from 'react-native';
 import { sessionStorage } from '../../../shared/api/sessionStorage';
 import { formatDateLabel } from '../../../shared/format/ruDate';
 import { registerForPushNotificationsAsync } from '../../../shared/notifications/pushRegistration';
-import { ApiMaster, AppointmentListItemDto, ClientServiceDto, MasterPostDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
+import { ApiMaster, AppointmentListItemDto, ClientNotificationDto, ClientServiceDto, MasterPostDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
 import { buildMockHomeFeed } from '../mocks/mockClientPortal';
 import {
@@ -46,7 +46,18 @@ type ClientPortalContextValue = {
   resetPendingAuth: () => void;
   refreshHomeFeed: () => Promise<void>;
   signOut: () => Promise<void>;
+  // Kept in the provider (not per screen) so the bell, the Chat tab and the
+  // Notifications list all read one source and a new master message shows up
+  // everywhere without opening a particular screen first.
+  notifications: ClientNotificationDto[] | null;
+  unreadCount: number;
+  unreadChatCount: number;
+  refreshNotifications: () => Promise<void>;
+  markNotificationsRead: (ids: number[]) => Promise<void>;
 };
+
+export const CHAT_ACTION_URL = '/chat';
+const NOTIFICATIONS_POLL_MS = 15000;
 
 const ClientPortalContext = createContext<ClientPortalContextValue | null>(null);
 
@@ -147,6 +158,7 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
   const [session, setSession] = useState<SessionUser | null>(null);
   const [pendingAuth, setPendingAuth] = useState<PendingAuth | null>(null);
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
+  const [notifications, setNotifications] = useState<ClientNotificationDto[] | null>(null);
 
   const loadHomeFeed = useCallback(async (feedToken: string, clientName: string) => {
     let services;
@@ -405,7 +417,59 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
     setPendingSelection(null);
   }, []);
 
+  const refreshNotifications = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await clientPortalApi.getNotifications(token);
+      setNotifications(response.data.notifications);
+    } catch {
+      // Best-effort: a failed poll keeps the last known list and badges.
+    }
+  }, [token]);
+
+  const markNotificationsRead = useCallback(async (ids: number[]) => {
+    if (!token || ids.length === 0) {
+      return;
+    }
+
+    // Optimistic, so the badge drops the moment the person opens the thing.
+    setNotifications((current) =>
+      current ? current.map((item) => (ids.includes(item.id) ? { ...item, is_read: true } : item)) : current,
+    );
+
+    try {
+      await clientPortalApi.markNotificationsRead(token, ids);
+    } catch {
+      void refreshNotifications();
+    }
+  }, [token, refreshNotifications]);
+
+  // Realtime (Pusher) is not configured everywhere and push never reaches the
+  // web build, so polling is what guarantees a master's message is noticed.
+  useEffect(() => {
+    if (!token) {
+      return undefined;
+    }
+
+    void refreshNotifications();
+    const interval = setInterval(() => {
+      void refreshNotifications();
+    }, NOTIFICATIONS_POLL_MS);
+
+    return () => clearInterval(interval);
+  }, [token, refreshNotifications]);
+
+  const unreadCount = useMemo(() => (notifications ?? []).filter((item) => !item.is_read).length, [notifications]);
+  const unreadChatCount = useMemo(
+    () => (notifications ?? []).filter((item) => !item.is_read && item.action_url === CHAT_ACTION_URL).length,
+    [notifications],
+  );
+
   const signOut = useCallback(async () => {
+    setNotifications(null);
     await sessionStorage.clearClientToken();
     setToken(null);
     setSession(null);
@@ -432,6 +496,11 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       resetPendingAuth,
       refreshHomeFeed,
       signOut,
+      notifications,
+      unreadCount,
+      unreadChatCount,
+      refreshNotifications,
+      markNotificationsRead,
     }),
     [
       authBusy,
@@ -445,10 +514,15 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
       requestLoginCode,
       requestMagicLink,
       resetPendingAuth,
+      markNotificationsRead,
+      notifications,
+      refreshNotifications,
       selectMaster,
       session,
       signOut,
       token,
+      unreadChatCount,
+      unreadCount,
     ],
   );
 

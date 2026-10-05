@@ -25,7 +25,7 @@ function resolveNumericServiceId(id: string): number | undefined {
 }
 
 export function HomeScreen({ navigation }: Props) {
-  const { home, master, session, refreshHomeFeed } = useClientPortal();
+  const { home, master, session, refreshHomeFeed, unreadChatCount, unreadCount } = useClientPortal();
   const theme = useAppTheme(master?.branding);
   const colors = theme.colors;
 
@@ -55,6 +55,7 @@ export function HomeScreen({ navigation }: Props) {
           theme={theme}
           active="Home"
           showChat={master.hasChat}
+          badges={{ Chat: unreadChatCount }}
           onNavigate={(tab) => navigation.navigate(tab)}
         />
       }
@@ -79,6 +80,11 @@ export function HomeScreen({ navigation }: Props) {
           style={[styles.iconButton, { borderColor: colors.borderSoft, backgroundColor: colors.surface }]}
         >
           <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+          {unreadCount > 0 ? (
+            <View style={[styles.bellBadge, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
+              <Text style={styles.bellBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          ) : null}
         </Pressable>
       </View>
 
@@ -235,6 +241,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   body: {
     paddingHorizontal: 20,

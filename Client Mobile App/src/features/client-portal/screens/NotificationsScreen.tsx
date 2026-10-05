@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
@@ -9,55 +9,28 @@ import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
 import { SectionCard } from '../../../shared/ui/SectionCard';
 import { useAppTheme } from '../../../theme/theme';
 import { ClientNotificationDto } from '../api/contracts';
-import { clientPortalApi } from '../api/clientPortalApi';
-import { useClientPortal } from '../model/clientPortalContext';
+import { CHAT_ACTION_URL, useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
 export function NotificationsScreen({ navigation }: Props) {
-  const { token, master } = useClientPortal();
+  const { master, notifications, refreshNotifications, markNotificationsRead } = useClientPortal();
   const theme = useAppTheme(master?.branding);
-
-  const [notifications, setNotifications] = useState<ClientNotificationDto[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!token) {
-      return;
-    }
-
-    setError(null);
-
-    try {
-      const response = await clientPortalApi.getNotifications(token);
-      setNotifications(response.data.notifications);
-    } catch (fetchError) {
-      const message = fetchError instanceof Error ? fetchError.message : 'Не удалось загрузить уведомления.';
-      setError(message);
-    }
-  }, [token]);
 
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      void refreshNotifications();
+    }, [refreshNotifications]),
   );
 
   const list = notifications ?? [];
   const unreadIds = list.filter((item) => !item.is_read).map((item) => item.id);
 
-  async function markAllRead() {
-    if (!token || unreadIds.length === 0) {
-      return;
-    }
+  function openNotification(item: ClientNotificationDto) {
+    void markNotificationsRead([item.id]);
 
-    try {
-      await clientPortalApi.markNotificationsRead(token, unreadIds);
-      setNotifications((current) =>
-        current ? current.map((item) => ({ ...item, is_read: true })) : current,
-      );
-    } catch {
-      // Best-effort — the list stays as-is and the next visit will try again.
+    if (item.action_url === CHAT_ACTION_URL && master?.hasChat) {
+      navigation.navigate('Chat');
     }
   }
 
@@ -74,17 +47,15 @@ export function NotificationsScreen({ navigation }: Props) {
 
         {unreadIds.length > 0 ? (
           <PrimaryButton
-            onPress={markAllRead}
+            onPress={() => void markNotificationsRead(unreadIds)}
             theme={theme}
             title="Отметить все как прочитанные"
             variant="secondary"
           />
         ) : null}
 
-        {notifications === null && !error ? (
+        {notifications === null ? (
           <ActivityIndicator color={theme.colors.primary} style={styles.loader} />
-        ) : error ? (
-          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>{error}</Text>
         ) : list.length === 0 ? (
           <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
             Пока нет уведомлений.
@@ -92,7 +63,8 @@ export function NotificationsScreen({ navigation }: Props) {
         ) : (
           <View style={styles.list}>
             {list.map((item) => (
-              <SectionCard key={item.id} theme={theme}>
+              <Pressable key={item.id} accessibilityRole="button" onPress={() => openNotification(item)}>
+              <SectionCard theme={theme}>
                 <View style={styles.rowBetween}>
                   <Text style={[styles.itemTitle, { color: theme.colors.textPrimary }]}>{item.title}</Text>
                   {!item.is_read ? (
@@ -101,6 +73,7 @@ export function NotificationsScreen({ navigation }: Props) {
                 </View>
                 <Text style={[styles.itemMessage, { color: theme.colors.textSecondary }]}>{item.message}</Text>
               </SectionCard>
+              </Pressable>
             ))}
           </View>
         )}

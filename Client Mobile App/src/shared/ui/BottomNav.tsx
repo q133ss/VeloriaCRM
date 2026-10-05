@@ -10,6 +10,7 @@ type BottomNavProps = {
   active: BottomNavTab;
   onNavigate: (tab: BottomNavTab) => void;
   showChat?: boolean;
+  badges?: Partial<Record<BottomNavTab, number>>;
 };
 
 const TABS: { key: BottomNavTab; label: string; icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap }[] = [
@@ -19,7 +20,7 @@ const TABS: { key: BottomNavTab; label: string; icon: keyof typeof Ionicons.glyp
   { key: 'Profile', label: 'Профиль', icon: 'person-outline', iconActive: 'person' },
 ];
 
-export function BottomNav({ theme, active, onNavigate, showChat = true }: BottomNavProps) {
+export function BottomNav({ theme, active, onNavigate, showChat = true, badges }: BottomNavProps) {
   const tabs = showChat ? TABS : TABS.filter((tab) => tab.key !== 'Chat');
 
   return (
@@ -41,7 +42,14 @@ export function BottomNav({ theme, active, onNavigate, showChat = true }: Bottom
             onPress={() => (isActive ? undefined : onNavigate(tab.key))}
             style={styles.tab}
           >
-            <Ionicons name={isActive ? tab.iconActive : tab.icon} size={24} color={color} />
+            <View>
+              <Ionicons name={isActive ? tab.iconActive : tab.icon} size={24} color={color} />
+              {badges?.[tab.key] ? (
+                <View style={[styles.badge, { backgroundColor: theme.colors.primary, borderColor: theme.colors.surface }]}>
+                  <Text style={styles.badgeText}>{badges[tab.key]! > 9 ? '9+' : badges[tab.key]}</Text>
+                </View>
+              ) : null}
+            </View>
             <Text style={[styles.label, { color, fontWeight: isActive ? '700' : '500' }]}>{tab.label}</Text>
           </Pressable>
         );
@@ -65,5 +73,22 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

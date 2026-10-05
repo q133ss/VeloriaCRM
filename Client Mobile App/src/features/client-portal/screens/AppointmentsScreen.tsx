@@ -22,7 +22,7 @@ function statusLabel(status: string): string {
 }
 
 export function AppointmentsScreen({ navigation }: Props) {
-  const { token, master } = useClientPortal();
+  const { token, master, unreadChatCount } = useClientPortal();
   const theme = useAppTheme(master?.branding);
 
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -70,6 +70,7 @@ export function AppointmentsScreen({ navigation }: Props) {
           theme={theme}
           active="Appointments"
           showChat={master?.hasChat ?? false}
+          badges={{ Chat: unreadChatCount }}
           onNavigate={(next) => navigation.navigate(next)}
         />
       }

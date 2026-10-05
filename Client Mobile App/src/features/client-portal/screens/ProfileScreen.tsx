@@ -10,7 +10,7 @@ import { useClientPortal } from '../model/clientPortalContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export function ProfileScreen({ navigation }: Props) {
-  const { master, session, signOut } = useClientPortal();
+  const { master, session, signOut, unreadChatCount } = useClientPortal();
   const theme = useAppTheme(master?.branding);
 
   const name = session?.name ?? 'Клиент';
@@ -31,6 +31,7 @@ export function ProfileScreen({ navigation }: Props) {
           theme={theme}
           active="Profile"
           showChat={master?.hasChat ?? false}
+          badges={{ Chat: unreadChatCount }}
           onNavigate={(tab) => navigation.navigate(tab)}
         />
       }
