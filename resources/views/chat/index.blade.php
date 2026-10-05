@@ -70,27 +70,95 @@
         .chat-empty {
             color: var(--bs-secondary-color);
         }
+
+        .chat-welcome {
+            max-width: 32rem;
+            margin: 3rem auto;
+            text-align: center;
+        }
+
+        .chat-welcome__icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1.25rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb), 0.1);
+        }
+
+        .chat-back {
+            display: none;
+        }
+
+        /* On a phone one pane at a time: the list, or the open conversation. */
+        @media (max-width: 991.98px) {
+            .chat-page {
+                height: calc(100vh - 9rem);
+            }
+
+            .chat-page .chat-pane-conversation {
+                display: none !important;
+            }
+
+            .chat-page.is-conversation-open .chat-pane-list {
+                display: none !important;
+            }
+
+            .chat-page.is-conversation-open .chat-pane-conversation {
+                display: flex !important;
+            }
+
+            .chat-back {
+                display: inline-flex;
+            }
+
+            .chat-bubble {
+                max-width: 85%;
+            }
+        }
     </style>
 
-    <div class="row g-4 chat-page">
-        <div class="col-12 col-lg-4 d-flex flex-column">
+    <div class="card" id="chat-welcome" hidden>
+        <div class="card-body chat-welcome">
+            <div class="chat-welcome__icon"><i class="ri ri-chat-3-line"></i></div>
+            <h4 class="mb-2">Здесь будут переписки с клиентами</h4>
+            <p class="text-muted mb-4">Клиенты пишут вам из приложения Veloria Client, а вы отвечаете здесь. Можно и самому написать первым: напомнить о записи или поблагодарить за визит.</p>
+            <button type="button" class="btn btn-primary" data-chat-new><i class="ri ri-edit-line me-1"></i>Написать клиенту</button>
+            <p class="small text-muted mt-4 mb-0">Сообщение увидят те клиенты, которые установили приложение.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 chat-page" id="chat-page">
+        <div class="col-12 col-lg-4 d-flex flex-column chat-pane-list">
             <div class="card flex-fill d-flex flex-column">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Сообщения</h5>
-                    <button type="button" class="btn btn-icon btn-outline-secondary btn-sm" id="chat-refresh-threads" title="Обновить">
-                        <i class="ri ri-refresh-line"></i>
-                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" data-chat-new><i class="ri ri-add-line me-1"></i>Новое</button>
                 </div>
                 <div class="chat-threads flex-fill" id="chat-threads-list">
                     <div class="text-center py-5 chat-empty">Загрузка…</div>
                 </div>
+                <div class="chat-threads flex-fill" id="chat-picker" hidden>
+                    <div class="p-3 border-bottom">
+                        <input type="search" class="form-control" id="chat-picker-search" placeholder="Найти клиента по имени или телефону" autocomplete="off">
+                    </div>
+                    <div id="chat-picker-results"></div>
+                    <div class="p-3 border-top">
+                        <button type="button" class="btn btn-text-secondary btn-sm" id="chat-picker-close">Назад к перепискам</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="col-12 col-lg-8 d-flex flex-column">
+        <div class="col-12 col-lg-8 d-flex flex-column chat-pane-conversation">
             <div class="card flex-fill d-flex flex-column">
-                <div class="card-header" id="chat-conversation-header">
-                    <span class="chat-empty">Выберите переписку слева</span>
+                <div class="card-header d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-icon btn-text-secondary btn-sm chat-back" id="chat-back" title="Назад к перепискам"><i class="ri ri-arrow-left-line"></i></button>
+                    <div id="chat-conversation-header"><span class="chat-empty">Выберите переписку слева</span></div>
                 </div>
 
                 <div class="card-body chat-messages flex-fill" id="chat-messages">
@@ -139,7 +207,12 @@
             var sendButton = document.getElementById('chat-send-button');
             var sendSpinner = document.getElementById('chat-send-spinner');
             var sendAlert = document.getElementById('chat-send-alert');
-            var refreshButton = document.getElementById('chat-refresh-threads');
+            var pageEl = document.getElementById('chat-page');
+            var welcomeEl = document.getElementById('chat-welcome');
+            var pickerEl = document.getElementById('chat-picker');
+            var pickerSearch = document.getElementById('chat-picker-search');
+            var pickerResults = document.getElementById('chat-picker-results');
+            var isNarrow = window.matchMedia('(max-width: 991.98px)');
 
             var state = {
                 threads: [],
@@ -285,7 +358,11 @@
                         state.threads = payload.data || [];
                         renderThreads();
 
-                        if (!state.activeThreadId && state.threads.length) {
+                        var empty = !state.threads.length && pickerEl.hidden;
+                        welcomeEl.hidden = !empty;
+                        pageEl.hidden = empty;
+
+                        if (!state.activeThreadId && state.threads.length && !isNarrow.matches) {
                             loadThread(state.threads[0].id);
                         }
                     })
@@ -296,6 +373,7 @@
 
             function loadThread(threadId, options) {
                 state.activeThreadId = threadId;
+                pageEl.classList.add('is-conversation-open');
                 renderThreads();
 
                 return fetch('/api/v1/chat/threads/' + threadId, { headers: headers })
@@ -328,8 +406,86 @@
                 loadThread(parseInt(button.dataset.threadId, 10));
             });
 
-            refreshButton.addEventListener('click', function () {
+            document.getElementById('chat-back').addEventListener('click', function () {
+                pageEl.classList.remove('is-conversation-open');
+            });
+
+            /* ---------- start a conversation with a client ---------- */
+
+            var pickerTimer = null;
+
+            function openPicker() {
+                welcomeEl.hidden = true;
+                pageEl.hidden = false;
+                pageEl.classList.remove('is-conversation-open');
+                threadsList.hidden = true;
+                pickerEl.hidden = false;
+                pickerSearch.value = '';
+                searchClients('');
+                pickerSearch.focus();
+            }
+
+            function closePicker() {
+                pickerEl.hidden = true;
+                threadsList.hidden = false;
                 loadThreads();
+            }
+
+            function searchClients(query) {
+                var url = '/api/v1/clients?per_page=8&sort=name&search=' + encodeURIComponent(query);
+                fetch(url, { headers: headers })
+                    .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+                    .then(function (payload) {
+                        var clients = payload.data || [];
+                        if (!clients.length) {
+                            pickerResults.innerHTML = '<div class="text-center py-4 chat-empty">' +
+                                (query ? 'Никого не нашли' : 'В базе пока нет клиентов') + '</div>';
+                            return;
+                        }
+                        pickerResults.innerHTML = '<div class="list-group list-group-flush">' + clients.map(function (client) {
+                            return '<button type="button" class="list-group-item list-group-item-action" data-client-id="' + client.id + '">' +
+                                '<span class="chat-thread-item__name">' + escapeHtml(client.name || 'Клиент') + '</span>' +
+                                (client.phone ? '<div class="chat-thread-item__preview">' + escapeHtml(client.phone) + '</div>' : '') +
+                                '</button>';
+                        }).join('') + '</div>';
+                    })
+                    .catch(function () {
+                        pickerResults.innerHTML = '<div class="text-center py-4 text-danger">Не удалось загрузить клиентов</div>';
+                    });
+            }
+
+            function startThread(clientId) {
+                fetch('/api/v1/chat/threads', {
+                    method: 'POST',
+                    headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ client_id: clientId }),
+                })
+                    .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+                    .then(function (payload) {
+                        pickerEl.hidden = true;
+                        threadsList.hidden = false;
+                        return loadThreads().then(function () {
+                            return loadThread(payload.data.id);
+                        }).then(function () {
+                            messageInput.focus();
+                        });
+                    })
+                    .catch(function () {
+                        pickerResults.insertAdjacentHTML('afterbegin', '<div class="alert alert-danger m-3">Не удалось открыть переписку.</div>');
+                    });
+            }
+
+            document.querySelectorAll('[data-chat-new]').forEach(function (button) {
+                button.addEventListener('click', openPicker);
+            });
+            document.getElementById('chat-picker-close').addEventListener('click', closePicker);
+            pickerSearch.addEventListener('input', function () {
+                clearTimeout(pickerTimer);
+                pickerTimer = setTimeout(function () { searchClients(pickerSearch.value.trim()); }, 250);
+            });
+            pickerResults.addEventListener('click', function (event) {
+                var button = event.target.closest('[data-client-id]');
+                if (button) startThread(parseInt(button.dataset.clientId, 10));
             });
 
             attachmentInput.addEventListener('change', function () {
