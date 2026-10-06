@@ -17,21 +17,28 @@ class ScheduleService
     ): array {
         $rules = is_array($rules) ? $rules : [];
         $legacy = $this->rulesFromLegacy($legacyWorkDays, $legacyWorkHours);
-        $mode = $rules['mode'] ?? $legacy['mode'] ?? 'weekly';
+        $rawMode = $rules['mode'] ?? $legacy['mode'] ?? 'weekly';
 
         $weeklyRules = $this->normalizeWeeklyRules($rules['weekly'] ?? $legacy['weekly'] ?? []);
         $cycleRules = $this->normalizeCycleRules($rules['cycle'] ?? []);
         $monthlyRules = $this->normalizeMonthlyRules($rules['monthly'] ?? []);
 
-        if (! in_array($mode, ['weekly', 'cycle', 'monthly'], true)) {
-            $mode = 'weekly';
+        // 'monthly' used to be an exclusive third mode: every date not listed in
+        // `monthly.dates` was a day off, and `weekly` was ignored outright. Now
+        // `monthly.dates` is an overlay on top of weekly/cycle for every mode, so a
+        // record saved under the old exclusive mode is migrated by forcing weekly to
+        // all-off — the dates it already lists keep resolving exactly as before, and
+        // any leftover `weekly` data that was dead under the old mode stays dead
+        // instead of silently reappearing as the new fallback.
+        if ($rawMode === 'monthly') {
+            foreach (self::DAYS as $day) {
+                $weeklyRules[$day] = ['enabled' => false, 'slots' => []];
+            }
         }
+
+        $mode = in_array($rawMode, ['weekly', 'cycle'], true) ? $rawMode : 'weekly';
 
         if ($mode === 'cycle' && $cycleRules['slots'] === []) {
-            $mode = 'weekly';
-        }
-
-        if ($mode === 'monthly' && $monthlyRules['dates'] === []) {
             $mode = 'weekly';
         }
 
@@ -110,9 +117,17 @@ class ScheduleService
             is_array($setting?->work_hours) ? $setting->work_hours : [],
         );
 
+        // A date picked by hand on the calendar always wins over the weekly/shift
+        // rule, whether that means working hours different from the rule or an
+        // explicit day off (stored as an empty slot list) on a day the rule says is a
+        // work day.
+        $dateKey = $day->toDateString();
+        if (array_key_exists($dateKey, $rules['monthly']['dates'])) {
+            return $rules['monthly']['dates'][$dateKey];
+        }
+
         return match ($rules['mode']) {
             'cycle' => $this->resolveCycleSlots($rules['cycle'], $day),
-            'monthly' => $this->resolveMonthlySlots($rules['monthly'], $day),
             default => $this->resolveWeeklySlots($rules['weekly'], $day),
         };
     }
@@ -185,12 +200,11 @@ class ScheduleService
                 continue;
             }
 
-            $normalizedSlots = $this->normalizeSlots($slots);
-            if ($normalizedSlots === []) {
-                continue;
-            }
-
-            $normalizedDates[$dateKey] = $normalizedSlots;
+            // An empty list here is a deliberate override (a day the rule says is a
+            // work day, picked by hand as a day off), not "nothing to report" — it
+            // must stay in the map so resolveSlotsForDate can tell it apart from a
+            // date with no override at all.
+            $normalizedDates[$dateKey] = $this->normalizeSlots($slots);
         }
 
         ksort($normalizedDates);
@@ -231,11 +245,6 @@ class ScheduleService
         $position = (($diff % $cycleLength) + $cycleLength) % $cycleLength;
 
         return $position < $workDays ? ($cycleRules['slots'] ?? []) : [];
-    }
-
-    private function resolveMonthlySlots(array $monthlyRules, CarbonInterface $day): array
-    {
-        return $monthlyRules['dates'][$day->toDateString()] ?? [];
     }
 
     /**

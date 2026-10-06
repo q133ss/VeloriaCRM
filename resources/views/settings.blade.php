@@ -284,19 +284,29 @@
             font-size: 0.875rem;
         }
 
-        .schedule-mode-card {
-            border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
-            border-radius: 1rem;
-            padding: 1rem;
-            height: 100%;
-            cursor: pointer;
-            transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+        .schedule-mode-switch {
+            display: inline-flex;
+            padding: 0.25rem;
+            gap: 0.25rem;
+            border-radius: 999px;
+            background: rgba(var(--bs-body-color-rgb), 0.05);
         }
 
-        .schedule-mode-card.is-active {
-            border-color: rgba(var(--bs-primary-rgb), 0.38);
-            background: rgba(var(--bs-primary-rgb), 0.06);
-            transform: translateY(-1px);
+        .schedule-mode-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1.1rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--settings-faint);
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .schedule-mode-pill.is-active {
+            background: var(--bs-primary);
+            color: #fff;
         }
 
         .schedule-panel {
@@ -425,75 +435,39 @@
             font-size: 0.875rem;
         }
 
-        .cycle-preview {
-            margin-top: 1.5rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
-        }
-
-        .cycle-legend {
+        .schedule-calendar-legend {
             display: inline-flex;
+            flex-wrap: wrap;
             gap: 1rem;
             font-size: 0.8125rem;
             color: var(--settings-faint);
         }
 
-        .cycle-dot {
+        .schedule-dot {
             display: inline-block;
             width: 0.7rem;
             height: 0.7rem;
             margin-right: 0.4rem;
             border-radius: 50%;
             background: rgba(var(--bs-body-color-rgb), 0.12);
+            vertical-align: middle;
         }
 
-        .cycle-dot.is-work {
+        .schedule-dot.is-work {
             background: var(--bs-primary);
         }
 
-        .cycle-months {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 1.5rem;
+        .schedule-dot.is-override {
+            position: relative;
         }
 
-        .cycle-month__title {
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .cycle-month__grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.25rem;
-            text-align: center;
-        }
-
-        .cycle-month__dow {
-            font-size: 0.72rem;
-            color: var(--settings-faint);
-            text-transform: uppercase;
-        }
-
-        .cycle-day {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            aspect-ratio: 1;
-            border-radius: 0.5rem;
-            font-size: 0.8125rem;
-            color: var(--settings-faint);
-        }
-
-        .cycle-day.is-work {
-            background: var(--bs-primary);
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .cycle-day.is-today {
-            outline: 2px solid rgba(var(--bs-body-color-rgb), 0.55);
-            outline-offset: -2px;
+        .schedule-dot.is-override::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border: 1.5px solid var(--bs-body-color);
+            border-radius: 50%;
+            opacity: 0.55;
         }
 
         .mcal {
@@ -513,8 +487,7 @@
             display: inline-block;
         }
 
-        .mcal__title::first-letter,
-        .cycle-month__title::first-letter {
+        .mcal__title::first-letter {
             text-transform: uppercase;
         }
 
@@ -559,6 +532,18 @@
         .mcal-day.is-active {
             outline: 2px solid var(--bs-body-color);
             outline-offset: 1px;
+        }
+
+        /* A date picked by hand, whether its value matches the rule or not. */
+        .mcal-day.is-override::after {
+            content: '';
+            display: block;
+            width: 0.3rem;
+            height: 0.3rem;
+            margin: 0.15rem auto 0;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.6;
         }
 
         .mday-chips {
@@ -656,17 +641,6 @@
             display: inline;
         }
 
-        .wd-modes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .wd-modes[hidden] {
-            display: none;
-        }
-
         .wd-simple {
             flex-wrap: wrap;
         }
@@ -700,8 +674,7 @@
                 margin-left: 0;
             }
 
-            .cycle-grid,
-            .cycle-months {
+            .cycle-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -725,7 +698,6 @@
             background: rgba(var(--bs-primary-rgb), 0.14);
         }
 
-        html[data-bs-theme="dark"] .schedule-mode-card.is-active,
         html[data-bs-theme="dark"] .schedule-panel {
             background: rgba(var(--bs-primary-rgb), 0.1);
         }
@@ -1067,34 +1039,16 @@
                             <span class="settings-meta-chip"><i class="icon-base ri ri-time-line"></i> Расписание</span>
                         </div>
 
-                        <div class="wd-modes" id="schedule-mode-links">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-switch-mode="cycle">{{ __('settings.schedule_link_cycle') }}</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-switch-mode="monthly">{{ __('settings.schedule_link_monthly') }}</button>
-                        </div>
-
-                        {{-- The three radios stay as the state holder; people switch mode with the buttons above the schedule. --}}
-                        <div class="row g-4 mb-5 d-none">
-                            <div class="col-lg-4">
-                                <label class="schedule-mode-card d-block" for="schedule-mode-weekly" data-schedule-card="weekly">
-                                    <input class="form-check-input me-2" type="radio" name="schedule_mode" id="schedule-mode-weekly" value="weekly" checked />
-                                    <span class="fw-semibold d-block mb-1">{{ __('settings.schedule_mode_weekly') }}</span>
-                                    <span class="text-muted small">{{ __('settings.schedule_mode_weekly_hint') }}</span>
-                                </label>
-                            </div>
-                            <div class="col-lg-4">
-                                <label class="schedule-mode-card d-block" for="schedule-mode-cycle" data-schedule-card="cycle">
-                                    <input class="form-check-input me-2" type="radio" name="schedule_mode" id="schedule-mode-cycle" value="cycle" />
-                                    <span class="fw-semibold d-block mb-1">{{ __('settings.schedule_mode_cycle') }}</span>
-                                    <span class="text-muted small">{{ __('settings.schedule_mode_cycle_hint') }}</span>
-                                </label>
-                            </div>
-                            <div class="col-lg-4">
-                                <label class="schedule-mode-card d-block" for="schedule-mode-monthly" data-schedule-card="monthly">
-                                    <input class="form-check-input me-2" type="radio" name="schedule_mode" id="schedule-mode-monthly" value="monthly" />
-                                    <span class="fw-semibold d-block mb-1">{{ __('settings.schedule_mode_monthly') }}</span>
-                                    <span class="text-muted small">{{ __('settings.schedule_mode_monthly_hint') }}</span>
-                                </label>
-                            </div>
+                        {{-- The two radios stay as the state holder for which rule generates the calendar below; a picked date always overrides whichever one is active. --}}
+                        <div class="schedule-mode-switch mb-4" role="radiogroup" aria-label="{{ __('settings.schedule_mode_label') }}">
+                            <label class="schedule-mode-pill" for="schedule-mode-weekly" data-schedule-card="weekly">
+                                <input class="visually-hidden" type="radio" name="schedule_mode" id="schedule-mode-weekly" value="weekly" checked />
+                                <span>{{ __('settings.schedule_mode_weekly') }}</span>
+                            </label>
+                            <label class="schedule-mode-pill" for="schedule-mode-cycle" data-schedule-card="cycle">
+                                <input class="visually-hidden" type="radio" name="schedule_mode" id="schedule-mode-cycle" value="cycle" />
+                                <span>{{ __('settings.schedule_mode_cycle') }}</span>
+                            </label>
                         </div>
 
                         <template id="wd-break-template">
@@ -1117,107 +1071,101 @@
                             </select>
                         </div>
 
-                        <div class="schedule-panel is-active mb-5" data-schedule-panel="weekly">
-                            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-                                <div>
-                                    <h6 class="mb-1">{{ __('settings.schedule_title') }}</h6>
-                                    <p class="text-muted mb-0">{{ __('settings.schedule_simple_hint') }}</p>
-                                </div>
-                            </div>
+                        <details class="settings-password-toggle p-4 mb-5" id="schedule-rule-details">
+                            <summary class="fw-semibold cursor-pointer">{{ __('settings.schedule_rule_summary') }}</summary>
+                            <div class="pt-4">
+                                <div class="schedule-panel is-active" data-schedule-panel="weekly">
+                                    <p class="text-muted mb-4">{{ __('settings.schedule_simple_hint') }}</p>
 
-                            <div class="wd-list">
-                                @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
-                                <div class="wd-row" data-day-row="{{ $day }}">
-                                    <div class="wd-row__main">
-                                        <div class="form-check form-switch wd-row__day">
-                                            <input class="form-check-input weekly-day-check" type="checkbox" id="weekly-day-{{ $day }}" data-day="{{ $day }}" />
-                                            <label class="form-check-label" for="weekly-day-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
+                                    <div class="wd-list">
+                                        @foreach(['mon','tue','wed','thu','fri','sat','sun'] as $day)
+                                        <div class="wd-row" data-day-row="{{ $day }}">
+                                            <div class="wd-row__main">
+                                                <div class="form-check form-switch wd-row__day">
+                                                    <input class="form-check-input weekly-day-check" type="checkbox" id="weekly-day-{{ $day }}" data-day="{{ $day }}" />
+                                                    <label class="form-check-label" for="weekly-day-{{ $day }}">{{ __('settings.day_' . $day) }}</label>
+                                                </div>
+                                                <span class="wd-off text-muted">{{ __('settings.schedule_day_off') }}</span>
+                                                <div class="wd-simple">
+                                                    <select class="form-select wd-from" data-day="{{ $day }}" aria-label="{{ __('settings.from') }}"></select>
+                                                    <span class="wd-dash">—</span>
+                                                    <select class="form-select wd-to" data-day="{{ $day }}" aria-label="{{ __('settings.to') }}"></select>
+                                                    <button type="button" class="btn btn-link btn-sm wd-break-add" data-day="{{ $day }}">{{ __('settings.schedule_break_add') }}</button>
+                                                </div>
+                                                <div class="wd-manual">
+                                                    <input type="text" class="form-control weekly-day-slots" data-day="{{ $day }}" placeholder="09:00, 10:00, 15:30" />
+                                                </div>
+                                            </div>
+                                            <div class="wd-breaks" data-day="{{ $day }}"></div>
+                                            <div class="wd-row__foot">
+                                                <span class="settings-slot-error" data-slot-error="{{ $day }}" hidden></span>
+                                                <button type="button" class="btn btn-link btn-sm p-0 wd-manual-toggle" data-day="{{ $day }}"></button>
+                                            </div>
                                         </div>
-                                        <span class="wd-off text-muted">{{ __('settings.schedule_day_off') }}</span>
-                                        <div class="wd-simple">
-                                            <select class="form-select wd-from" data-day="{{ $day }}" aria-label="{{ __('settings.from') }}"></select>
-                                            <span class="wd-dash">—</span>
-                                            <select class="form-select wd-to" data-day="{{ $day }}" aria-label="{{ __('settings.to') }}"></select>
-                                            <button type="button" class="btn btn-link btn-sm wd-break-add" data-day="{{ $day }}">{{ __('settings.schedule_break_add') }}</button>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-3 mt-4">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="weekly-copy-all">{{ __('settings.schedule_copy_all') }}</button>
+                                        <button type="button" class="btn btn-link btn-sm px-0" id="weekly-manual-all">{{ __('settings.schedule_manual_on') }}</button>
+                                    </div>
+                                </div>
+
+                                <div class="schedule-panel" data-schedule-panel="cycle">
+                                    <p class="text-muted mb-4">{{ __('settings.schedule_cycle_intro') }}</p>
+
+                                    <div class="cycle-grid">
+                                        <div>
+                                            <label for="cycle_work_days" class="form-label">{{ __('settings.schedule_cycle_q_work') }}</label>
+                                            <input type="number" min="1" max="31" class="form-control" id="cycle_work_days" />
                                         </div>
-                                        <div class="wd-manual">
-                                            <input type="text" class="form-control weekly-day-slots" data-day="{{ $day }}" placeholder="09:00, 10:00, 15:30" />
+                                        <div>
+                                            <label for="cycle_rest_days" class="form-label">{{ __('settings.schedule_cycle_q_rest') }}</label>
+                                            <input type="number" min="1" max="31" class="form-control" id="cycle_rest_days" />
+                                        </div>
+                                        <div>
+                                            <label for="cycle_anchor_date" class="form-label">{{ __('settings.schedule_cycle_q_anchor') }}</label>
+                                            <input type="date" class="form-control" id="cycle_anchor_date" />
                                         </div>
                                     </div>
-                                    <div class="wd-breaks" data-day="{{ $day }}"></div>
-                                    <div class="wd-row__foot">
-                                        <span class="settings-slot-error" data-slot-error="{{ $day }}" hidden></span>
-                                        <button type="button" class="btn btn-link btn-sm p-0 wd-manual-toggle" data-day="{{ $day }}"></button>
-                                    </div>
-                                </div>
-                                @endforeach
-                            </div>
 
-                            <div class="d-flex flex-wrap gap-3 mt-4">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="weekly-copy-all">{{ __('settings.schedule_copy_all') }}</button>
-                                <button type="button" class="btn btn-link btn-sm px-0" id="weekly-manual-all">{{ __('settings.schedule_manual_on') }}</button>
-                            </div>
-
-                        </div>
-
-                        <div class="schedule-panel mb-5" data-schedule-panel="cycle">
-                            <button type="button" class="btn btn-link btn-sm px-0 mb-3" data-switch-mode="weekly">{{ __('settings.schedule_link_weekly') }}</button>
-                            <h6 class="mb-1">{{ __('settings.schedule_mode_cycle') }}</h6>
-                            <p class="text-muted mb-4">{{ __('settings.schedule_cycle_intro') }}</p>
-
-                            <div class="cycle-grid">
-                                <div>
-                                    <label for="cycle_work_days" class="form-label">{{ __('settings.schedule_cycle_q_work') }}</label>
-                                    <input type="number" min="1" max="31" class="form-control" id="cycle_work_days" />
-                                </div>
-                                <div>
-                                    <label for="cycle_rest_days" class="form-label">{{ __('settings.schedule_cycle_q_rest') }}</label>
-                                    <input type="number" min="1" max="31" class="form-control" id="cycle_rest_days" />
-                                </div>
-                                <div>
-                                    <label for="cycle_anchor_date" class="form-label">{{ __('settings.schedule_cycle_q_anchor') }}</label>
-                                    <input type="date" class="form-control" id="cycle_anchor_date" />
-                                </div>
-                            </div>
-
-                            <div class="wd-list mt-4">
-                                <div class="wd-row is-on" data-day-row="cycle">
-                                    <div class="wd-row__main">
-                                        <span class="wd-row__day fw-semibold">{{ __('settings.work_hours') }}</span>
-                                        <div class="wd-simple">
-                                            <select class="form-select wd-from" data-day="cycle" aria-label="{{ __('settings.from') }}"></select>
-                                            <span class="wd-dash">—</span>
-                                            <select class="form-select wd-to" data-day="cycle" aria-label="{{ __('settings.to') }}"></select>
-                                            <button type="button" class="btn btn-link btn-sm wd-break-add" data-day="cycle">{{ __('settings.schedule_break_add') }}</button>
+                                    <div class="wd-list mt-4">
+                                        <div class="wd-row is-on" data-day-row="cycle">
+                                            <div class="wd-row__main">
+                                                <span class="wd-row__day fw-semibold">{{ __('settings.work_hours') }}</span>
+                                                <div class="wd-simple">
+                                                    <select class="form-select wd-from" data-day="cycle" aria-label="{{ __('settings.from') }}"></select>
+                                                    <span class="wd-dash">—</span>
+                                                    <select class="form-select wd-to" data-day="cycle" aria-label="{{ __('settings.to') }}"></select>
+                                                    <button type="button" class="btn btn-link btn-sm wd-break-add" data-day="cycle">{{ __('settings.schedule_break_add') }}</button>
+                                                </div>
+                                                <div class="wd-manual">
+                                                    <input type="text" class="form-control weekly-day-slots" id="cycle_slots" data-day="cycle" placeholder="09:00, 10:00, 15:30" />
+                                                </div>
+                                            </div>
+                                            <div class="wd-breaks" data-day="cycle"></div>
+                                            <div class="wd-row__foot">
+                                                <span class="settings-slot-error" data-slot-error="cycle" hidden></span>
+                                                <button type="button" class="btn btn-link btn-sm p-0 wd-manual-toggle" data-day="cycle"></button>
+                                            </div>
                                         </div>
-                                        <div class="wd-manual">
-                                            <input type="text" class="form-control weekly-day-slots" id="cycle_slots" data-day="cycle" placeholder="09:00, 10:00, 15:30" />
-                                        </div>
-                                    </div>
-                                    <div class="wd-breaks" data-day="cycle"></div>
-                                    <div class="wd-row__foot">
-                                        <span class="settings-slot-error" data-slot-error="cycle" hidden></span>
-                                        <button type="button" class="btn btn-link btn-sm p-0 wd-manual-toggle" data-day="cycle"></button>
                                     </div>
                                 </div>
                             </div>
+                        </details>
 
-                            <div class="cycle-preview">
-                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                                    <span class="fw-semibold">{{ __('settings.schedule_cycle_preview') }}</span>
-                                    <span class="cycle-legend">
-                                        <span><i class="cycle-dot is-work"></i>{{ __('settings.schedule_cycle_legend_work') }}</span>
-                                        <span><i class="cycle-dot"></i>{{ __('settings.schedule_cycle_legend_rest') }}</span>
-                                    </span>
+                        <div class="schedule-calendar-block mb-5">
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-3">
+                                <div>
+                                    <h6 class="mb-1">{{ __('settings.schedule_calendar_title') }}</h6>
+                                    <p class="text-muted small mb-0">{{ __('settings.schedule_calendar_hint') }}</p>
                                 </div>
-                                <div class="cycle-months" id="cycle-calendar" aria-live="polite"></div>
+                                <span class="schedule-calendar-legend">
+                                    <span><i class="schedule-dot is-work"></i>{{ __('settings.schedule_calendar_legend_work') }}</span>
+                                    <span><i class="schedule-dot"></i>{{ __('settings.schedule_calendar_legend_off') }}</span>
+                                    <span><i class="schedule-dot is-override"></i>{{ __('settings.schedule_calendar_legend_override') }}</span>
+                                </span>
                             </div>
-                        </div>
-
-                        <div class="schedule-panel mb-5" data-schedule-panel="monthly">
-                            <button type="button" class="btn btn-link btn-sm px-0 mb-3" data-switch-mode="weekly">{{ __('settings.schedule_link_weekly') }}</button>
-                            <h6 class="mb-1">{{ __('settings.schedule_mode_monthly') }}</h6>
-                            <p class="text-muted mb-4">{{ __('settings.schedule_monthly_pick') }}</p>
 
                             <div class="mcal">
                                 <div class="mcal__head">
@@ -1236,9 +1184,13 @@
                                     <button type="button" class="btn btn-link btn-sm p-0" id="mday-close">{{ __('settings.schedule_monthly_done') }}</button>
                                 </div>
                                 <div class="wd-list">
-                                    <div class="wd-row is-on" data-day-row="mday">
+                                    <div class="wd-row" data-day-row="mday">
                                         <div class="wd-row__main">
-                                            <span class="wd-row__day fw-semibold">{{ __('settings.schedule_monthly_time') }}</span>
+                                            <div class="form-check form-switch wd-row__day">
+                                                <input class="form-check-input" type="checkbox" id="mday-work-toggle" />
+                                                <label class="form-check-label" for="mday-work-toggle">{{ __('settings.schedule_mday_work_label') }}</label>
+                                            </div>
+                                            <span class="wd-off text-muted">{{ __('settings.schedule_day_off') }}</span>
                                             <div class="wd-simple">
                                                 <select class="form-select wd-from" data-day="mday" aria-label="{{ __('settings.from') }}"></select>
                                                 <span class="wd-dash">—</span>
@@ -1257,8 +1209,7 @@
                                     </div>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2 mt-3">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="mday-apply-all">{{ __('settings.schedule_monthly_apply_all') }}</button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" id="mday-remove">{{ __('settings.schedule_monthly_remove') }}</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="mday-reset" hidden>{{ __('settings.schedule_reset_to_rule') }}</button>
                                 </div>
                             </div>
                         </div>
@@ -1544,8 +1495,9 @@
         document.querySelectorAll('[data-schedule-card]').forEach(card => {
             card.classList.toggle('is-active', card.dataset.scheduleCard === mode);
         });
-        const modeLinks = document.getElementById('schedule-mode-links');
-        if (modeLinks) modeLinks.hidden = mode !== 'weekly';
+        // The calendar always shows the chosen rule's fill, so switching the rule
+        // (weekly <-> shift) must repaint it.
+        renderMonthlyCalendar();
     }
     function getSelectedScheduleMode() {
         return document.querySelector('input[name="schedule_mode"]:checked')?.value || 'weekly';
@@ -1738,15 +1690,20 @@
             ? wdField(day, '.weekly-day-slots')
             : wdField(day, '.wd-from');
     }
-    // The shift-schedule row has no day switch: it is always on.
+    // The shift-schedule row has no day switch: it is always on. The calendar-date
+    // row has its own switch instead of the weekday checkboxes.
     function wdIsOn(day) {
-        return day === 'cycle' || day === 'mday' || document.getElementById('weekly-day-' + day).checked;
+        if (day === 'cycle') return true;
+        if (day === 'mday') return document.getElementById('mday-work-toggle').checked;
+        return document.getElementById('weekly-day-' + day).checked;
     }
     function initWeeklyScheduleControls() {
         document.querySelectorAll('.wd-list').forEach(bindWeeklyList);
 
+        // The calendar below always shows the active rule's fill, so any change to
+        // the rule itself must repaint it.
         ['cycle_work_days', 'cycle_rest_days', 'cycle_anchor_date'].forEach(id => {
-            document.getElementById(id).addEventListener('input', renderCycleCalendar);
+            document.getElementById(id).addEventListener('input', renderMonthlyCalendar);
         });
 
         document.getElementById('weekly-step').addEventListener('change', () => {
@@ -1756,6 +1713,7 @@
             });
             // Re-generated hours of the day being edited go back into its date.
             if (!document.getElementById('mday').hidden) wdNotify('mday');
+            renderMonthlyCalendar();
         });
 
         document.getElementById('weekly-copy-all').addEventListener('click', () => {
@@ -1770,6 +1728,7 @@
                 wdShowError(day, '');
             });
             wdNotify(source);
+            renderMonthlyCalendar();
         });
 
         document.getElementById('weekly-manual-all').addEventListener('click', () => {
@@ -1778,17 +1737,9 @@
                 wdSyncDay(day);
                 wdSetState(day, { enabled: true, manual: true });
             });
+            renderMonthlyCalendar();
         });
 
-        document.querySelectorAll('[data-switch-mode]').forEach(button => {
-            button.addEventListener('click', () => {
-                const radio = document.querySelector(`input[name="schedule_mode"][value="${button.dataset.switchMode}"]`);
-                if (!radio) return;
-                radio.checked = true;
-                radio.dispatchEvent(new Event('change', { bubbles: true }));
-                showSettingsTab('settings-work');
-            });
-        });
     }
     function bindWeeklyList(list) {
         list.addEventListener('change', event => {
@@ -1807,6 +1758,7 @@
             }
             wdSyncDay(day);
             if (wdIsOn(day)) wdShowError(day, wdDayError(day));
+            renderMonthlyCalendar();
         });
 
         list.addEventListener('click', event => {
@@ -1832,61 +1784,32 @@
             wdSyncDay(day);
             wdShowError(day, wdDayError(day));
             wdNotify(day);
+            renderMonthlyCalendar();
         });
     }
     function localIsoDate(date = new Date()) {
         return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
     }
-    // Must stay in step with ScheduleService::resolveCycleSlots (positive modulo, dates before the start count too).
-    function renderCycleCalendar() {
-        const container = document.getElementById('cycle-calendar');
-        const work = Math.min(Math.max(parseInt(document.getElementById('cycle_work_days').value, 10) || 0, 0), 31);
-        const rest = Math.min(Math.max(parseInt(document.getElementById('cycle_rest_days').value, 10) || 0, 0), 31);
-        const anchorParts = (document.getElementById('cycle_anchor_date').value || '').split('-').map(Number);
-        const hasCycle = work > 0 && rest > 0 && anchorParts.length === 3 && anchorParts.every(Number.isFinite);
-        const dayNumber = (y, m, d) => Math.round(Date.UTC(y, m, d) / 86400000);
-        const anchor = hasCycle ? dayNumber(anchorParts[0], anchorParts[1] - 1, anchorParts[2]) : 0;
-        const locale = document.documentElement.lang || 'ru';
-        const today = new Date();
-        const todayKey = localIsoDate(today);
-
-        const weekdays = [...Array(7)].map((_, i) => new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2024, 0, 1 + i)));
-        container.innerHTML = '';
-
-        [0, 1].forEach(offset => {
-            const first = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-            const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-            const lead = (first.getDay() + 6) % 7; // Monday first
-
-            const month = document.createElement('div');
-            const title = document.createElement('div');
-            title.className = 'cycle-month__title';
-            title.textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(first);
-            const grid = document.createElement('div');
-            grid.className = 'cycle-month__grid';
-
-            weekdays.forEach(name => {
-                const cell = document.createElement('div');
-                cell.className = 'cycle-month__dow';
-                cell.textContent = name;
-                grid.appendChild(cell);
-            });
-            for (let i = 0; i < lead; i++) grid.appendChild(document.createElement('div'));
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement('div');
-                cell.className = 'cycle-day';
-                cell.textContent = day;
-                if (hasCycle) {
-                    const length = work + rest;
-                    const position = (((dayNumber(first.getFullYear(), first.getMonth(), day) - anchor) % length) + length) % length;
-                    if (position < work) cell.classList.add('is-work');
-                }
-                if (localIsoDate(new Date(first.getFullYear(), first.getMonth(), day)) === todayKey) cell.classList.add('is-today');
-                grid.appendChild(cell);
-            }
-            month.append(title, grid);
-            container.appendChild(month);
-        });
+    const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']; // Date#getDay(): 0 = Sunday
+    // What the active rule (weekly or shift cycle) says for a date, ignoring any
+    // picked-by-hand override. Must stay in step with ScheduleService::resolveWeeklySlots
+    // / resolveCycleSlots (same positive-modulo cycle math, dates before the start count too).
+    function ruleSlotsForDate(iso) {
+        const [y, m, d] = isoParts(iso);
+        if (getSelectedScheduleMode() === 'cycle') {
+            const work = Math.min(Math.max(parseInt(document.getElementById('cycle_work_days').value, 10) || 0, 0), 31);
+            const rest = Math.min(Math.max(parseInt(document.getElementById('cycle_rest_days').value, 10) || 0, 0), 31);
+            const length = work + rest;
+            const anchorParts = (document.getElementById('cycle_anchor_date').value || '').split('-').map(Number);
+            if (!(work > 0 && rest > 0 && anchorParts.length === 3 && anchorParts.every(Number.isFinite))) return [];
+            const dayNumber = (yy, mm, dd) => Math.round(Date.UTC(yy, mm, dd) / 86400000);
+            const anchor = dayNumber(anchorParts[0], anchorParts[1] - 1, anchorParts[2]);
+            const position = (((dayNumber(y, m - 1, d) - anchor) % length) + length) % length;
+            return position < work ? parseSlots(wdField('cycle', '.weekly-day-slots').value) : [];
+        }
+        const dayKey = WEEKDAY_KEYS[new Date(y, m - 1, d).getDay()];
+        if (!document.getElementById('weekly-day-' + dayKey).checked) return [];
+        return parseSlots(wdField(dayKey, '.weekly-day-slots').value);
     }
     function populateCycleSchedule(cycle = {}) {
         document.getElementById('cycle_anchor_date').value = cycle.anchor_date || localIsoDate();
@@ -1901,32 +1824,41 @@
         wdSetState('cycle', { enabled: true, manual });
         wdSyncDay('cycle');
         wdShowError('cycle', '');
-        renderCycleCalendar();
     }
-    /* ---------- custom month: click the days you work ----------
-       monthlyDates (date -> slots) is the state; the single editor row ("mday") edits the active date. */
+    /* ---------- calendar: click a date to override the rule for just that day ----------
+       monthlyDates (date -> slots, [] meaning an explicit day off) holds only the
+       overrides; every other date follows the active weekly/cycle rule. The single
+       editor row ("mday") edits whichever date is active. */
 
     let monthlyDates = {};
     let monthlyActive = null;
-    let monthlyTemplate = null; // slots of the day touched last: a newly clicked day starts with the same hours
+    let monthlyTemplate = null; // slots of the override touched last: a new override starts with the same hours
     const monthlyView = { year: new Date().getFullYear(), month: new Date().getMonth() };
 
+    function monthlyIsOverridden(date) {
+        return Object.prototype.hasOwnProperty.call(monthlyDates, date);
+    }
     function monthlyNewDaySlots() {
         if (monthlyTemplate && monthlyTemplate.length) return monthlyTemplate.slice();
         const { from, to } = wdDefaults();
         return buildSlots(from, to, wdStep());
     }
+    // An un-overridden date opens pre-filled with what the rule currently says for
+    // it, so the switch merely confirms or flips that — not a blank slate.
     function loadMonthlyEditor(date) {
-        const slots = monthlyDates[date] || [];
+        const slots = monthlyIsOverridden(date) ? monthlyDates[date] : ruleSlotsForDate(date);
         const inferred = inferDay(slots, wdStep());
         const manual = slots.length > 0 && !inferred;
         wdWrite('mday', inferred || wdDefaults());
         document.querySelector('.weekly-day-slots[data-day="mday"]').value = manual ? slotsToInput(slots) : '';
-        wdSetState('mday', { enabled: true, manual });
+        document.getElementById('mday-work-toggle').checked = slots.length > 0;
+        wdSetState('mday', { enabled: slots.length > 0, manual });
         wdSyncDay('mday');
         wdShowError('mday', '');
+        document.getElementById('mday-reset').hidden = !monthlyIsOverridden(date);
     }
     function describeSlots(slots) {
+        if (!slots.length) return @json(__('settings.schedule_day_off'));
         const inferred = inferDay(slots, wdStep());
         return inferred
             ? minToTime(inferred.from) + '–' + minToTime(inferred.to)
@@ -1978,30 +1910,33 @@
         for (let i = 0; i < lead; i++) grid.appendChild(document.createElement('div'));
         for (let day = 1; day <= daysInMonth; day++) {
             const iso = localIsoDate(new Date(year, month, day));
+            const overridden = monthlyIsOverridden(iso);
+            const isWork = overridden ? monthlyDates[iso].length > 0 : ruleSlotsForDate(iso).length > 0;
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'mcal-day';
             button.textContent = day;
             button.dataset.date = iso;
-            if (monthlyDates[iso]) button.classList.add('is-work');
+            if (isWork) button.classList.add('is-work');
+            if (overridden) button.classList.add('is-override');
             if (iso === todayKey) button.classList.add('is-today');
             if (iso === monthlyActive) button.classList.add('is-active');
-            button.setAttribute('aria-pressed', monthlyDates[iso] ? 'true' : 'false');
+            button.setAttribute('aria-pressed', isWork ? 'true' : 'false');
             grid.appendChild(button);
         }
         const count = Object.keys(monthlyDates).length;
         document.getElementById('mcal-summary').textContent = count
-            ? @json(__('settings.schedule_monthly_selected', ['count' => ':count'])).replace(':count', count)
-            : @json(__('settings.schedule_monthly_none'));
+            ? @json(__('settings.schedule_overrides_count', ['count' => ':count'])).replace(':count', count)
+            : @json(__('settings.schedule_overrides_none'));
         renderMonthlyChips();
     }
     function populateMonthlySchedule(monthly = {}) {
         monthlyDates = {};
         Object.entries(monthly?.dates || {}).forEach(([date, slots]) => {
-            const parsed = parseSlots(slots);
-            if (/^\d{4}-\d{2}-\d{2}$/.test(date) && parsed.length) monthlyDates[date] = parsed;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+            monthlyDates[date] = parseSlots(slots);
         });
-        monthlyTemplate = Object.values(monthlyDates)[0] || null;
+        monthlyTemplate = Object.values(monthlyDates).find(slots => slots.length) || null;
         const now = new Date();
         monthlyView.year = now.getFullYear();
         monthlyView.month = now.getMonth();
@@ -2012,14 +1947,7 @@
             const button = event.target.closest('.mcal-day');
             if (!button) return;
             const date = button.dataset.date;
-            if (!monthlyDates[date]) {
-                // A new day opens its hours right away: every day may differ.
-                monthlyDates[date] = monthlyNewDaySlots();
-                setMonthlyActive(date);
-                touchSettingsForm();
-            } else {
-                setMonthlyActive(monthlyActive === date ? null : date);
-            }
+            setMonthlyActive(monthlyActive === date ? null : date);
         });
         document.getElementById('mcal-prev').addEventListener('click', () => {
             const view = new Date(monthlyView.year, monthlyView.month - 1, 1);
@@ -2042,27 +1970,48 @@
             setMonthlyActive(monthlyActive === chip.dataset.date ? null : chip.dataset.date);
         });
         document.getElementById('mday-close').addEventListener('click', () => setMonthlyActive(null));
-        document.getElementById('mday-remove').addEventListener('click', () => {
+
+        // The switch is the one action that always creates/updates an override —
+        // just opening a date to look at it never writes anything.
+        document.getElementById('mday-work-toggle').addEventListener('change', event => {
+            if (!monthlyActive) return;
+            const enabled = event.target.checked;
+            if (enabled) {
+                const slots = monthlyNewDaySlots();
+                wdWrite('mday', inferDay(slots, wdStep()) || wdDefaults());
+                document.querySelector('.weekly-day-slots[data-day="mday"]').value = '';
+                wdSetState('mday', { enabled: true, manual: false });
+                wdSyncDay('mday');
+                monthlyDates[monthlyActive] = parseSlots(document.querySelector('.weekly-day-slots[data-day="mday"]').value);
+            } else {
+                wdSetState('mday', { enabled: false, manual: false });
+                monthlyDates[monthlyActive] = [];
+            }
+            wdShowError('mday', enabled ? wdDayError('mday') : '');
+            monthlyTemplate = monthlyDates[monthlyActive].length ? monthlyDates[monthlyActive].slice() : monthlyTemplate;
+            document.getElementById('mday-reset').hidden = false;
+            renderMonthlyCalendar();
+            touchSettingsForm();
+        });
+
+        document.getElementById('mday-reset').addEventListener('click', () => {
             delete monthlyDates[monthlyActive];
-            setMonthlyActive(null);
+            loadMonthlyEditor(monthlyActive);
+            renderMonthlyCalendar();
             touchSettingsForm();
         });
-        document.getElementById('mday-apply-all').addEventListener('click', () => {
-            const slots = parseSlots(document.querySelector('.weekly-day-slots[data-day="mday"]').value);
-            if (!slots.length) return;
-            Object.keys(monthlyDates).forEach(date => { monthlyDates[date] = slots.slice(); });
-            monthlyTemplate = slots.slice();
-            touchSettingsForm();
-        });
-        // The editor row writes its slots into the hidden input; mirror them into the active date.
+
+        // The editor row writes its slots into the hidden input; mirror them into the active override.
         const editorList = document.querySelector('[data-day-row="mday"]').closest('.wd-list');
         const mirror = () => {
-            if (!monthlyActive) return;
+            if (!monthlyActive || !wdIsOn('mday')) return;
             const slots = parseSlots(document.querySelector('.weekly-day-slots[data-day="mday"]').value);
             if (!slots.length) return;
             monthlyDates[monthlyActive] = slots;
             monthlyTemplate = slots.slice();
+            document.getElementById('mday-reset').hidden = false;
             renderMonthlyChips();
+            renderMonthlyCalendar();
         };
         editorList.addEventListener('change', mirror);
         editorList.addEventListener('input', mirror);
@@ -2077,7 +2026,7 @@
         });
         const monthlyOut = {};
         Object.keys(monthlyDates).sort().forEach(date => {
-            if (monthlyDates[date].length) monthlyOut[date] = monthlyDates[date];
+            monthlyOut[date] = monthlyDates[date];
         });
         return {
             mode: getSelectedScheduleMode(),
@@ -2250,6 +2199,10 @@
         populateWeeklySchedule(scheduleRules.weekly || {}, scheduleRules.cycle || {});
         populateCycleSchedule(scheduleRules.cycle || {});
         populateMonthlySchedule(scheduleRules.monthly || {});
+        // Nothing to look at yet: open the rule editor instead of hiding an empty schedule behind a collapsed summary.
+        const hasWeeklyRule = scheduleDays.some(day => scheduleRules.weekly?.[day]?.enabled && scheduleRules.weekly[day].slots?.length);
+        const hasCycleRule = (scheduleRules.cycle?.slots || []).length > 0;
+        document.getElementById('schedule-rule-details').open = !hasWeeklyRule && !hasCycleRule;
         setHolidays((data.settings.holidays || []).map(date => String(date).split('T')[0]));
         form.address.value = data.settings.address || '';
         form['map_point[lat]'].value = data.settings.map_point?.lat || '';
