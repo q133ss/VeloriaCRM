@@ -256,17 +256,105 @@
             quickServicesSummary.textContent = formatQuickCurrency(totalPrice);
         }
 
+        // A plain link to /services used to be the only way out of an empty
+        // catalog, but it threw away whatever the popup already had filled
+        // in (client, date, time). A tiny inline form keeps the booking
+        // intact; the full page stays one click away for category/cost.
+        function bindQuickServiceCreateForm(formEl, errorEl) {
+            formEl.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                errorEl.textContent = '';
+
+                const nameInput = document.getElementById('quick_new_service_name');
+                const priceInput = document.getElementById('quick_new_service_price');
+                const durationInput = document.getElementById('quick_new_service_duration');
+                const submitButton = formEl.querySelector('button[type="submit"]');
+
+                submitButton.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/services', {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            name: nameInput.value.trim(),
+                            base_price: priceInput.value,
+                            duration_min: durationInput.value,
+                        }),
+                    });
+
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const fields = result.error?.fields || {};
+                        const firstField = Object.values(fields)[0];
+                        errorEl.textContent = (firstField && firstField[0]) || result.error?.message || 'Не удалось добавить услугу.';
+                        submitButton.disabled = false;
+                        return;
+                    }
+
+                    const createdId = result.data?.id;
+
+                    await loadQuickServices();
+
+                    if (createdId) {
+                        const checkbox = quickServicesContainer.querySelector('.quick-service-checkbox[value="' + createdId + '"]');
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            updateQuickSummary();
+                        }
+                    }
+                } catch (error) {
+                    errorEl.textContent = 'Не удалось добавить услугу.';
+                    submitButton.disabled = false;
+                }
+            });
+        }
+
         function renderQuickServices(services) {
             quickServicesContainer.innerHTML = '';
 
             if (!Array.isArray(services) || !services.length) {
-                // A dead end: the form said there were no services and offered no way
-                // to add one.
                 const empty = document.createElement('div');
-                empty.className = 'col-12 text-muted';
-                empty.innerHTML = 'Услуги ещё не добавлены. <a href="{{ route('services.index') }}">Добавить услугу</a>';
+                empty.className = 'col-12';
+                empty.innerHTML = `
+                    <p class="text-muted mb-2">Услуги ещё не добавлены.</p>
+                    <form id="quick-service-create-form" class="row g-2 align-items-end">
+                        <div class="col-sm-5">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control form-control-sm" id="quick_new_service_name" placeholder="Название" autocomplete="off" required>
+                                <label for="quick_new_service_name">Название услуги</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="form-floating form-floating-outline">
+                                <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="quick_new_service_price" placeholder="Цена" required>
+                                <label for="quick_new_service_price">Цена, ₽</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="form-floating form-floating-outline">
+                                <input type="number" min="5" step="5" class="form-control form-control-sm" id="quick_new_service_duration" placeholder="Мин" required>
+                                <label for="quick_new_service_duration">Мин.</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2 d-grid">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Добавить</button>
+                        </div>
+                    </form>
+                    <div id="quick-new-service-error" class="text-danger small mt-1"></div>
+                    <a href="{{ route('services.index') }}" target="_blank" rel="noopener" class="d-inline-block small mt-2">Нужны категория или себестоимость — открыть полный список услуг</a>
+                `;
                 quickServicesContainer.appendChild(empty);
                 updateQuickSummary();
+
+                const createForm = document.getElementById('quick-service-create-form');
+                const createError = document.getElementById('quick-new-service-error');
+                if (createForm) {
+                    bindQuickServiceCreateForm(createForm, createError);
+                }
+
                 return;
             }
 
