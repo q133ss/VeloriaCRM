@@ -52,7 +52,9 @@
                 <section class="setup-step" data-step="schedule" hidden>
                     <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 1, 'total' => 3]) }}</p>
                     <h2 class="setup-title" id="setupWizardTitle">{{ __('dashboard.setup.wizard.schedule.title') }}</h2>
-                    <p class="setup-text">{{ __('dashboard.setup.wizard.schedule.text') }}</p>
+                    <p class="setup-text">{!! __('dashboard.setup.wizard.schedule.text', [
+                        'link' => '<a href="' . route('settings') . '#settings-work">' . __('dashboard.setup.wizard.schedule.link_label') . '</a>',
+                    ]) !!}</p>
 
                     <form data-setup-form="schedule" novalidate>
                         <fieldset class="mb-4">

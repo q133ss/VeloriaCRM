@@ -126,7 +126,8 @@ return [
             'saving' => 'Saving…',
             'schedule' => [
                 'title' => 'When do you work?',
-                'text' => 'Pick the days and hours you see clients. You can change this later in settings.',
+                'text' => 'Pick the days and hours you see clients. Shift or custom-monthly schedules live in :link; everything else here can be changed later.',
+                'link_label' => 'Settings',
                 'days' => 'Working days',
                 'from' => 'Day starts',
                 'to' => 'Day ends',
