@@ -25,6 +25,7 @@
             promotions: [],
             optionsLoaded: false,
             optionsFailed: false,
+            limitBlocked: false,
             allServices: true,
             serviceIds: [],
             serviceId: '',
@@ -452,7 +453,7 @@
             nav.classList.toggle('is-hidden', state.step === totalSteps);
             prevBtn.style.visibility = state.step === 1 ? 'hidden' : 'visible';
             nextBtn.textContent = state.step === 2 ? (state.saving ? W.creating : W.create) : W.next;
-            nextBtn.disabled = state.saving || (state.step === 1 && !state.layout);
+            nextBtn.disabled = state.saving || state.limitBlocked || (state.step === 1 && !state.layout);
         }
 
         function go(step) {
@@ -679,6 +680,14 @@
                 state.services = (data.data && data.data.services) || [];
                 state.promotions = (data.data && data.data.promotions) || [];
                 if (data.data && data.data.custom_design) { state.custom.info = data.data.custom_design; renderLayouts(); }
+
+                // Block the whole wizard up front instead of letting the master
+                // pick a template, fill in the form, and fail on submit.
+                if (data.data && data.data.can_create === false) {
+                    state.limitBlocked = true;
+                    showAlert('danger', esc(W.errors.limit) + ' <a href="' + esc(cfg.listUrl) + '">' + esc(W.to_list) + '</a>');
+                    updateChrome();
+                }
             })
             .catch(function () { state.optionsFailed = true; })
             .finally(function () {

@@ -46,7 +46,7 @@
                             <h3 class="mb-2">{{ __('landings.index.title') }}</h3>
                             <p class="text-muted mb-0">{{ __('landings.index.subtitle') }}</p>
                         </div>
-                        <a href="{{ route('landings.create') }}" class="btn btn-primary px-4">
+                        <a href="{{ route('landings.create') }}" class="btn btn-primary px-4" id="landings-create-btn">
                             <i class="ri ri-add-line me-1"></i>
                             {{ __('landings.actions.create') }}
                         </a>
@@ -102,7 +102,7 @@
                         <div class="d-flex flex-column align-items-center gap-2">
                             <i class="ri ri-layout-4-line icon-base" style="font-size: 32px;"></i>
                             <div>{{ __('landings.table.empty') }}</div>
-                            <a href="{{ route('landings.create') }}" class="btn btn-sm btn-primary">
+                            <a href="{{ route('landings.create') }}" class="btn btn-sm btn-primary" id="landings-create-first-btn">
                                 {{ __('landings.actions.create_first') }}
                             </a>
                         </div>
@@ -123,6 +123,8 @@
             const activeStat = document.getElementById('landings-stat-active');
             const viewsStat = document.getElementById('landings-stat-views');
             const requestsStat = document.getElementById('landings-stat-requests');
+            const createBtn = document.getElementById('landings-create-btn');
+            const createFirstBtn = document.getElementById('landings-create-first-btn');
             const TYPE_LABELS = @json(__('landings.types'));
             const STATUS_LABELS = @json(__('landings.statuses'));
 
@@ -246,6 +248,25 @@
                 });
             }
 
+            // Blocks both «Создать» entry points up front instead of letting the
+            // master fill the whole wizard and fail on submit (api/v1/landings
+            // returns the same limit the store() endpoint enforces).
+            function applyCreateLimit(canCreate) {
+                [createBtn, createFirstBtn].forEach(function (btn) {
+                    if (!btn) return;
+                    btn.classList.toggle('disabled', !canCreate);
+                    btn.setAttribute('aria-disabled', canCreate ? 'false' : 'true');
+                    btn.tabIndex = canCreate ? 0 : -1;
+                    if (!canCreate) {
+                        btn.addEventListener('click', function (event) { event.preventDefault(); });
+                    }
+                });
+
+                if (!canCreate) {
+                    showAlert('info', '{{ __('landings.errors.free_limit') }}');
+                }
+            }
+
             function fetchLandings() {
                 return fetch('/api/v1/landings', { headers: authHeaders() })
                     .then(function (response) {
@@ -254,6 +275,7 @@
                     })
                     .then(function (data) {
                         renderLandings(data.data || []);
+                        applyCreateLimit(!data.meta || data.meta.can_create !== false);
                     })
                     .catch(function () {
                         showAlert('danger', '{{ __('landings.notifications.load_failed') }}');

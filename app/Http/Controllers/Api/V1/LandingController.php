@@ -42,7 +42,13 @@ class LandingController extends Controller
             ->map(fn (Landing $landing) => $this->transformLanding($landing))
             ->all();
 
-        return response()->json(['data' => $landings]);
+        return response()->json([
+            'data' => $landings,
+            'meta' => [
+                'can_create' => $this->canCreateLanding($userId),
+                'free_limit' => self::FREE_LANDING_LIMIT,
+            ],
+        ]);
     }
 
     public function store(LandingStoreRequest $request): JsonResponse
@@ -211,6 +217,7 @@ class LandingController extends Controller
                 'services' => $services,
                 'promotions' => $promotions,
                 'custom_design' => $this->customDesignInfo(Auth::guard('sanctum')->user()),
+                'can_create' => $this->canCreateLanding($userId),
             ],
         ]);
     }
@@ -369,15 +376,17 @@ class LandingController extends Controller
      *
      * Поэтому ограничиваем количество, а не доступ. Упереться в лимит того,
      * чем уже пользуешься, понятнее, чем открыть раздел и получить 403 на
-     * первой же кнопке.
+     * первой же кнопке. index() и options() отдают этот же флаг заранее, чтобы
+     * список и визард не доводили до формы, которая гарантированно упадёт.
      */
+    protected function canCreateLanding(int $userId): bool
+    {
+        return $this->userHasProAccess() || Landing::forUser($userId)->count() < self::FREE_LANDING_LIMIT;
+    }
+
     protected function ensureWithinLandingLimit(int $userId): void
     {
-        if ($this->userHasProAccess()) {
-            return;
-        }
-
-        if (Landing::forUser($userId)->count() < self::FREE_LANDING_LIMIT) {
+        if ($this->canCreateLanding($userId)) {
             return;
         }
 
