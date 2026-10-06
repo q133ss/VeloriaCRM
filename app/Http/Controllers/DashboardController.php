@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Landing;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\Setting;
@@ -64,6 +65,7 @@ class DashboardController extends Controller
         $setting = Setting::where('user_id', $user->id)->first();
         $clientCount = Client::where('user_id', $user->id)->count();
         $serviceCount = Service::where('user_id', $user->id)->count();
+        $landingCount = Landing::where('user_id', $user->id)->count();
         $scheduleConfigured = $this->hasConfiguredSchedule($setting);
 
         // Eight weeks back covers the occupancy trend; a week forward covers the
@@ -128,10 +130,12 @@ class DashboardController extends Controller
                 'schedule_configured' => $scheduleConfigured,
                 'service_count' => $serviceCount,
                 'client_count' => $clientCount,
+                'landing_count' => $landingCount,
                 'completed_steps' => collect([
                     $scheduleConfigured,
                     $serviceCount > 0,
                     $clientCount > 0,
+                    $landingCount > 0,
                 ])->filter()->count(),
                 'steps' => [
                     [
@@ -157,6 +161,14 @@ class DashboardController extends Controller
                         'href' => route('clients.create'),
                         'cta' => 'Добавить клиента',
                         'completed' => $clientCount > 0,
+                    ],
+                    [
+                        'key' => 'landing',
+                        'title' => 'Сайт для записи',
+                        'description' => 'Соберите страницу с услугами и онлайн-записью, которую можно отправить клиентам.',
+                        'href' => route('landings.create'),
+                        'cta' => 'Создать сайт',
+                        'completed' => $landingCount > 0,
                     ],
                 ],
             ],

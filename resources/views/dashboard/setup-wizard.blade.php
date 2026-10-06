@@ -5,7 +5,9 @@
      * The wizard collects the setup itself instead of linking away to three
      * different screens. A checklist that only points elsewhere gets dismissed and
      * leaves nothing behind; this one leaves a working schedule, a service and a
-     * client.
+     * client. The site step is the exception: the landing wizard is its own
+     * multi-step flow (templates, photos), so this step is a link-out instead of
+     * an inline form, and its "done" state is just whether a landing exists.
      */
     $wizardDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     $wizardWeekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->locale(app()->getLocale());
@@ -29,6 +31,7 @@
         'schedule' => (bool) ($onboarding['schedule_configured'] ?? false),
         'services' => (int) ($onboarding['service_count'] ?? 0) > 0,
         'clients' => (int) ($onboarding['client_count'] ?? 0) > 0,
+        'landing' => (int) ($onboarding['landing_count'] ?? 0) > 0,
     ];
 @endphp
 
@@ -50,7 +53,7 @@
 
                 {{-- Step 1: working hours --}}
                 <section class="setup-step" data-step="schedule" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 1, 'total' => 3]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 1, 'total' => 4]) }}</p>
                     <h2 class="setup-title" id="setupWizardTitle">{{ __('dashboard.setup.wizard.schedule.title') }}</h2>
                     <p class="setup-text">{!! __('dashboard.setup.wizard.schedule.text', [
                         'link' => '<a href="' . route('settings') . '#settings-work">' . __('dashboard.setup.wizard.schedule.link_label') . '</a>',
@@ -121,7 +124,7 @@
 
                 {{-- Step 2: first service --}}
                 <section class="setup-step" data-step="services" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 2, 'total' => 3]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 2, 'total' => 4]) }}</p>
                     <h2 class="setup-title">{{ __('dashboard.setup.wizard.service.title') }}</h2>
                     <p class="setup-text">{{ __('dashboard.setup.wizard.service.text') }}</p>
 
@@ -189,7 +192,7 @@
 
                 {{-- Step 3: first client --}}
                 <section class="setup-step" data-step="clients" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 3, 'total' => 3]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 3, 'total' => 4]) }}</p>
                     <h2 class="setup-title">{{ __('dashboard.setup.wizard.client.title') }}</h2>
                     <p class="setup-text">{{ __('dashboard.setup.wizard.client.text') }}</p>
 
@@ -236,6 +239,25 @@
                     </form>
                 </section>
 
+                {{-- Step 4: public booking site --}}
+                <section class="setup-step" data-step="landing" hidden>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 4, 'total' => 4]) }}</p>
+                    <h2 class="setup-title">{{ __('dashboard.setup.wizard.landing.title') }}</h2>
+                    <p class="setup-text">{{ __('dashboard.setup.wizard.landing.text') }}</p>
+
+                    <div class="setup-actions">
+                        <button type="button" class="btn btn-outline-secondary" data-setup-back>
+                            {{ __('dashboard.setup.wizard.back') }}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            {{ __('dashboard.setup.wizard.skip') }}
+                        </button>
+                        <a href="{{ route('landings.create') }}" class="btn btn-primary setup-actions-primary">
+                            {{ __('dashboard.setup.wizard.landing.cta') }}
+                        </a>
+                    </div>
+                </section>
+
                 {{-- Done --}}
                 <section class="setup-step" data-step="done" hidden>
                     <div class="setup-done-mark" aria-hidden="true">
@@ -243,6 +265,12 @@
                     </div>
                     <h2 class="setup-title">{{ __('dashboard.setup.wizard.finish.title') }}</h2>
                     <p class="setup-text">{{ __('dashboard.setup.wizard.finish.text') }}</p>
+                    <p class="setup-hint">
+                        <i class="icon-base ri ri-smartphone-line" aria-hidden="true"></i>
+                        {!! __('dashboard.setup.wizard.finish.app_hint', [
+                            'link' => '<a href="' . route('settings') . '#settings-branding">' . __('dashboard.setup.wizard.finish.app_link') . '</a>',
+                        ]) !!}
+                    </p>
                     <div class="setup-actions">
                         <button type="button" class="btn btn-primary setup-actions-primary" data-setup-finish>
                             {{ __('dashboard.setup.wizard.finish.action') }}

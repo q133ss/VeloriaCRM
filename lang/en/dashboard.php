@@ -117,6 +117,7 @@ return [
             'schedule' => 'Working hours',
             'services' => 'Services',
             'clients' => 'First client',
+            'landing' => 'Booking site',
         ],
         'wizard' => [
             'step_of' => 'Step :current of :total',
@@ -152,10 +153,17 @@ return [
                 'name_placeholder' => 'Irina Sokolova',
                 'phone' => 'Phone',
             ],
+            'landing' => [
+                'title' => 'Booking site',
+                'text' => 'Put together a page with your services and online booking — send clients a link instead of texting back and forth about times.',
+                'cta' => 'Create site',
+            ],
             'finish' => [
                 'title' => 'All set',
                 'text' => 'Setup is done. Your home screen will now list whoever is coming today.',
                 'action' => 'Get to work',
+                'app_hint' => 'Clients have a mobile app for booking and reminders — set the name and colors in :link.',
+                'app_link' => 'Branding',
             ],
             'already_done' => 'This step is already done',
             'error' => 'Could not save. Check the fields and try again.',

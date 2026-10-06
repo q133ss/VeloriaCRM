@@ -571,6 +571,23 @@
             color: var(--bs-danger);
         }
 
+        .setup-hint {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin: 0 0 1.5rem;
+            padding: 0.75rem 0.9rem;
+            border-radius: 0.5rem;
+            background: var(--bs-secondary-bg);
+            color: var(--bs-secondary-color);
+            font-size: 0.875rem;
+        }
+
+        .setup-hint i {
+            margin-top: 0.15rem;
+            color: var(--bs-primary);
+        }
+
         .setup-done-mark {
             display: inline-flex;
             align-items: center;

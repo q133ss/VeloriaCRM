@@ -6,7 +6,7 @@
             return;
         }
 
-        var ORDER = ['schedule', 'services', 'clients'];
+        var ORDER = ['schedule', 'services', 'clients', 'landing'];
         var STORAGE_KEY = 'veloria:onboarding:pending';
         var GENERIC_ERROR = @json(__('dashboard.setup.wizard.error'));
         var SAVING_LABEL = @json(__('dashboard.setup.wizard.saving'));
