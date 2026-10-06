@@ -51,17 +51,53 @@
             return formatted;
         }
 
+        function digitsBeforePosition(value, pos) {
+            return (value.slice(0, pos).match(/\d/g) || []).length;
+        }
+
+        // Literal mask characters like "(" and ")" get re-inserted on every
+        // reformat even if the user just deleted them, so putting the caret
+        // back at the end (the browser's default after a programmatic value
+        // set) can trap backspace into deleting/restoring the same literal
+        // forever. Placing it after the same digit it was after before fixes
+        // that for backspace, delete, and mid-string edits alike.
+        function caretPositionForDigitCount(value, count) {
+            if (count <= 0) {
+                const idx = value.search(/\d/);
+                return idx === -1 ? value.length : idx;
+            }
+
+            let seen = 0;
+            for (let i = 0; i < value.length; i++) {
+                if (/\d/.test(value[i])) {
+                    seen++;
+                    if (seen === count) {
+                        return i + 1;
+                    }
+                }
+            }
+
+            return value.length;
+        }
+
         function applyMask(input) {
-            const updateValue = () => {
-                input.value = formatPhone(input.value);
+            const reformat = () => {
+                const rawValue = input.value;
+                const caret = input.selectionStart == null ? rawValue.length : input.selectionStart;
+                const digitCount = digitsBeforePosition(rawValue, caret);
+
+                input.value = formatPhone(rawValue);
+
+                const newCaret = caretPositionForDigitCount(input.value, digitCount);
+                input.setSelectionRange(newCaret, newCaret);
             };
 
-            updateValue();
+            reformat();
 
-            input.addEventListener('input', updateValue);
-            input.addEventListener('blur', updateValue);
+            input.addEventListener('input', reformat);
+            input.addEventListener('blur', reformat);
             input.addEventListener('paste', function () {
-                setTimeout(updateValue, 0);
+                setTimeout(reformat, 0);
             });
         }
 
