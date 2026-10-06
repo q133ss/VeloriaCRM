@@ -92,10 +92,18 @@
                 input.setSelectionRange(newCaret, newCaret);
             };
 
+            // blur means focus already left the field, so the caret position no
+            // longer matters — and restoring it via setSelectionRange here is what
+            // trapped focus on the input, making every other field unclickable
+            // right after typing a phone number.
+            const reformatOnBlur = () => {
+                input.value = formatPhone(input.value);
+            };
+
             reformat();
 
             input.addEventListener('input', reformat);
-            input.addEventListener('blur', reformat);
+            input.addEventListener('blur', reformatOnBlur);
             input.addEventListener('paste', function () {
                 setTimeout(reformat, 0);
             });
