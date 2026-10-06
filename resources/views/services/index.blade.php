@@ -365,7 +365,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="service-duration" class="form-label">{{ __('services.modals.service.duration_min') }}</label>
-                                <input type="number" class="form-control" id="service-duration" name="duration_min" min="5" step="5" required />
+                                <input type="text" inputmode="numeric" class="form-control" id="service-duration" name="duration_min" placeholder="{{ __('services.modals.service.duration_placeholder') }}" required />
+                                <div class="form-text">{{ __('services.modals.service.duration_hint') }}</div>
                                 <div class="form-text" id="service-duration-hint" hidden></div>
                             </div>
                             <div class="col-12">
@@ -487,6 +488,7 @@
                         createButton: @json(__('services.modals.service.create')),
                         saveButton: @json(__('services.modals.service.save')),
                         upsellSuggested: @json(__('services.modals.service.upsell_suggested')),
+                        durationFormatError: @json(__('services.modals.service.duration_format_error')),
                         costCalculator: {
                             open: @json(__('services.modals.service.cost_calculator.open')),
                             close: @json(__('services.modals.service.cost_calculator.close')),
@@ -586,6 +588,24 @@
                 if (value === null || value === undefined || value === '') return null;
                 const number = Number(value);
                 return isNaN(number) ? null : number;
+            }
+
+            // Masters think in both units depending on the service: "90" for
+            // a manicure, "1:30" for a haircut-and-color. Accept either and
+            // normalize to the minutes the API stores.
+            function parseDurationMinutes(value) {
+                if (value === null || value === undefined) return null;
+                const trimmed = String(value).trim();
+                if (trimmed === '') return null;
+
+                const hoursMatch = trimmed.match(/^(\d{1,3}):([0-5]\d)$/);
+                if (hoursMatch) {
+                    return Number(hoursMatch[1]) * 60 + Number(hoursMatch[2]);
+                }
+
+                if (!/^\d+$/.test(trimmed)) return null;
+
+                return Number(trimmed);
             }
 
             const state = {
@@ -1025,6 +1045,14 @@
 
             async function submitService() {
                 clearFormErrors(serviceFormErrors);
+
+                const duration = parseDurationMinutes(serviceDurationInput.value);
+
+                if (duration === null) {
+                    displayFormErrors(serviceFormErrors, { duration_min: [t.modals.service.durationFormatError] });
+                    return;
+                }
+
                 serviceFormSubmit.disabled = true;
 
                 const payload = {
@@ -1032,7 +1060,7 @@
                     category_id: serviceCategorySelect.value ? Number(serviceCategorySelect.value) : null,
                     base_price: parseNumber(servicePriceInput.value),
                     cost: parseNumber(serviceCostInput.value),
-                    duration_min: parseNumber(serviceDurationInput.value),
+                    duration_min: duration,
                     upsell_suggestions: selectedUpsell(),
                 };
 

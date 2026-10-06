@@ -83,7 +83,10 @@ return [
             'upsell' => 'Often booked together',
             'upsell_hint' => 'Services you offer alongside this one.',
             'upsell_suggested' => 'Bookings show these taken with it:',
-            'duration_min' => 'Duration, min',
+            'duration_min' => 'Duration',
+            'duration_placeholder' => 'e.g. 90 or 1:30',
+            'duration_hint' => 'In minutes (90) or hours:minutes (1:30)',
+            'duration_format_error' => 'Enter the duration in minutes (e.g. 90) or hours:minutes (e.g. 1:30).',
             'cost_calculator' => [
                 'open' => 'Cost calculator',
                 'close' => 'Hide calculator',

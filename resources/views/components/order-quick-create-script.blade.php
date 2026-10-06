@@ -256,6 +256,21 @@
             quickServicesSummary.textContent = formatQuickCurrency(totalPrice);
         }
 
+        // Masters think in both units depending on the service: "90" for a
+        // manicure, "1:30" for a haircut-and-color. Accept either here too,
+        // same as the full service form on /services.
+        function parseQuickDurationMinutes(value) {
+            const trimmed = String(value ?? '').trim();
+            if (trimmed === '') return null;
+
+            const hoursMatch = trimmed.match(/^(\d{1,3}):([0-5]\d)$/);
+            if (hoursMatch) {
+                return Number(hoursMatch[1]) * 60 + Number(hoursMatch[2]);
+            }
+
+            return /^\d+$/.test(trimmed) ? Number(trimmed) : null;
+        }
+
         // A plain link to /services used to be the only way out of an empty
         // catalog, but it threw away whatever the popup already had filled
         // in (client, date, time). A tiny inline form keeps the booking
@@ -270,6 +285,13 @@
                 const durationInput = document.getElementById('quick_new_service_duration');
                 const submitButton = formEl.querySelector('button[type="submit"]');
 
+                const duration = parseQuickDurationMinutes(durationInput.value);
+
+                if (duration === null) {
+                    errorEl.textContent = 'Укажите длительность в минутах (90) или часах:минутах (1:30).';
+                    return;
+                }
+
                 submitButton.disabled = true;
 
                 try {
@@ -280,7 +302,7 @@
                         body: JSON.stringify({
                             name: nameInput.value.trim(),
                             base_price: priceInput.value,
-                            duration_min: durationInput.value,
+                            duration_min: duration,
                         }),
                     });
 
@@ -335,8 +357,8 @@
                         </div>
                         <div class="col-sm-2">
                             <div class="form-floating form-floating-outline">
-                                <input type="number" min="5" step="5" class="form-control form-control-sm" id="quick_new_service_duration" placeholder="Мин" required>
-                                <label for="quick_new_service_duration">Мин.</label>
+                                <input type="text" inputmode="numeric" class="form-control form-control-sm" id="quick_new_service_duration" placeholder="90 или 1:30" required>
+                                <label for="quick_new_service_duration">Мин. или ч:мм</label>
                             </div>
                         </div>
                         <div class="col-sm-2 d-grid">
