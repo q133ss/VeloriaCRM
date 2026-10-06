@@ -152,6 +152,51 @@ class BookingIntentParseTest extends TestCase
         $response->assertJsonPath('filled.new_client.phone', '+79160000077');
     }
 
+    public function test_a_diminutive_name_finds_the_client_by_her_full_name(): void
+    {
+        config(['ai.routes.booking_intent' => 'off']);
+        Http::fake();
+
+        $master = $this->master();
+        $this->service($master, 'Маникюр', 2800, 90);
+        // «Люда» shares no substring with «Людмила» for `name LIKE` to find.
+        $this->clientWithVisit($master, 'Людмила Смирнова', '+79161234504');
+
+        $response = $this->parse($master, 'люда завтра маникюр в 15:00')->assertOk();
+
+        $response->assertJsonPath('filled.client.name', 'Людмила Смирнова');
+        $this->assertSame([], $response->json('choices'));
+    }
+
+    public function test_an_unmapped_nickname_is_resolved_by_the_model_from_the_real_client_list(): void
+    {
+        $master = $this->master();
+        $this->service($master, 'Маникюр', 2800, 90);
+        // «мышка» is neither a substring of «Мария Громова» nor in the
+        // diminutive dictionary — the model is the only one left who could
+        // place it, but only if it is actually shown who exists.
+        $client = $this->clientWithVisit($master, 'Мария Громова', '+79161234505');
+
+        config(['ai.routes.booking_intent' => 'openai_only']);
+        Http::fake([self::OPENAI => $this->openAiJson([
+            'understood' => true,
+            'client_id' => $client->id,
+            'service_ids' => [],
+        ])]);
+
+        $response = $this->parse($master, 'мышка завтра маникюр в 15:00')->assertOk();
+
+        $response->assertJsonPath('filled.client.name', 'Мария Громова');
+
+        Http::assertSent(function ($request) use ($client) {
+            $messages = $request->data()['messages'] ?? [];
+            $content = collect($messages)->pluck('content')->implode(' ');
+
+            return str_contains($content, (string) $client->id)
+                && str_contains($content, 'Мария Громова');
+        });
+    }
+
     public function test_a_lowercase_name_finds_the_client_on_postgres(): void
     {
         config(['ai.routes.booking_intent' => 'off']);

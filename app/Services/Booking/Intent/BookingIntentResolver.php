@@ -40,12 +40,15 @@ class BookingIntentResolver
     /**
      * @param  Collection<int, Service>  $services  the master's whole price list
      * @param  callable(string): Collection  $searchClients  OrderController::searchSelectableClients
+     * @param  callable(): Collection  $recentClients  OrderController::buildRecentClients — the
+     *         fallback pool handed to the model when no rule, dictionary included, finds anyone
      */
     public function resolve(
         string $text,
         int $masterId,
         Collection $services,
         callable $searchClients,
+        callable $recentClients,
         CarbonImmutable $now,
         ?CarbonImmutable $anchorDay = null,
         ?Setting $setting = null,
@@ -55,7 +58,7 @@ class BookingIntentResolver
         $parsed = $this->parser->parse($text, $now, $anchorDay);
 
         $serviceMatches = $this->matchServices($parsed->residueTokens(), $services);
-        $clientMatches = $this->matchClients($parsed, $searchClients);
+        $clientMatches = $this->matchClients($parsed, $searchClients, $recentClients);
 
         $engine = 'rules';
         $provider = null;
@@ -137,30 +140,68 @@ class BookingIntentResolver
     // ----------------------------------------------------------------- clients
 
     /**
-     * @return array{matched: Collection<int, array>, query: ?string}
+     * @return array{matched: Collection<int, array>, query: ?string, pool: Collection<int, array>}
      */
-    private function matchClients(ParsedPhrase $parsed, callable $searchClients): array
+    private function matchClients(ParsedPhrase $parsed, callable $searchClients, callable $recentClients): array
     {
         if ($parsed->phone !== null) {
             $found = $searchClients($parsed->phone);
 
             if ($found->isNotEmpty()) {
                 // A phone identifies one person by construction; no chooser.
-                return ['matched' => collect([$found->first()]), 'query' => null];
+                return ['matched' => collect([$found->first()]), 'query' => null, 'pool' => collect()];
             }
         }
 
         foreach ($parsed->residueTokens() as $token) {
             $found = $this->searchBothCases($searchClients, $token);
 
+            if ($found->isEmpty()) {
+                // «люда» shares no substring with «людмила» for `name LIKE`
+                // to find; try the full names a diminutive dictionary says it
+                // could be short for.
+                $found = $this->searchByKnownDiminutive($searchClients, $token);
+            }
+
             if ($found->isNotEmpty()) {
-                return ['matched' => $found, 'query' => Str::ucfirst($token)];
+                return ['matched' => $found, 'query' => Str::ucfirst($token), 'pool' => collect()];
             }
         }
 
         $name = $parsed->residueTokens()[0] ?? null;
 
-        return ['matched' => collect(), 'query' => $name ? Str::ucfirst($name) : null];
+        // Neither the direct search nor the dictionary placed her. Rather than
+        // hand the model nothing to compare the name against, give it the
+        // master's own recent clients — it may still recognise a nickname the
+        // dictionary does not carry.
+        $pool = $name !== null ? $recentClients() : collect();
+
+        return ['matched' => collect(), 'query' => $name ? Str::ucfirst($name) : null, 'pool' => $pool];
+    }
+
+    private function searchByKnownDiminutive(callable $searchClients, string $token): Collection
+    {
+        $fullNames = RussianNameDiminutives::fullNamesFor($token);
+
+        if ($fullNames === []) {
+            return collect();
+        }
+
+        $found = collect();
+        $seen = [];
+
+        foreach ($fullNames as $fullName) {
+            foreach ($this->searchBothCases($searchClients, Str::lower($fullName)) as $item) {
+                $key = $this->clientKey($item);
+
+                if (! in_array($key, $seen, true)) {
+                    $seen[] = $key;
+                    $found->push($item);
+                }
+            }
+        }
+
+        return $found;
     }
 
     /**
@@ -219,7 +260,8 @@ class BookingIntentResolver
             ? $serviceMatches['matched']
             : $services->take(12);
 
-        $clients = $clientMatches['matched']->take(8);
+        $clients = ($clientMatches['matched']->isNotEmpty() ? $clientMatches['matched'] : $clientMatches['pool'])
+            ->take(8);
 
         $key = 'orders:intent:' . $masterId . ':' . sha1($parsed->residue . '|' . $this->catalogSignature($services));
 
@@ -350,7 +392,8 @@ class BookingIntentResolver
         $clientId = is_numeric($clientId) ? (int) $clientId : null;
 
         if ($clientId !== null) {
-            $picked = $clientMatches['matched']->firstWhere('id', $clientId);
+            $picked = $clientMatches['matched']->firstWhere('id', $clientId)
+                ?? $clientMatches['pool']->firstWhere('id', $clientId);
 
             if ($picked !== null) {
                 $clientMatches = ['matched' => collect([$picked]), 'query' => $clientMatches['query']];

@@ -815,6 +815,7 @@ class OrderController extends Controller
             masterId: $this->currentUserId(),
             services: $this->getUserServices(),
             searchClients: fn (string $query) => $this->searchSelectableClients($query),
+            recentClients: fn () => $this->buildRecentClients(15),
             now: CarbonImmutable::now($timezone),
             anchorDay: $anchor,
             setting: Setting::query()->where('user_id', $this->currentUserId())->first(),
