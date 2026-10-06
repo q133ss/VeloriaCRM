@@ -16,6 +16,6 @@ return [
     'learning' => 'Learning',
     'useful' => 'Useful',
     'automations' => 'Automations',
-    'landings' => 'Landings',
+    'landings' => 'Website',
     'loading' => 'Loading...',
 ];

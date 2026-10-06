@@ -16,6 +16,6 @@ return [
     'learning' => 'Обучение',
     'useful' => 'Полезное',
     'automations' => 'Автоматизации',
-    'landings' => 'Лендинги',
+    'landings' => 'Сайт',
     'loading' => 'Загрузка...',
 ];
