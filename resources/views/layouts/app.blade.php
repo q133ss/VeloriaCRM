@@ -612,7 +612,9 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
 
     var PLAN_ADDITIONS = {
-        lite: [],
+        lite: [
+            menuItem('landings', '/landings', 'ri-layout-4-line')
+        ],
         pro: [
             menuItem('landings', '/landings', 'ri-layout-4-line'),
             menuItem('marketing', '/marketing', 'ri-megaphone-line')
@@ -935,7 +937,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var menu = BASE_MENU.slice();
             (PLAN_ADDITIONS[slug] || []).forEach(function (item) {
-                if (!menu.some(function (m) { return m.href === item.href; })) {
+                if (menu.some(function (m) { return m.href === item.href; })) return;
+
+                // Landings sits with the other client-facing pages, not tacked onto
+                // the end of the menu — same position on every plan that has it.
+                if (item.href === '/landings') {
+                    var usefulIndex = menu.findIndex(function (m) { return m.href === '/useful'; });
+                    menu.splice(usefulIndex + 1, 0, item);
+                } else {
                     menu.push(item);
                 }
             });
