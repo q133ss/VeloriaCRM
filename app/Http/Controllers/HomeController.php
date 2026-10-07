@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
+use App\Services\Landing\TemplateRegistry;
+use App\Support\VideoEmbed;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
@@ -19,12 +21,68 @@ class HomeController extends Controller
         'elite' => 1990,
     ];
 
-    public function __invoke(): View
+    public function __invoke(TemplateRegistry $registry): View
     {
+        [$templates, $templateCount] = $this->templates($registry);
+
         return view('welcome', [
             'isAuthenticated' => Auth::guard('sanctum')->check(),
             'planPrices' => $this->planPrices(),
+            'templates' => $templates,
+            'templateCount' => $templateCount,
+            'androidAppUrl' => config('landing_home.android_app_url') ?: null,
+            'videoReviews' => $this->videoReviews(),
         ]);
+    }
+
+    /**
+     * Галерея сайтов на главной. Шаблоны читаются из файлов-манифестов, и
+     * битый манифест не должен ронять страницу холодного трафика — отсюда
+     * тот же запасной путь, что у цен: без галереи, но с главной.
+     *
+     * @return array{0: list<array{slug: string, title: string, thumb: string}>, 1: int}
+     */
+    private function templates(TemplateRegistry $registry): array
+    {
+        try {
+            $layouts = $registry->layouts();
+        } catch (Throwable) {
+            return [[], 0];
+        }
+
+        $featured = collect(config('landing_home.featured_templates', []))
+            ->map(fn (string $slug) => $layouts->get($slug))
+            ->filter(fn (?array $layout) => $layout && $layout['thumb'])
+            ->map(fn (array $layout) => [
+                'slug' => $layout['slug'],
+                'title' => __($layout['name']),
+                'thumb' => $layout['thumb'],
+            ])
+            ->values()
+            ->all();
+
+        return [$featured, $layouts->count()];
+    }
+
+    /**
+     * Отзывы без распознанной ссылки на ролик выкидываем: карточка, по
+     * которой ничего не играет, хуже, чем её отсутствие.
+     *
+     * @return list<array{embed: string, poster: ?string, name: string, role: ?string, city: ?string}>
+     */
+    private function videoReviews(): array
+    {
+        return collect(config('landing_home.video_reviews', []))
+            ->map(fn (array $review) => [
+                'embed' => VideoEmbed::url($review['url'] ?? null),
+                'poster' => $review['poster'] ?? null,
+                'name' => (string) ($review['name'] ?? ''),
+                'role' => $review['role'] ?? null,
+                'city' => $review['city'] ?? null,
+            ])
+            ->filter(fn (array $review) => $review['embed'] !== null)
+            ->values()
+            ->all();
     }
 
     /**
