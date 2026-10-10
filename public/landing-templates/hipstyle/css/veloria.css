@@ -13,6 +13,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 70px; }
 }
 .navbar-toggler { border: 0; }
 
+.banner_part:after { background-image: var(--lf-hero-bg, url(../img/banner_bg.jpg)); }
 .banner_part .banner_text h1 { overflow-wrap: break-word; font-size: clamp(30px, 5vw, 64px); line-height: 1.15; }
 .banner_part .banner_text .banner_btn a { margin-bottom: 10px; }
 

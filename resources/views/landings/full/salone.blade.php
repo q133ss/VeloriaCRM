@@ -41,6 +41,7 @@
 
     <!-- Template Stylesheet -->
     <link href="{{ $asset('css/style.css') }}" rel="stylesheet">
+    <style>.hero-header{background-image:var(--lf-hero-bg)}</style>
 </head>
 
 <body>
@@ -84,7 +85,7 @@
 
 
     <!-- Hero Start -->
-    <div class="container-fluid p-0 hero-header bg-light mb-5" id="top">
+    <x-landing.bg key="extra_image_1" default="landing-templates/salone/img/hero-bg.jpg" tag="div" var="lf-hero-bg" class="container-fluid p-0 hero-header bg-light mb-5" id="top">
         <div class="container p-0">
             <div class="row g-0 align-items-center">
                 <div class="col-lg-6 hero-header-text py-5">
@@ -138,7 +139,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </x-landing.bg>
     <!-- Hero End -->
 
 

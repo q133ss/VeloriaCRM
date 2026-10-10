@@ -3,6 +3,7 @@
 namespace App\Services\Landing;
 
 use App\Models\Landing;
+use App\Models\Service;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -53,6 +54,13 @@ class LandingContent
         'extra_image_1' => ['kind' => 'image'],
         'extra_image_2' => ['kind' => 'image'],
         'extra_image_3' => ['kind' => 'image'],
+        'extra_image_4' => ['kind' => 'image'],
+        'extra_image_5' => ['kind' => 'image'],
+        'extra_image_6' => ['kind' => 'image'],
+        // The pictures above the answers of the questions block, one per question.
+        'faq_image_1' => ['kind' => 'image'],
+        'faq_image_2' => ['kind' => 'image'],
+        'faq_image_3' => ['kind' => 'image'],
     ];
 
     /**
@@ -65,6 +73,13 @@ class LandingContent
     public const LABEL_PATTERN = '/^lbl_[a-z0-9_]{2,80}$/';
 
     public const LABEL_MAX_LENGTH = 500;
+
+    /**
+     * The photo of one service on the page's service list. It is keyed by the
+     * service's id, not its position, so adding or reordering services never
+     * moves a photo onto another service.
+     */
+    public const SERVICE_IMAGE_PATTERN = '/^service_image_(\d{1,12})$/';
 
     public const MAX_LABELS_PER_LANDING = 150;
 
@@ -83,7 +98,27 @@ class LandingContent
             return self::FIELDS[$key];
         }
 
+        if (self::isServiceImage($key)) {
+            return ['kind' => 'image'];
+        }
+
         return self::isLabel($key) ? ['kind' => 'text', 'max' => self::LABEL_MAX_LENGTH] : null;
+    }
+
+    public static function isServiceImage(string $key): bool
+    {
+        return preg_match(self::SERVICE_IMAGE_PATTERN, $key) === 1;
+    }
+
+    /** May the owner put a photo in this slot: one of the template's own, or one of her services. */
+    public function acceptsImage(Landing $landing, string $key): bool
+    {
+        if (array_key_exists($key, $this->imageDefaults($landing))) {
+            return true;
+        }
+
+        return self::isServiceImage($key)
+            && Service::query()->where('user_id', $landing->user_id)->whereKey((int) substr($key, strlen('service_image_')))->exists();
     }
 
     public static function isLabel(string $key): bool

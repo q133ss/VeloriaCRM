@@ -226,7 +226,9 @@
 
     function applyImage(key, url, custom) {
         all(key).forEach(function (n) {
+            var cssVar = n.getAttribute('data-lf-bgvar');
             if (n.tagName === 'IMG') n.src = url;
+            else if (cssVar) n.style.setProperty(cssVar, 'url("' + url + '")');
             else n.style.backgroundImage = 'url("' + url + '")';
             n.setAttribute('data-lf-custom', custom ? '1' : '0');
         });
@@ -269,7 +271,8 @@
             .then(function (response) { return response.json().catch(function () { return {}; }).then(function (b) { return { ok: response.ok, body: b }; }); })
             .then(function (res) {
                 setBusy(key, false);
-                if (res.ok && res.body.data) { applyImage(key, res.body.data.url, false); status('ok', (ui.saved || 'Saved') + ' ✓'); }
+                var stock = res.ok && res.body.data ? (res.body.data.url || (all(key)[0] && all(key)[0].getAttribute('data-lf-stock'))) : null;
+                if (stock) { applyImage(key, stock, false); status('ok', (ui.saved || 'Saved') + ' ✓'); }
                 else toast(firstError(res.body) || errors.image_failed || 'Error');
             })
             .catch(function () { setBusy(key, false); toast(errors.image_failed || 'Error'); });
@@ -284,6 +287,33 @@
         });
     }
 
+    /** The smallest editable photo whose box contains the point, or null. */
+    function imageAt(x, y) {
+        var best = null, bestArea = Infinity;
+        Array.prototype.forEach.call(document.querySelectorAll('[data-lf-kind="image"]'), function (img) {
+            var r = img.getBoundingClientRect();
+            if (r.width < 8 || r.height < 8 || x < r.left || x > r.right || y < r.top || y > r.bottom) return;
+            var area = r.width * r.height;
+            if (area < bestArea) { best = img; bestArea = area; }
+        });
+        return best;
+    }
+
+    // Outline the photo under the pointer even when an overlay sits on top of it.
+    var hovered = null, hoverFrame = 0;
+    document.addEventListener('mousemove', function (e) {
+        if (hoverFrame) return;
+        var x = e.clientX, y = e.clientY, t = e.target;
+        hoverFrame = requestAnimationFrame(function () {
+            hoverFrame = 0;
+            var next = t instanceof Element && !t.closest('[data-lf-key], .lf-bar, .lf-pop') ? imageAt(x, y) : null;
+            if (next === hovered) return;
+            if (hovered) hovered.classList.remove('lf-hover');
+            hovered = next;
+            if (hovered) hovered.classList.add('lf-hover');
+        });
+    });
+
     // Capture phase, so links, buttons and carousels never react to an edit click.
     document.addEventListener('click', function (e) {
         var target = e.target;
@@ -293,6 +323,10 @@
 
         // The nearest editable element decides: a heading inside a photo background is text.
         var el = target.closest('[data-lf-key]');
+
+        // Templates lay overlays over photos (hover tints, gradients, caption boxes), so the click
+        // lands on a sibling of the <img>. Fall back to the photo under the pointer.
+        if (!el) el = imageAt(e.clientX, e.clientY);
         if (el && el.getAttribute('data-lf-kind') === 'image') { e.preventDefault(); e.stopPropagation(); openImagePop(el); return; }
         closePop();
 

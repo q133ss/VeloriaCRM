@@ -37,6 +37,8 @@
     <!-- Template Stylesheet -->
     <link href="{{ $asset('css/style.css') }}" rel="stylesheet">
     <link href="{{ $asset('css/veloria.css') }}" rel="stylesheet">
+    <style>.bg-appointment{background-image:linear-gradient(rgba(33,30,28,.7),rgba(33,30,28,.7)),var(--lf-appointment-bg)}</style>
+    <style>.bg-pricing{background-image:linear-gradient(rgba(33,40,28,.7),rgba(33,40,28,.7)),var(--lf-pricing-bg)}</style>
 </head>
 
 <body id="top">
@@ -189,7 +191,7 @@
         <div class="owl-carousel service-carousel">
             @foreach($cards->take(9) as $card)
                 <div class="service-item position-relative">
-                    <img class="img-fluid" src="{{ $asset('img/service-' . (($loop->index % 6) + 1) . '.jpg') }}" alt="">
+                    <x-landing.image :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/spacenter/img/service-' . (($loop->index % 6) + 1) . '.jpg'" class="img-fluid" alt="" />
                     <div class="service-text text-center">
                         <h4 class="text-white font-weight-medium px-3">{{ $card['name'] }}</h4>
                         <p class="text-white px-3 mb-3">
@@ -209,7 +211,7 @@
             @endforeach
         </div>
 
-        <div class="row justify-content-center bg-appointment mx-0" id="booking">
+        <x-landing.bg key="extra_image_3" default="landing-templates/spacenter/img/carousel-1.jpg" tag="div" var="lf-appointment-bg" class="row justify-content-center bg-appointment mx-0" id="booking">
             <div class="col-lg-6 py-5">
                 <div class="p-5 my-5" style="background: rgba(33, 30, 28, 0.7);">
                     <h1 class="text-white text-center mb-4"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h1>
@@ -246,7 +248,7 @@
                     </form>
                 </div>
             </div>
-        </div>
+        </x-landing.bg>
     </div>
     <!-- Service End -->
 
@@ -283,7 +285,7 @@
 
     <!-- Pricing Start -->
     @if($priced->isNotEmpty())
-        <div class="container-fluid bg-pricing" style="margin: 90px 0;" id="prices">
+        <x-landing.bg key="extra_image_4" default="landing-templates/spacenter/img/carousel-2.jpg" tag="div" var="lf-pricing-bg" class="container-fluid bg-pricing" style="margin: 90px 0;" id="prices">
             <div class="container">
                 <div class="row">
                     <div class="col-lg-5" style="min-height: 500px;">
@@ -314,7 +316,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </x-landing.bg>
     @endif
     <!-- Pricing End -->
 

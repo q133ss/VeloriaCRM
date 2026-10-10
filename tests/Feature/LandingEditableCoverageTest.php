@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Landing;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\Landing\LandingContent;
 use App\Services\Landing\TemplateRegistry;
@@ -198,5 +199,79 @@ class LandingEditableCoverageTest extends TestCase
             'key' => 'extra_image_3',
             'file' => UploadedFile::fake()->image('photo.jpg', 800, 600),
         ])->assertStatus(422);
+    }
+
+    public function test_the_photo_of_a_service_card_is_editable_and_follows_the_service_not_its_position(): void
+    {
+        Sanctum::actingAs($owner = User::factory()->create());
+        $first = Service::create(['user_id' => $owner->id, 'name' => 'Стрижка', 'base_price' => 1500, 'duration_min' => 60]);
+        $second = Service::create(['user_id' => $owner->id, 'name' => 'Окрашивание', 'base_price' => 4000, 'duration_min' => 120]);
+
+        foreach (['energen', 'barber-doc', 'salon-style', 'barberx', 'hipstyle', 'spacenter', 'sparlex'] as $layout) {
+            $landing = $this->landing($owner, $layout);
+
+            $this->get('/l/' . $landing->slug . '?edit=1')
+                ->assertOk()
+                ->assertSee('data-lf-key="service_image_' . $first->id . '"', false)
+                ->assertSee('data-lf-key="service_image_' . $second->id . '"', false);
+        }
+
+        $landing = $this->landing($owner, 'energen');
+        $url = "/api/v1/landings/{$landing->id}/images";
+
+        $this->postJson($url, ['key' => 'service_image_' . $second->id, 'file' => UploadedFile::fake()->image('p.jpg', 600, 600)])
+            ->assertOk();
+        $this->assertNotEmpty($landing->fresh()->settings['images']['service_image_' . $second->id]);
+
+        // The photo stays with the service when another one is added in front of it.
+        Service::create(['user_id' => $owner->id, 'name' => 'Аа первая', 'base_price' => 100, 'duration_min' => 30]);
+        $page = $this->get('/l/' . $landing->slug)->assertOk()->getContent();
+        $this->assertStringContainsString(Storage::disk('landing_media')->url($landing->fresh()->settings['images']['service_image_' . $second->id]), $page);
+
+        // Restoring needs no stock url from the server: the page carries it.
+        $this->deleteJson($url . '/service_image_' . $second->id)->assertOk()->assertJsonPath('data.url', null);
+        $this->assertArrayNotHasKey('images', $landing->fresh()->settings ?? []);
+        $this->get('/l/' . $landing->slug . '?edit=1')->assertSee('data-lf-stock="', false);
+    }
+
+    public function test_someone_elses_service_photo_slot_is_refused(): void
+    {
+        Sanctum::actingAs($owner = User::factory()->create());
+        $foreign = Service::create(['user_id' => User::factory()->create()->id, 'name' => 'Чужая', 'base_price' => 1, 'duration_min' => 30]);
+        $landing = $this->landing($owner, 'energen');
+
+        foreach (['service_image_' . $foreign->id, 'service_image_999999'] as $key) {
+            $this->postJson("/api/v1/landings/{$landing->id}/images", [
+                'key' => $key,
+                'file' => UploadedFile::fake()->image('p.jpg', 600, 600),
+            ])->assertStatus(422);
+        }
+    }
+
+    public function test_a_photo_the_layout_paints_itself_goes_through_a_css_variable(): void
+    {
+        Sanctum::actingAs($owner = User::factory()->create());
+        $landing = $this->landing($owner, 'hipstyle');
+
+        // hipstyle draws its hero in a ::after layer, so the section carries the url in a custom property.
+        $this->get('/l/' . $landing->slug)->assertOk()->assertSee('--lf-hero-bg: url(', false)->assertDontSee('data-lf-bgvar', false);
+        $this->get('/l/' . $landing->slug . '?edit=1')->assertOk()->assertSee('data-lf-bgvar="--lf-hero-bg"', false);
+    }
+
+    public function test_energen_does_not_show_the_same_services_in_three_blocks(): void
+    {
+        Sanctum::actingAs($owner = User::factory()->create());
+        foreach (['А', 'Б', 'В'] as $name) {
+            Service::create(['user_id' => $owner->id, 'name' => 'Услуга ' . $name, 'base_price' => 1000, 'duration_min' => 60]);
+        }
+        $landing = $this->landing($owner, 'energen');
+
+        // Three services fit the big cards; the extra grid is for the ones beyond them.
+        $this->get('/l/' . $landing->slug)->assertOk()->assertDontSee('id="more-services"', false);
+
+        foreach (['Г', 'Д'] as $name) {
+            Service::create(['user_id' => $owner->id, 'name' => 'Услуга ' . $name, 'base_price' => 1000, 'duration_min' => 60]);
+        }
+        $this->get('/l/' . $landing->slug)->assertOk()->assertSee('id="more-services"', false);
     }
 }
