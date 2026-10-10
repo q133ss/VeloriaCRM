@@ -1,54 +1,56 @@
-@extends('layouts.app')
-
+{{--
+    The prepayment tab of the settings page. It sits OUTSIDE the settings <form>
+    (its own forms are built by script, and forms cannot nest) and has its own
+    save buttons, so the page's «save changes» bar is hidden while it is shown.
+--}}
 @php
     $copy = __('prepayment.page');
 @endphp
 
-@section('title', $copy['title'])
-
-@section('content')
+<div class="card mb-6 settings-card" id="settings-prepayment" hidden>
     <style>
-        .prepay-page { max-width: 46rem; }
-        .prepay-page [hidden] { display: none !important; }
-        .prepay-title { margin: 0 0 .15rem; font-size: clamp(1.25rem, 1.6vw, 1.5rem); letter-spacing: -0.02em; }
-        .prepay-lead { margin: 0; color: var(--bs-secondary-color); }
-        .prepay-card { border: 1px solid var(--bs-border-color); border-radius: .75rem; background: var(--bs-paper-bg, var(--bs-body-bg)); padding: 1.25rem; }
-        .prepay-card h2 { margin: 0 0 .25rem; font-size: 1.05rem; }
-        .prepay-hint { margin: .25rem 0 0; font-size: .875rem; color: var(--bs-secondary-color); }
-        .prepay-gate { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; border-color: var(--bs-warning); }
-        .prepay-gate p { margin: .25rem 0 0; color: var(--bs-secondary-color); }
-        .prepay-row { display: flex; gap: .75rem; flex-wrap: wrap; }
-        .prepay-row > * { flex: 1 1 10rem; }
-        .prepay-rule { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: .75rem 0; border-top: 1px solid var(--bs-border-color); }
-        .prepay-rule:first-of-type { border-top: 0; }
-        .prepay-rule__name { font-weight: 600; }
-        .prepay-rule__meta { font-size: .875rem; color: var(--bs-secondary-color); }
-        .prepay-rule.is-off .prepay-rule__name { text-decoration: line-through; opacity: .7; }
-        .prepay-days { display: flex; flex-wrap: wrap; gap: .4rem; }
-        .prepay-days label { margin: 0; }
-        .prepay-days input { position: absolute; opacity: 0; pointer-events: none; }
-        .prepay-days span { display: inline-block; min-width: 2.6rem; padding: .35rem .6rem; text-align: center; border: 1px solid var(--bs-border-color); border-radius: .5rem; cursor: pointer; }
-        .prepay-days input:checked + span { background: var(--bs-primary); border-color: var(--bs-primary); color: #fff; }
-        .prepay-days input:focus-visible + span { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
-        .prepay-services { display: grid; gap: .25rem; max-height: 12rem; overflow: auto; padding: .5rem; border: 1px solid var(--bs-border-color); border-radius: .5rem; }
-        .prepay-details > summary { cursor: pointer; font-weight: 600; padding: .25rem 0; }
-        .prepay-alert { padding: .75rem 1rem; border-radius: .5rem; border: 1px solid var(--bs-border-color); }
-        .prepay-alert.is-error { border-color: var(--bs-danger); color: var(--bs-danger); }
-        .prepay-alert.is-ok { border-color: var(--bs-success); }
+        #settings-prepayment [hidden] { display: none !important; }
+        #settings-prepayment .prepay-section + .prepay-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--bs-border-color); }
+        #settings-prepayment .prepay-section h2 { margin: 0 0 .25rem; font-size: 1.05rem; }
+        #settings-prepayment .prepay-hint { margin: .25rem 0 0; font-size: .875rem; color: var(--bs-secondary-color); }
+        #settings-prepayment .prepay-gate { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 1rem 1.25rem; border: 1px solid var(--bs-warning); border-radius: .75rem; margin-bottom: 1.5rem; }
+        #settings-prepayment .prepay-gate h2 { margin: 0; font-size: 1.05rem; }
+        #settings-prepayment .prepay-gate p { margin: .25rem 0 0; color: var(--bs-secondary-color); }
+        #settings-prepayment .prepay-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+        #settings-prepayment .prepay-row > * { flex: 1 1 10rem; }
+        #settings-prepayment .prepay-rule { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: .75rem 0; border-top: 1px solid var(--bs-border-color); }
+        #settings-prepayment .prepay-rule:first-of-type { border-top: 0; }
+        #settings-prepayment .prepay-rule__name { font-weight: 600; }
+        #settings-prepayment .prepay-rule__meta { font-size: .875rem; color: var(--bs-secondary-color); }
+        #settings-prepayment .prepay-rule.is-off .prepay-rule__name { text-decoration: line-through; opacity: .7; }
+        #settings-prepayment .prepay-days { display: flex; flex-wrap: wrap; gap: .4rem; }
+        #settings-prepayment .prepay-days label { margin: 0; }
+        #settings-prepayment .prepay-days input { position: absolute; opacity: 0; pointer-events: none; }
+        #settings-prepayment .prepay-days span { display: inline-block; min-width: 2.6rem; padding: .35rem .6rem; text-align: center; border: 1px solid var(--bs-border-color); border-radius: .5rem; cursor: pointer; }
+        #settings-prepayment .prepay-days input:checked + span { background: var(--bs-primary); border-color: var(--bs-primary); color: #fff; }
+        #settings-prepayment .prepay-days input:focus-visible + span { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
+        #settings-prepayment .prepay-services { display: grid; gap: .25rem; max-height: 12rem; overflow: auto; padding: .5rem; border: 1px solid var(--bs-border-color); border-radius: .5rem; }
+        #settings-prepayment .prepay-details > summary { cursor: pointer; font-weight: 600; padding: .25rem 0; }
+        #settings-prepayment .prepay-alert { padding: .75rem 1rem; margin-bottom: 1rem; border-radius: .5rem; border: 1px solid var(--bs-border-color); }
+        #settings-prepayment .prepay-alert.is-error { border-color: var(--bs-danger); color: var(--bs-danger); }
+        #settings-prepayment .prepay-alert.is-ok { border-color: var(--bs-success); }
     </style>
 
-    <div class="prepay-page d-flex flex-column gap-3">
-        <header>
-            <h1 class="prepay-title">{{ $copy['title'] }}</h1>
-            <p class="prepay-lead">{{ $copy['lead'] }}</p>
-        </header>
+    <div class="card-body p-5 p-lg-6">
+        <div class="settings-section-title">
+            <div>
+                <h5 class="mb-1">{{ $copy['title'] }}</h5>
+                <p class="text-muted mb-0">{{ $copy['lead'] }}</p>
+            </div>
+            <span class="settings-meta-chip"><i class="icon-base ri ri-bank-card-line"></i> ЮKassa</span>
+        </div>
 
         <div id="prepay-alert" role="status" hidden></div>
-        <div id="prepay-body" class="d-flex flex-column gap-3"><p class="prepay-hint">{{ $copy['loading'] }}</p></div>
+        <div id="prepay-body"><p class="prepay-hint">{{ $copy['loading'] }}</p></div>
     </div>
-@endsection
+</div>
 
-@section('scripts')
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var COPY = {{ \Illuminate\Support\Js::from($copy) }};
@@ -124,14 +126,14 @@
                 var text = data.shop === 'unchecked' ? COPY.unchecked_text : COPY.connect_text;
                 var title = data.shop === 'unchecked' ? COPY.unchecked_cta : COPY.connect_title;
                 var cta = data.shop === 'unchecked' ? COPY.unchecked_cta : COPY.connect_cta;
-                return '<section class="prepay-card prepay-gate"><div><h2>' + esc(title) + '</h2><p>' + esc(text) + '</p></div>'
+                return '<section class="prepay-gate"><div><h2>' + esc(title) + '</h2><p>' + esc(text) + '</p></div>'
                     + '<a class="btn btn-primary" href="' + esc(INTEGRATIONS_URL) + '">' + esc(cta) + '</a></section>';
             }
 
             function policyForm() {
                 var p = data.policy;
                 var locked = data.shop !== 'verified';
-                return '<form class="prepay-card d-flex flex-column gap-3" id="policy-form" novalidate>'
+                return '<form class="prepay-section d-flex flex-column gap-3" id="policy-form" novalidate>'
                     + '<div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="p-enabled" ' + (p.enabled ? 'checked ' : '') + (locked ? 'disabled ' : '') + '>'
                     + '<label class="form-check-label fw-semibold" for="p-enabled">' + esc(COPY.toggle) + '</label>'
                     + '<p class="prepay-hint">' + esc(COPY.toggle_hint) + '</p></div>'
@@ -168,7 +170,7 @@
                         + '<button class="btn btn-sm btn-outline-danger" type="button" data-act="delete" data-id="' + rule.id + '">' + esc(COPY.delete) + '</button></div></div>';
                 }).join('');
 
-                return '<section class="prepay-card"><h2>' + esc(COPY.periods_title) + '</h2><p class="prepay-hint">' + esc(COPY.periods_hint) + '</p>'
+                return '<section class="prepay-section"><h2>' + esc(COPY.periods_title) + '</h2><p class="prepay-hint">' + esc(COPY.periods_hint) + '</p>'
                     + '<div class="mt-2">' + (rows || '<p class="prepay-hint">' + esc(COPY.rules_empty) + '</p>') + '</div>'
                     + (editingRule === null ? '<button class="btn btn-outline-primary mt-3" type="button" data-act="new">' + esc(COPY.rule_add) + '</button>' : ruleForm())
                     + '</section>';
@@ -356,7 +358,19 @@
                 }
             });
 
-            load();
+            // Only when the tab is opened: most visits to settings never need it.
+            var loaded = false;
+            function loadOnce() {
+                if (loaded) return;
+                loaded = true;
+                load();
+            }
+
+            if (location.hash === '#settings-prepayment') loadOnce();
+            window.addEventListener('hashchange', function () { if (location.hash === '#settings-prepayment') loadOnce(); });
+            document.addEventListener('click', function (event) {
+                if (event.target.closest('[data-settings-tab="settings-prepayment"]')) loadOnce();
+            });
         });
     </script>
-@endsection
+@endpush

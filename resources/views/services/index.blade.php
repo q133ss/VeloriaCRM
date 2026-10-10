@@ -419,7 +419,7 @@
                                             <input type="number" class="form-control" id="service-prepay-value" min="1" step="1" inputmode="decimal" />
                                         </div>
                                     </div>
-                                    <div class="form-text">{{ __('prepayment.page.link_hint') }}: <a href="{{ route('prepayment') }}">{{ __('prepayment.page.link_label') }}</a></div>
+                                    <div class="form-text">{{ __('prepayment.page.link_hint') }}: <a href="{{ route('settings') }}#settings-prepayment">{{ __('prepayment.page.link_label') }}</a></div>
                                 </details>
                             </div>
                             <div class="col-12">

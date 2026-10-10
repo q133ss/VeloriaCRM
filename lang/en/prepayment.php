@@ -7,6 +7,9 @@ return [
     'cancel_reason_unpaid' => 'The prepayment did not arrive in time.',
     'lapsed_title' => 'Booking not confirmed',
     'lapsed_message' => 'The prepayment for ":service" on :datetime did not arrive, so the time was released. You can book again.',
+    'nothing_to_refund' => 'Nothing to refund: the prepayment was already returned or never paid.',
+    'refund_refused' => 'YooKassa refused the refund. Check that the shop balance is enough and try again.',
+    'refunded' => 'Refunded :amount ₽.',
     'delete_blocked' => 'This booking carries a prepayment. Cancel it first, then it can be deleted.',
     'refund_failed' => 'The booking was cancelled, but the prepayment could not be refunded. Refund it in your YooKassa account.',
     'return' => [
@@ -126,5 +129,7 @@ return [
         'title' => 'Prepayment',
         'awaiting_hint' => 'The time is held for the client until they pay. If the money does not arrive, the booking cancels itself.',
         'minutes_left' => ':minutes min left',
+        'refund_pending' => 'The prepayment of :amount ₽ is still with you, although the booking was cancelled.',
+        'refund_button' => 'Refund :amount ₽',
     ],
 ];

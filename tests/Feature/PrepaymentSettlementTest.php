@@ -365,4 +365,59 @@ class PrepaymentSettlementTest extends PrepaymentTestCase
         $this->postJson("/api/v1/orders/{$order->id}/cancel", [])->assertOk();
         $this->deleteJson("/api/v1/orders/{$order->id}")->assertOk();
     }
+    public function test_a_refund_refused_at_cancellation_can_be_repeated_by_hand(): void
+    {
+        $order = $this->paidBooking();
+        FakeYooKassa::$refundFails = true;
+        $this->postJson("/api/v1/orders/{$order->id}/cancel", [])->assertOk()->assertJsonPath('prepayment.refunded', 0);
+        $this->assertSame('paid', $order->fresh()->payment_status);
+
+        // Still refused: a clear message, nothing changes.
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", [])
+            ->assertStatus(502)->assertJsonPath('error.code', 'refund_refused');
+
+        FakeYooKassa::$refundFails = false;
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", [])
+            ->assertOk()->assertJsonPath('data.prepayment.state', 'refunded');
+
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame([['payment' => 'pay-' . $order->id, 'amount' => 600.0]], FakeYooKassa::$refunds);
+    }
+
+    public function test_a_prepayment_can_be_returned_in_parts_and_never_beyond_what_was_paid(): void
+    {
+        $order = $this->paidBooking();
+
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", ['amount' => 200])->assertOk();
+        $this->assertEquals(200, Payment::firstOrFail()->refunded_amount);
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertEquals(400, $order->fresh()->prepaid_amount);
+
+        // More than is left is cut to what is left.
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", ['amount' => 5000])->assertOk();
+        $this->assertEquals(600, Payment::firstOrFail()->refunded_amount);
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame([200.0, 400.0], array_column(FakeYooKassa::$refunds, 'amount'));
+
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", [])
+            ->assertStatus(422)->assertJsonPath('error.code', 'nothing_to_refund');
+    }
+
+    public function test_there_is_nothing_to_refund_on_a_booking_that_was_never_paid(): void
+    {
+        $order = $this->heldBooking();
+        Sanctum::actingAs($this->master);
+
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", [])->assertStatus(422);
+        $this->assertSame([], FakeYooKassa::$refunds);
+    }
+
+    public function test_another_master_cannot_refund_my_prepayment(): void
+    {
+        $order = $this->paidBooking();
+        Sanctum::actingAs(\App\Models\User::factory()->create());
+
+        $this->postJson("/api/v1/orders/{$order->id}/prepayment/refund", [])->assertForbidden();
+        $this->assertSame([], FakeYooKassa::$refunds);
+    }
 }

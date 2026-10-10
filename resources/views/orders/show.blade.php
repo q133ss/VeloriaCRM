@@ -125,6 +125,10 @@
                         </span>
                     </div>
                     <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-center gap-3 mb-3" id="order-prepay-refund" hidden>
+                            <span class="small text-muted" id="order-prepay-refund-text"></span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="order-prepay-refund-btn"></button>
+                        </div>
                         <p class="small text-muted mb-3" id="order-prepay-note" hidden></p>
                         <div class="row g-4">
                             <div class="col-md-6">
@@ -602,6 +606,16 @@
             badge.hidden = !info;
             note.hidden = true;
 
+            // A cancelled booking that still holds the client's money (the refund was refused, or kept on purpose).
+            const refund = order.prepayment_refund;
+            const refundRow = document.getElementById('order-prepay-refund');
+            refundRow.hidden = !(refund && refund.refundable > 0 && order.status === 'cancelled');
+            if (!refundRow.hidden) {
+                const money = new Intl.NumberFormat('ru-RU').format(refund.refundable);
+                document.getElementById('order-prepay-refund-text').textContent = prepayCopy.refund_pending.replace(':amount', money);
+                document.getElementById('order-prepay-refund-btn').textContent = prepayCopy.refund_button.replace(':amount', money);
+            }
+
             if (!info) return;
 
             badge.className = 'badge ' + (prepayTones[info.state] || 'bg-label-secondary');
@@ -831,6 +845,12 @@
                 showAlert('warning', result.prepayment.warning, true);
             }
         }
+
+        document.getElementById('order-prepay-refund-btn').addEventListener('click', async function () {
+            this.disabled = true;
+            await performAction(`/api/v1/orders/${orderId}/prepayment/refund`, 'POST', {});
+            this.disabled = false;
+        });
 
         [['refund-give', true], ['refund-keep', false]].forEach(function ([id, value]) {
             document.getElementById(id).addEventListener('click', function () {

@@ -698,6 +698,38 @@ class OrderController extends Controller
     }
 
     /**
+     * Give a prepayment back by hand: when the refund at cancellation was refused
+     * (the shop's balance was short), or the master changed her mind later.
+     * Without an amount everything still returnable goes back.
+     */
+    public function refundPrepayment(Request $request, Order $order): JsonResponse
+    {
+        $this->ensureOrderBelongsToCurrentUser($order);
+
+        $data = $request->validate(['amount' => ['nullable', 'numeric', 'min:1']]);
+        $settlement = app(PrepaymentSettlementService::class);
+
+        if ($settlement->refundable($order) <= 0) {
+            return response()->json([
+                'error' => ['code' => 'nothing_to_refund', 'message' => __('prepayment.nothing_to_refund')],
+            ], 422);
+        }
+
+        try {
+            $refunded = $settlement->refund($order, isset($data['amount']) ? (float) $data['amount'] : null);
+        } catch (PrepaymentFailedException) {
+            return response()->json([
+                'error' => ['code' => 'refund_refused', 'message' => __('prepayment.refund_refused')],
+            ], 502);
+        }
+
+        return response()->json([
+            'data' => $this->decorateOrder($order->refresh()),
+            'message' => __('prepayment.refunded', ['amount' => number_format($refunded, 0, ',', ' ')]),
+        ]);
+    }
+
+    /**
      * Everything that follows an order being cancelled, however it got there:
      * the client's side of the booking goes with it (or its time stays
      * blocked), and a prepayment is dropped or returned.
