@@ -44,11 +44,7 @@ return [
 
     'vkid' => [
         'client_id' => env('VKID_CLIENT_ID'),
-        'client_secret' => env('VKID_CLIENT_SECRET'),
         'redirect' => env('VKID_REDIRECT_URI'),
-        'scopes' => ['vkid.personal_info', 'email'],
-        'pkce_ttl' => 10,
-        'cache_store' => '',
     ],
 
     'client_portal' => [

@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminUsefulPostController;
 Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
+    Route::post('/auth/vkid', \App\Http\Controllers\Auth\VkIdController::class)->middleware('throttle:20,1')->name('api.auth.vkid');
     Route::post('/support-requests', [SupportRequestController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('api.support-requests.store');

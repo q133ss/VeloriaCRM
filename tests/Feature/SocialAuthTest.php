@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialUser;
@@ -17,13 +18,17 @@ class SocialAuthTest extends TestCase
 
     private function configure(): void
     {
-        foreach (['vkid', 'yandex'] as $provider) {
-            config([
-                "services.{$provider}.client_id" => 'id',
-                "services.{$provider}.client_secret" => 'secret',
-                "services.{$provider}.redirect" => "http://localhost/auth/{$provider}/callback",
-            ]);
-        }
+        config([
+            'services.yandex.client_id' => 'id',
+            'services.yandex.client_secret' => 'secret',
+            'services.yandex.redirect' => 'http://localhost/auth/yandex/callback',
+        ]);
+    }
+
+    private function fakeVk(array $user, int $status = 200): void
+    {
+        config(['services.vkid.client_id' => '54815286']);
+        Http::fake(['id.vk.ru/oauth2/user_info' => Http::response(['user' => $user], $status)]);
     }
 
     private function fakeProvider(?string $id, ?string $email, string $name = 'Anna Master'): void
@@ -40,6 +45,7 @@ class SocialAuthTest extends TestCase
     {
         $this->get('/auth/google/redirect')->assertNotFound();
         $this->get('/auth/vkontakte/redirect')->assertNotFound();
+        $this->get('/auth/vkid/redirect')->assertNotFound();
     }
 
     public function test_login_and_register_pages_offer_only_vk_and_yandex(): void
@@ -47,7 +53,7 @@ class SocialAuthTest extends TestCase
         foreach (['/login', '/register'] as $page) {
             $this->get($page)
                 ->assertOk()
-                ->assertSee('/auth/vkid/redirect', false)
+                ->assertSee('id="vkid-button"', false)
                 ->assertSee('/auth/yandex/redirect', false)
                 ->assertDontSee('/auth/google/redirect', false)
                 ->assertDontSee('ri-twitter-fill', false)
@@ -57,9 +63,9 @@ class SocialAuthTest extends TestCase
 
     public function test_unconfigured_provider_returns_to_login_with_message(): void
     {
-        config(['services.vkid.client_id' => null]);
+        config(['services.yandex.client_id' => null]);
 
-        $this->get('/auth/vkid/redirect')
+        $this->get('/auth/yandex/redirect')
             ->assertRedirect(route('login'))
             ->assertSessionHas('auth_error');
     }
@@ -92,13 +98,13 @@ class SocialAuthTest extends TestCase
     public function test_user_without_email_can_sign_in(): void
     {
         $this->configure();
-        $this->fakeProvider('777', null, 'Vk Person');
+        $this->fakeProvider('777', null, 'Ya Person');
 
-        $this->get('/auth/vkid/callback')->assertRedirect('/dashboard');
+        $this->get('/auth/yandex/callback')->assertRedirect('/dashboard');
 
-        $user = SocialAccount::where('provider', 'vkid')->firstOrFail()->user;
+        $user = SocialAccount::where('provider', 'yandex')->firstOrFail()->user;
         $this->assertNull($user->email);
-        $this->assertSame('Vk Person', $user->name);
+        $this->assertSame('Ya Person', $user->name);
     }
 
     public function test_existing_account_with_same_email_gets_linked(): void
@@ -134,8 +140,46 @@ class SocialAuthTest extends TestCase
         $driver->shouldReceive('user')->andThrow(new \RuntimeException('boom'));
         Socialite::shouldReceive('buildProvider')->andReturn($driver);
 
-        $this->get('/auth/vkid/callback')
+        $this->get('/auth/yandex/callback')
             ->assertRedirect(route('login'))
             ->assertSessionHas('auth_error');
+    }
+
+    public function test_vk_widget_token_signs_in_and_creates_user(): void
+    {
+        $this->fakeVk(['user_id' => '9', 'first_name' => 'Olga', 'last_name' => 'Ivanova', 'email' => 'olga@example.com']);
+
+        $this->postJson('/api/v1/auth/vkid', ['access_token' => 'abc'])
+            ->assertOk()
+            ->assertJsonStructure(['token', 'user']);
+
+        $this->assertDatabaseHas('social_accounts', ['provider' => 'vkid', 'provider_id' => '9']);
+        $this->assertSame('Olga Ivanova', User::where('email', 'olga@example.com')->value('name'));
+        Http::assertSent(fn ($r) => $r['client_id'] === '54815286' && $r['access_token'] === 'abc');
+    }
+
+    public function test_vk_widget_rejects_a_token_vk_does_not_recognise(): void
+    {
+        $this->fakeVk([], 401);
+
+        $this->postJson('/api/v1/auth/vkid', ['access_token' => 'bad'])->assertStatus(401);
+        $this->assertSame(0, User::count());
+    }
+
+    public function test_vk_widget_works_without_email_and_refuses_suspended(): void
+    {
+        $this->fakeVk(['user_id' => '10', 'first_name' => 'Vera']);
+        $this->postJson('/api/v1/auth/vkid', ['access_token' => 'abc'])->assertOk();
+
+        SocialAccount::firstOrFail()->user->forceFill(['status' => User::STATUS_SUSPENDED])->save();
+        $this->postJson('/api/v1/auth/vkid', ['access_token' => 'abc'])->assertStatus(403);
+    }
+
+    public function test_vk_widget_requires_a_token_and_configuration(): void
+    {
+        $this->postJson('/api/v1/auth/vkid', [])->assertStatus(422);
+
+        config(['services.vkid.client_id' => null]);
+        $this->postJson('/api/v1/auth/vkid', ['access_token' => 'abc'])->assertStatus(503);
     }
 }
