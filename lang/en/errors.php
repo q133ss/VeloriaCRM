@@ -28,4 +28,5 @@ return [
         'title' => 'Brief maintenance',
         'message' => 'We are updating the service. It usually takes a few minutes — please look in a little later.',
     ],
+    'to_login' => 'Sign in',
 ];
