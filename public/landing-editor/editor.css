@@ -21,8 +21,8 @@ img.lf-image.lf-busy, .lf-image.lf-busy { opacity: .45; pointer-events: none; }
 .lf-btn-main { background: var(--lf-accent); color: #fff; }
 
 .lf-pop { position: absolute; z-index: 100001; display: flex; gap: .4rem; padding: .4rem; border-radius: 14px; background: #1f1b2e; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
-.lf-pop button { min-height: 40px; padding: 0 .9rem; border: 0; border-radius: 10px; background: rgba(255, 255, 255, .12); color: #fff; font: 600 14px/1 system-ui, sans-serif; cursor: pointer; }
-.lf-pop button.lf-main { background: var(--lf-accent); }
+.lf-pop button, .lf-pop label.lf-main { min-height: 40px; padding: 0 .9rem; border: 0; border-radius: 10px; background: rgba(255, 255, 255, .12); color: #fff; font: 600 14px/1 system-ui, sans-serif; cursor: pointer; }
+.lf-pop button.lf-main, .lf-pop label.lf-main { background: var(--lf-accent); }
 
 .lf-toast { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 100002; max-width: calc(100vw - 32px); padding: .6rem 1rem; border-radius: 12px; background: #b91c1c; color: #fff; font: 500 14px/1.4 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
 
@@ -30,3 +30,5 @@ img.lf-image.lf-busy, .lf-image.lf-busy { opacity: .45; pointer-events: none; }
     .lf-bar { left: 12px; right: 12px; transform: none; justify-content: space-between; padding-left: .85rem; }
     .lf-bar .lf-btn-ghost { display: none; }
 }
+.lf-pop label.lf-main { position: relative; display: inline-flex; align-items: center; box-sizing: border-box; cursor: pointer; }
+.lf-pop .lf-file { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
