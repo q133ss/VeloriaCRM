@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
 import { formatDateLabel } from '../../../shared/format/ruDate';
@@ -11,14 +12,11 @@ import { SegmentedControl } from '../../../shared/ui/SegmentedControl';
 import { useAppTheme } from '../../../theme/theme';
 import { AppointmentListItemDto } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
+import { appointmentStatusLabel, canPayNow, formatRubles, isAwaitingPayment, minutesLeft } from '../model/appointmentStatus';
 import { useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Appointments'>;
 type Tab = 'upcoming' | 'history';
-
-function statusLabel(status: string): string {
-  return status === 'scheduled' ? 'Подтверждено' : status;
-}
 
 export function AppointmentsScreen({ navigation }: Props) {
   const { token, master } = useClientPortal();
@@ -28,36 +26,51 @@ export function AppointmentsScreen({ navigation }: Props) {
   const [appointments, setAppointments] = useState<AppointmentListItemDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [now, setNow] = useState(() => Date.now());
+
+  const load = useCallback(async () => {
     if (!token) {
       return;
     }
 
-    let cancelled = false;
+    setError(null);
 
-    async function load() {
-      setError(null);
+    try {
+      const response = await clientPortalApi.getAppointments(token);
 
-      try {
-        const response = await clientPortalApi.getAppointments(token as string);
-
-        if (!cancelled) {
-          setAppointments(response.data.appointments);
-        }
-      } catch (fetchError) {
-        if (!cancelled) {
-          const message = fetchError instanceof Error ? fetchError.message : 'Не удалось загрузить записи.';
-          setError(message);
-        }
-      }
+      setAppointments(response.data.appointments);
+      setNow(Date.now());
+    } catch (fetchError) {
+      const message = fetchError instanceof Error ? fetchError.message : 'Не удалось загрузить записи.';
+      setError(message);
     }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
   }, [token]);
+
+  // Coming back to this screen, or back to the app from the payment page, shows the
+  // booking as it is now: "Ждёт оплаты" turns into "Подтверждено" without a pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void load();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [load]);
+
+  const handlePay = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Не получилось открыть оплату', 'Попробуйте ещё раз чуть позже.');
+    }
+  };
 
   const visible = (appointments ?? []).filter((item) => (tab === 'upcoming' ? item.is_upcoming : !item.is_upcoming));
 
@@ -116,10 +129,32 @@ export function AppointmentsScreen({ navigation }: Props) {
                   </View>
                   <View style={[styles.statusPill, { backgroundColor: theme.colors.accentSoft }]}>
                     <Text style={[styles.statusText, { color: theme.colors.textPrimary }]}>
-                      {statusLabel(appointment.status)}
+                      {appointmentStatusLabel(appointment)}
                     </Text>
                   </View>
                 </View>
+
+                {isAwaitingPayment(appointment) && appointment.is_upcoming ? (
+                  <View style={styles.paymentBlock}>
+                    <Text style={[styles.itemMeta, { color: theme.colors.textSecondary }]}>
+                      {canPayNow(appointment, now)
+                        ? `Предоплата ${formatRubles(appointment.payment?.amount ?? 0)}. Время закреплено ещё на ${minutesLeft(appointment.payment?.expires_at, now)} мин.`
+                        : 'Время закрепления вышло. Если вы уже оплатили, статус скоро обновится.'}
+                    </Text>
+                    {canPayNow(appointment, now) ? (
+                      <PrimaryButton
+                        onPress={() => void handlePay(appointment.payment?.confirmation_url as string)}
+                        theme={theme}
+                        title={`Оплатить ${formatRubles(appointment.payment?.amount ?? 0)}`}
+                        style={styles.payButton}
+                      />
+                    ) : null}
+                  </View>
+                ) : appointment.payment?.state === 'paid' ? (
+                  <Text style={[styles.itemMeta, { color: theme.colors.textSecondary }]}>
+                    {`Предоплата ${formatRubles(appointment.payment.amount)} внесена`}
+                  </Text>
+                ) : null}
               </SectionCard>
             ))}
           </View>
@@ -178,6 +213,13 @@ const styles = StyleSheet.create({
   itemMeta: {
     fontSize: 14,
     marginTop: 6,
+  },
+  paymentBlock: {
+    marginTop: 12,
+    gap: 12,
+  },
+  payButton: {
+    alignSelf: 'stretch',
   },
   statusPill: {
     borderRadius: 999,

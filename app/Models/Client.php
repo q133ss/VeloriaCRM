@@ -38,6 +38,7 @@ class Client extends Authenticatable
         'expo_push_token',
         'expo_push_token_updated_at',
         'last_seen_at',
+        'prepay_override',
     ];
 
     protected function casts(): array

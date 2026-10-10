@@ -5,6 +5,7 @@ import {
   ApiMaster,
   AppointmentDto,
   AppointmentListItemDto,
+  BookingPaymentDto,
   ChatThreadDto,
   ClientNotificationDto,
   ClientServiceDto,
@@ -21,8 +22,10 @@ import {
   VerifyLoginBody,
   VerifyLoginResponseData,
   WaitlistEntryPayload,
+  GetPrepaymentQuoteQuery,
   GetServicesQuery,
   GetSlotsQuery,
+  PrepaymentQuoteDto,
 } from './contracts';
 
 export const clientPortalApi = {
@@ -95,8 +98,16 @@ export const clientPortalApi = {
     });
   },
 
+  getPrepaymentQuote(token: string, query: GetPrepaymentQuoteQuery) {
+    return httpRequest<ApiEnvelope<PrepaymentQuoteDto>>({
+      path: '/client/prepayment-quote',
+      token,
+      query,
+    });
+  },
+
   createAppointment(token: string, body: CreateAppointmentBody) {
-    return httpRequest<ApiEnvelope<{ appointment: AppointmentDto }>>({
+    return httpRequest<ApiEnvelope<{ appointment: AppointmentDto; payment: BookingPaymentDto | null }>>({
       method: 'POST',
       path: '/client/appointments',
       token,

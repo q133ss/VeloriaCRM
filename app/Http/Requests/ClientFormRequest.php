@@ -51,6 +51,8 @@ class ClientFormRequest extends BaseRequest
             'notes' => ['nullable', 'string'],
             'last_visit_at' => ['nullable', 'date'],
             'loyalty_level' => ['nullable', 'string', 'max:50'],
+            // Whether online bookings by this client need a prepayment, whatever the general rule says.
+            'prepay_override' => ['sometimes', 'nullable', Rule::in(['inherit', 'always', 'never'])],
         ];
     }
 

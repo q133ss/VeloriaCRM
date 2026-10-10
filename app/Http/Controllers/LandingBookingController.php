@@ -9,8 +9,11 @@ use App\Models\LandingRequest;
 use App\Models\Order;
 use App\Models\Service;
 use App\Services\Booking\ClientBookingService;
+use App\Services\Booking\PrepaymentFailedException;
 use App\Services\Booking\SlotUnavailableException;
+use App\Services\Prepayment\PrepaymentPolicyService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -49,6 +52,39 @@ class LandingBookingController extends Controller
         ]);
     }
 
+    /**
+     * What a booking at this time would ask up front, so the page can say it
+     * before the visitor commits. It is the amount for a client the master
+     * knows nothing about; the booking itself answers for the real person
+     * (her own «always/never» setting and history), so nothing about any
+     * client is given away here.
+     */
+    public function prepayment(Request $request, string $slug, PrepaymentPolicyService $policy): JsonResponse
+    {
+        $landing = $this->activeLanding($slug);
+        $data = $request->validate([
+            'service_id' => ['nullable', 'integer'],
+            'date' => ['required', 'date_format:Y-m-d'],
+            'time' => ['required', 'date_format:H:i'],
+        ]);
+
+        $service = $this->resolveOfferedService($landing, $data['service_id'] ?? null);
+        $startsAt = Carbon::createFromFormat('Y-m-d H:i', $data['date'] . ' ' . $data['time'], $this->booking->masterTimezone($landing->user_id));
+
+        $requirement = $policy->resolve(
+            $landing->user_id,
+            null,
+            null,
+            $service,
+            $startsAt,
+            $service ? (float) ($service->base_price ?? 0) : 0.0,
+        );
+
+        return response()->json(['data' => $requirement
+            ? ['required' => true, 'amount' => $requirement->amount, 'hold_minutes' => $requirement->holdMinutes]
+            : ['required' => false]]);
+    }
+
     public function book(LandingBookRequest $request, string $slug): JsonResponse
     {
         $landing = $this->activeLanding($slug);
@@ -68,10 +104,15 @@ class LandingBookingController extends Controller
                 $validated['time'],
                 $validated['message'] ?? null,
                 'landing',
+                url('/l/' . $landing->slug . '/paid/{token}'),
             );
         } catch (SlotUnavailableException) {
             throw ValidationException::withMessages(['time' => __('landings.booking.slot_taken')]);
+        } catch (PrepaymentFailedException) {
+            return response()->json(['message' => __('prepayment.payment_failed')], 503);
         }
+
+        $payment = $booked['payment'];
 
         // Kept with the landing's other requests so its counters and the
         // "requests" list on the edit page include people who booked outright.
@@ -84,7 +125,7 @@ class LandingBookingController extends Controller
             'client_phone' => $validated['client_phone'],
             'preferred_date' => $validated['date'],
             'message' => $validated['message'] ?? null,
-            'status' => 'booked',
+            'status' => $payment ? 'awaiting_payment' : 'booked',
             'meta' => [
                 'landing_title' => $landing->title,
                 'service_name' => $service?->name,
@@ -98,9 +139,16 @@ class LandingBookingController extends Controller
         $start = $booked['starts_at_local'];
 
         return response()->json([
-            'message' => __('landings.booking.booked'),
+            'message' => $payment
+                ? __('prepayment.required', ['amount' => number_format($payment['amount'], 0, ',', ' ')])
+                : __('landings.booking.booked'),
             'data' => [
-                'kind' => 'booked',
+                'kind' => $payment ? 'payment_required' : 'booked',
+                'payment' => $payment ? [
+                    'amount' => $payment['amount'],
+                    'confirmation_url' => $payment['confirmation_url'],
+                    'expires_at' => $payment['expires_at']->toIso8601String(),
+                ] : null,
                 'date' => $start->toDateString(),
                 'date_label' => $start->translatedFormat('j F, l'),
                 'time' => $start->format('H:i'),

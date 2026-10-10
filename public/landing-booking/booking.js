@@ -22,7 +22,7 @@
     var lang = (document.documentElement.lang || 'ru').slice(0, 5);
     var idleLabel = button ? button.innerHTML : '';
 
-    var state = { days: [], date: null, time: null, loaded: false, token: 0 };
+    var state = { days: [], date: null, time: null, loaded: false, token: 0, prepay: null, prepayToken: 0 };
 
     function el(tag, className, text) {
         var node = document.createElement(tag);
@@ -62,10 +62,42 @@
         box.textContent = text || '';
     }
 
+    function money(value) {
+        return new Intl.NumberFormat(lang).format(value);
+    }
+
     function updateButton() {
         if (!button) return;
-        if (state.date && state.time) button.textContent = fmt(ui.submit_book, { when: whenLabel() });
+        if (state.date && state.time && state.prepay) button.textContent = fmt(ui.submit_pay, { amount: money(state.prepay.amount) });
+        else if (state.date && state.time) button.textContent = fmt(ui.submit_book, { when: whenLabel() });
         else button.innerHTML = idleLabel;
+    }
+
+    /* The amount a booking at the chosen time would ask up front (for a new client;
+       the booking itself answers for the real person). Asked again whenever the choice changes. */
+    function loadPrepayment() {
+        var token = ++state.prepayToken;
+        state.prepay = null;
+
+        if (cfg.editing || !cfg.urls.prepayment || !state.date || !state.time) {
+            renderPicker();
+            updateButton();
+            return;
+        }
+
+        var url = cfg.urls.prepayment + '?date=' + encodeURIComponent(state.date) + '&time=' + encodeURIComponent(state.time)
+            + (select && select.value ? '&service_id=' + encodeURIComponent(select.value) : '');
+
+        fetch(url, { headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (body) {
+                if (token !== state.prepayToken) return;
+                var data = body && body.data;
+                state.prepay = data && data.required ? { amount: data.amount, hold: data.hold_minutes } : null;
+                renderPicker();
+                updateButton();
+            })
+            .catch(function () {});
     }
 
     /* ---------------- picker ---------------- */
@@ -108,6 +140,7 @@
                 if (state.time && day.slots.indexOf(state.time) === -1) state.time = null;
                 renderPicker();
                 updateButton();
+                loadPrepayment();
             });
             strip.appendChild(b);
         });
@@ -123,10 +156,15 @@
                     state.time = state.time === slot ? null : slot;
                     renderPicker();
                     updateButton();
+                    loadPrepayment();
                 });
                 times.appendChild(t);
             });
             pickerRoot.appendChild(times);
+        }
+
+        if (state.date && state.time && state.prepay) {
+            pickerRoot.appendChild(el('p', 'lb-note lb-prepay', fmt(ui.pay_note, { amount: money(state.prepay.amount) })));
         }
 
         if (state.date && state.time) {
@@ -135,6 +173,7 @@
             clear.addEventListener('click', function () {
                 state.date = null;
                 state.time = null;
+                state.prepay = null;
                 renderPicker();
                 updateButton();
             });
@@ -221,6 +260,49 @@
         document.addEventListener('keydown', onKey);
     }
 
+    /* The one step left: go and pay. Closing it leaves the time held until it runs out. */
+    function showPaymentModal(payment, whenText) {
+        var previous = document.activeElement;
+        var overlay = el('div', 'lb-overlay');
+        var card = el('div', 'lb-modal');
+        card.setAttribute('role', 'dialog');
+        card.setAttribute('aria-modal', 'true');
+
+        var minutes = payment.expires_at ? Math.max(1, Math.round((new Date(payment.expires_at) - Date.now()) / 60000)) : null;
+        var amount = money(payment.amount);
+
+        card.appendChild(el('div', 'lb-modal-icon', '₽'));
+        card.appendChild(el('h3', 'lb-modal-title', ui.pay_title));
+        card.appendChild(el('p', 'lb-modal-text', fmt(ui.pay_text, { amount: amount, when: whenText })));
+        if (minutes) card.appendChild(el('p', 'lb-modal-hint', fmt(ui.pay_hold, { minutes: minutes })));
+
+        var pay = el('a', 'lb-modal-btn', fmt(ui.pay_button, { amount: amount }));
+        pay.href = payment.confirmation_url;
+        pay.addEventListener('click', function () { pay.textContent = ui.pay_redirecting; });
+        var later = el('button', 'lb-modal-link', ui.pay_cancel);
+        later.type = 'button';
+
+        card.appendChild(pay);
+        card.appendChild(later);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        document.body.classList.add('lb-locked');
+        pay.focus();
+
+        function close() {
+            overlay.remove();
+            document.body.classList.remove('lb-locked');
+            document.removeEventListener('keydown', onKey);
+            if (previous && previous.focus) previous.focus();
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') close();
+            if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === pay ? later : pay).focus(); }
+        }
+        later.addEventListener('click', close);
+        document.addEventListener('keydown', onKey);
+    }
+
     /* ---------------- submit ---------------- */
     function value(name) {
         var f = form.elements.namedItem(name);
@@ -270,12 +352,24 @@
                 });
             })
             .then(function (body) {
+                var data = body.data || {};
+                var whenText = state.date && state.time ? whenLabel() : '';
                 form.reset();
                 say('ok', '');
-                showModal(booking ? 'booked' : 'lead', body.data || {});
                 state.date = null;
                 state.time = null;
+                state.prepay = null;
                 updateButton();
+
+                // The time is held but not booked until it is paid.
+                if (booking && data.kind === 'payment_required') {
+                    // Never tell someone they are booked when the time is only held.
+                    if (data.payment && data.payment.confirmation_url) showPaymentModal(data.payment, whenText);
+                    else say('error', cfg.failed || ui.failed);
+                } else {
+                    showModal(booking ? 'booked' : 'lead', data);
+                }
+
                 if (booking) loadDays();
             })
             .catch(function (error) {
@@ -286,7 +380,7 @@
             .then(function () { button.disabled = false; });
     });
 
-    if (select) select.addEventListener('change', function () { state.date = null; state.time = null; updateButton(); loadDays(); });
+    if (select) select.addEventListener('change', function () { state.date = null; state.time = null; state.prepay = null; updateButton(); loadDays(); });
 
     loadDays();
 })();

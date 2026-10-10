@@ -238,6 +238,20 @@ class IntegrationCatalog
         return self::missing($settings, $provider) === [];
     }
 
+    /** Filled in AND the last check of exactly these values passed. */
+    public static function isVerified(?Setting $settings, string $provider): bool
+    {
+        if (! self::isFilled($settings, $provider)) {
+            return false;
+        }
+
+        $check = ($settings?->integration_checks ?? [])[$provider] ?? null;
+
+        return is_array($check)
+            && ($check['ok'] ?? false)
+            && ($check['fingerprint'] ?? null) === self::fingerprint($settings, $provider);
+    }
+
     public static function hasAnyValue(?Setting $settings, string $provider): bool
     {
         return array_filter(self::values($settings, $provider), fn ($value) => $value !== null) !== [];

@@ -10,8 +10,13 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\ClientNotificationService;
 use App\Services\NotificationService;
+use App\Models\Payment;
 use App\Services\OrderService;
+use App\Services\Prepayment\PrepaymentPolicyService;
+use App\Services\YooKassaService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -34,6 +39,7 @@ class ClientBookingService
         private readonly NotificationService $notifications,
         private readonly ClientNotificationService $clientNotifications,
         private readonly OrderService $orderService,
+        private readonly PrepaymentPolicyService $prepayments,
     ) {
     }
 
@@ -88,9 +94,15 @@ class ClientBookingService
     }
 
     /**
-     * @throws SlotUnavailableException when the time is not free any more
+     * When the master's rules ask for a prepayment the booking is held, unpaid,
+     * for the hold time: it blocks the slot like any order, but nobody is told
+     * about it until completePaidBooking() runs. `$returnUrl` may contain
+     * `{token}`, replaced by an unguessable token for the payment.
      *
-     * @return array{order: Order, appointment: Appointment, starts_at_local: Carbon, service_label: string}
+     * @throws SlotUnavailableException when the time is not free any more
+     * @throws PrepaymentFailedException when ЮKassa refuses the payment (nothing is kept)
+     *
+     * @return array{order: Order, appointment: Appointment, starts_at_local: Carbon, service_label: string, payment: ?array{id:int,token:string,amount:float,confirmation_url:?string,expires_at:Carbon}}
      */
     public function book(
         int $masterId,
@@ -100,6 +112,7 @@ class ClientBookingService
         string $time,
         ?string $note,
         string $source,
+        ?string $returnUrl = null,
     ): array {
         $timezone = $this->masterTimezone($masterId);
         $duration = $this->durationFor($service);
@@ -117,47 +130,185 @@ class ClientBookingService
         }
 
         $clientUser = $this->resolveOrCreateClientUser($client);
+        $totalPrice = $service ? (float) ($service->base_price ?? 0) : 0.0;
 
-        // The order is what the master sees in the calendar and orders list.
-        $order = Order::query()->create([
-            'master_id' => $masterId,
-            'client_id' => $clientUser->id,
-            'services' => $this->orderServicePayload($service, $duration),
-            'scheduled_at' => $startsAtLocal->copy()->timezone(config('app.timezone')),
-            'duration_forecast' => $duration,
-            'total_price' => $service ? (float) ($service->base_price ?? 0) : 0,
-            'status' => 'new',
-            'note' => $note,
-            'source' => $source,
-        ]);
+        $requirement = $this->prepayments->resolve(
+            $masterId,
+            $client->prepay_override,
+            $clientUser->id,
+            $service,
+            $startsAtLocal,
+            $totalPrice,
+        );
 
-        $this->orderService->scheduleStartReminder($order);
-
-        $appointment = Appointment::query()->create([
-            'user_id' => $masterId,
-            'client_id' => $client->id,
-            'service_ids' => $service ? [$service->id] : [],
-            'starts_at' => $startsAt,
-            'ends_at' => $startsAt->copy()->addMinutes($duration),
-            'status' => 'scheduled',
-            'meta' => [
-                'source' => $source,
+        // Order, appointment and payment stand or fall together: if ЮKassa
+        // refuses, the slot must not stay held by a booking nobody can pay.
+        $result = DB::transaction(function () use (
+            $masterId, $client, $clientUser, $service, $startsAt, $startsAtLocal, $duration,
+            $totalPrice, $note, $source, $serviceLabel, $requirement, $returnUrl,
+        ) {
+            // The order is what the master sees in the calendar and orders list.
+            $order = Order::query()->create([
+                'master_id' => $masterId,
+                'client_id' => $clientUser->id,
+                'services' => $this->orderServicePayload($service, $duration),
+                'scheduled_at' => $startsAtLocal->copy()->timezone(config('app.timezone')),
+                'duration_forecast' => $duration,
+                'total_price' => $totalPrice,
+                'status' => 'new',
                 'note' => $note,
-                'order_id' => $order->id,
-                'service_label' => $serviceLabel,
-                'service_specified' => $service !== null,
-            ],
-        ]);
+                'source' => $source,
+                'payment_status' => $requirement ? 'awaiting' : null,
+                'prepay_expires_at' => $requirement ? now()->addMinutes($requirement->holdMinutes) : null,
+                'prepay_rule' => $requirement?->rule,
+            ]);
 
-        $this->notifyMaster($masterId, $client, $serviceLabel, $startsAtLocal);
-        $this->clientNotifications->notifyBookingConfirmed($client, $serviceLabel, $startsAtLocal);
+            $appointment = Appointment::query()->create([
+                'user_id' => $masterId,
+                'client_id' => $client->id,
+                'service_ids' => $service ? [$service->id] : [],
+                'starts_at' => $startsAt,
+                'ends_at' => $startsAt->copy()->addMinutes($duration),
+                'status' => 'scheduled',
+                'deposit_amount' => $requirement?->amount ?? 0,
+                'meta' => [
+                    'source' => $source,
+                    'note' => $note,
+                    'order_id' => $order->id,
+                    'service_label' => $serviceLabel,
+                    'service_specified' => $service !== null,
+                    'awaiting_payment' => $requirement !== null,
+                ],
+            ]);
+
+            $payment = $requirement
+                ? $this->createPrepayment($order, $appointment, $client, $requirement->amount, $serviceLabel, $startsAtLocal, $returnUrl)
+                : null;
+
+            return [$order, $appointment, $payment];
+        });
+
+        [$order, $appointment, $payment] = $result;
+
+        // An unpaid booking is announced only once it is paid.
+        if (! $payment) {
+            $this->orderService->scheduleStartReminder($order);
+            $this->notifyMaster($masterId, $client, $serviceLabel, $startsAtLocal);
+            $this->clientNotifications->notifyBookingConfirmed($client, $serviceLabel, $startsAtLocal);
+        }
 
         return [
             'order' => $order,
             'appointment' => $appointment,
             'starts_at_local' => $startsAtLocal,
             'service_label' => $serviceLabel,
+            'payment' => $payment ? [
+                'id' => $payment->id,
+                'token' => $payment->return_token,
+                'amount' => (float) $payment->amount,
+                'confirmation_url' => $payment->confirmation_url,
+                'expires_at' => $order->prepay_expires_at,
+            ] : null,
         ];
+    }
+
+    /**
+     * The booking has been paid: from here it is an ordinary booking, so the
+     * start reminder is scheduled and the master and the client are told.
+     */
+    public function completePaidBooking(Payment $payment): void
+    {
+        $order = $payment->order;
+        $meta = (array) $payment->metadata;
+        $client = Client::query()->find($meta['client_card_id'] ?? 0);
+
+        if (! $order || ! $client) {
+            return;
+        }
+
+        $startsAtLocal = $order->scheduled_at->copy()->timezone($this->masterTimezone($order->master_id));
+        $label = (string) ($meta['service_label'] ?? self::UNSPECIFIED_SERVICE_LABEL);
+
+        $this->orderService->scheduleStartReminder($order);
+        $this->notifyMaster($order->master_id, $client, $label, $startsAtLocal);
+        $this->clientNotifications->notifyBookingConfirmed($client, $label, $startsAtLocal);
+    }
+
+    /**
+     * The booking's appointment (what the client sees, and what the slot
+     * search counts as busy) goes with its order: without this a cancelled
+     * order kept the time blocked.
+     */
+    public function cancelAppointmentFor(Order $order): void
+    {
+        // A prepaid booking remembers its appointment; any other is found by its time.
+        $known = Payment::query()->where('order_id', $order->id)->get()
+            ->map(fn (Payment $payment) => (int) ($payment->metadata['appointment_id'] ?? 0))
+            ->filter()->all();
+        $times = array_filter([$order->scheduled_at, $order->rescheduled_from]);
+
+        if ($known === [] && $times === []) {
+            return;
+        }
+
+        Appointment::query()
+            ->where('user_id', $order->master_id)
+            ->where('status', '!=', 'cancelled')
+            ->where(fn ($query) => $query->whereIn('id', $known)->orWhereIn('starts_at', $times))
+            ->get()
+            ->filter(fn (Appointment $appointment) => in_array($appointment->id, $known, true)
+                || (int) ($appointment->meta['order_id'] ?? 0) === (int) $order->id)
+            ->each(fn (Appointment $appointment) => $appointment->update(['status' => 'cancelled']));
+    }
+
+    private function createPrepayment(
+        Order $order,
+        Appointment $appointment,
+        Client $client,
+        float $amount,
+        string $serviceLabel,
+        Carbon $startsAtLocal,
+        ?string $returnUrl,
+    ): Payment {
+        $token = Str::random(40);
+        $returnUrl = str_replace('{token}', $token, $returnUrl ?? url('/pay/return/{token}'));
+
+        try {
+            $created = YooKassaService::forMaster(Setting::query()->where('user_id', $order->master_id)->first())
+                ->createBookingPayment(
+                    $order,
+                    $amount,
+                    $returnUrl,
+                    __('prepayment.payment_description', [
+                        'service' => $serviceLabel,
+                        'datetime' => $startsAtLocal->translatedFormat('d.m.Y H:i'),
+                    ]),
+                );
+        } catch (\Throwable $exception) {
+            Log::warning('Could not create a booking prepayment', [
+                'order_id' => $order->id,
+                'master_id' => $order->master_id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            throw new PrepaymentFailedException($exception->getMessage(), 0, $exception);
+        }
+
+        return Payment::query()->create([
+            'user_id' => $order->master_id,
+            'order_id' => $order->id,
+            'provider' => 'yookassa',
+            'provider_payment_id' => $created['id'],
+            'amount' => $amount,
+            'status' => $created['status'] ?: Payment::STATUS_PENDING,
+            'confirmation_url' => $created['confirmation_url'],
+            'return_token' => $token,
+            'metadata' => [
+                'client_card_id' => $client->id,
+                'appointment_id' => $appointment->id,
+                'service_label' => $serviceLabel,
+            ],
+        ]);
     }
 
     public function resolveOrCreateClientUser(Client $client): User

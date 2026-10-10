@@ -13,6 +13,8 @@ class CancelOrderRequest extends BaseRequest
     {
         return [
             'reason' => ['nullable', 'string', 'max:500'],
+            // Left out: the master's own refund rule decides. true: give it all back. false: keep it.
+            'refund_prepayment' => ['nullable', 'boolean'],
         ];
     }
 

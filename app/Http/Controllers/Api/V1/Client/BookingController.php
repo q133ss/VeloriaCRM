@@ -10,13 +10,17 @@ use App\Http\Requests\ClientPortalSlotsRequest;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\AvailabilityService;
 use App\Services\Booking\ClientBookingService;
+use App\Services\Booking\PrepaymentFailedException;
 use App\Services\Booking\SlotUnavailableException;
+use App\Services\Prepayment\PrepaymentPolicyService;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -127,8 +131,17 @@ class BookingController extends Controller
             ->orderByDesc('starts_at')
             ->get();
 
-        $payload = $appointments->map(function (Appointment $appointment) use ($masterTimezone, $now) {
+        // What each booking owes up front, in two queries rather than one per row.
+        $orderIds = $appointments->map(fn (Appointment $a) => (int) Arr::get($a->meta, 'order_id', 0))->filter()->unique()->values()->all();
+        $orders = Order::query()->where('master_id', $masterId)->whereIn('id', $orderIds)->get()->keyBy('id');
+        $payments = Payment::query()
+            ->whereIn('order_id', $orderIds)
+            ->whereIn('status', [Payment::STATUS_PENDING, Payment::STATUS_WAITING_FOR_CAPTURE])
+            ->latest('id')->get()->unique('order_id')->keyBy('order_id');
+
+        $payload = $appointments->map(function (Appointment $appointment) use ($masterTimezone, $now, $orders, $payments) {
             $startsAt = $appointment->starts_at?->copy()->timezone($masterTimezone);
+            $orderId = (int) Arr::get($appointment->meta, 'order_id', 0);
 
             return [
                 'id' => $appointment->id,
@@ -136,7 +149,9 @@ class BookingController extends Controller
                 'service_label' => Arr::get($appointment->meta, 'service_label', self::UNSPECIFIED_SERVICE_LABEL),
                 'date' => $startsAt?->toDateString(),
                 'time' => $startsAt?->format('H:i'),
-                'is_upcoming' => $startsAt !== null && $startsAt->greaterThanOrEqualTo($now),
+                // A cancelled booking (for instance one whose prepayment never came) is not ahead of anyone.
+                'is_upcoming' => $startsAt !== null && $startsAt->greaterThanOrEqualTo($now) && $appointment->status !== 'cancelled',
+                'payment' => $this->paymentFor($orders->get($orderId), $payments->get($orderId)),
             ];
         });
 
@@ -145,6 +160,70 @@ class BookingController extends Controller
                 'appointments' => $payload,
             ],
         ]);
+    }
+
+    /**
+     * What the prepayment is for a booking still unpaid, or what was paid.
+     *
+     * @return array{state:string,amount:float,confirmation_url:?string,expires_at:?string}|null
+     */
+    private function paymentFor(?Order $order, ?Payment $payment): ?array
+    {
+        if (! $order) {
+            return null;
+        }
+
+        if ($order->payment_status === 'paid') {
+            return ['state' => 'paid', 'amount' => (float) $order->prepaid_amount, 'confirmation_url' => null, 'expires_at' => null];
+        }
+
+        if ($order->payment_status !== 'awaiting') {
+            return null;
+        }
+
+        $open = $order->prepay_expires_at?->isFuture() ?? false;
+
+        return [
+            'state' => 'awaiting',
+            'amount' => (float) ($payment?->amount ?? 0),
+            // No link once the time is up: paying then would only be refunded.
+            'confirmation_url' => $open ? $payment?->confirmation_url : null,
+            'expires_at' => $order->prepay_expires_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * What booking this service at this time would ask up front, for this very
+     * client (her own «always/never» setting and history count), so the app can
+     * say so before she confirms.
+     */
+    public function prepaymentQuote(Request $request, PrepaymentPolicyService $policy): JsonResponse
+    {
+        /** @var Client $client */
+        $client = $request->user();
+        $masterId = (int) $client->user_id;
+
+        $data = $request->validate([
+            'service_id' => ['nullable', 'integer'],
+            'date' => ['required', 'date_format:Y-m-d'],
+            'time' => ['required', 'date_format:H:i'],
+        ]);
+
+        $service = $this->resolveBookingService($masterId, $data['service_id'] ?? null);
+        $startsAt = Carbon::createFromFormat('Y-m-d H:i', $data['date'] . ' ' . $data['time'], $this->resolveMasterTimezone($masterId));
+
+        $requirement = $policy->resolve(
+            $masterId,
+            $client->prepay_override,
+            $client->client_user_id,
+            $service,
+            $startsAt,
+            $service ? (float) ($service->base_price ?? 0) : 0.0,
+        );
+
+        return response()->json(['data' => $requirement
+            ? ['required' => true, 'amount' => $requirement->amount, 'hold_minutes' => $requirement->holdMinutes]
+            : ['required' => false]]);
     }
 
     public function slots(Service $service, ClientPortalSlotsRequest $request): JsonResponse
@@ -194,6 +273,7 @@ class BookingController extends Controller
                 (string) $validated['time'],
                 $validated['note'] ?? null,
                 'client_portal',
+                config('services.yookassa.app_return_url', url('/pay/return/{token}')),
             );
         } catch (SlotUnavailableException) {
             return response()->json([
@@ -202,11 +282,25 @@ class BookingController extends Controller
                     'message' => __('client_portal.booking.slot_unavailable'),
                 ],
             ], 422);
+        } catch (PrepaymentFailedException) {
+            return response()->json([
+                'error' => [
+                    'code' => 'payment_unavailable',
+                    'message' => __('prepayment.payment_failed'),
+                ],
+            ], 503);
         }
+
+        $payment = $booked['payment'];
 
         return response()->json([
             'data' => [
                 'appointment' => $booked['appointment'],
+                'payment' => $payment ? [
+                    'amount' => $payment['amount'],
+                    'confirmation_url' => $payment['confirmation_url'],
+                    'expires_at' => $payment['expires_at']->toIso8601String(),
+                ] : null,
             ],
         ], 201);
     }

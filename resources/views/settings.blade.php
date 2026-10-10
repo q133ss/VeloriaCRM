@@ -730,6 +730,9 @@
                         <a class="nav-link" href="#settings-work" role="tab" data-settings-tab="settings-work" aria-selected="false"><i class="icon-base ri ri-calendar-line icon-sm me-2"></i>{{ __('settings.work_settings') }}<span class="settings-tab-dot" hidden></span></a>
                     </li>
                     <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#settings-prepayment" role="tab" data-settings-tab="settings-prepayment" aria-selected="false"><i class="icon-base ri ri-bank-card-line icon-sm me-2"></i>{{ __('prepayment.page.link_label') }}<span class="settings-tab-dot" hidden></span></a>
+                    </li>
+                    <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#settings-location" role="tab" data-settings-tab="settings-location" aria-selected="false"><i class="icon-base ri ri-map-pin-line icon-sm me-2"></i>{{ __('settings.address') }}<span class="settings-tab-dot" hidden></span></a>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -1360,6 +1363,9 @@
                     <button type="submit" class="btn btn-primary" id="settings-save">{{ __('settings.save_changes') }}</button>
                 </div>
             </form>
+
+            {{-- Outside the form above: it has its own forms and save buttons. --}}
+            @include('prepayment._panel')
         </div>
 
         {{-- Account deletion used to sit on the first screen, beside the tips. --}}
@@ -2331,6 +2337,10 @@
             link.setAttribute('aria-selected', active ? 'true' : 'false');
             if (active) link.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         });
+
+        // The prepayment tab saves itself; «save changes» would only mislead there.
+        const actionBar = document.getElementById('settings-actionbar');
+        if (actionBar) actionBar.hidden = id === 'settings-prepayment';
 
         if (updateHash && location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
     }

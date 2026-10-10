@@ -335,6 +335,7 @@
             <h1 class="integrations-hero__title">{{ __('integrations.title') }}</h1>
             <p class="integrations-hero__lead">{{ __('integrations.description') }}</p>
             <p class="integrations-hero__lead" id="integrations-summary">{{ __('integrations.summary_empty') }}</p>
+            <p class="integrations-hero__lead"><a href="{{ route('settings') }}#settings-prepayment">{{ __('prepayment.page.link_hint') }} →</a></p>
         </header>
 
         <p class="integrations-note">

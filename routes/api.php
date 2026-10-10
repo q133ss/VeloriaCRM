@@ -35,6 +35,13 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
     Route::post('/auth/vkid', \App\Http\Controllers\Auth\VkIdController::class)->middleware('throttle:20,1')->name('api.auth.vkid');
+    // Booking prepayments: the page a client returns to polls this, and ЮKassa notifies the webhook.
+    Route::get('/payments/status/{token}', [\App\Http\Controllers\PaymentReturnController::class, 'status'])
+        ->middleware('throttle:120,1')
+        ->name('api.payments.status');
+    Route::post('/payments/yookassa/webhook', \App\Http\Controllers\YooKassaWebhookController::class)
+        ->middleware('throttle:300,1')
+        ->name('api.payments.yookassa.webhook');
     Route::post('/support-requests', [SupportRequestController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('api.support-requests.store');
@@ -54,6 +61,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
             Route::get('/services', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'services']);
             Route::get('/slots', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'genericSlots']);
             Route::get('/services/{service}/slots', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'slots']);
+            Route::get('/prepayment-quote', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'prepaymentQuote']);
             Route::get('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'appointments']);
             Route::post('/appointments', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'book']);
             Route::post('/waitlist', [\App\Http\Controllers\Api\V1\Client\BookingController::class, 'waitlist']);
@@ -79,6 +87,11 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/settings/integrations', [SettingController::class, 'updateIntegrations']);
         Route::post('/settings/integrations/{provider}/check', [SettingController::class, 'checkIntegration']);
         Route::delete('/settings/integrations/{provider}', [SettingController::class, 'disconnectIntegration']);
+        Route::get('/settings/prepayment', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'show']);
+        Route::put('/settings/prepayment', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'update']);
+        Route::post('/prepayment-rules', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'storeRule']);
+        Route::put('/prepayment-rules/{rule}', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'updateRule']);
+        Route::delete('/prepayment-rules/{rule}', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'destroyRule']);
         Route::post('/user/avatar', [UserController::class, 'updateAvatar']);
         Route::delete('/user/avatar', [UserController::class, 'deleteAvatar']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
@@ -113,6 +126,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::post('/orders/{order}/no-show', [ApiOrderController::class, 'markNoShow']);
         Route::post('/orders/{order}/remind', [ApiOrderController::class, 'remind']);
         Route::post('/orders/{order}/cancel', [ApiOrderController::class, 'cancel']);
+        Route::post('/orders/{order}/prepayment/refund', [ApiOrderController::class, 'refundPrepayment']);
         Route::post('/orders/{order}/reschedule', [ApiOrderController::class, 'reschedule']);
         Route::get('/orders/{order}/analytics', [ApiOrderController::class, 'analytics']);
         Route::get('/waitlist/options', [WaitlistController::class, 'options']);

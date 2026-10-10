@@ -94,6 +94,15 @@ export type WaitlistEntryPayload = {
   waitlist_entry_id: number;
 };
 
+// What a booking owes up front: `awaiting` while the master holds the time for the
+// payment (the link is gone once the time is up), `paid` afterwards.
+export type AppointmentPaymentDto = {
+  state: 'awaiting' | 'paid';
+  amount: number;
+  confirmation_url: string | null;
+  expires_at: string | null;
+};
+
 export type AppointmentListItemDto = {
   id: number;
   status: string;
@@ -101,6 +110,26 @@ export type AppointmentListItemDto = {
   date: string | null;
   time: string | null;
   is_upcoming: boolean;
+  payment: AppointmentPaymentDto | null;
+};
+
+// Returned together with a new booking that needs a prepayment.
+export type BookingPaymentDto = {
+  amount: number;
+  confirmation_url: string;
+  expires_at: string;
+};
+
+export type PrepaymentQuoteDto = {
+  required: boolean;
+  amount?: number;
+  hold_minutes?: number;
+};
+
+export type GetPrepaymentQuoteQuery = {
+  service_id?: number;
+  date: string;
+  time: string;
 };
 
 export type StartLoginBody = {

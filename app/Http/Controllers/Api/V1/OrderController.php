@@ -18,7 +18,10 @@ use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Ai\AiGateway;
 use App\Services\Booking\BookingConflictService;
+use App\Services\Booking\ClientBookingService;
 use App\Services\Booking\Intent\BookingIntentResolver;
+use App\Services\Booking\PrepaymentFailedException;
+use App\Services\Prepayment\PrepaymentSettlementService;
 use App\Services\Booking\OrderDurationResolver;
 use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\ClientIdentityService;
@@ -189,6 +192,7 @@ class OrderController extends Controller
         $masterId = $this->currentUserId();
 
         $scheduledChanged = false;
+        $wasCancelled = $order->status === 'cancelled';
 
         DB::transaction(function () use ($validated, $order, $masterId, &$scheduledChanged) {
             $client = $this->resolveOrderClient($validated);
@@ -232,7 +236,10 @@ class OrderController extends Controller
                 'note' => Arr::get($validated, 'note'),
                 'duration_forecast' => $durationForecast ?: null,
                 'total_price' => $totalPrice ?? 0,
-                'status' => $validated['status'],
+                // A booking held for a prepayment stays as it is, unless it is being cancelled.
+                'status' => $order->payment_status === 'awaiting' && $validated['status'] !== 'cancelled'
+                    ? $order->status
+                    : $validated['status'],
                 'recommended_services' => $this->serializeRecommendations($recommended),
             ];
 
@@ -248,6 +255,11 @@ class OrderController extends Controller
 
         $order->refresh()->loadMissing(['client', 'master']);
 
+        if ($order->status === 'cancelled' && ! $wasCancelled) {
+            $this->afterOrderCancelled($order);
+            $order->refresh();
+        }
+
         if ($scheduledChanged) {
             $this->orderService->scheduleStartReminder($order);
         }
@@ -261,6 +273,17 @@ class OrderController extends Controller
     public function destroy(Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        // The money (or the hold on the time) would be left with nothing to hang on.
+        if (in_array($order->payment_status, ['awaiting', 'paid'], true)) {
+            return response()->json([
+                'error' => [
+                    'code' => 'prepayment_pending',
+                    'message' => __('prepayment.delete_blocked'),
+                ],
+            ], 422);
+        }
+
         $order->delete();
 
         return response()->json([
@@ -349,6 +372,13 @@ class OrderController extends Controller
                 }
             }
         });
+
+        // Outside the transaction: returning a prepayment calls ЮKassa.
+        if ($validated['action'] === 'cancel') {
+            foreach ($eligible as $order) {
+                $this->afterOrderCancelled($order->refresh());
+            }
+        }
 
         $messages = [
             'confirm' => 'Подтверждено записей: ' . $eligible->count() . '.',
@@ -653,14 +683,101 @@ class OrderController extends Controller
 
         $order->refresh();
 
+        $prepayment = $this->afterOrderCancelled($order, $request->input('refund_prepayment'));
+        $order->refresh();
+
         if ($previousSlot) {
             $this->waitlistMatches->notifyMatchesForSlot($this->currentUserId(), $previousSlot, $duration, $serviceId);
         }
 
-        return response()->json([
+        return response()->json(array_filter([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись отменена.',
+            'prepayment' => $prepayment,
+        ], fn ($value) => $value !== null));
+    }
+
+    /**
+     * Give a prepayment back by hand: when the refund at cancellation was refused
+     * (the shop's balance was short), or the master changed her mind later.
+     * Without an amount everything still returnable goes back.
+     */
+    public function refundPrepayment(Request $request, Order $order): JsonResponse
+    {
+        $this->ensureOrderBelongsToCurrentUser($order);
+
+        $data = $request->validate(['amount' => ['nullable', 'numeric', 'min:1']]);
+        $settlement = app(PrepaymentSettlementService::class);
+
+        if ($settlement->refundable($order) <= 0) {
+            return response()->json([
+                'error' => ['code' => 'nothing_to_refund', 'message' => __('prepayment.nothing_to_refund')],
+            ], 422);
+        }
+
+        try {
+            $refunded = $settlement->refund($order, isset($data['amount']) ? (float) $data['amount'] : null);
+        } catch (PrepaymentFailedException) {
+            return response()->json([
+                'error' => ['code' => 'refund_refused', 'message' => __('prepayment.refund_refused')],
+            ], 502);
+        }
+
+        return response()->json([
+            'data' => $this->decorateOrder($order->refresh()),
+            'message' => __('prepayment.refunded', ['amount' => number_format($refunded, 0, ',', ' ')]),
         ]);
+    }
+
+    /**
+     * Everything that follows an order being cancelled, however it got there:
+     * the client's side of the booking goes with it (or its time stays
+     * blocked), and a prepayment is dropped or returned.
+     *
+     * @return array{refunded: float, kept: float, warning?: string}|null
+     */
+    private function afterOrderCancelled(Order $order, mixed $refundChoice = null): ?array
+    {
+        app(ClientBookingService::class)->cancelAppointmentFor($order);
+
+        return $this->settlePrepaymentOnCancel($order, $refundChoice);
+    }
+
+    /**
+     * A cancelled booking that carries a prepayment: one still unpaid is
+     * dropped (a late payment of it is then refunded), a paid one is returned
+     * as the master chose, or by her own rule when she did not say.
+     *
+     * @return array{refunded: float, kept: float, warning?: string}|null
+     */
+    private function settlePrepaymentOnCancel(Order $order, mixed $refundChoice): ?array
+    {
+        if ($order->payment_status === 'awaiting') {
+            $order->update(['payment_status' => 'failed']);
+
+            return null;
+        }
+
+        if ($order->payment_status !== 'paid') {
+            return null;
+        }
+
+        $settlement = app(PrepaymentSettlementService::class);
+        $refundable = $settlement->refundable($order);
+        $amount = $refundChoice === null
+            ? $settlement->suggestedRefund($order)
+            : (filter_var($refundChoice, FILTER_VALIDATE_BOOLEAN) ? $refundable : 0.0);
+
+        $result = ['refunded' => 0.0, 'kept' => $refundable];
+
+        try {
+            $result['refunded'] = $settlement->refund($order, $amount);
+            $result['kept'] = round($refundable - $result['refunded'], 2);
+        } catch (PrepaymentFailedException) {
+            $result['warning'] = __('prepayment.refund_failed');
+        }
+
+        return $result;
     }
 
     public function reschedule(RescheduleOrderRequest $request, Order $order): JsonResponse
@@ -2268,6 +2385,7 @@ PROMPT;
             'status' => $order->status,
             'status_label' => $order->status_label,
             'status_class' => $order->status_class,
+            'prepayment' => $order->prepayment,
             'rescheduled_from' => optional($order->rescheduled_from)->toIso8601String(),
             'reschedule_count' => $order->reschedule_count,
             'confirmed_at' => optional($order->confirmed_at)->toIso8601String(),
@@ -2401,9 +2519,26 @@ PROMPT;
         return app(OrderActionPolicy::class)->for($order);
     }
 
+    /**
+     * What a cancellation would return, so the dialog can say it before the master decides.
+     *
+     * @return array{refundable: float, suggested: float}|null
+     */
+    protected function prepaymentRefundOptions(Order $order): ?array
+    {
+        if ($order->payment_status !== 'paid') {
+            return null;
+        }
+
+        $settlement = app(PrepaymentSettlementService::class);
+
+        return ['refundable' => $settlement->refundable($order), 'suggested' => $settlement->suggestedRefund($order)];
+    }
+
     protected function decorateOrder(Order $order): array
     {
         return $this->transformOrder($order) + [
+            'prepayment_refund' => $this->prepaymentRefundOptions($order),
             'history' => $this->buildHistory($order),
             'actions' => $this->buildActionAvailability($order),
         ];
