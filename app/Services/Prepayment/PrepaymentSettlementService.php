@@ -303,12 +303,23 @@ class PrepaymentSettlementService
         ) === null;
     }
 
+    /**
+     * The money is already recorded; a failing notification must not turn the
+     * webhook into a 500 (the retry would find nothing left to do).
+     */
     private function afterPaid(Payment $payment, ?Order $order): void
     {
-        $this->booking->completePaidBooking($payment);
+        try {
+            $this->booking->completePaidBooking($payment);
 
-        if ($order) {
-            $this->markLandingRequest($order, 'booked');
+            if ($order) {
+                $this->markLandingRequest($order, 'booked');
+            }
+        } catch (\Throwable $exception) {
+            Log::error('A prepaid booking was confirmed but its follow-up failed', [
+                'payment_id' => $payment->id,
+                'exception' => $exception->getMessage(),
+            ]);
         }
     }
 

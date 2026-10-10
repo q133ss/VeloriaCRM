@@ -30,12 +30,14 @@ class SyncPrepaymentsCommand extends Command
             ->whereIn('status', [Payment::STATUS_PENDING, Payment::STATUS_WAITING_FOR_CAPTURE])
             ->whereNotNull('order_id')
             ->where('created_at', '>=', now()->subHours(self::WATCH_HOURS))
-            ->each(function (Payment $payment) use ($settlement, &$synced) {
-                try {
-                    $settlement->sync($payment);
-                    $synced++;
-                } catch (Throwable $exception) {
-                    $this->warn("Payment {$payment->id}: {$exception->getMessage()}");
+            ->chunkById(100, function ($payments) use ($settlement, &$synced) {
+                foreach ($payments as $payment) {
+                    try {
+                        $settlement->sync($payment);
+                        $synced++;
+                    } catch (Throwable $exception) {
+                        $this->warn("Payment {$payment->id}: {$exception->getMessage()}");
+                    }
                 }
             });
 
@@ -45,8 +47,10 @@ class SyncPrepaymentsCommand extends Command
         Order::query()
             ->where('payment_status', 'awaiting')
             ->where('prepay_expires_at', '<', now())
-            ->each(function (Order $order) use ($settlement, &$released) {
-                $released += $settlement->expire($order) ? 1 : 0;
+            ->chunkById(100, function ($orders) use ($settlement, &$released) {
+                foreach ($orders as $order) {
+                    $released += $settlement->expire($order) ? 1 : 0;
+                }
             });
 
         $this->info("Synced {$synced} payment(s), released {$released} unpaid booking(s).");
