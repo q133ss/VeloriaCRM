@@ -607,6 +607,10 @@ class ClientController extends Controller
             }
         }
 
+        if (Arr::has($payload, 'prepay_override')) {
+            $normalized['prepay_override'] = $payload['prepay_override'] ?: 'inherit';
+        }
+
         $normalized['phone'] = trim((string) ($payload['phone'] ?? ''));
         if ($normalized['phone'] === '') {
             $normalized['phone'] = $client?->phone ?? '';
@@ -766,6 +770,7 @@ class ClientController extends Controller
             'loyalty_label' => $client->loyalty_level
                 ? (Client::loyaltyLevels()[$client->loyalty_level] ?? ucfirst($client->loyalty_level))
                 : null,
+            'prepay_override' => $client->prepay_override ?? 'inherit',
             'created_at' => $client->created_at?->toIso8601String(),
             'created_at_formatted' => $client->created_at?->format('d.m.Y H:i'),
             'updated_at' => $client->updated_at?->toIso8601String(),

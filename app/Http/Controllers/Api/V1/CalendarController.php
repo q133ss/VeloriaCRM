@@ -212,6 +212,7 @@ class CalendarController extends Controller
             'extendedProps' => [
                 'status' => $order->status,
                 'status_label' => $order->status_label,
+                'prepayment' => $order->prepayment,
                 'client' => [
                     'id' => $order->client?->id,
                     'name' => $clientName,
@@ -257,6 +258,7 @@ class CalendarController extends Controller
             'duration' => $duration,
             'status' => $order->status,
             'status_label' => $order->status_label,
+            'prepayment' => $order->prepayment,
             'note' => $order->note,
             'total_price' => $order->total_price !== null ? (float) $order->total_price : null,
             'services' => $services,

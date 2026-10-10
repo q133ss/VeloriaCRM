@@ -34,6 +34,25 @@ class OrderActionPolicy
         $startsSoon = $scheduledAt ? $scheduledAt->greaterThan($now) : false;
         $hoursDiff = $scheduledAt ? $now->diffInHours($scheduledAt, false) : null;
 
+        $actions = $this->abilities($order, $now, $scheduledAt, $isToday, $startsSoon, $hoursDiff);
+
+        // A booking held for a prepayment can only be cancelled: confirming,
+        // starting or moving it would leave an unpaid visit that the sync then
+        // cancels from under the master.
+        if ($order->payment_status === 'awaiting') {
+            foreach (['can_start', 'can_confirm', 'can_remind', 'can_complete', 'can_reschedule', 'can_mark_no_show'] as $ability) {
+                $actions[$ability] = false;
+            }
+        }
+
+        return $actions;
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function abilities(Order $order, Carbon $now, ?Carbon $scheduledAt, bool $isToday, bool $startsSoon, ?int $hoursDiff): array
+    {
         return [
             'can_start_now' => $isToday,
             // can_start_now only answers "is it today"; a finished or cancelled

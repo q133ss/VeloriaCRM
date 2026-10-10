@@ -192,6 +192,7 @@ class OrderController extends Controller
         $masterId = $this->currentUserId();
 
         $scheduledChanged = false;
+        $wasCancelled = $order->status === 'cancelled';
 
         DB::transaction(function () use ($validated, $order, $masterId, &$scheduledChanged) {
             $client = $this->resolveOrderClient($validated);
@@ -235,7 +236,10 @@ class OrderController extends Controller
                 'note' => Arr::get($validated, 'note'),
                 'duration_forecast' => $durationForecast ?: null,
                 'total_price' => $totalPrice ?? 0,
-                'status' => $validated['status'],
+                // A booking held for a prepayment stays as it is, unless it is being cancelled.
+                'status' => $order->payment_status === 'awaiting' && $validated['status'] !== 'cancelled'
+                    ? $order->status
+                    : $validated['status'],
                 'recommended_services' => $this->serializeRecommendations($recommended),
             ];
 
@@ -251,6 +255,11 @@ class OrderController extends Controller
 
         $order->refresh()->loadMissing(['client', 'master']);
 
+        if ($order->status === 'cancelled' && ! $wasCancelled) {
+            $this->afterOrderCancelled($order);
+            $order->refresh();
+        }
+
         if ($scheduledChanged) {
             $this->orderService->scheduleStartReminder($order);
         }
@@ -264,6 +273,17 @@ class OrderController extends Controller
     public function destroy(Order $order): JsonResponse
     {
         $this->ensureOrderBelongsToCurrentUser($order);
+
+        // The money (or the hold on the time) would be left with nothing to hang on.
+        if (in_array($order->payment_status, ['awaiting', 'paid'], true)) {
+            return response()->json([
+                'error' => [
+                    'code' => 'prepayment_pending',
+                    'message' => __('prepayment.delete_blocked'),
+                ],
+            ], 422);
+        }
+
         $order->delete();
 
         return response()->json([
@@ -352,6 +372,13 @@ class OrderController extends Controller
                 }
             }
         });
+
+        // Outside the transaction: returning a prepayment calls ЮKassa.
+        if ($validated['action'] === 'cancel') {
+            foreach ($eligible as $order) {
+                $this->afterOrderCancelled($order->refresh());
+            }
+        }
 
         $messages = [
             'confirm' => 'Подтверждено записей: ' . $eligible->count() . '.',
@@ -656,10 +683,7 @@ class OrderController extends Controller
 
         $order->refresh();
 
-        // The client's side of the booking goes with it, or its time stays blocked.
-        app(ClientBookingService::class)->cancelAppointmentFor($order);
-
-        $prepayment = $this->settlePrepaymentOnCancel($order, $request->input('refund_prepayment'));
+        $prepayment = $this->afterOrderCancelled($order, $request->input('refund_prepayment'));
         $order->refresh();
 
         if ($previousSlot) {
@@ -671,6 +695,20 @@ class OrderController extends Controller
             'message' => 'Запись отменена.',
             'prepayment' => $prepayment,
         ], fn ($value) => $value !== null));
+    }
+
+    /**
+     * Everything that follows an order being cancelled, however it got there:
+     * the client's side of the booking goes with it (or its time stays
+     * blocked), and a prepayment is dropped or returned.
+     *
+     * @return array{refunded: float, kept: float, warning?: string}|null
+     */
+    private function afterOrderCancelled(Order $order, mixed $refundChoice = null): ?array
+    {
+        app(ClientBookingService::class)->cancelAppointmentFor($order);
+
+        return $this->settlePrepaymentOnCancel($order, $refundChoice);
     }
 
     /**
@@ -2315,6 +2353,7 @@ PROMPT;
             'status' => $order->status,
             'status_label' => $order->status_label,
             'status_class' => $order->status_class,
+            'prepayment' => $order->prepayment,
             'rescheduled_from' => optional($order->rescheduled_from)->toIso8601String(),
             'reschedule_count' => $order->reschedule_count,
             'confirmed_at' => optional($order->confirmed_at)->toIso8601String(),
@@ -2448,9 +2487,26 @@ PROMPT;
         return app(OrderActionPolicy::class)->for($order);
     }
 
+    /**
+     * What a cancellation would return, so the dialog can say it before the master decides.
+     *
+     * @return array{refundable: float, suggested: float}|null
+     */
+    protected function prepaymentRefundOptions(Order $order): ?array
+    {
+        if ($order->payment_status !== 'paid') {
+            return null;
+        }
+
+        $settlement = app(PrepaymentSettlementService::class);
+
+        return ['refundable' => $settlement->refundable($order), 'suggested' => $settlement->suggestedRefund($order)];
+    }
+
     protected function decorateOrder(Order $order): array
     {
         return $this->transformOrder($order) + [
+            'prepayment_refund' => $this->prepaymentRefundOptions($order),
             'history' => $this->buildHistory($order),
             'actions' => $this->buildActionAvailability($order),
         ];

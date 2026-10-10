@@ -273,7 +273,7 @@ class ServiceController extends Controller
             'cost' => $validated['cost'] ?? null,
             'duration_min' => $validated['duration_min'],
             'upsell_suggestions' => Arr::get($validated, 'upsell_suggestions', []),
-        ]);
+        ] + $this->prepayAttributes($validated));
 
         $service->loadMissing('category');
 
@@ -308,7 +308,7 @@ class ServiceController extends Controller
             'cost' => $validated['cost'] ?? null,
             'duration_min' => $validated['duration_min'],
             'upsell_suggestions' => Arr::get($validated, 'upsell_suggestions', []),
-        ]);
+        ] + $this->prepayAttributes($validated));
 
         $service->loadMissing('category');
 
@@ -402,6 +402,22 @@ class ServiceController extends Controller
     /**
      * @param  array<string, mixed>  $context
      */
+    /** Only what the caller sent: a form that does not know about prepayments must not wipe them. */
+    private function prepayAttributes(array $validated): array
+    {
+        if (! array_key_exists('prepay_mode', $validated)) {
+            return [];
+        }
+
+        $mode = $validated['prepay_mode'];
+        $hasAmount = in_array($mode, ['fixed', 'percent'], true);
+
+        return [
+            'prepay_mode' => $mode,
+            'prepay_value' => $hasAmount ? $validated['prepay_value'] : null,
+        ];
+    }
+
     protected function transformService(Service $service, array $context = []): array
     {
         $price = $service->base_price !== null ? (float) $service->base_price : null;
@@ -418,6 +434,8 @@ class ServiceController extends Controller
             // The one money fact a list should interrupt for.
             'below_cost' => $price !== null && $cost !== null && $cost > $price,
             'duration_min' => $service->duration_min,
+            'prepay_mode' => $service->prepay_mode,
+            'prepay_value' => $service->prepay_value,
             'upsell_suggestions' => array_values(array_map('intval', $service->upsell_suggestions ?? [])),
             'created_at' => optional($service->created_at)->toIso8601String(),
             'updated_at' => optional($service->updated_at)->toIso8601String(),

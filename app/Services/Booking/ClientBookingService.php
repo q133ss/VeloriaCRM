@@ -241,18 +241,23 @@ class ClientBookingService
      */
     public function cancelAppointmentFor(Order $order): void
     {
+        // A prepaid booking remembers its appointment; any other is found by its time.
+        $known = Payment::query()->where('order_id', $order->id)->get()
+            ->map(fn (Payment $payment) => (int) ($payment->metadata['appointment_id'] ?? 0))
+            ->filter()->all();
         $times = array_filter([$order->scheduled_at, $order->rescheduled_from]);
 
-        if ($times === []) {
+        if ($known === [] && $times === []) {
             return;
         }
 
         Appointment::query()
             ->where('user_id', $order->master_id)
-            ->whereIn('starts_at', $times)
             ->where('status', '!=', 'cancelled')
+            ->where(fn ($query) => $query->whereIn('id', $known)->orWhereIn('starts_at', $times))
             ->get()
-            ->filter(fn (Appointment $appointment) => (int) ($appointment->meta['order_id'] ?? 0) === (int) $order->id)
+            ->filter(fn (Appointment $appointment) => in_array($appointment->id, $known, true)
+                || (int) ($appointment->meta['order_id'] ?? 0) === (int) $order->id)
             ->each(fn (Appointment $appointment) => $appointment->update(['status' => 'cancelled']));
     }
 

@@ -289,4 +289,80 @@ class PrepaymentSettlementTest extends PrepaymentTestCase
 
         $this->assertContains('10:00', $this->freeSlots());
     }
+    private function paidBooking(): Order
+    {
+        $order = $this->heldBooking();
+        FakeYooKassa::markPaid('pay-' . $order->id);
+        $this->webhook('pay-' . $order->id);
+        Sanctum::actingAs($this->master);
+
+        return $order->fresh();
+    }
+
+    public function test_an_unpaid_hold_offers_nothing_but_cancel(): void
+    {
+        $order = $this->heldBooking();
+        Sanctum::actingAs($this->master);
+
+        $actions = $this->getJson("/api/v1/orders/{$order->id}")->json('data.actions');
+
+        $this->assertTrue($actions['can_cancel']);
+        foreach (['can_confirm', 'can_start', 'can_complete', 'can_remind', 'can_reschedule', 'can_mark_no_show'] as $ability) {
+            $this->assertFalse($actions[$ability], $ability);
+        }
+
+        $this->postJson('/api/v1/orders/bulk', ['orders' => [$order->id], 'action' => 'confirm'])->assertStatus(422);
+        $this->assertSame('new', $order->fresh()->status);
+    }
+
+    public function test_the_edit_form_cannot_confirm_an_unpaid_hold(): void
+    {
+        $order = $this->heldBooking();
+        Sanctum::actingAs($this->master);
+
+        $this->patchJson("/api/v1/orders/{$order->id}", [
+            'client_id' => $order->client_id,
+            'scheduled_at' => $order->scheduled_at->copy()->addHours(2)->toIso8601String(),
+            'services' => [$this->service->id],
+            'status' => 'confirmed',
+        ])->assertOk()->assertJsonPath('data.status', 'new');
+    }
+
+    public function test_cancelling_through_the_edit_form_returns_the_prepayment_too(): void
+    {
+        $order = $this->paidBooking();
+
+        $this->patchJson("/api/v1/orders/{$order->id}", [
+            'client_id' => $order->client_id,
+            'scheduled_at' => $order->scheduled_at->copy()->addHours(2)->toIso8601String(),
+            'services' => [$this->service->id],
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame('cancelled', Appointment::firstOrFail()->status);
+        $this->assertContains('10:00', $this->freeSlots());
+    }
+
+    public function test_bulk_cancelling_returns_prepayments_and_frees_the_time(): void
+    {
+        $order = $this->paidBooking();
+
+        $this->postJson('/api/v1/orders/bulk', ['orders' => [$order->id], 'action' => 'cancel'])->assertOk();
+
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertCount(1, FakeYooKassa::$refunds);
+        $this->assertContains('10:00', $this->freeSlots());
+    }
+
+    public function test_an_order_with_a_prepayment_cannot_be_deleted_until_cancelled(): void
+    {
+        $order = $this->paidBooking();
+
+        $this->deleteJson("/api/v1/orders/{$order->id}")->assertStatus(422)->assertJsonPath('error.code', 'prepayment_pending');
+        $this->assertNotNull(Order::find($order->id));
+
+        $this->postJson("/api/v1/orders/{$order->id}/cancel", [])->assertOk();
+        $this->deleteJson("/api/v1/orders/{$order->id}")->assertOk();
+    }
 }

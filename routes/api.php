@@ -86,6 +86,11 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
         Route::patch('/settings/integrations', [SettingController::class, 'updateIntegrations']);
         Route::post('/settings/integrations/{provider}/check', [SettingController::class, 'checkIntegration']);
         Route::delete('/settings/integrations/{provider}', [SettingController::class, 'disconnectIntegration']);
+        Route::get('/settings/prepayment', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'show']);
+        Route::put('/settings/prepayment', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'update']);
+        Route::post('/prepayment-rules', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'storeRule']);
+        Route::put('/prepayment-rules/{rule}', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'updateRule']);
+        Route::delete('/prepayment-rules/{rule}', [\App\Http\Controllers\Api\V1\PrepaymentSettingsController::class, 'destroyRule']);
         Route::post('/user/avatar', [UserController::class, 'updateAvatar']);
         Route::delete('/user/avatar', [UserController::class, 'deleteAvatar']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);

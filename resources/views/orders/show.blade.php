@@ -119,9 +119,13 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h5 class="mb-0">Основное</h5>
-                        <span class="badge" id="order-status">—</span>
+                        <span class="d-flex align-items-center gap-2">
+                            <span class="badge" id="order-prepay" hidden></span>
+                            <span class="badge" id="order-status">—</span>
+                        </span>
                     </div>
                     <div class="card-body">
+                        <p class="small text-muted mb-3" id="order-prepay-note" hidden></p>
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <h6 class="text-muted">Клиент</h6>
@@ -207,6 +211,26 @@
     <template id="order-ai-lock-template">
         @include('components.elite-lock-card')
     </template>
+
+    <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="refundModalLabel">{{ __('prepayment.cancel.title') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2" id="refund-paid-line"></p>
+                    <p class="text-muted small mb-0" id="refund-suggested-line"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('prepayment.page.cancel') }}</button>
+                    <button type="button" class="btn btn-outline-secondary" id="refund-keep">{{ __('prepayment.cancel.keep') }}</button>
+                    <button type="button" class="btn btn-primary" id="refund-give"></button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -567,6 +591,29 @@
             }
         }
 
+        const prepayCopy = @json(__('prepayment.order'));
+        const prepayTones = { awaiting: 'bg-label-warning', paid: 'bg-label-success', refunded: 'bg-label-secondary' };
+
+        function renderPrepayment(order) {
+            const badge = document.getElementById('order-prepay');
+            const note = document.getElementById('order-prepay-note');
+            const info = order.prepayment;
+
+            badge.hidden = !info;
+            note.hidden = true;
+
+            if (!info) return;
+
+            badge.className = 'badge ' + (prepayTones[info.state] || 'bg-label-secondary');
+            badge.textContent = info.label;
+
+            if (info.state === 'awaiting') {
+                const minutes = info.expires_at ? Math.max(0, Math.ceil((new Date(info.expires_at) - Date.now()) / 60000)) : null;
+                note.textContent = prepayCopy.awaiting_hint + (minutes !== null ? ' (' + prepayCopy.minutes_left.replace(':minutes', minutes) + ')' : '');
+                note.hidden = false;
+            }
+        }
+
         function renderOrder(order) {
             document.getElementById('order-title').textContent = order.client?.name ? `Запись: ${order.client.name}` : 'Запись';
             document.getElementById('order-subtitle').textContent = order.scheduled_at_formatted ? `Назначено на ${order.scheduled_at_formatted}` : 'Дата не указана';
@@ -574,6 +621,7 @@
             const statusBadge = document.getElementById('order-status');
             statusBadge.className = 'badge ' + (order.status_class || 'bg-label-secondary');
             statusBadge.textContent = order.status_label || '—';
+            renderPrepayment(order);
 
             document.getElementById('order-client-name').textContent = order.client?.name || 'Не указан';
             document.getElementById('order-client-phone').textContent = order.client?.phone || '—';
@@ -759,8 +807,36 @@
 
         actionCancel.addEventListener('click', function () {
             if (this.disabled) return;
+            const refund = currentOrder?.prepayment_refund;
+
+            // A paid prepayment is the master's to return or keep; ask before cancelling.
+            if (refund && refund.refundable > 0) {
+                const money = (value) => new Intl.NumberFormat('ru-RU').format(value);
+                document.getElementById('refund-paid-line').textContent = @json(__('prepayment.cancel.paid_line')).replace(':amount', money(refund.refundable));
+                document.getElementById('refund-suggested-line').textContent = @json(__('prepayment.cancel.suggested')).replace(':amount', money(refund.suggested));
+                document.getElementById('refund-give').textContent = @json(__('prepayment.cancel.refund')).replace(':amount', money(refund.refundable));
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('refundModal')).show();
+                return;
+            }
+
             if (!confirm('Вы уверены, что хотите отменить запись?')) return;
-            performAction(`/api/v1/orders/${orderId}/cancel`, 'POST', {});
+            cancelOrder(null);
+        });
+
+        async function cancelOrder(refundPrepayment) {
+            const body = refundPrepayment === null ? {} : { refund_prepayment: refundPrepayment };
+            const result = await performAction(`/api/v1/orders/${orderId}/cancel`, 'POST', body);
+
+            if (result?.prepayment?.warning) {
+                showAlert('warning', result.prepayment.warning, true);
+            }
+        }
+
+        [['refund-give', true], ['refund-keep', false]].forEach(function ([id, value]) {
+            document.getElementById(id).addEventListener('click', function () {
+                bootstrap.Modal.getInstance(document.getElementById('refundModal'))?.hide();
+                cancelOrder(value);
+            });
         });
 
         actionAnalytics.addEventListener('click', function () {

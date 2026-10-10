@@ -146,6 +146,16 @@
                     </div>
                     <div class="form-text">Можно не заполнять. Используйте статус так, как вам удобно вести клиентскую базу.</div>
                 </div>
+                <div class="col-md-5">
+                    <div class="form-floating form-floating-outline">
+                        <select class="form-select" id="client-prepay" name="prepay_override">
+                            <option value="inherit">{{ __('prepayment.client.inherit') }}</option>
+                            <option value="always">{{ __('prepayment.client.always') }}</option>
+                            <option value="never">{{ __('prepayment.client.never') }}</option>
+                        </select>
+                        <label for="client-prepay">{{ __('prepayment.client.label') }}</label>
+                    </div>
+                </div>
                 <div class="col-md-4">
                     <label for="client-tags" class="form-label">Теги</label>
                     <textarea class="form-control" id="client-tags" name="tags" rows="3"></textarea>
@@ -610,6 +620,7 @@
                 form.email.value = client.email || '';
                 form.birthday.value = client.birthday || '';
                 form.loyalty_level.value = client.loyalty_level || '';
+                form.prepay_override.value = client.prepay_override || 'inherit';
                 form.tags.value = formatListForInput(client.tags || []);
                 form.allergies.value = formatListForInput(client.allergies || []);
                 form.preferences.value = formatPreferencesForInput(client.preferences);
@@ -631,6 +642,7 @@
                     email: form.email.value.trim() || null,
                     birthday: form.birthday.value || null,
                     loyalty_level: form.loyalty_level.value || null,
+                    prepay_override: form.prepay_override.value || 'inherit',
                     notes: form.notes.value.trim() || null,
                     tags: readTagifyValues(tagsTagify, form.tags),
                     allergies: readTagifyValues(allergiesTagify, form.allergies),

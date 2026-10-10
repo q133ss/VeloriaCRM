@@ -2817,6 +2817,13 @@
                     header.appendChild(statusEl);
                 }
 
+                if (order.prepayment) {
+                    const prepayEl = document.createElement('span');
+                    prepayEl.className = 'badge ' + ({ awaiting: 'bg-label-warning', paid: 'bg-label-success' }[order.prepayment.state] || 'bg-label-secondary');
+                    prepayEl.textContent = order.prepayment.label;
+                    header.appendChild(prepayEl);
+                }
+
                 wrapper.appendChild(header);
 
                 if (order.attention && order.attention.text) {

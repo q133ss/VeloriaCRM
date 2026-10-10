@@ -698,6 +698,7 @@
                     </div>
                     <div class="orders-row__status">
                         <span class="badge ${order.status_class}">${order.status_label}</span>
+                        ${order.prepayment ? `<span class="badge ${({ awaiting: 'bg-label-warning', paid: 'bg-label-success' })[order.prepayment.state] || 'bg-label-secondary'}">${order.prepayment.label}</span>` : ''}
                     </div>
                     <div class="orders-row__act">
                         ${primary

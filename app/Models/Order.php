@@ -218,6 +218,39 @@ class Order extends Model
         return self::STATUS_LABELS[$this->status] ?? ucfirst($this->status);
     }
 
+    /**
+     * What to say next to a booking about its prepayment, or null when there
+     * is nothing worth saying (no prepayment, or one that came to nothing).
+     *
+     * @return array{state:string,label:string,amount:?float,expires_at:?string}|null
+     */
+    public function getPrepaymentAttribute(): ?array
+    {
+        $amount = (float) $this->prepaid_amount;
+
+        return match ($this->payment_status) {
+            'awaiting' => [
+                'state' => 'awaiting',
+                'label' => __('prepayment.badge.awaiting'),
+                'amount' => null,
+                'expires_at' => $this->prepay_expires_at?->toIso8601String(),
+            ],
+            'paid' => [
+                'state' => 'paid',
+                'label' => __('prepayment.badge.paid', ['amount' => number_format($amount, 0, ',', ' ')]),
+                'amount' => $amount,
+                'expires_at' => null,
+            ],
+            'refunded' => [
+                'state' => 'refunded',
+                'label' => __('prepayment.badge.refunded'),
+                'amount' => null,
+                'expires_at' => null,
+            ],
+            default => null,
+        };
+    }
+
     public function getStatusClassAttribute(): string
     {
         return self::statusBadgeClasses()[$this->status] ?? 'bg-label-secondary';

@@ -65,6 +65,18 @@ class ServiceFormRequest extends BaseRequest
             'base_price' => ['required', 'numeric', 'min:0', 'max:1000000'],
             'cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
             'duration_min' => ['required', 'integer', 'min:5', 'max:1440'],
+            // How much of this service is paid up front: null follows the master's general rule, none never asks.
+            'prepay_mode' => ['sometimes', 'nullable', Rule::in(['none', 'fixed', 'percent'])],
+            'prepay_value' => [
+                'nullable',
+                'numeric',
+                'min:1',
+                'max:1000000',
+                Rule::requiredIf(fn () => in_array($this->input('prepay_mode'), ['fixed', 'percent'], true)),
+                fn ($attribute, $value, $fail) => $this->input('prepay_mode') === 'percent' && (float) $value > 100
+                    ? $fail(__('prepayment.validation.percent_max'))
+                    : null,
+            ],
             'upsell_suggestions' => ['nullable', 'array', 'max:10'],
             'upsell_suggestions.*' => [
                 'integer',

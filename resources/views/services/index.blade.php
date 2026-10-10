@@ -404,6 +404,25 @@
                                 <div id="service-upsell-suggested" class="small text-muted mt-2" hidden></div>
                             </div>
                             <div class="col-12">
+                                <details id="service-prepay">
+                                    <summary class="fw-semibold">{{ __('prepayment.service.label') }}</summary>
+                                    <div class="row g-3 pt-3">
+                                        <div class="col-md-7">
+                                            <select class="form-select" id="service-prepay-mode" aria-label="{{ __('prepayment.service.label') }}">
+                                                <option value="">{{ __('prepayment.service.inherit') }}</option>
+                                                <option value="none">{{ __('prepayment.service.none') }}</option>
+                                                <option value="percent">{{ __('prepayment.service.percent') }}</option>
+                                                <option value="fixed">{{ __('prepayment.service.fixed') }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-5" id="service-prepay-value-wrap" hidden>
+                                            <input type="number" class="form-control" id="service-prepay-value" min="1" step="1" inputmode="decimal" />
+                                        </div>
+                                    </div>
+                                    <div class="form-text">{{ __('prepayment.page.link_hint') }}: <a href="{{ route('prepayment') }}">{{ __('prepayment.page.link_label') }}</a></div>
+                                </details>
+                            </div>
+                            <div class="col-12">
                                 <div class="d-flex align-items-center justify-content-between gap-2 p-3 border rounded" id="service-margin-wrapper">
                                     <div class="text-muted">{{ __('services.modals.service.margin_label') }}</div>
                                     <div class="d-flex align-items-center gap-2">
@@ -638,6 +657,11 @@
             const serviceCostInput = document.getElementById('service-cost');
             const serviceDurationInput = document.getElementById('service-duration');
             const serviceDurationHint = document.getElementById('service-duration-hint');
+            const servicePrepay = document.getElementById('service-prepay');
+            const servicePrepayMode = document.getElementById('service-prepay-mode');
+            const servicePrepayValue = document.getElementById('service-prepay-value');
+            const servicePrepayValueWrap = document.getElementById('service-prepay-value-wrap');
+            const prepayCopy = {{ \Illuminate\Support\Js::from(__('prepayment.service')) }};
             const serviceUpsell = document.getElementById('service-upsell');
             const serviceUpsellSuggested = document.getElementById('service-upsell-suggested');
             const costCalculatorToggle = document.getElementById('cost-calculator-toggle');
@@ -1016,6 +1040,15 @@
                     .map(button => Number(button.dataset.id));
             }
 
+            function syncPrepayValue() {
+                const mode = servicePrepayMode.value;
+                servicePrepayValueWrap.hidden = mode !== 'percent' && mode !== 'fixed';
+                servicePrepayValue.placeholder = mode === 'percent' ? prepayCopy.value_percent : prepayCopy.value_fixed;
+                servicePrepayValue.max = mode === 'percent' ? 100 : 1000000;
+            }
+
+            servicePrepayMode.addEventListener('change', syncPrepayValue);
+
             function openServiceModal(service) {
                 state.editingServiceId = service ? service.id : null;
                 clearFormErrors(serviceFormErrors);
@@ -1031,6 +1064,10 @@
                 servicePriceInput.value = service?.base_price ?? '';
                 serviceCostInput.value = service?.cost ?? '';
                 serviceDurationInput.value = service?.duration_min ?? '';
+                servicePrepayMode.value = service?.prepay_mode || '';
+                servicePrepayValue.value = service?.prepay_value ?? '';
+                servicePrepay.open = !!service?.prepay_mode;
+                syncPrepayValue();
 
                 const duration = service?.duration || {};
                 serviceDurationHint.hidden = !duration.needs_review;
@@ -1062,6 +1099,8 @@
                     cost: parseNumber(serviceCostInput.value),
                     duration_min: duration,
                     upsell_suggestions: selectedUpsell(),
+                    prepay_mode: servicePrepayMode.value || null,
+                    prepay_value: servicePrepayValue.value !== '' ? Number(servicePrepayValue.value) : null,
                 };
 
                 const editing = state.editingServiceId;
