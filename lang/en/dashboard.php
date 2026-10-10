@@ -119,6 +119,11 @@ return [
             'clients' => 'First client',
             'landing' => 'Booking site',
         ],
+        'app_strip' => [
+            'title' => 'Share the app with your clients',
+            'open' => 'Open',
+            'dismiss' => 'Dismiss',
+        ],
         'wizard' => [
             'step_of' => 'Step :current of :total',
             'skip' => 'Later',
@@ -157,6 +162,15 @@ return [
                 'title' => 'Booking site',
                 'text' => 'Put together a page with your services and online booking — send clients a link instead of texting back and forth about times.',
                 'cta' => 'Create site',
+            ],
+            'app' => [
+                'title' => 'Share the app with your clients',
+                'text' => 'Clients can book and get reminders in your mobile app. Send them this link — they download the file and install it.',
+                'link_label' => 'Download link',
+                'copy' => 'Copy link',
+                'copied' => 'Copied',
+                'download' => 'Download APK',
+                'android_only' => 'For now the app is available on Android only. On install, the phone may ask to allow installs from this source — that is expected.',
             ],
             'finish' => [
                 'title' => 'All set',

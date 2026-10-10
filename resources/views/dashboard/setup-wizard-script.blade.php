@@ -12,6 +12,7 @@
         var SAVING_LABEL = @json(__('dashboard.setup.wizard.saving'));
 
         var state;
+        var hasAppStep = modalElement.dataset.setupApp === '1';
 
         try {
             state = JSON.parse(modalElement.dataset.setupState || '{}');
@@ -49,7 +50,7 @@
                 }
             }
 
-            return 'done';
+            return hasAppStep ? 'app' : 'done';
         }
 
         function show(step) {
@@ -77,6 +78,10 @@
 
         function stepBefore(step) {
             var index = ORDER.indexOf(step);
+
+            if (step === 'app') {
+                return 'landing';
+            }
 
             return index > 0 ? ORDER[index - 1] : step;
         }
@@ -223,6 +228,45 @@
             });
         });
 
+        modalElement.querySelectorAll('[data-setup-goto]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                show(button.dataset.setupGoto);
+            });
+        });
+
+        modalElement.querySelectorAll('[data-setup-copy]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var field = document.getElementById('setup-app-link');
+                var original = button.textContent;
+
+                function confirmCopy() {
+                    button.textContent = button.dataset.copiedLabel || original;
+                    setTimeout(function () {
+                        button.textContent = original;
+                    }, 1800);
+                }
+
+                function fallback() {
+                    field.focus();
+                    field.select();
+
+                    try {
+                        if (document.execCommand('copy')) {
+                            confirmCopy();
+                        }
+                    } catch (error) {
+                        /* The link stays selected, so it can still be copied by hand. */
+                    }
+                }
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(field.value).then(confirmCopy, fallback);
+                } else {
+                    fallback();
+                }
+            });
+        });
+
         modalElement.querySelectorAll('[data-setup-finish]').forEach(function (button) {
             button.addEventListener('click', function () {
                 window.location.reload();
@@ -252,6 +296,31 @@
                 window.location.reload();
             }
         });
+
+        var STRIP_KEY = 'veloria:onboarding:app-strip-dismissed';
+        var strip = document.getElementById('appShareStrip');
+
+        if (strip) {
+            var dismissed = false;
+
+            try {
+                dismissed = window.localStorage.getItem(STRIP_KEY) === '1';
+            } catch (error) {
+                /* Blocked storage: the strip simply stays visible. */
+            }
+
+            strip.hidden = dismissed;
+
+            strip.querySelector('[data-app-strip-dismiss]').addEventListener('click', function () {
+                strip.hidden = true;
+
+                try {
+                    window.localStorage.setItem(STRIP_KEY, '1');
+                } catch (error) {
+                    /* Not remembered across visits; acceptable. */
+                }
+            });
+        }
 
         show(firstPending());
 
