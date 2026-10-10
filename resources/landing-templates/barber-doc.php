@@ -28,10 +28,12 @@ return [
         'work_image_1' => 'landing-templates/barber-doc/img/about/about_lft.png',
         'work_image_2' => 'landing-templates/barber-doc/img/about/about_right.png',
         'extra_image_1' => 'landing-templates/barber-doc/img/prising/1.png',
+        'extra_image_2' => 'landing-templates/barber-doc/img/banner/prise_bg.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text',
         'hero_image_1', 'work_image_1', 'work_image_2', 'extra_image_1',
+        'extra_image_2',
     ],
 ];

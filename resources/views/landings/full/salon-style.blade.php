@@ -34,7 +34,8 @@ popup and testimonial plugins of the original are not loaded.
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
         <link rel="stylesheet" href="{{ $asset('css/app.css') }}">
         <link rel="stylesheet" href="{{ $asset('css/veloria.css') }}">
-    </head>
+        <style>section#contact{background-image:var(--lf-contact-bg)}</style>
+</head>
     <body id="page-top-body">
         @if($isPreview && empty($isEdit))
             <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 2000; background: #111; color: #fff; text-align: center; font-size: 12px; padding: 2px 0;">{{ __('landings.public.preview_badge') }}</div>
@@ -112,7 +113,7 @@ popup and testimonial plugins of the original are not loaded.
                     @foreach($cards->take(4) as $card)
                         <div class="col-md-3 col-sm-6">
                             <div class="service-cont">
-                                <img src="{{ $asset('img/service/service-' . $loop->iteration . '.jpg') }}" alt="" class="img-fluid">
+                                <x-landing.image :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/salon-style/img/service/service-' . $loop->iteration . '.jpg'" alt="" class="img-fluid" />
                                 <div class="service-desc">
                                     {{ $card['name'] }}
                                     <p>
@@ -162,7 +163,7 @@ popup and testimonial plugins of the original are not loaded.
                     </div>
                     <div class="col-md-7 m-auto text-center">
                         <div class="body-img-1">
-                            <x-landing.image key="extra_image_1" default="landing-templates/salon-style/img/treamer-small.png" alt="" class="img-fluid" />
+                            <x-landing.image key="extra_image_1" default="landing-templates/salon-style/img/treamer-small.png" alt="" class="img-fluid" style="width: 420px; height: 190px; object-fit: cover;" />
                         </div>
                     </div>
                 </div>
@@ -194,7 +195,7 @@ popup and testimonial plugins of the original are not loaded.
             </div>
         </section>
 
-        <section id="contact" class="contact pb-0">
+        <x-landing.bg key="extra_image_2" default="landing-templates/salon-style/img/bg-footer1.jpg" tag="section" var="lf-contact-bg" id="contact" class="contact pb-0">
             <div class="container">
                 <div class="row mb-5">
                     <div class="col-md-12 text-center">
@@ -255,7 +256,7 @@ popup and testimonial plugins of the original are not loaded.
                     </div>
                 </div>
             </footer>
-        </section>
+        </x-landing.bg>
 
         <script src="{{ $asset('js/jquery.min.js') }}"></script>
         <script src="{{ $asset('js/popper.min.js') }}"></script>

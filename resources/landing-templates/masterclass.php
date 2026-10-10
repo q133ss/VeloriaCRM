@@ -26,10 +26,12 @@ return [
     'images' => [
         'hero_image_1' => 'landing-templates/masterclass/img/carousel-1.jpg',
         'about_image' => 'landing-templates/masterclass/img/about.jpg',
+        'extra_image_1' => 'landing-templates/masterclass/img/registration.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'master_bio',
         'hero_image_1', 'about_image',
+        'extra_image_1',
     ],
 ];

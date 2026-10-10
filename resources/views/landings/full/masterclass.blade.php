@@ -31,6 +31,7 @@
         .mc-hero { background-size: cover; background-position: center; }
         body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 { font-family: 'Montserrat', 'Poppins', sans-serif; }
     </style>
+    <style>.bg-registration{background-image:linear-gradient(rgba(0,0,0,.8),rgba(0,0,0,.8)),var(--lf-reg-bg);background-size:cover;background-position:center;background-repeat:no-repeat}</style>
 </head>
 <body>
     @if($isPreview && empty($isEdit))
@@ -151,7 +152,7 @@
         </div>
     @endif
 
-    <div class="container-fluid bg-registration py-5" id="signup" style="margin: 90px 0;">
+    <x-landing.bg key="extra_image_1" default="landing-templates/masterclass/img/registration.jpg" tag="div" var="lf-reg-bg" class="container-fluid bg-registration py-5" id="signup" style="margin: 90px 0;">
         <div class="container py-5">
             <div class="row align-items-center">
                 <div class="col-lg-7 mb-5 mb-lg-0">
@@ -208,7 +209,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </x-landing.bg>
 
     <div class="container-fluid bg-dark text-white border-top py-4 px-sm-3 px-md-5" style="border-color: rgba(256, 256, 256, .1) !important;">
         <div class="row">

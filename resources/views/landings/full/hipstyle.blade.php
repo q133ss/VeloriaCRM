@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="{{ $asset('css/flaticon.css') }}">
     <link rel="stylesheet" href="{{ $asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ $asset('css/veloria.css') }}">
+    <style>.regervation_part:after{background-image:var(--lf-booking-bg)}</style>
 </head>
 
 <body>
@@ -63,7 +64,7 @@
     </header>
 
     <a id="top"></a>
-    <x-landing.bg key="hero_image_1" default="landing-templates/hipstyle/img/banner_bg.jpg" tag="section" class="banner_part">
+    <x-landing.bg key="hero_image_1" default="landing-templates/hipstyle/img/banner_bg.jpg" tag="section" var="lf-hero-bg" class="banner_part">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
@@ -139,7 +140,7 @@
                     @foreach($cards->take(4) as $card)
                         <div class="single_offer_part">
                             <div class="single_offer">
-                                <img src="{{ $asset('img/offer_img_' . $loop->iteration . '.jpg') }}" alt="">
+                                <x-landing.image :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/hipstyle/img/offer_img_' . $loop->iteration . '.jpg'" alt="" />
                                 <div class="hover_text">
                                     <img src="{{ $asset('img/icon/cutter.svg') }}" alt="">
                                     <h2>{{ $card['name'] }}</h2>
@@ -190,7 +191,7 @@
         </section>
     @endif
 
-    <section class="regervation_part section_padding" id="booking">
+    <x-landing.bg key="extra_image_4" default="landing-templates/hipstyle/img/reservation_bg.jpg" tag="section" var="lf-booking-bg" class="regervation_part section_padding" id="booking">
         <div class="container">
             <div class="row justify-content-end">
                 <div class="col-lg-7">
@@ -229,7 +230,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </x-landing.bg>
 
     @if($faqItems->isNotEmpty())
         <section class="service_part section_padding">

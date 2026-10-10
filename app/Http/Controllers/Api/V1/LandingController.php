@@ -150,7 +150,7 @@ class LandingController extends Controller
             'file.dimensions' => __('landings.editor.errors.image_size'),
         ]);
 
-        abort_unless(array_key_exists($data['key'], $content->imageDefaults($landing)), 422, __('landings.editor.errors.unknown_key'));
+        abort_unless($content->acceptsImage($landing, $data['key']), 422, __('landings.editor.errors.unknown_key'));
 
         $url = $images->store($landing, $data['key'], $request->file('file'));
 
@@ -163,11 +163,13 @@ class LandingController extends Controller
         $this->ensureLandingBelongsToUser($landing);
 
         $defaults = $content->imageDefaults($landing);
-        abort_unless(isset($defaults[$key]), 404);
+        abort_unless(isset($defaults[$key]) || $content->acceptsImage($landing, $key), 404);
 
         $images->remove($landing, $key);
 
-        return response()->json(['data' => ['key' => $key, 'url' => asset($defaults[$key])]]);
+        // A service's stock photo depends on its place in the template, so the page
+        // carries it (data-lf-stock) and the editor puts it back itself.
+        return response()->json(['data' => ['key' => $key, 'url' => isset($defaults[$key]) ? asset($defaults[$key]) : null]]);
     }
 
     public function destroy(Landing $landing, LandingImageStore $images): JsonResponse

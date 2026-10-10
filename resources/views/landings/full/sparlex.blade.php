@@ -44,7 +44,9 @@
         <!-- Template Stylesheet -->
         <link href="{{ $asset('css/style.css') }}" rel="stylesheet">
         <link href="{{ $asset('css/veloria.css') }}" rel="stylesheet">
-    </head>
+        <style>.appointment{background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),var(--lf-appointment-bg)}</style>
+    <style>.pricing{background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),var(--lf-pricing-bg)}</style>
+</head>
 
     <body id="top">
         @if($isPreview && empty($isEdit))
@@ -198,7 +200,7 @@
                                     </div>
                                     <div class="col-4">
                                         <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                            <img src="{{ $asset('img/services-' . (($loop->index % 6) + 1) . '.jpg') }}" class="img-fluid rounded" alt="">
+                                            <x-landing.image :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/sparlex/img/services-' . (($loop->index % 6) + 1) . '.jpg'" class="img-fluid rounded" alt="" />
                                         </div>
                                     </div>
                                 </div>
@@ -220,7 +222,7 @@
                             <div class="video">
                                 <x-landing.image key="about_image" default="landing-templates/sparlex/img/about-1.jpg" class="img-fluid rounded" alt="" />
                                 <div class="position-absolute rounded border-5 border-top border-start border-white" style="bottom: 0; right: 0;">
-                                    <x-landing.image key="extra_image_1" default="landing-templates/sparlex/img/about-2.jpg" class="img-fluid rounded" alt="" />
+                                    <x-landing.image key="extra_image_1" default="landing-templates/sparlex/img/about-2.jpg" class="img-fluid rounded" alt="" style="width: 300px; height: 200px; object-fit: cover;" />
                                 </div>
                             </div>
                         </div>
@@ -252,7 +254,7 @@
 
 
         <!-- Appointment Start -->
-        <div class="container-fluid appointment py-5" id="booking">
+        <x-landing.bg key="extra_image_2" default="landing-templates/sparlex/img/appointment-background.jpg" tag="div" var="lf-appointment-bg" class="container-fluid appointment py-5" id="booking">
             <div class="container py-5">
                 <div class="row g-5 align-items-center">
                     <div class="col-lg-6">
@@ -329,7 +331,7 @@
                     </div>
                 </div>
             @endif
-        </div>
+        </x-landing.bg>
         <!-- Appointment End -->
 
 
@@ -358,7 +360,7 @@
 
         <!-- Pricing Start -->
         @if($priced->isNotEmpty())
-            <div class="container-fluid pricing py-5" id="prices">
+            <x-landing.bg key="extra_image_3" default="landing-templates/sparlex/img/appointment-background.jpg" tag="div" var="lf-pricing-bg" class="container-fluid pricing py-5" id="prices">
                 <div class="container py-5">
                     <div class="owl-carousel pricing-carousel">
                         @foreach($priced as $card)
@@ -379,7 +381,7 @@
                         @endforeach
                     </div>
                 </div>
-            </div>
+            </x-landing.bg>
         @endif
         <!-- Pricing End -->
 

@@ -24,6 +24,7 @@ return [
         'hero_image_2' => 'landing-templates/salone/img/hero-slider-2.jpg',
         'hero_image_3' => 'landing-templates/salone/img/hero-slider-3.jpg',
         'about_image' => 'landing-templates/salone/img/about.jpg',
+        'extra_image_1' => 'landing-templates/salone/img/hero-bg.jpg',
     ],
     // What the template is good for; the wizard filters by these.
     'purposes' => ['booking'],
@@ -35,5 +36,6 @@ return [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text',
         'hero_image_1', 'hero_image_2', 'hero_image_3', 'about_image',
+        'extra_image_1',
     ],
 ];

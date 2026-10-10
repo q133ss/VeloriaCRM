@@ -28,10 +28,12 @@ return [
         'extra_image_1' => 'landing-templates/hipstyle/img/about_us_1.png',
         'extra_image_2' => 'landing-templates/hipstyle/img/about_us_2.png',
         'extra_image_3' => 'landing-templates/hipstyle/img/about_us_3.png',
+        'extra_image_4' => 'landing-templates/hipstyle/img/reservation_bg.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text',
         'hero_image_1', 'extra_image_1', 'extra_image_2', 'extra_image_3', 'faq_items_text',
+        'extra_image_4',
     ],
 ];

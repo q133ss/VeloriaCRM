@@ -36,7 +36,8 @@
         <!-- Template Stylesheet -->
         <link href="{{ $asset('css/style.css') }}" rel="stylesheet">
         <link href="{{ $asset('css/veloria.css') }}" rel="stylesheet">
-    </head>
+        <style>.contact .container-fluid{background-image:var(--lf-contact-bg)}</style>
+</head>
 
     <body id="top">
         @if($isPreview && empty($isEdit))
@@ -166,7 +167,7 @@
                         <div class="col-lg-4 col-md-6">
                             <div class="service-item">
                                 <div class="service-img">
-                                    <img src="{{ $asset('img/service-' . (($loop->index % 3) + 1) . '.jpg') }}" alt="">
+                                    <x-landing.image :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/barberx/img/service-' . (($loop->index % 3) + 1) . '.jpg'" alt="" />
                                 </div>
                                 <h3>{{ $card['name'] }}</h3>
                                 <p>
@@ -241,7 +242,7 @@
 
         <!-- Booking Start -->
         <div class="contact" id="booking">
-            <div class="container-fluid">
+            <x-landing.bg key="extra_image_1" default="landing-templates/barberx/img/contact.jpg" tag="div" var="lf-contact-bg" class="container-fluid">
                 <div class="container">
                     <div class="row align-items-center">
                         <div class="col-md-4"></div>
@@ -282,7 +283,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-landing.bg>
         </div>
         <!-- Booking End -->
 
@@ -299,7 +300,7 @@
                             <div class="col-md-4">
                                 <div class="blog-item">
                                     <div class="blog-img">
-                                        <img src="{{ $asset('img/blog-' . ($loop->index + 1) . '.jpg') }}" alt="">
+                                        <x-landing.image :key="'faq_image_' . ($loop->index + 1)" :default="'landing-templates/barberx/img/blog-' . ($loop->index + 1) . '.jpg'" alt="" />
                                     </div>
                                     <div class="blog-text">
                                         <x-landing.text key="faq_items_text" :index="$loop->index" tag="p" />

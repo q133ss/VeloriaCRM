@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="{{ $asset('css/flaticon.css') }}">
     <link rel="stylesheet" href="{{ $asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ $asset('css/veloria.css') }}">
+    <style>.prising_area::after{background-image:var(--lf-prices-bg)}</style>
 </head>
 
 <body>
@@ -93,7 +94,7 @@
                 <div class="col-xl-6 col-lg-6 col-md-6">
                     <div class="about_thumbs">
                         <div class="large_img_1"><x-landing.image key="work_image_1" default="landing-templates/barber-doc/img/about/about_lft.png" alt="" /></div>
-                        <div class="small_img_1"><x-landing.image key="work_image_2" default="landing-templates/barber-doc/img/about/about_right.png" alt="" /></div>
+                        <div class="small_img_1"><x-landing.image key="work_image_2" default="landing-templates/barber-doc/img/about/about_right.png" alt="" style="width: 182px; height: 355px; max-width: 100%; object-fit: cover;" /></div>
                     </div>
                 </div>
                 <div class="col-xl-6 col-lg-6 col-md-6">
@@ -136,7 +137,7 @@
                 @foreach($cards->take(3) as $card)
                     <div class="col-lg-4 col-md-6">
                         <div class="single_service">
-                            <div class="service_thumb"><img src="{{ $asset('img/service/' . $loop->iteration . '.png') }}" alt=""></div>
+                            <div class="service_thumb"><x-landing.image :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/barber-doc/img/service/' . $loop->iteration . '.png'" alt="" /></div>
                             <div class="service_content text-center">
                                 <div class="icon"><i class="{{ $icons[$loop->index] }}"></i></div>
                                 <h3>{{ $card['name'] }}</h3>
@@ -157,7 +158,7 @@
     </div>
 
     @if($priced->isNotEmpty())
-        <div class="prising_area" id="prices">
+        <x-landing.bg key="extra_image_2" default="landing-templates/barber-doc/img/banner/prise_bg.jpg" tag="div" var="lf-prices-bg" class="prising_area" id="prices">
             <div class="container">
                 <div class="row justify-content-center">
                     <div class="col-lg-6 col-md-10">
@@ -187,7 +188,7 @@
                     @endforeach
                 </div>
             </div>
-        </div>
+        </x-landing.bg>
     @endif
 
     <div class="vb-booking" id="booking">

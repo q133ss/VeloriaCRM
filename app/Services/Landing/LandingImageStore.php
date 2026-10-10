@@ -20,7 +20,7 @@ class LandingImageStore
 {
     public const MAX_SIDE = 1600;
 
-    public const MAX_FILES_PER_LANDING = 12;
+    public const MAX_FILES_PER_LANDING = 40;
 
     public function __construct(private readonly LandingContent $content)
     {

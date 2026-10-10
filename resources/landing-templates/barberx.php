@@ -27,10 +27,15 @@ return [
         'hero_image_1' => 'landing-templates/barberx/img/hero.png',
         'about_image' => 'landing-templates/barberx/img/about.jpg',
         'master_photo' => 'landing-templates/barberx/img/team-1.jpg',
+        'extra_image_1' => 'landing-templates/barberx/img/contact.jpg',
+        'faq_image_1' => 'landing-templates/barberx/img/blog-1.jpg',
+        'faq_image_2' => 'landing-templates/barberx/img/blog-2.jpg',
+        'faq_image_3' => 'landing-templates/barberx/img/blog-3.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'faq_items_text', 'master_role',
         'hero_image_1', 'about_image', 'master_photo',
+        'extra_image_1', 'faq_image_1', 'faq_image_2', 'faq_image_3',
     ],
 ];

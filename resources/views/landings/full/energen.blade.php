@@ -110,13 +110,13 @@
       </x-landing.bg>
     @endif
 
-    <section class="ftco-section ftco-no-pt ftco-no-pb">
+    <section class="ftco-section ftco-no-pt ftco-no-pb" id="services">
       <div class="container">
         <div class="row no-gutters">
           @foreach($offerCards as $card)
             <div class="col-md-4 d-flex align-items-stretch">
               <div class="offer-deal {{ $loop->iteration === 2 ? 'active' : '' }} text-center px-2 px-lg-5">
-                <div class="img" style="background-image: url({{ $asset('images/offer-deal-' . $loop->iteration . '.jpg') }});"></div>
+                <x-landing.bg :key="$card['id'] ? 'service_image_' . $card['id'] : null" :default="'landing-templates/energen/images/offer-deal-' . $loop->iteration . '.jpg'" class="img" />
                 <div class="text mt-4">
                   <h3 class="mb-4">{{ $card['name'] }}</h3>
                   <p class="mb-5">
@@ -137,7 +137,9 @@
       </div>
     </section>
 
-    <section class="ftco-section ftco-section-services bg-light" id="services">
+    {{-- The first three services are the big cards above; this grid only carries the rest, so one service is not shown three times in a row. --}}
+    @if($cards->count() > $offerCards->count())
+    <section class="ftco-section ftco-section-services bg-light" id="more-services">
       <div class="container-fluid px-md-5">
         <div class="row justify-content-center mb-5 pb-3">
           <div class="col-md-12 heading-section ftco-animate text-center">
@@ -146,7 +148,7 @@
           </div>
         </div>
         <div class="row justify-content-center">
-          @foreach($cards->take(8) as $card)
+          @foreach($cards->slice($offerCards->count())->take(8) as $card)
             <div class="col-md-6 col-lg-3">
               <div class="services text-center ftco-animate">
                 <div class="icon d-flex justify-content-center align-items-center">
@@ -173,6 +175,7 @@
         </div>
       </div>
     </section>
+    @endif
 
     @if($priced->isNotEmpty())
       <section class="ftco-section" id="prices">
@@ -285,7 +288,7 @@
             @foreach($faqItems->take(3) as $item)
               <div class="col-md-4 d-flex ftco-animate">
                 <div class="blog-entry justify-content-end">
-                  <span class="block-20" style="background-image: url('{{ $asset('images/image_' . ($loop->index + 1) . '.jpg') }}');"></span>
+                  <x-landing.bg tag="span" :key="'faq_image_' . ($loop->index + 1)" :default="'landing-templates/energen/images/image_' . ($loop->index + 1) . '.jpg'" class="block-20" />
                   <div class="text p-4 float-right d-block">
                     <x-landing.text key="faq_items_text" :index="$loop->index" tag="p" />
                   </div>

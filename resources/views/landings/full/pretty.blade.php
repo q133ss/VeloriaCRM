@@ -271,7 +271,7 @@
                     @foreach($faqItems->take(3) as $item)
                         <div class="col-md-4 d-flex ftco-animate">
                             <div class="blog-entry align-self-stretch">
-                                <span class="block-20" style="background-image: url('{{ $asset('images/image_' . ($loop->index + 1) . '.jpg') }}');"></span>
+                                <x-landing.bg tag="span" :key="'faq_image_' . ($loop->index + 1)" :default="'landing-templates/pretty/images/image_' . ($loop->index + 1) . '.jpg'" class="block-20" />
                                 <div class="text py-4 d-block">
                                     <x-landing.text key="faq_items_text" :index="$loop->index" tag="p" />
                                 </div>
