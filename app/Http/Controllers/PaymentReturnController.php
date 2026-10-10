@@ -28,8 +28,12 @@ class PaymentReturnController extends Controller
     {
         $token = (string) $request->route('token');
 
+        $slug = $request->route('slug');
+
         return response()->view('payments.return', [
             'token' => $token,
+            // Only the landing address knows which master's page to send the client back to.
+            'landingUrl' => is_string($slug) && $slug !== '' ? url('/l/' . $slug) : null,
             'statusUrl' => url('/api/v1/payments/status/' . $token),
         ]);
     }

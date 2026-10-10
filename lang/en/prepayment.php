@@ -22,6 +22,7 @@ return [
         'text_unknown' => 'Check the address or book again.',
         'when' => ':date at :time',
         'open_app' => 'Open the app',
+        'back' => 'Back to the booking page',
     ],
     'validation' => [
         'percent_max' => 'The percentage cannot be more than 100.',

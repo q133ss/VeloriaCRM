@@ -60,6 +60,8 @@
         .dot { width: 14px; height: 14px; margin: 0 auto 20px; border-radius: 50%; background: var(--pr-accent); animation: pulse 1.2s ease-in-out infinite; }
         .card[data-state="paid"] .dot { background: var(--pr-ok); animation: none; }
         .card[data-state="expired"] .dot, .card[data-state="refunded"] .dot, .card[data-state="unknown"] .dot { background: var(--pr-warn); animation: none; }
+        .back { display: none; margin-top: 20px; color: var(--pr-muted); font-size: 14px; }
+        .card[data-state="paid"] .back, .card[data-state="expired"] .back, .card[data-state="refunded"] .back { display: inline-block; }
         .app { display: none; margin-top: 24px; padding: 12px 20px; border-radius: 10px; background: var(--pr-accent); color: #fff; text-decoration: none; font-weight: 600; }
 
         @keyframes pulse { 50% { opacity: .35; } }
@@ -72,6 +74,9 @@
         <h1 id="title">{{ __('prepayment.return.title_waiting') }}</h1>
         <p id="text">{{ __('prepayment.return.text_waiting') }}</p>
         <p class="when" id="when" hidden></p>
+        @if ($landingUrl)
+            <a class="back" href="{{ $landingUrl }}">{{ __('prepayment.return.back') }}</a>
+        @endif
         <a class="app" id="app" href="veloriaclient://payment-return?token={{ $token }}">{{ __('prepayment.return.open_app') }}</a>
     </main>
 

@@ -30,6 +30,9 @@ Route::middleware('set.locale')->group(function () {
     // Where a client lands after paying a booking prepayment.
     Route::get('/pay/return/{token}', [PaymentReturnController::class, 'page'])->name('payments.return');
     Route::get('/l/{slug}/paid/{token}', [PaymentReturnController::class, 'page'])->name('landings.paid');
+    Route::get('/l/{slug}/prepayment', [LandingBookingController::class, 'prepayment'])
+        ->middleware('throttle:60,1')
+        ->name('landings.prepayment');
     Route::post('/l/{slug}/book', [LandingBookingController::class, 'book'])
         ->middleware('throttle:10,1')
         ->name('landings.book');

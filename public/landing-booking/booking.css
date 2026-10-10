@@ -27,6 +27,12 @@
 .lb-modal-row span { opacity: .65; }
 .lb-modal-row strong { text-align: right; }
 .lb-modal-btn { width: 100%; min-height: 3rem; border: 0; border-radius: .9rem; background: var(--lb-accent, #7f5af0); color: var(--lb-accent-text, #fff); font: inherit; font-weight: 700; cursor: pointer; }
+.lb-modal-hint { margin: -.5rem 0 1.25rem; font-size: .9rem; opacity: .75; }
+a.lb-modal-btn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.lb-modal-link { display: block; width: 100%; margin-top: .6rem; padding: .6rem; border: 0; background: none; font: inherit; font-size: .95rem; text-decoration: underline; cursor: pointer; opacity: .75; }
+.lb-modal-link:focus-visible, a.lb-modal-btn:focus-visible { outline: 3px solid var(--lb-accent, #7f5af0); outline-offset: 2px; }
+/* The prepayment note must be readable on any template, so it carries its own background. */
+.lb-note.lb-prepay { margin: .25rem 0 .75rem; padding: .65rem .85rem; border-radius: .7rem; background: rgba(255, 255, 255, .94); color: #231f2e; font-weight: 600; opacity: 1; }
 @keyframes lb-pop { from { transform: translateY(8px) scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
 
 .lb-message { color: #1f9d55; text-align: center; }

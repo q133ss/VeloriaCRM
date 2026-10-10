@@ -22,6 +22,7 @@
         'urls' => [
             'lead' => route('landings.request', ['slug' => $landing->slug]),
             'availability' => route('landings.availability', ['slug' => $landing->slug]),
+            'prepayment' => route('landings.prepayment', ['slug' => $landing->slug]),
             'book' => route('landings.book', ['slug' => $landing->slug]),
         ],
         'i18n' => __('landings.booking.ui'),

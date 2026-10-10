@@ -11,7 +11,9 @@ use App\Models\Service;
 use App\Services\Booking\ClientBookingService;
 use App\Services\Booking\PrepaymentFailedException;
 use App\Services\Booking\SlotUnavailableException;
+use App\Services\Prepayment\PrepaymentPolicyService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -48,6 +50,39 @@ class LandingBookingController extends Controller
                 'days' => $this->booking->upcomingDays($landing->user_id, $service, (int) ($data['days'] ?? 14)),
             ],
         ]);
+    }
+
+    /**
+     * What a booking at this time would ask up front, so the page can say it
+     * before the visitor commits. It is the amount for a client the master
+     * knows nothing about; the booking itself answers for the real person
+     * (her own «always/never» setting and history), so nothing about any
+     * client is given away here.
+     */
+    public function prepayment(Request $request, string $slug, PrepaymentPolicyService $policy): JsonResponse
+    {
+        $landing = $this->activeLanding($slug);
+        $data = $request->validate([
+            'service_id' => ['nullable', 'integer'],
+            'date' => ['required', 'date_format:Y-m-d'],
+            'time' => ['required', 'date_format:H:i'],
+        ]);
+
+        $service = $this->resolveOfferedService($landing, $data['service_id'] ?? null);
+        $startsAt = Carbon::createFromFormat('Y-m-d H:i', $data['date'] . ' ' . $data['time'], $this->booking->masterTimezone($landing->user_id));
+
+        $requirement = $policy->resolve(
+            $landing->user_id,
+            null,
+            null,
+            $service,
+            $startsAt,
+            $service ? (float) ($service->base_price ?? 0) : 0.0,
+        );
+
+        return response()->json(['data' => $requirement
+            ? ['required' => true, 'amount' => $requirement->amount, 'hold_minutes' => $requirement->holdMinutes]
+            : ['required' => false]]);
     }
 
     public function book(LandingBookRequest $request, string $slug): JsonResponse
