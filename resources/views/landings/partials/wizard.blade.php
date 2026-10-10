@@ -178,6 +178,7 @@
                 <div class="lw-field-error"></div>
             </div>
 
+            <x-meta-notice />
             <div id="lw-type-block"></div>
 
             <div class="lw-field" data-field="phone">
@@ -221,6 +222,7 @@
                         <input type="text" id="lw-link" readonly aria-label="{{ $w['done']['link_title'] }}" />
                         <button type="button" class="lw-copy" id="lw-copy"><i class="ri ri-file-copy-line" aria-hidden="true"></i><span>{{ $w['done']['copy'] }}</span></button>
                     </div>
+                    <x-meta-notice />
                     <div class="lw-share">
                         <span>{{ $w['done']['share'] }}</span>
                         <a id="lw-share-tg" href="#" target="_blank" rel="noopener"><i class="ri ri-telegram-line" aria-hidden="true"></i>Telegram</a>

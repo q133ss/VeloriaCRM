@@ -29,6 +29,7 @@
         var copyButton = sheetEl.querySelector('[data-message-copy]');
         var sendButton = sheetEl.querySelector('[data-message-send]');
         var whatsappLink = sheetEl.querySelector('[data-message-whatsapp]');
+        var metaNotice = sheetEl.querySelector('[data-message-meta-notice]');
 
         var LABELS = @json($messageSheetLabels);
         var current = null;
@@ -64,6 +65,7 @@
             var usable = current && current.phone && !(current.channels || []).length;
 
             whatsappLink.hidden = !usable;
+            if (metaNotice) metaNotice.hidden = !usable;
 
             if (usable) {
                 whatsappLink.href = 'https://wa.me/' + current.phone.replace(/\D+/g, '')

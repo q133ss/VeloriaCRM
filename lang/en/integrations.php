@@ -161,7 +161,7 @@ return [
 
         'whatsapp' => [
             'title' => 'WhatsApp Business',
-            'description' => 'Messages to clients in WhatsApp. Requires WhatsApp Business API access.',
+            'description' => 'Messages to clients in WhatsApp. Requires WhatsApp Business API access. WhatsApp belongs to Meta, which has been designated an extremist organization and is banned in the Russian Federation.',
             'link_label' => 'Meta for Developers',
             'link_url' => 'https://developers.facebook.com/apps',
             'steps' => [

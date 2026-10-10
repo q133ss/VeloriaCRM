@@ -221,6 +221,7 @@
                     <label for="landing-whatsapp" class="form-label">{{ __('landings.form.fields.whatsapp_url') }}</label>
                     <input type="url" class="form-control" id="landing-whatsapp" name="settings[whatsapp_url]" placeholder="https://wa.me/..." />
                 </div>
+                <div class="col-12"><x-meta-notice /></div>
                 <div class="col-md-4">
                     <label for="landing-telegram" class="form-label">{{ __('landings.form.fields.telegram_url') }}</label>
                     <input type="url" class="form-control" id="landing-telegram" name="settings[telegram_url]" placeholder="https://t.me/..." />
