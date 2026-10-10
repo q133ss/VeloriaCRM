@@ -199,11 +199,21 @@
         var key = img.getAttribute('data-lf-key');
         pop = document.createElement('div');
         pop.className = 'lf-pop';
-        var replace = document.createElement('button');
-        replace.type = 'button';
+        // A real file input laid over the button: the user's own click opens the dialog. A
+        // scripted input.click() can be dropped by the browser, and then nothing happens.
+        var replace = document.createElement('label');
         replace.className = 'lf-main';
-        replace.textContent = ui.photo_replace || 'Replace';
-        replace.addEventListener('click', function () { pickerKey = key; closePop(); picker.value = ''; picker.click(); });
+        replace.appendChild(document.createTextNode(ui.photo_replace || 'Replace'));
+        var chooser = document.createElement('input');
+        chooser.type = 'file';
+        chooser.accept = picker.accept;
+        chooser.className = 'lf-file';
+        chooser.addEventListener('change', function () {
+            var file = chooser.files && chooser.files[0];
+            closePop();
+            if (file) uploadImage(key, file);
+        });
+        replace.appendChild(chooser);
         pop.appendChild(replace);
 
         if (img.getAttribute('data-lf-custom') === '1') {
@@ -234,10 +244,7 @@
         });
     }
 
-    picker.addEventListener('change', function () {
-        var file = picker.files && picker.files[0];
-        if (!file || !pickerKey) return;
-        var key = pickerKey;
+    function uploadImage(key, file) {
         var form = new FormData();
         form.append('key', key);
         form.append('file', file);
@@ -263,7 +270,7 @@
                 barStatus.hidden = true; barText.hidden = false;
                 toast(errors.image_failed || 'Error');
             });
-    });
+    }
 
     function resetImage(key) {
         setBusy(key, true);
