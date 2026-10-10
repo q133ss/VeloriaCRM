@@ -10,24 +10,26 @@
 
     <a
         href="{{ route('social.redirect', ['provider' => 'yandex']) }}"
-        class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2"
+        class="btn d-flex align-items-center justify-content-center gap-2 text-white"
+        style="background:#fc3f1d;border-color:#fc3f1d;min-height:44px;"
         aria-label="{{ __('auth.continue_with_yandex') }}"
     >
-        <i class="icon-base ri ri-mail-fill icon-18px"></i>
+        <span class="fw-bold" aria-hidden="true">Я</span>
         <span>{{ __('auth.continue_with_yandex') }}</span>
     </a>
 </div>
 
 @if ($vkAppId)
     <div id="vkid-error" class="invalid-feedback d-block text-center mt-3"></div>
-    <script src="https://unpkg.com/@vkid/sdk@2.6.9/dist-sdk/umd/index.js"></script>
+    <script src="{{ asset('assets/vendor/libs/vkid/sdk-2.6.9.js') }}"></script>
     <script>
         (function () {
-            if (!('VKIDSDK' in window)) return;
-            var VKID = window.VKIDSDK;
             var errorBox = document.getElementById('vkid-error');
             var defaultError = @json(__('auth.social_login_failed', ['provider' => __('auth.providers.vkid')]));
             var fail = function (message) { errorBox.textContent = message || defaultError; };
+
+            if (!('VKIDSDK' in window)) { fail(); return; }
+            var VKID = window.VKIDSDK;
 
             VKID.Config.init({
                 app: {{ $vkAppId }},

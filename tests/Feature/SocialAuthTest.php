@@ -75,7 +75,7 @@ class SocialAuthTest extends TestCase
         $this->configure();
         $this->fakeProvider('42', 'Anna@Example.com');
 
-        $this->get('/auth/yandex/callback')->assertRedirect('/dashboard')->assertCookie('token');
+        $this->get('/auth/yandex/callback?code=abc')->assertRedirect('/dashboard')->assertCookie('token');
 
         $user = User::where('email', 'anna@example.com')->firstOrFail();
         $this->assertAuthenticatedAs($user);
@@ -87,9 +87,9 @@ class SocialAuthTest extends TestCase
         $this->configure();
         $this->fakeProvider('42', 'anna@example.com');
 
-        $this->get('/auth/yandex/callback');
+        $this->get('/auth/yandex/callback?code=abc');
         auth()->logout();
-        $this->get('/auth/yandex/callback');
+        $this->get('/auth/yandex/callback?code=abc');
 
         $this->assertSame(1, User::count());
         $this->assertSame(1, SocialAccount::count());
@@ -100,7 +100,7 @@ class SocialAuthTest extends TestCase
         $this->configure();
         $this->fakeProvider('777', null, 'Ya Person');
 
-        $this->get('/auth/yandex/callback')->assertRedirect('/dashboard');
+        $this->get('/auth/yandex/callback?code=abc')->assertRedirect('/dashboard');
 
         $user = SocialAccount::where('provider', 'yandex')->firstOrFail()->user;
         $this->assertNull($user->email);
@@ -113,7 +113,7 @@ class SocialAuthTest extends TestCase
         $existing = User::factory()->create(['email' => 'anna@example.com']);
         $this->fakeProvider('42', 'anna@example.com');
 
-        $this->get('/auth/yandex/callback')->assertRedirect('/dashboard');
+        $this->get('/auth/yandex/callback?code=abc')->assertRedirect('/dashboard');
 
         $this->assertSame(1, User::count());
         $this->assertAuthenticatedAs($existing);
@@ -126,7 +126,7 @@ class SocialAuthTest extends TestCase
         $user->forceFill(['status' => User::STATUS_SUSPENDED])->save();
         $this->fakeProvider('42', 'anna@example.com');
 
-        $this->get('/auth/yandex/callback')
+        $this->get('/auth/yandex/callback?code=abc')
             ->assertRedirect(route('login'))
             ->assertSessionHas('auth_error');
 
@@ -140,9 +140,25 @@ class SocialAuthTest extends TestCase
         $driver->shouldReceive('user')->andThrow(new \RuntimeException('boom'));
         Socialite::shouldReceive('buildProvider')->andReturn($driver);
 
-        $this->get('/auth/yandex/callback')
+        $this->get('/auth/yandex/callback?code=abc')
             ->assertRedirect(route('login'))
             ->assertSessionHas('auth_error');
+    }
+
+    public function test_callback_without_code_goes_back_to_login_with_message(): void
+    {
+        $this->configure();
+
+        $this->get('/auth/yandex/callback')->assertRedirect(route('login'))->assertSessionHas('auth_error');
+        $this->get('/auth/yandex/callback?error=access_denied')->assertRedirect(route('login'))->assertSessionHas('auth_error');
+    }
+
+    public function test_vk_sdk_is_served_from_our_own_domain(): void
+    {
+        config(['services.vkid.client_id' => '54815286']);
+
+        $this->get('/login')->assertOk()->assertDontSee('unpkg.com', false)->assertSee('sdk-2.6.9.js', false);
+        $this->assertFileExists(public_path('assets/vendor/libs/vkid/sdk-2.6.9.js'));
     }
 
     public function test_vk_widget_token_signs_in_and_creates_user(): void
