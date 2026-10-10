@@ -34,16 +34,14 @@ return [
     'forgot_heading' => 'Забыли пароль? 🔒',
     'forgot_subtitle' => 'Введите свой email, и мы отправим инструкции по сбросу пароля',
     'or' => 'или',
-    'continue_with_vkontakte' => 'Войти через ВКонтакте',
+    'continue_with_vkid' => 'Войти через ВКонтакте',
     'continue_with_yandex' => 'Войти через Яндекс',
-    'continue_with_google' => 'Войти через Gmail',
     'social_login_failed' => 'Не удалось авторизоваться через :provider. Попробуйте еще раз.',
     'social_login_email_missing' => 'Не удалось получить email от :provider. Пожалуйста, завершите регистрацию вручную.',
     'social_login_not_configured' => 'Вход через :provider временно недоступен. Выберите другой способ авторизации.',
     'unauthorized' => 'Не авторизовано.',
     'providers' => [
-        'vkontakte' => 'ВКонтакте',
+        'vkid' => 'ВКонтакте',
         'yandex' => 'Яндекс',
-        'google' => 'Gmail',
     ],
 ];

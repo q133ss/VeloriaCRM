@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3231b83f24327208b0d2f4e5c34b860e",
+    "content-hash": "772469677c7043e004f5f3a340928443",
     "packages": [
         {
             "name": "brick/math",
@@ -2388,6 +2388,60 @@
             "time": "2025-03-24T10:02:05+00:00"
         },
         {
+            "name": "movemoveapp/vkid",
+            "version": "1.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/movemoveapp/vkid.git",
+                "reference": "7520f025b2173a542d97e7eb5569cd61d2613cfe"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/movemoveapp/vkid/zipball/7520f025b2173a542d97e7eb5569cd61d2613cfe",
+                "reference": "7520f025b2173a542d97e7eb5569cd61d2613cfe",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "illuminate/support": "^10.0 || ^11.0 || ^12.0",
+                "laravel/socialite": "^5.6 || ^6.0",
+                "php": "^8.0",
+                "socialiteproviders/manager": "^4.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MoveMoveApp\\VKID\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dmitry Kovalev",
+                    "email": "d.kovalev@movemove.com.ru",
+                    "homepage": "https://movemove.com.ru",
+                    "role": "Developer"
+                }
+            ],
+            "description": "VK ID OAuth 2.1 (id.vk.ru) Socialite provider with PKCE (cache-based, stateless-friendly).",
+            "keywords": [
+                "laravel",
+                "movemove",
+                "oauth",
+                "pkce",
+                "sdk",
+                "vk"
+            ],
+            "support": {
+                "issues": "https://github.com/movemoveapp/vkid/issues",
+                "source": "https://github.com/movemoveapp/vkid/tree/v1.0.4"
+            },
+            "time": "2025-10-16T07:04:25+00:00"
+        },
+        {
             "name": "nesbot/carbon",
             "version": "3.10.3",
             "source": {
@@ -3972,56 +4026,6 @@
                 "source": "https://github.com/socialiteproviders/manager"
             },
             "time": "2025-02-24T19:33:30+00:00"
-        },
-        {
-            "name": "socialiteproviders/vkontakte",
-            "version": "5.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/SocialiteProviders/VKontakte.git",
-                "reference": "306a746967d1712c4414c405cd359fe27193f1d1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/SocialiteProviders/VKontakte/zipball/306a746967d1712c4414c405cd359fe27193f1d1",
-                "reference": "306a746967d1712c4414c405cd359fe27193f1d1",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "php": "^8.0",
-                "socialiteproviders/manager": "^4.4"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "SocialiteProviders\\VKontakte\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Brian Faust",
-                    "email": "hello@brianfaust.de"
-                }
-            ],
-            "description": "VKontakte OAuth2 Provider for Laravel Socialite",
-            "keywords": [
-                "laravel",
-                "oauth",
-                "provider",
-                "socialite",
-                "vkontakte"
-            ],
-            "support": {
-                "docs": "https://socialiteproviders.com/vkontakte",
-                "issues": "https://github.com/socialiteproviders/providers/issues",
-                "source": "https://github.com/socialiteproviders/providers"
-            },
-            "time": "2025-09-08T22:08:36+00:00"
         },
         {
             "name": "socialiteproviders/yandex",

@@ -154,34 +154,7 @@
                         <div class="divider-text">{{ __('auth.or') }}</div>
                     </div>
 
-                    <div class="d-grid gap-3">
-                        <a
-                            href="{{ route('social.redirect', ['provider' => 'vkontakte']) }}"
-                            class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2"
-                            aria-label="{{ __('auth.continue_with_vkontakte') }}"
-                        >
-                            <i class="icon-base ri ri-vk-fill icon-18px"></i>
-                            <span>{{ __('auth.continue_with_vkontakte') }}</span>
-                        </a>
-
-                        <a
-                            href="{{ route('social.redirect', ['provider' => 'yandex']) }}"
-                            class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2"
-                            aria-label="{{ __('auth.continue_with_yandex') }}"
-                        >
-                            <i class="icon-base ri ri-mail-fill icon-18px"></i>
-                            <span>{{ __('auth.continue_with_yandex') }}</span>
-                        </a>
-
-                        <a
-                            href="{{ route('social.redirect', ['provider' => 'google']) }}"
-                            class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2"
-                            aria-label="{{ __('auth.continue_with_google') }}"
-                        >
-                            <i class="icon-base ri ri-google-fill icon-18px"></i>
-                            <span>{{ __('auth.continue_with_google') }}</span>
-                        </a>
-                    </div>
+                    @include('auth.partials.social-buttons')
                 </div>
             </div>
             <!-- /Login -->

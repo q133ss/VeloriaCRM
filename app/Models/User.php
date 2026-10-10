@@ -80,6 +80,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     public function plans(): BelongsToMany
     {
         return $this->belongsToMany(Plan::class)->withPivot('ends_at')->withTimestamps();
