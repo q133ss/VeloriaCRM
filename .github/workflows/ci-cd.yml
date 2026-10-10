@@ -77,8 +77,8 @@ jobs:
         run: |
           SSH="ssh -i ~/.ssh/deploy_key -o BatchMode=yes"
           # tracked files only; the mobile app, tests and CI config are not deployed
-          git ls-files | grep -v -e '^Client Mobile App/' -e '^tests/' -e '^\.github/' > /tmp/files.txt
-          rsync -az --files-from=/tmp/files.txt -e "$SSH" ./ "$SSH_USER@$SSH_HOST:$APP_DIR/"
+          git ls-files -z | grep -zv -e '^Client Mobile App/' -e '^tests/' -e '^\.github/' > /tmp/files.txt
+          rsync -az --from0 --files-from=/tmp/files.txt -e "$SSH" ./ "$SSH_USER@$SSH_HOST:$APP_DIR/"
           rsync -az --delete -e "$SSH" vendor/ "$SSH_USER@$SSH_HOST:$APP_DIR/vendor/"
 
       - name: Migrate and refresh caches
