@@ -634,6 +634,11 @@
         $onboardingTotal = max($onboardingSteps->count(), 1);
         $onboardingCompleted = (int) ($onboarding['completed_steps'] ?? 0);
         $setupPending = $onboardingCompleted < $onboardingSteps->count();
+        // The client-app step outlives the setup checklist: once setup is done the
+        // wizard is still rendered (opened from a dismissible strip) while the APK exists.
+        $wizardApkPath = 'downloads/veloria-client.apk';
+        $wizardApkUrl = file_exists(public_path($wizardApkPath)) ? url($wizardApkPath) : null;
+        $showWizard = $setupPending || $wizardApkUrl !== null;
         $formatServices = static fn (array $services): string => collect($services)->filter()->implode(', ');
     @endphp
 
@@ -653,6 +658,14 @@
                     {{-- «Продолжить» на счётчике «0 из 3» предлагало продолжить то, что не начинали. --}}
                     {{ $onboardingCompleted > 0 ? __('dashboard.setup.continue') : __('dashboard.setup.start') }}
                 </button>
+            </div>
+        @elseif ($wizardApkUrl)
+            <div class="day-setup" id="appShareStrip" hidden>
+                <span class="day-setup-label">{{ __('dashboard.setup.app_strip.title') }}</span>
+                <button type="button" class="btn btn-primary btn-sm" data-setup-open>
+                    {{ __('dashboard.setup.app_strip.open') }}
+                </button>
+                <button type="button" class="btn-close" data-app-strip-dismiss aria-label="{{ __('dashboard.setup.app_strip.dismiss') }}"></button>
             </div>
         @endif
 
@@ -963,8 +976,8 @@
         </div>
     </div>
 
-    @if ($setupPending)
-        @include('dashboard.setup-wizard', ['onboarding' => $onboarding])
+    @if ($showWizard)
+        @include('dashboard.setup-wizard', ['onboarding' => $onboarding, 'wizardApkUrl' => $wizardApkUrl])
     @endif
 
     @if ($dueClients->isNotEmpty())
@@ -979,7 +992,7 @@
     @include('components.phone-mask-script')
     @include('components.veloria-datetime-picker-script')
     @include('components.order-quick-create-modal')
-    @if ($setupPending)
+    @if ($showWizard)
         @include('dashboard.setup-wizard-script')
     @endif
     @if ($dueClients->isNotEmpty())

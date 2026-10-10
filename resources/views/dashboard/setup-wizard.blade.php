@@ -33,6 +33,11 @@
         'clients' => (int) ($onboarding['client_count'] ?? 0) > 0,
         'landing' => (int) ($onboarding['landing_count'] ?? 0) > 0,
     ];
+
+    // The app step is informational (not part of the setup progress) and only
+    // exists while the APK is actually on the server.
+    $wizardApkUrl ??= file_exists(public_path('downloads/veloria-client.apk')) ? url('downloads/veloria-client.apk') : null;
+    $wizardTotal = $wizardApkUrl ? 5 : 4;
 @endphp
 
 <div
@@ -41,7 +46,8 @@
     tabindex="-1"
     aria-labelledby="setupWizardTitle"
     aria-hidden="true"
-    data-setup-state="{{ json_encode($wizardState) }}">
+    data-setup-state="{{ json_encode($wizardState) }}"
+    data-setup-app="{{ $wizardApkUrl ? 1 : 0 }}">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-body">
@@ -53,7 +59,7 @@
 
                 {{-- Step 1: working hours --}}
                 <section class="setup-step" data-step="schedule" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 1, 'total' => 4]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 1, 'total' => $wizardTotal]) }}</p>
                     <h2 class="setup-title" id="setupWizardTitle">{{ __('dashboard.setup.wizard.schedule.title') }}</h2>
                     <p class="setup-text">{!! __('dashboard.setup.wizard.schedule.text', [
                         'link' => '<a href="' . route('settings') . '#settings-work">' . __('dashboard.setup.wizard.schedule.link_label') . '</a>',
@@ -124,7 +130,7 @@
 
                 {{-- Step 2: first service --}}
                 <section class="setup-step" data-step="services" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 2, 'total' => 4]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 2, 'total' => $wizardTotal]) }}</p>
                     <h2 class="setup-title">{{ __('dashboard.setup.wizard.service.title') }}</h2>
                     <p class="setup-text">{{ __('dashboard.setup.wizard.service.text') }}</p>
 
@@ -192,7 +198,7 @@
 
                 {{-- Step 3: first client --}}
                 <section class="setup-step" data-step="clients" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 3, 'total' => 4]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 3, 'total' => $wizardTotal]) }}</p>
                     <h2 class="setup-title">{{ __('dashboard.setup.wizard.client.title') }}</h2>
                     <p class="setup-text">{{ __('dashboard.setup.wizard.client.text') }}</p>
 
@@ -241,7 +247,7 @@
 
                 {{-- Step 4: public booking site --}}
                 <section class="setup-step" data-step="landing" hidden>
-                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 4, 'total' => 4]) }}</p>
+                    <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 4, 'total' => $wizardTotal]) }}</p>
                     <h2 class="setup-title">{{ __('dashboard.setup.wizard.landing.title') }}</h2>
                     <p class="setup-text">{{ __('dashboard.setup.wizard.landing.text') }}</p>
 
@@ -252,11 +258,53 @@
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                             {{ __('dashboard.setup.wizard.skip') }}
                         </button>
+                        @if ($wizardApkUrl)
+                            <button type="button" class="btn btn-outline-secondary" data-setup-goto="app">
+                                {{ __('dashboard.setup.wizard.next') }}
+                            </button>
+                        @endif
                         <a href="{{ route('landings.create') }}" class="btn btn-primary setup-actions-primary">
                             {{ __('dashboard.setup.wizard.landing.cta') }}
                         </a>
                     </div>
                 </section>
+
+                @if ($wizardApkUrl)
+                    {{-- Step 5: share the client app --}}
+                    <section class="setup-step" data-step="app" hidden>
+                        <p class="setup-step-of">{{ __('dashboard.setup.wizard.step_of', ['current' => 5, 'total' => $wizardTotal]) }}</p>
+                        <h2 class="setup-title">{{ __('dashboard.setup.wizard.app.title') }}</h2>
+                        <p class="setup-text">{{ __('dashboard.setup.wizard.app.text') }}</p>
+
+                        <label class="form-label" for="setup-app-link">{{ __('dashboard.setup.wizard.app.link_label') }}</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="setup-app-link" value="{{ $wizardApkUrl }}" readonly>
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary"
+                                data-setup-copy
+                                data-copied-label="{{ __('dashboard.setup.wizard.app.copied') }}">
+                                {{ __('dashboard.setup.wizard.app.copy') }}
+                            </button>
+                        </div>
+                        <p class="setup-hint">
+                            <i class="icon-base ri ri-android-line" aria-hidden="true"></i>
+                            <span>{{ __('dashboard.setup.wizard.app.android_only') }}</span>
+                        </p>
+
+                        <div class="setup-actions">
+                            <button type="button" class="btn btn-outline-secondary" data-setup-back>
+                                {{ __('dashboard.setup.wizard.back') }}
+                            </button>
+                            <a href="{{ $wizardApkUrl }}" class="btn btn-outline-secondary" download>
+                                {{ __('dashboard.setup.wizard.app.download') }}
+                            </a>
+                            <button type="button" class="btn btn-primary setup-actions-primary" data-setup-goto="done">
+                                {{ __('dashboard.setup.wizard.next') }}
+                            </button>
+                        </div>
+                    </section>
+                @endif
 
                 {{-- Done --}}
                 <section class="setup-step" data-step="done" hidden>
@@ -267,9 +315,11 @@
                     <p class="setup-text">{{ __('dashboard.setup.wizard.finish.text') }}</p>
                     <p class="setup-hint">
                         <i class="icon-base ri ri-smartphone-line" aria-hidden="true"></i>
-                        {!! __('dashboard.setup.wizard.finish.app_hint', [
-                            'link' => '<a href="' . route('settings') . '#settings-branding">' . __('dashboard.setup.wizard.finish.app_link') . '</a>',
-                        ]) !!}
+                        <span>
+                            {!! __('dashboard.setup.wizard.finish.app_hint', [
+                                'link' => '<a href="' . route('settings') . '#settings-branding">' . __('dashboard.setup.wizard.finish.app_link') . '</a>',
+                            ]) !!}
+                        </span>
                     </p>
                     <div class="setup-actions">
                         <button type="button" class="btn btn-primary setup-actions-primary" data-setup-finish>
