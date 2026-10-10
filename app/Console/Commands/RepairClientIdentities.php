@@ -119,7 +119,12 @@ class RepairClientIdentities extends Command
         $digits = preg_replace('/\D+/', '', (string) $card->phone);
 
         if ($digits !== '') {
-            $matches = User::whereRaw("regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = ?", [$digits])
+            // Postgres needs the 'g' flag to replace every match; MySQL replaces all by default.
+            $digitsOnly = User::query()->getConnection()->getDriverName() === 'pgsql'
+                ? "regexp_replace(coalesce(phone, ''), '\\D', '', 'g')"
+                : "regexp_replace(coalesce(phone, ''), '[^0-9]', '')";
+
+            $matches = User::whereRaw("{$digitsOnly} = ?", [$digits])
                 ->where('id', '!=', $card->user_id)
                 ->get();
 

@@ -737,11 +737,19 @@ class ClientController extends Controller
     {
         $birthday = $client->birthday ? $client->birthday->copy() : null;
         $lastVisit = $client->last_visit_at ? $client->last_visit_at->copy() : null;
+        $lastSeen = $client->last_seen_at ? $client->last_seen_at->copy() : null;
 
         return [
             'id' => $client->id,
             // The booking form works off the client's account, not off the card.
             'account_id' => $client->client_user_id,
+            // Whether the client has ever actually opened the app — unlike
+            // `account_id`, which is just the booking-identity link and can be
+            // set the moment a card is created, long before anyone installs
+            // anything.
+            'in_app' => $lastSeen !== null,
+            'last_seen_at' => $lastSeen?->toIso8601String(),
+            'last_seen_at_formatted' => $lastSeen?->format('d.m.Y H:i'),
             'name' => $client->name,
             'phone' => $client->phone,
             'email' => $client->email,

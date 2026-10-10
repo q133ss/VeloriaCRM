@@ -35,9 +35,13 @@ class SubscriptionPaymentSyncService
                 ->whereIn('status', ['pending', 'waiting_for_capture'])
                 ->whereNotNull('payment_id')
                 ->where(function ($query) {
+                    $attempts = $query->getConnection()->getDriverName() === 'pgsql'
+                        ? "(metadata->>'sync_attempts')::int"
+                        : "CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.sync_attempts')) AS UNSIGNED)";
+
                     $query
                         ->whereNull('metadata->sync_attempts')
-                        ->orWhereRaw("(metadata->>'sync_attempts')::int < 10");
+                        ->orWhereRaw("{$attempts} < 10");
                 })
                 ->latest()
                 ->get(),

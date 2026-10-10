@@ -122,8 +122,11 @@ class ChatController extends Controller
             'id' => $thread->id,
             'client_id' => $thread->client_id,
             'client_name' => $thread->client?->name,
-            // A client without an account in the app never sees what is written here.
-            'client_in_app' => $thread->client?->client_user_id !== null,
+            // `last_seen_at` is set by the client-portal auth middleware on real
+            // app activity, unlike `client_user_id` (the booking-identity link),
+            // which can be non-null for someone who has never opened the app.
+            'client_in_app' => $thread->client?->last_seen_at !== null,
+            'client_last_seen_at' => optional($thread->client?->last_seen_at)->toIso8601String(),
             'last_message_at' => optional($thread->last_message_at)->toIso8601String(),
             'last_message_preview' => $lastMessage ? Str::limit((string) $lastMessage->body, 120) : null,
             'unread' => $thread->isUnreadForMaster(),
@@ -136,8 +139,10 @@ class ChatController extends Controller
             'id' => $thread->id,
             'client_id' => $thread->client_id,
             'client_name' => $thread->client?->name,
-            // A client without an account in the app never sees what is written here.
-            'client_in_app' => $thread->client?->client_user_id !== null,
+            // See transformThreadSummary() above for why this reads `last_seen_at`
+            // rather than `client_user_id`.
+            'client_in_app' => $thread->client?->last_seen_at !== null,
+            'client_last_seen_at' => optional($thread->client?->last_seen_at)->toIso8601String(),
             'messages' => $thread->messages
                 ->map(fn (ChatMessage $message) => $this->transformMessage($message))
                 ->values()

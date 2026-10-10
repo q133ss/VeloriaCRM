@@ -383,7 +383,10 @@
                     .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
                     .then(function (payload) {
                         var thread = payload.data;
-                        conversationHeader.innerHTML = '<h6 class="mb-0">' + escapeHtml(thread.client_name || 'Клиент') + '</h6>';
+                        var lastSeenLine = thread.client_in_app
+                            ? '<div class="small text-muted">Был(а) в сети: ' + formatTime(thread.client_last_seen_at) + '</div>'
+                            : '';
+                        conversationHeader.innerHTML = '<div><h6 class="mb-0">' + escapeHtml(thread.client_name || 'Клиент') + '</h6>' + lastSeenLine + '</div>';
                         composer.hidden = false;
                         notInAppAlert.classList.toggle('d-none', thread.client_in_app !== false);
                         notInAppLink.href = '/clients/' + thread.client_id;
@@ -451,9 +454,12 @@
                             return '<button type="button" class="list-group-item list-group-item-action" data-client-id="' + client.id + '">' +
                                 '<div class="d-flex justify-content-between align-items-center gap-2">' +
                                 '<span class="chat-thread-item__name">' + escapeHtml(client.name || 'Клиент') + '</span>' +
-                                '<span class="badge ' + (client.account_id ? 'bg-label-success' : 'bg-label-secondary') + '">' + (client.account_id ? 'В приложении' : 'Нет в приложении') + '</span>' +
+                                '<span class="badge ' + (client.in_app ? 'bg-label-success' : 'bg-label-secondary') + '">' + (client.in_app ? 'В приложении' : 'Нет в приложении') + '</span>' +
                                 '</div>' +
-                                (client.phone ? '<div class="chat-thread-item__preview">' + escapeHtml(client.phone) + '</div>' : '') +
+                                '<div class="chat-thread-item__preview">' +
+                                (client.phone ? escapeHtml(client.phone) : '') +
+                                (client.in_app && client.last_seen_at_formatted ? ' · был(а) ' + escapeHtml(client.last_seen_at_formatted) : '') +
+                                '</div>' +
                                 '</button>';
                         }).join('') + '</div>';
                     })

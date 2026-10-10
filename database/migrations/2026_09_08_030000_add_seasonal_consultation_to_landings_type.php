@@ -31,11 +31,19 @@ return new class extends Migration
 
     private function applyCheck(array $types): void
     {
-        if (Schema::getConnection()->getDriverName() !== 'pgsql') {
+        $driver = Schema::getConnection()->getDriverName();
+        $list = implode(', ', array_map(fn (string $type) => "'" . $type . "'", $types));
+
+        // MySQL keeps `enum()` as a native column type, so it is widened in place.
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            DB::statement("ALTER TABLE landings MODIFY type ENUM({$list}) NOT NULL");
+
             return;
         }
 
-        $list = implode(', ', array_map(fn (string $type) => "'" . $type . "'", $types));
+        if ($driver !== 'pgsql') {
+            return;
+        }
 
         DB::statement('ALTER TABLE landings DROP CONSTRAINT IF EXISTS landings_type_check');
         DB::statement("ALTER TABLE landings ADD CONSTRAINT landings_type_check CHECK (type IN ({$list}))");

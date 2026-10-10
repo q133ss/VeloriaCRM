@@ -37,6 +37,7 @@ class Client extends Authenticatable
         'loyalty_level',
         'expo_push_token',
         'expo_push_token_updated_at',
+        'last_seen_at',
     ];
 
     protected function casts(): array
@@ -48,6 +49,7 @@ class Client extends Authenticatable
             'preferences' => 'array',
             'last_visit_at' => 'datetime',
             'expo_push_token_updated_at' => 'datetime',
+            'last_seen_at' => 'datetime',
         ];
     }
 

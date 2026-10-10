@@ -21,7 +21,25 @@ class EnsureSanctumTokenIsClient
             ], 401);
         }
 
+        $this->touchLastSeen($user);
+
         return $next($request);
+    }
+
+    /**
+     * Every authenticated client-portal call is proof the app is actually in
+     * someone's hands, unlike `client_user_id` which just links the booking
+     * identity and can be set long before anyone opens the app. Chat polls this
+     * route every few seconds while open, so the write is throttled to once a
+     * minute rather than on every request.
+     */
+    private function touchLastSeen(Client $client): void
+    {
+        if ($client->last_seen_at !== null && $client->last_seen_at->gt(now()->subMinute())) {
+            return;
+        }
+
+        $client->forceFill(['last_seen_at' => now()])->saveQuietly();
     }
 }
 
