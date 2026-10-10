@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { Alert } from 'react-native';
@@ -16,6 +17,7 @@ import { registerForPushNotificationsAsync } from '../../../shared/notifications
 import { ApiMaster, AppointmentListItemDto, ClientServiceDto, MasterPostDto, VerifyAuthPayload, VerifyLoginResponseData, isMasterSelectionRequired } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
 import { buildMockHomeFeed } from '../mocks/mockClientPortal';
+import { appointmentStatusLabel } from './appointmentStatus';
 import {
   AuthMaster,
   HomeFeed,
@@ -133,7 +135,7 @@ function pickNextUpcomingAppointment(appointments: AppointmentListItemDto[]): Up
     serviceLabel: soonest.service_label,
     dateLabel: formatDateLabel(soonest.date),
     timeLabel: soonest.time,
-    statusLabel: soonest.status === 'scheduled' ? 'Подтверждено' : soonest.status,
+    statusLabel: appointmentStatusLabel(soonest),
   };
 }
 
@@ -209,6 +211,12 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
 
     await loadHomeFeed(token, session.name);
   }, [loadHomeFeed, token, session]);
+
+  // The link listener below must not be re-subscribed whenever the token changes
+  // (it would re-read the launch URL and try the magic link a second time), so it
+  // reaches the current refresh through a ref.
+  const refreshHomeFeedRef = useRef(refreshHomeFeed);
+  refreshHomeFeedRef.current = refreshHomeFeed;
 
   const applyAuthPayload = useCallback(async (payload: VerifyAuthPayload) => {
     await sessionStorage.setClientToken(payload.token);
@@ -290,6 +298,14 @@ export function ClientPortalProvider({ children }: ClientPortalProviderProps) {
   useEffect(() => {
     function handleUrl(url: string) {
       const parsed = Linking.parse(url);
+
+      // The page a client lands on after paying a prepayment ("Open the app"). The
+      // token in it is for the page's own status poll; here it is enough to look
+      // again, so the booking reads "Подтверждено" instead of "Ждёт оплаты".
+      if (parsed.hostname === 'payment-return' || parsed.path === 'payment-return') {
+        void refreshHomeFeedRef.current();
+        return;
+      }
 
       // Two URL shapes reach here: the Android App Link the magic-link email actually
       // sends (`https://<host>/auth/verify`, "auth/verify" lands whole in `path`) and the

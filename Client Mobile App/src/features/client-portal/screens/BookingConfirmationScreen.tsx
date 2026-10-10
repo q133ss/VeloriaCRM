@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../../../navigation/types';
 import { ApiError } from '../../../shared/api/http';
@@ -10,12 +10,14 @@ import { ScreenContainer } from '../../../shared/ui/ScreenContainer';
 import { SectionCard } from '../../../shared/ui/SectionCard';
 import { TextField } from '../../../shared/ui/TextField';
 import { useAppTheme } from '../../../theme/theme';
+import { BookingPaymentDto, PrepaymentQuoteDto } from '../api/contracts';
 import { clientPortalApi } from '../api/clientPortalApi';
+import { formatRubles, minutesLeft } from '../model/appointmentStatus';
 import { useClientPortal } from '../model/clientPortalContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingConfirmation'>;
 
-type Stage = 'review' | 'submitting' | 'booked' | 'conflict' | 'waitlisted' | 'error';
+type Stage = 'review' | 'submitting' | 'booked' | 'awaitingPayment' | 'conflict' | 'waitlisted' | 'error';
 
 export function BookingConfirmationScreen({ navigation, route }: Props) {
   const { token, master } = useClientPortal();
@@ -25,6 +27,35 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
   const [note, setNote] = useState('');
   const [stage, setStage] = useState<Stage>('review');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [quote, setQuote] = useState<PrepaymentQuoteDto | null>(null);
+  const [payment, setPayment] = useState<BookingPaymentDto | null>(null);
+  const [appointmentId, setAppointmentId] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  // What this booking would ask up front, told before she confirms. If it cannot be
+  // fetched the booking still works: the answer to the booking itself is what counts.
+  useEffect(() => {
+    if (!token || serviceId === null) {
+      return;
+    }
+
+    let cancelled = false;
+
+    clientPortalApi
+      .getPrepaymentQuote(token, { service_id: serviceId, date, time })
+      .then((response) => {
+        if (!cancelled) {
+          setQuote(response.data);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, serviceId, date, time]);
+
+  const prepay = quote?.required && quote.amount ? quote : null;
 
   const handleConfirm = async () => {
     if (!token) {
@@ -35,12 +66,21 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
     setErrorMessage(null);
 
     try {
-      await clientPortalApi.createAppointment(token, {
+      const response = await clientPortalApi.createAppointment(token, {
         service_id: serviceId ?? undefined,
         date,
         time,
         note: note.trim() || undefined,
       });
+
+      // The time is held, not booked, until the prepayment arrives.
+      if (response.data.payment) {
+        setPayment(response.data.payment);
+        setAppointmentId(response.data.appointment.id);
+        setNow(Date.now());
+        setStage('awaitingPayment');
+        return;
+      }
 
       setStage('booked');
     } catch (error) {
@@ -77,6 +117,63 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
     }
   };
 
+  const handlePay = async () => {
+    if (!payment) {
+      return;
+    }
+
+    try {
+      await Linking.openURL(payment.confirmation_url);
+    } catch {
+      Alert.alert('Не получилось открыть оплату', 'Попробуйте ещё раз или оплатите из раздела «Мои записи».');
+    }
+  };
+
+  // She pays in the browser and comes back: look again, so "one more step" turns
+  // into "booked" (or into "the time was released") without her doing anything.
+  const stageRef = useRef(stage);
+  stageRef.current = stage;
+
+  useEffect(() => {
+    if (stage !== 'awaitingPayment' || !token || appointmentId === null) {
+      return;
+    }
+
+    const check = async () => {
+      setNow(Date.now());
+
+      try {
+        const response = await clientPortalApi.getAppointments(token);
+        const item = response.data.appointments.find((appointment) => appointment.id === appointmentId);
+
+        if (stageRef.current !== 'awaitingPayment' || !item) {
+          return;
+        }
+
+        if (item.payment?.state === 'paid') {
+          setStage('booked');
+        } else if (item.status === 'cancelled') {
+          setErrorMessage('Предоплата не поступила вовремя, и время освободилось. Можно записаться заново.');
+          setStage('error');
+        }
+      } catch {
+        // Offline for a moment: the next return to the app asks again.
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void check();
+      }
+    });
+    const ticker = setInterval(() => setNow(Date.now()), 30000);
+
+    return () => {
+      subscription.remove();
+      clearInterval(ticker);
+    };
+  }, [stage, token, appointmentId]);
+
   if (stage === 'booked' || stage === 'waitlisted') {
     return (
       <ScreenContainer theme={theme}>
@@ -95,6 +192,47 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
             title="На главный экран"
             style={styles.successButton}
           />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (stage === 'awaitingPayment' && payment) {
+    const left = minutesLeft(payment.expires_at, now);
+
+    return (
+      <ScreenContainer theme={theme}>
+        <View style={styles.centeredRoot}>
+          <Text style={[styles.successTitle, { color: theme.colors.textPrimary }]}>Остался один шаг</Text>
+          <Text style={[styles.successBody, { color: theme.colors.textSecondary }]}>
+            {`${serviceLabel} · ${formatDateLabel(date)} в ${time}`}
+          </Text>
+          <Text style={[styles.successBody, { color: theme.colors.textPrimary }]}>
+            {`Оплатите предоплату ${formatRubles(payment.amount)} — и запись будет подтверждена. Она входит в стоимость услуги.`}
+          </Text>
+          {left !== null ? (
+            <Text style={[styles.successBody, { color: theme.colors.textMuted }]}>
+              {left > 0
+                ? `Время закреплено за вами ещё на ${left} мин. Если оплата не пройдёт, оно освободится.`
+                : 'Время закрепления вышло. Если вы уже оплатили, статус скоро обновится.'}
+            </Text>
+          ) : null}
+          <PrimaryButton
+            onPress={handlePay}
+            theme={theme}
+            title={`Оплатить ${formatRubles(payment.amount)}`}
+            style={styles.successButton}
+          />
+          <PrimaryButton
+            onPress={() => navigation.navigate('Appointments')}
+            theme={theme}
+            title="Мои записи"
+            variant="secondary"
+            style={styles.secondaryButton}
+          />
+          <Text style={[styles.hint, { color: theme.colors.textMuted }]}>
+            После оплаты вернитесь в приложение — статус обновится сам.
+          </Text>
         </View>
       </ScreenContainer>
     );
@@ -121,6 +259,20 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
           <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
             {formatDateLabel(date)} · {time}
           </Text>
+
+          {prepay && stage !== 'conflict' ? (
+            <>
+              <Text style={[styles.summaryLabel, styles.summarySpacing, { color: theme.colors.textMuted }]}>
+                Предоплата
+              </Text>
+              <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
+                {formatRubles(prepay.amount as number)}
+              </Text>
+              <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                {`Входит в стоимость услуги. После записи время закрепится за вами на ${prepay.hold_minutes ?? 15} мин — за это время нужно оплатить.`}
+              </Text>
+            </>
+          ) : null}
         </SectionCard>
 
         {stage === 'conflict' ? (
@@ -171,7 +323,13 @@ export function BookingConfirmationScreen({ navigation, route }: Props) {
               disabled={stage === 'submitting'}
               onPress={handleConfirm}
               theme={theme}
-              title={stage === 'submitting' ? 'Записываем...' : 'Подтвердить запись'}
+              title={
+                stage === 'submitting'
+                  ? 'Записываем...'
+                  : prepay
+                    ? `Записаться и оплатить ${formatRubles(prepay.amount as number)}`
+                    : 'Подтвердить запись'
+              }
               style={styles.confirmButton}
             />
           </>
@@ -260,5 +418,14 @@ const styles = StyleSheet.create({
   successButton: {
     marginTop: 20,
     alignSelf: 'stretch',
+  },
+  secondaryButton: {
+    alignSelf: 'stretch',
+  },
+  hint: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

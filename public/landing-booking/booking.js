@@ -362,8 +362,10 @@
                 updateButton();
 
                 // The time is held but not booked until it is paid.
-                if (booking && data.kind === 'payment_required' && data.payment && data.payment.confirmation_url) {
-                    showPaymentModal(data.payment, whenText);
+                if (booking && data.kind === 'payment_required') {
+                    // Never tell someone they are booked when the time is only held.
+                    if (data.payment && data.payment.confirmation_url) showPaymentModal(data.payment, whenText);
+                    else say('error', cfg.failed || ui.failed);
                 } else {
                     showModal(booking ? 'booked' : 'lead', data);
                 }

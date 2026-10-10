@@ -33,6 +33,8 @@ class PaymentReturnController extends Controller
         return response()->view('payments.return', [
             'token' => $token,
             // Only the landing address knows which master's page to send the client back to.
+            // Only the address a client opens from the app leads back into it.
+            'showApp' => ! is_string($slug) || $slug === '',
             'landingUrl' => is_string($slug) && $slug !== '' ? url('/l/' . $slug) : null,
             'statusUrl' => url('/api/v1/payments/status/' . $token),
         ]);

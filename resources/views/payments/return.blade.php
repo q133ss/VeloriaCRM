@@ -77,7 +77,9 @@
         @if ($landingUrl)
             <a class="back" href="{{ $landingUrl }}">{{ __('prepayment.return.back') }}</a>
         @endif
-        <a class="app" id="app" href="veloriaclient://payment-return?token={{ $token }}">{{ __('prepayment.return.open_app') }}</a>
+        @if ($showApp)
+            <a class="app" id="app" href="veloriaclient://payment-return?token={{ $token }}">{{ __('prepayment.return.open_app') }}</a>
+        @endif
     </main>
 
     <script>
@@ -127,8 +129,9 @@
             }
 
             // Only phones can open the app link; elsewhere it would lead nowhere.
-            if (/android|iphone|ipad/i.test(navigator.userAgent)) {
-                document.getElementById('app').style.display = 'inline-block';
+            var appLink = document.getElementById('app');
+            if (appLink && /android|iphone|ipad/i.test(navigator.userAgent)) {
+                appLink.style.display = 'inline-block';
             }
 
             poll();
