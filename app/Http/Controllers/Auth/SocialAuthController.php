@@ -47,6 +47,16 @@ class SocialAuthController extends Controller
             );
         }
 
+        if ($request->filled('error') || !$request->filled('code')) {
+            if ($request->filled('error')) {
+                report(new \RuntimeException('Social login declined: ' . $request->input('error') . ' ' . $request->input('error_description')));
+            }
+
+            return $this->redirectToLoginWithError(
+                __('auth.social_login_cancelled', ['provider' => $this->providerLabel($provider)])
+            );
+        }
+
         try {
             $socialUser = $this->makeProvider($provider)->user();
         } catch (\Throwable $throwable) {

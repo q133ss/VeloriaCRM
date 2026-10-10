@@ -36,6 +36,7 @@ return [
     'or' => 'или',
     'continue_with_vkid' => 'Войти через ВКонтакте',
     'continue_with_yandex' => 'Войти через Яндекс',
+    'social_login_cancelled' => 'Вход через :provider не завершён. Нажмите кнопку и разрешите доступ ещё раз.',
     'social_login_failed' => 'Не удалось авторизоваться через :provider. Попробуйте еще раз.',
     'social_login_email_missing' => 'Не удалось получить email от :provider. Пожалуйста, завершите регистрацию вручную.',
     'social_login_not_configured' => 'Вход через :provider временно недоступен. Выберите другой способ авторизации.',

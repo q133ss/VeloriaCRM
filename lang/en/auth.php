@@ -49,6 +49,7 @@ return [
     'or' => 'or',
     'continue_with_vkid' => 'Continue with VKontakte',
     'continue_with_yandex' => 'Continue with Yandex',
+    'social_login_cancelled' => 'Sign in with :provider was not completed. Try again and allow access.',
     'social_login_failed' => 'We could not sign you in with :provider. Please try again.',
     'social_login_email_missing' => 'We were unable to receive an email address from :provider. Please finish sign up manually.',
     'social_login_not_configured' => 'Sign in with :provider is temporarily unavailable. Please choose another option.',
