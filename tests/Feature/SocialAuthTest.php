@@ -92,6 +92,22 @@ class SocialAuthTest extends TestCase
         $this->assertDatabaseHas('social_accounts', ['user_id' => $user->id, 'provider' => 'yandex', 'provider_id' => '42']);
     }
 
+    public function test_token_cookie_is_plain_and_authenticates_the_api(): void
+    {
+        $this->configure();
+        $this->fakeProvider('42', 'anna@example.com');
+
+        $response = $this->get('/auth/yandex/callback?code=abc');
+        $plain = collect($response->headers->getCookies())->first(fn ($c) => $c->getName() === 'token')->getValue();
+
+        $this->assertMatchesRegularExpression('/^\d+\|[A-Za-z0-9]+$/', $plain);
+
+        $this->flushSession();
+        $this->withUnencryptedCookie('token', $plain)->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('user.email', 'anna@example.com');
+    }
+
     public function test_repeat_login_does_not_create_a_second_user(): void
     {
         $this->configure();
