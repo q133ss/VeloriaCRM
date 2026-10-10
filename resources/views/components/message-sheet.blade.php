@@ -23,6 +23,7 @@
                 <p class="outreach-note" data-message-note hidden></p>
                 <p class="outreach-error" data-message-error hidden></p>
 
+                <x-meta-notice data-message-meta-notice hidden />
                 <div class="outreach-actions">
                     <button type="button" class="btn btn-outline-secondary" data-message-regenerate hidden>
                         {{ __('dashboard.outreach.regenerate') }}

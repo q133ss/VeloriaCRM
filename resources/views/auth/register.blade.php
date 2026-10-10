@@ -212,9 +212,6 @@
                     </div>
 
                     <div class="d-flex justify-content-center gap-2">
-                        <a href="javascript:;" class="btn btn-icon rounded-circle btn-text-facebook">
-                            <i class="icon-base ri ri-facebook-fill icon-18px"></i>
-                        </a>
 
                         <a href="javascript:;" class="btn btn-icon rounded-circle btn-text-twitter">
                             <i class="icon-base ri ri-twitter-fill icon-18px"></i>

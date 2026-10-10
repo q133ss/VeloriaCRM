@@ -127,6 +127,7 @@
                                 <div class="col-md-3">
                                     <label for="campaign-channel" class="form-label">Канал</label>
                                     <select id="campaign-channel" name="channel" class="form-select" required></select>
+                                    <x-meta-notice class="mt-2" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="campaign-segment" class="form-label">Сегмент аудитории</label>

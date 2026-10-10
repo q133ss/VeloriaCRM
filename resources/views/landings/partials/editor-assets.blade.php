@@ -1,3 +1,6 @@
+@if(!empty($whatsapp) && empty($isEdit))
+    <div style="max-width:960px;margin:0 auto;padding:0 16px 16px;"><x-meta-notice /></div>
+@endif
 @if(!empty($isEdit))
     @php
         $lfConfig = [

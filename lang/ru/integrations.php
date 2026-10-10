@@ -161,7 +161,7 @@ return [
 
         'whatsapp' => [
             'title' => 'WhatsApp Business',
-            'description' => 'Сообщения клиентам в WhatsApp. Нужен доступ к WhatsApp Business API.',
+            'description' => 'Сообщения клиентам в WhatsApp. Нужен доступ к WhatsApp Business API. Для WhatsApp: компания Meta признана экстремистской организацией и запрещена в РФ.',
             'link_label' => 'Кабинет Meta for Developers',
             'link_url' => 'https://developers.facebook.com/apps',
             'steps' => [
