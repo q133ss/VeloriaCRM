@@ -70,11 +70,11 @@
             <div class="collapse navbar-collapse p-3" id="navbarCollapse">
                 <div class="navbar-nav mx-auto">
                     @if($proofItems->isNotEmpty())
-                        <a href="#about" class="nav-item nav-link">{{ __('landings.salone.nav_about') }}</a>
+                        <a href="#about" class="nav-item nav-link"><x-landing.text key="lbl_salone_nav_about" tag="bdi" :default="__('landings.salone.nav_about')" :title-fallback="false" /></a>
                     @endif
-                    <a href="#services" class="nav-item nav-link">{{ __('landings.salone.nav_services') }}</a>
-                    <a href="#booking" class="nav-item nav-link">{{ __('landings.salone.nav_booking') }}</a>
-                    <a href="#contacts" class="nav-item nav-link">{{ __('landings.salone.nav_contacts') }}</a>
+                    <a href="#services" class="nav-item nav-link"><x-landing.text key="lbl_salone_nav_services" tag="bdi" :default="__('landings.salone.nav_services')" :title-fallback="false" /></a>
+                    <a href="#booking" class="nav-item nav-link"><x-landing.text key="lbl_salone_nav_booking" tag="bdi" :default="__('landings.salone.nav_booking')" :title-fallback="false" /></a>
+                    <a href="#contacts" class="nav-item nav-link"><x-landing.text key="lbl_salone_nav_contacts" tag="bdi" :default="__('landings.salone.nav_contacts')" :title-fallback="false" /></a>
                 </div>
                 <a class="btn btn-sm btn-primary" href="#booking"><x-landing.text key="cta_label" :default="__('landings.salone.book')" /></a>
             </div>
@@ -89,7 +89,7 @@
             <div class="row g-0 align-items-center">
                 <div class="col-lg-6 hero-header-text py-5">
                     <div class="py-5 px-3 ps-lg-0">
-                        <h1 class="font-dancing-script text-primary animated slideInLeft">{{ __('landings.salone.welcome') }}</h1>
+                        <h1 class="font-dancing-script text-primary animated slideInLeft"><x-landing.text key="lbl_salone_welcome" tag="bdi" :default="__('landings.salone.welcome')" :title-fallback="false" /></h1>
                         <x-landing.text key="hero_title" tag="h1" class="display-3 mb-4 animated slideInLeft" :default="$landing->title" />
                         @if($editing || filled($heroText))
                             <x-landing.text key="hero_text" tag="p" class="fs-5 mb-4 animated slideInLeft" />
@@ -102,7 +102,7 @@
                                             <i class="fa fa-phone text-dark"></i>
                                         </div>
                                         <div class="px-3">
-                                            <h5 class="text-primary mb-0">{{ __('landings.salone.call_us') }}</h5>
+                                            <h5 class="text-primary mb-0"><x-landing.text key="lbl_salone_call_us" tag="bdi" :default="__('landings.salone.call_us')" :title-fallback="false" /></h5>
                                             <a class="fs-5 text-dark" href="{{ $phoneHref ?: '#' }}"><x-landing.text key="phone" /></a>
                                         </div>
                                     </div>
@@ -116,10 +116,10 @@
                                         </div>
                                         <div class="px-3">
                                             @if($address !== '' || $editing)
-                                                <h5 class="text-primary mb-0">{{ __('landings.salone.find_us') }}</h5>
+                                                <h5 class="text-primary mb-0"><x-landing.text key="lbl_salone_find_us" tag="bdi" :default="__('landings.salone.find_us')" :title-fallback="false" /></h5>
                                                 <x-landing.text key="address" tag="p" class="fs-5 text-dark mb-0" />
                                             @else
-                                                <h5 class="text-primary mb-0">{{ __('landings.salone.write_us') }}</h5>
+                                                <h5 class="text-primary mb-0"><x-landing.text key="lbl_salone_write_us" tag="bdi" :default="__('landings.salone.write_us')" :title-fallback="false" /></h5>
                                                 <a class="fs-5 text-dark" href="{{ $telegram ?: $whatsapp }}" target="_blank" rel="noopener">{{ $telegram ? 'Telegram' : 'WhatsApp' }}</a>
                                             @endif
                                         </div>
@@ -156,14 +156,14 @@
                                 </div>
                                 <div class="px-3">
                                     <h3><a class="text-dark" href="{{ $phoneHref ?: '#' }}"><x-landing.text key="phone" /></a></h3>
-                                    <span>{{ __('landings.salone.call_direct') }}</span>
+                                    <span><x-landing.text key="lbl_salone_call_direct" tag="bdi" :default="__('landings.salone.call_direct')" :title-fallback="false" /></span>
                                 </div>
                             </div>
                         @endif
                     </div>
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.5s">
-                        <h1 class="font-dancing-script text-primary">{{ __('landings.salone.about_kicker') }}</h1>
-                        <h1 class="mb-5">{{ __('landings.salone.about_title') }}</h1>
+                        <h1 class="font-dancing-script text-primary"><x-landing.text key="lbl_salone_about_kicker" tag="bdi" :default="__('landings.salone.about_kicker')" :title-fallback="false" /></h1>
+                        <h1 class="mb-5"><x-landing.text key="lbl_salone_about_title" tag="bdi" :default="__('landings.salone.about_title')" :title-fallback="false" /></h1>
                         <div class="row g-3 mb-5">
                             @foreach($proofItems->take(3) as $item)
                                 <div class="col-12">
@@ -187,8 +187,8 @@
     <div class="container-fluid service py-5" id="services">
         <div class="container">
             <div class="text-center wow fadeIn" data-wow-delay="0.1s">
-                <h1 class="font-dancing-script text-primary">{{ __('landings.salone.services_kicker') }}</h1>
-                <h1 class="mb-5">{{ __('landings.salone.services_title') }}</h1>
+                <h1 class="font-dancing-script text-primary"><x-landing.text key="lbl_salone_services_kicker" tag="bdi" :default="__('landings.salone.services_kicker')" :title-fallback="false" /></h1>
+                <h1 class="mb-5"><x-landing.text key="lbl_salone_services_title" tag="bdi" :default="__('landings.salone.services_title')" :title-fallback="false" /></h1>
             </div>
             <div class="row g-4 g-md-0 text-center">
                 @php
@@ -210,7 +210,7 @@
                                     {{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}
                                 @endif
                             </p>
-                            <a class="btn btn-sm btn-primary text-uppercase" href="#booking" data-pick-service="{{ $card['id'] }}">{{ __('landings.salone.book') }} <i
+                            <a class="btn btn-sm btn-primary text-uppercase" href="#booking" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_salone_book" tag="bdi" :default="__('landings.salone.book')" :title-fallback="false" /> <i
                                     class="bi bi-arrow-right"></i></a>
                         </div>
                     </div>
@@ -225,8 +225,8 @@
     <div class="container-fluid bg-light py-5" id="booking">
         <div class="container">
             <div class="text-center wow fadeIn" data-wow-delay="0.2s">
-                <h1 class="font-dancing-script text-primary">{{ __('landings.salone.booking_kicker') }}</h1>
-                <h1 class="mb-5">{{ __('landings.salone.booking_title') }}</h1>
+                <h1 class="font-dancing-script text-primary"><x-landing.text key="lbl_salone_booking_kicker" tag="bdi" :default="__('landings.salone.booking_kicker')" :title-fallback="false" /></h1>
+                <h1 class="mb-5"><x-landing.text key="lbl_salone_booking_title" tag="bdi" :default="__('landings.salone.booking_title')" :title-fallback="false" /></h1>
             </div>
             <div class="row justify-content-center">
                 <div class="col-lg-7">
@@ -288,7 +288,7 @@
                 </div>
                 <div class="col-lg-6 ps-lg-5">
                     @if($editing || filled($settings['booking_hint'] ?? null))
-                        <h5 class="text-primary mb-4">{{ __('landings.salone.booking_title') }}</h5>
+                        <h5 class="text-primary mb-4"><x-landing.text key="lbl_salone_booking_title" tag="bdi" :default="__('landings.salone.booking_title')" :title-fallback="false" /></h5>
                         <x-landing.text key="booking_hint" tag="p" class="mb-4" />
                         <a class="btn btn-primary text-uppercase px-5 py-3" href="#booking"><x-landing.text key="cta_label" :default="__('landings.salone.book')" /></a>
                     @endif

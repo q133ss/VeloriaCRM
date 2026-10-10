@@ -28,9 +28,12 @@ return [
         'work_image_1' => 'landing-templates/energen/images/gallery-1.jpg',
         'work_image_2' => 'landing-templates/energen/images/gallery-2.jpg',
         'work_image_3' => 'landing-templates/energen/images/gallery-3.jpg',
+        'extra_image_1' => 'landing-templates/energen/images/intro.jpg',
+        'extra_image_2' => 'landing-templates/energen/images/bg_3.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'faq_items_text',
+        'hero_image_1', 'extra_image_1', 'extra_image_2', 'work_image_1', 'work_image_2', 'work_image_3',
     ],
 ];

@@ -68,15 +68,15 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <div class="navbar-nav ms-auto p-4 p-lg-0">
-                <a href="#services" class="nav-item nav-link">{{ __('landings.common.nav_services') }}</a>
+                <a href="#services" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>
                 @if($priced->isNotEmpty())
-                    <a href="#prices" class="nav-item nav-link">{{ __('landings.common.nav_prices') }}</a>
+                    <a href="#prices" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_prices" tag="bdi" :default="__('landings.common.nav_prices')" :title-fallback="false" /></a>
                 @endif
-                <a href="#master" class="nav-item nav-link">{{ __('landings.common.nav_master') }}</a>
+                <a href="#master" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_master" tag="bdi" :default="__('landings.common.nav_master')" :title-fallback="false" /></a>
                 @if($hours || $editing)
-                    <a href="#hours" class="nav-item nav-link">{{ __('landings.common.nav_hours') }}</a>
+                    <a href="#hours" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_hours" tag="bdi" :default="__('landings.common.nav_hours')" :title-fallback="false" /></a>
                 @endif
-                <a href="#contacts" class="nav-item nav-link">{{ __('landings.common.nav_contacts') }}</a>
+                <a href="#contacts" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_contacts" tag="bdi" :default="__('landings.common.nav_contacts')" :title-fallback="false" /></a>
             </div>
             <a href="#booking" class="btn btn-primary rounded-0 py-2 px-lg-4 d-none d-lg-block"><x-landing.text key="cta_label" tag="bdi" :default="$ctaDefault" /><i class="fa fa-arrow-right ms-3"></i></a>
         </div>
@@ -106,7 +106,7 @@
                     <x-landing.image key="hero_image_2" default="landing-templates/haircut/img/carousel-2.jpg" class="w-100" alt="" />
                     <div class="carousel-caption d-flex align-items-center justify-content-center text-start">
                         <div class="mx-sm-5 px-5" style="max-width: 900px;">
-                            <h1 class="display-2 text-white text-uppercase mb-4 animated slideInDown">{{ __('landings.common.hero_slide_two') }}</h1>
+                            <h1 class="display-2 text-white text-uppercase mb-4 animated slideInDown"><x-landing.text key="lbl_common_hero_slide_two" tag="bdi" :default="__('landings.common.hero_slide_two')" :title-fallback="false" /></h1>
                             <p class="mb-4"><a href="#booking" class="btn btn-primary rounded-0 py-3 px-5"><x-landing.text key="cta_label" tag="bdi" :default="$ctaDefault" /></a></p>
                         </div>
                     </div>
@@ -136,14 +136,14 @@
                             @if($phoneHref || $editing)
                                 <div class="w-50 bg-secondary p-5" style="margin-top: -25%;">
                                     <h2 class="text-uppercase text-primary mb-3" style="font-size: 1.5rem;"><a href="{{ $phoneHref ?: '#' }}" class="text-primary"><x-landing.text key="phone" tag="bdi" /></a></h2>
-                                    <h5 class="text-uppercase mb-0">{{ __('landings.common.appointment') }}</h5>
+                                    <h5 class="text-uppercase mb-0"><x-landing.text key="lbl_common_appointment" tag="bdi" :default="__('landings.common.appointment')" :title-fallback="false" /></h5>
                                 </div>
                             @endif
                         </div>
                     </div>
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.5s">
-                        <p class="d-inline-block bg-secondary text-primary py-1 px-4">{{ __('landings.common.about_kicker') }}</p>
-                        <h1 class="text-uppercase mb-4">{{ __('landings.common.about_title') }}</h1>
+                        <p class="d-inline-block bg-secondary text-primary py-1 px-4"><x-landing.text key="lbl_common_about_kicker" tag="bdi" :default="__('landings.common.about_kicker')" :title-fallback="false" /></p>
+                        <h1 class="text-uppercase mb-4"><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></h1>
                         @if($editing || filled($heroText))
                             <x-landing.text key="hero_text" tag="p" class="mb-4" />
                         @endif
@@ -166,8 +166,8 @@
     <div class="container-xxl py-5" id="services">
         <div class="container">
             <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
-                <p class="d-inline-block bg-secondary text-primary py-1 px-4">{{ __('landings.common.services_kicker') }}</p>
-                <h1 class="text-uppercase">{{ __('landings.common.services_title') }}</h1>
+                <p class="d-inline-block bg-secondary text-primary py-1 px-4"><x-landing.text key="lbl_common_services_kicker" tag="bdi" :default="__('landings.common.services_kicker')" :title-fallback="false" /></p>
+                <h1 class="text-uppercase"><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h1>
             </div>
             <div class="row g-4">
                 @foreach($cards->take(9) as $card)
@@ -202,8 +202,8 @@
                 <div class="row g-0">
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.1s">
                         <div class="bg-secondary h-100 d-flex flex-column justify-content-center p-5">
-                            <p class="d-inline-flex bg-dark text-primary py-1 px-4 me-auto">{{ __('landings.common.prices_kicker') }}</p>
-                            <h1 class="text-uppercase mb-4">{{ __('landings.common.prices_title') }}</h1>
+                            <p class="d-inline-flex bg-dark text-primary py-1 px-4 me-auto"><x-landing.text key="lbl_common_prices_kicker" tag="bdi" :default="__('landings.common.prices_kicker')" :title-fallback="false" /></p>
+                            <h1 class="text-uppercase mb-4"><x-landing.text key="lbl_common_prices_title" tag="bdi" :default="__('landings.common.prices_title')" :title-fallback="false" /></h1>
                             <div>
                                 @foreach($cards->filter(fn ($c) => ! empty($c['price']))->take(7) as $card)
                                     <div class="d-flex justify-content-between {{ $loop->last ? '' : 'border-bottom' }} py-2">
@@ -216,7 +216,7 @@
                     </div>
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.5s">
                         <div class="h-100">
-                            <img class="img-fluid h-100" style="object-fit: cover;" src="{{ $asset('img/price.jpg') }}" alt="">
+                            <x-landing.image key="extra_image_1" default="landing-templates/haircut/img/price.jpg" class="img-fluid h-100" style="object-fit: cover;" alt="" />
                         </div>
                     </div>
                 </div>
@@ -230,8 +230,8 @@
     <div class="container-xxl py-5" id="master">
         <div class="container">
             <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
-                <p class="d-inline-block bg-secondary text-primary py-1 px-4">{{ __('landings.common.master_kicker') }}</p>
-                <h1 class="text-uppercase">{{ __('landings.common.master_title') }}</h1>
+                <p class="d-inline-block bg-secondary text-primary py-1 px-4"><x-landing.text key="lbl_common_master_kicker" tag="bdi" :default="__('landings.common.master_kicker')" :title-fallback="false" /></p>
+                <h1 class="text-uppercase"><x-landing.text key="lbl_common_master_title" tag="bdi" :default="__('landings.common.master_title')" :title-fallback="false" /></h1>
             </div>
             <div class="row g-4 justify-content-center">
                 <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
@@ -268,13 +268,13 @@
                 <div class="row g-0">
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.1s">
                         <div class="h-100">
-                            <img class="img-fluid h-100" style="object-fit: cover;" src="{{ $asset('img/open.jpg') }}" alt="">
+                            <x-landing.image key="extra_image_2" default="landing-templates/haircut/img/open.jpg" class="img-fluid h-100" style="object-fit: cover;" alt="" />
                         </div>
                     </div>
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.5s">
                         <div class="bg-secondary h-100 d-flex flex-column justify-content-center p-5">
-                            <p class="d-inline-flex bg-dark text-primary py-1 px-4 me-auto">{{ __('landings.common.hours_kicker') }}</p>
-                            <h1 class="text-uppercase mb-4">{{ __('landings.common.hours_title') }}</h1>
+                            <p class="d-inline-flex bg-dark text-primary py-1 px-4 me-auto"><x-landing.text key="lbl_common_hours_kicker" tag="bdi" :default="__('landings.common.hours_kicker')" :title-fallback="false" /></p>
+                            <h1 class="text-uppercase mb-4"><x-landing.text key="lbl_common_hours_title" tag="bdi" :default="__('landings.common.hours_title')" :title-fallback="false" /></h1>
                             <div>
                                 @foreach($hours as $line)
                                     <div class="d-flex justify-content-between {{ $loop->last ? '' : 'border-bottom' }} py-2">
@@ -283,7 +283,7 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <p class="mt-4 mb-0">{{ __('landings.common.hours_note') }}</p>
+                            <p class="mt-4 mb-0"><x-landing.text key="lbl_common_hours_note" tag="bdi" :default="__('landings.common.hours_note')" :title-fallback="false" /></p>
                         </div>
                     </div>
                 </div>
@@ -297,8 +297,8 @@
     <div class="container-xxl py-5" id="booking">
         <div class="container">
             <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
-                <p class="d-inline-block bg-secondary text-primary py-1 px-4">{{ __('landings.common.booking_kicker') }}</p>
-                <h1 class="text-uppercase">{{ __('landings.common.booking_title') }}</h1>
+                <p class="d-inline-block bg-secondary text-primary py-1 px-4"><x-landing.text key="lbl_common_booking_kicker" tag="bdi" :default="__('landings.common.booking_kicker')" :title-fallback="false" /></p>
+                <h1 class="text-uppercase"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h1>
                 @if($editing || filled($settings['booking_hint'] ?? null))
                     <x-landing.text key="booking_hint" tag="p" />
                 @endif
@@ -343,7 +343,7 @@
         <div class="container py-5">
             <div class="row g-5">
                 <div class="col-lg-4 col-md-6">
-                    <h4 class="text-uppercase mb-4">{{ __('landings.common.contacts_title') }}</h4>
+                    <h4 class="text-uppercase mb-4"><x-landing.text key="lbl_common_contacts_title" tag="bdi" :default="__('landings.common.contacts_title')" :title-fallback="false" /></h4>
                     @if($address !== '' || $editing)
                         <div class="d-flex align-items-center mb-2">
                             <div class="btn-square bg-dark flex-shrink-0 me-3">
@@ -362,13 +362,13 @@
                     @endif
                 </div>
                 <div class="col-lg-4 col-md-6">
-                    <h4 class="text-uppercase mb-4">{{ __('landings.common.quick_links') }}</h4>
-                    <a class="btn btn-link" href="#services">{{ __('landings.common.nav_services') }}</a>
+                    <h4 class="text-uppercase mb-4"><x-landing.text key="lbl_common_quick_links" tag="bdi" :default="__('landings.common.quick_links')" :title-fallback="false" /></h4>
+                    <a class="btn btn-link" href="#services"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>
                     @if($priced->isNotEmpty())
-                        <a class="btn btn-link" href="#prices">{{ __('landings.common.nav_prices') }}</a>
+                        <a class="btn btn-link" href="#prices"><x-landing.text key="lbl_common_nav_prices" tag="bdi" :default="__('landings.common.nav_prices')" :title-fallback="false" /></a>
                     @endif
-                    <a class="btn btn-link" href="#master">{{ __('landings.common.nav_master') }}</a>
-                    <a class="btn btn-link" href="#booking">{{ __('landings.common.nav_booking') }}</a>
+                    <a class="btn btn-link" href="#master"><x-landing.text key="lbl_common_nav_master" tag="bdi" :default="__('landings.common.nav_master')" :title-fallback="false" /></a>
+                    <a class="btn btn-link" href="#booking"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a>
                 </div>
                 @if($telegram || $whatsapp)
                     <div class="col-lg-4 col-md-6">

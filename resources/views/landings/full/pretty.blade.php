@@ -71,20 +71,20 @@
 
             <div class="collapse navbar-collapse" id="ftco-nav">
                 <ul class="navbar-nav ml-auto">
-                    <li class="nav-item"><a href="#services" class="nav-link">{{ __('landings.pretty.nav_services') }}</a></li>
-                    <li class="nav-item"><a href="#team" class="nav-link">{{ __('landings.pretty.nav_team') }}</a></li>
+                    <li class="nav-item"><a href="#services" class="nav-link"><x-landing.text key="lbl_pretty_nav_services" tag="bdi" :default="__('landings.pretty.nav_services')" :title-fallback="false" /></a></li>
+                    <li class="nav-item"><a href="#team" class="nav-link"><x-landing.text key="lbl_pretty_nav_team" tag="bdi" :default="__('landings.pretty.nav_team')" :title-fallback="false" /></a></li>
                     @if($hasOffer)
-                        <li class="nav-item"><a href="#offer" class="nav-link">{{ __('landings.pretty.nav_offer') }}</a></li>
+                        <li class="nav-item"><a href="#offer" class="nav-link"><x-landing.text key="lbl_pretty_nav_offer" tag="bdi" :default="__('landings.pretty.nav_offer')" :title-fallback="false" /></a></li>
                     @endif
-                    <li class="nav-item"><a href="#work" class="nav-link">{{ __('landings.pretty.nav_work') }}</a></li>
+                    <li class="nav-item"><a href="#work" class="nav-link"><x-landing.text key="lbl_pretty_nav_work" tag="bdi" :default="__('landings.pretty.nav_work')" :title-fallback="false" /></a></li>
                     @if($priced->isNotEmpty())
-                        <li class="nav-item"><a href="#pricing" class="nav-link">{{ __('landings.pretty.nav_pricing') }}</a></li>
+                        <li class="nav-item"><a href="#pricing" class="nav-link"><x-landing.text key="lbl_pretty_nav_pricing" tag="bdi" :default="__('landings.pretty.nav_pricing')" :title-fallback="false" /></a></li>
                     @endif
                     @if($faqItems->isNotEmpty())
-                        <li class="nav-item"><a href="#faq" class="nav-link">{{ __('landings.pretty.nav_faq') }}</a></li>
+                        <li class="nav-item"><a href="#faq" class="nav-link"><x-landing.text key="lbl_pretty_nav_faq" tag="bdi" :default="__('landings.pretty.nav_faq')" :title-fallback="false" /></a></li>
                     @endif
-                    <li class="nav-item"><a href="#booking" class="nav-link">{{ __('landings.pretty.nav_booking') }}</a></li>
-                    <li class="nav-item"><a href="#contacts" class="nav-link">{{ __('landings.pretty.nav_contacts') }}</a></li>
+                    <li class="nav-item"><a href="#booking" class="nav-link"><x-landing.text key="lbl_pretty_nav_booking" tag="bdi" :default="__('landings.pretty.nav_booking')" :title-fallback="false" /></a></li>
+                    <li class="nav-item"><a href="#contacts" class="nav-link"><x-landing.text key="lbl_pretty_nav_contacts" tag="bdi" :default="__('landings.pretty.nav_contacts')" :title-fallback="false" /></a></li>
                 </ul>
             </div>
         </div>
@@ -95,8 +95,8 @@
         <div class="container">
             <div class="row justify-content-center mb-5 pb-3">
                 <div class="col-md-7 heading-section ftco-animate text-center">
-                    <h2 class="mb-4">{{ __('landings.pretty.services_title') }}</h2>
-                    <p>{{ __('landings.pretty.services_lead') }}</p>
+                    <h2 class="mb-4"><x-landing.text key="lbl_pretty_services_title" tag="bdi" :default="__('landings.pretty.services_title')" :title-fallback="false" /></h2>
+                    <p><x-landing.text key="lbl_pretty_services_lead" tag="bdi" :default="__('landings.pretty.services_lead')" :title-fallback="false" /></p>
                 </div>
             </div>
             <div class="row justify-content-center">
@@ -117,7 +117,7 @@
                                         @endif
                                     </p>
                                 @endif
-                                <p><a href="#booking" class="btn btn-primary btn-outline-primary btn-sm px-3 py-2 smoothscroll" data-pick-service="{{ $card['id'] }}">{{ __('landings.salone.book') }}</a></p>
+                                <p><a href="#booking" class="btn btn-primary btn-outline-primary btn-sm px-3 py-2 smoothscroll" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_salone_book" tag="bdi" :default="__('landings.salone.book')" :title-fallback="false" /></a></p>
                             </div>
                         </div>
                     </div>
@@ -131,8 +131,8 @@
         <div class="container">
             <div class="row justify-content-center mb-5 pb-3">
                 <div class="col-md-7 heading-section ftco-animate text-center">
-                    <h2 class="mb-4">{{ __('landings.pretty.team_title') }}</h2>
-                    <p>{{ __('landings.pretty.team_lead') }}</p>
+                    <h2 class="mb-4"><x-landing.text key="lbl_pretty_team_title" tag="bdi" :default="__('landings.pretty.team_title')" :title-fallback="false" /></h2>
+                    <p><x-landing.text key="lbl_pretty_team_lead" tag="bdi" :default="__('landings.pretty.team_lead')" :title-fallback="false" /></p>
                 </div>
             </div>
             <div class="row justify-content-center">
@@ -154,7 +154,7 @@
 
     {{-- Offer (promotion pages) --}}
     @if($hasOffer)
-        <section class="ftco-section ftco-discount img" id="offer" style="background-image: url({{ $asset('images/bg_2.jpg') }});">
+        <x-landing.bg key="extra_image_1" default="landing-templates/pretty/images/bg_2.jpg" tag="section" class="ftco-section ftco-discount img" id="offer">
             <div class="overlay"></div>
             <div class="container">
                 <div class="row justify-content-end">
@@ -167,13 +167,13 @@
                             @if($endsAt)
                                 {{ __('landings.pretty.offer_until', ['date' => $endsAt]) }}
                             @endif
-                            {{ __('landings.pretty.offer_say_code') }}
+                            <x-landing.text key="lbl_pretty_offer_say_code" tag="bdi" :default="__('landings.pretty.offer_say_code')" :title-fallback="false" />
                         </p>
                         <p><a href="#booking" class="btn btn-white btn-outline-white px-4 py-3 smoothscroll"><x-landing.text key="cta_label" tag="bdi" :default="$ctaDefault" /></a></p>
                     </div>
                 </div>
             </div>
-        </section>
+        </x-landing.bg>
     @endif
 
     {{-- Work --}}
@@ -181,7 +181,7 @@
         <div class="container">
             <div class="row justify-content-center mb-5 pb-3">
                 <div class="col-md-7 heading-section text-center ftco-animate">
-                    <h2 class="mb-4">{{ __('landings.pretty.work_title') }}</h2>
+                    <h2 class="mb-4"><x-landing.text key="lbl_pretty_work_title" tag="bdi" :default="__('landings.pretty.work_title')" :title-fallback="false" /></h2>
                     @if($editing)
                         <p>{{ __('landings.pretty.work_hint') }}</p>
                     @endif
@@ -205,8 +205,8 @@
             <div class="container">
                 <div class="row justify-content-center mb-5 pb-3">
                     <div class="col-md-7 heading-section text-center ftco-animate">
-                        <h2 class="mb-4">{{ __('landings.pretty.pricing_title') }}</h2>
-                        <p>{{ __('landings.pretty.pricing_lead') }}</p>
+                        <h2 class="mb-4"><x-landing.text key="lbl_pretty_pricing_title" tag="bdi" :default="__('landings.pretty.pricing_title')" :title-fallback="false" /></h2>
+                        <p><x-landing.text key="lbl_pretty_pricing_lead" tag="bdi" :default="__('landings.pretty.pricing_lead')" :title-fallback="false" /></p>
                     </div>
                 </div>
                 <div class="row justify-content-center">
@@ -222,7 +222,7 @@
                                         @endif
                                     </p>
                                 </div>
-                                <p class="button text-center"><a href="#booking" class="btn btn-primary btn-outline-primary px-4 py-3 smoothscroll" data-pick-service="{{ $card['id'] }}">{{ __('landings.pretty.pricing_order') }}</a></p>
+                                <p class="button text-center"><a href="#booking" class="btn btn-primary btn-outline-primary px-4 py-3 smoothscroll" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_pretty_pricing_order" tag="bdi" :default="__('landings.pretty.pricing_order')" :title-fallback="false" /></a></p>
                             </div>
                         </div>
                     @endforeach
@@ -233,7 +233,7 @@
 
     {{-- Counters: real figures, only once there are enough of them --}}
     @if($showCounters)
-        <section class="ftco-section ftco-counter img" id="section-counter" style="background-image: url({{ $asset('images/bg_2.jpg') }});">
+        <x-landing.bg key="extra_image_2" default="landing-templates/pretty/images/bg_2.jpg" tag="section" class="ftco-section ftco-counter img" id="section-counter">
             <div class="overlay"></div>
             <div class="container">
                 <div class="row justify-content-center">
@@ -254,7 +254,7 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </x-landing.bg>
     @endif
 
     {{-- Questions (the template's "blog" block) --}}
@@ -263,8 +263,8 @@
             <div class="container">
                 <div class="row justify-content-center mb-5 pb-3">
                     <div class="col-md-7 heading-section ftco-animate text-center">
-                        <h2 class="mb-4">{{ __('landings.pretty.faq_title') }}</h2>
-                        <p>{{ __('landings.pretty.faq_lead') }}</p>
+                        <h2 class="mb-4"><x-landing.text key="lbl_pretty_faq_title" tag="bdi" :default="__('landings.pretty.faq_title')" :title-fallback="false" /></h2>
+                        <p><x-landing.text key="lbl_pretty_faq_lead" tag="bdi" :default="__('landings.pretty.faq_lead')" :title-fallback="false" /></p>
                     </div>
                 </div>
                 <div class="row d-flex">
@@ -293,19 +293,19 @@
                         <div class="appointment-info text-center p-5">
                             @if($address !== '' || $editing)
                                 <div class="mb-4">
-                                    <h3 class="mb-3">{{ __('landings.pretty.info_address') }}</h3>
+                                    <h3 class="mb-3"><x-landing.text key="lbl_pretty_info_address" tag="bdi" :default="__('landings.pretty.info_address')" :title-fallback="false" /></h3>
                                     <x-landing.text key="address" tag="p" />
                                 </div>
                             @endif
                             @if($phoneHref || $editing)
                                 <div class="mb-4">
-                                    <h3 class="mb-3">{{ __('landings.pretty.info_phone') }}</h3>
+                                    <h3 class="mb-3"><x-landing.text key="lbl_pretty_info_phone" tag="bdi" :default="__('landings.pretty.info_phone')" :title-fallback="false" /></h3>
                                     <p class="day"><strong><a href="{{ $phoneHref ?: '#' }}" style="color: inherit;"><x-landing.text key="phone" tag="bdi" /></a></strong></p>
                                 </div>
                             @endif
                             @if($hours)
                                 <div>
-                                    <h3 class="mb-3">{{ __('landings.pretty.info_hours') }}</h3>
+                                    <h3 class="mb-3"><x-landing.text key="lbl_pretty_info_hours" tag="bdi" :default="__('landings.pretty.info_hours')" :title-fallback="false" /></h3>
                                     @foreach($hours as $line)
                                         <p class="day mb-1"><strong>{{ $line['days'] }}</strong></p>
                                         <span class="d-block mb-3">{{ $line['from'] }} – {{ $line['to'] }}</span>
@@ -316,7 +316,7 @@
                     </div>
                 @endif
                 <div class="{{ $hasInfo ? 'col-md-8 pl-md-5' : 'col-md-8 offset-md-2' }} appointment ftco-animate">
-                    <h3 class="mb-3">{{ __('landings.pretty.booking_title') }}</h3>
+                    <h3 class="mb-3"><x-landing.text key="lbl_pretty_booking_title" tag="bdi" :default="__('landings.pretty.booking_title')" :title-fallback="false" /></h3>
                     @if($editing || filled($settings['booking_hint'] ?? null))
                         <x-landing.text key="booking_hint" tag="p" class="mb-4" />
                     @endif
@@ -358,7 +358,7 @@
             <div class="row mb-5">
                 <div class="col-md-4">
                     <div class="ftco-footer-widget mb-4">
-                        <h2 class="ftco-heading-2">{{ __('landings.pretty.footer_about') }}</h2>
+                        <h2 class="ftco-heading-2"><x-landing.text key="lbl_pretty_footer_about" tag="bdi" :default="__('landings.pretty.footer_about')" :title-fallback="false" /></h2>
                         @if($proofItems->isNotEmpty())
                             <ul class="list-unstyled">
                                 @foreach($proofItems->take(3) as $item)
@@ -380,7 +380,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="ftco-footer-widget mb-4 ml-md-4">
-                        <h2 class="ftco-heading-2">{{ __('landings.pretty.footer_services') }}</h2>
+                        <h2 class="ftco-heading-2"><x-landing.text key="lbl_pretty_footer_services" tag="bdi" :default="__('landings.pretty.footer_services')" :title-fallback="false" /></h2>
                         <ul class="list-unstyled">
                             @foreach($cards->take(6) as $card)
                                 <li class="mb-2"><a href="#booking" class="smoothscroll" data-pick-service="{{ $card['id'] }}">{{ $card['name'] }}</a></li>
@@ -390,18 +390,18 @@
                 </div>
                 <div class="col-md-2">
                     <div class="ftco-footer-widget mb-4 ml-md-4">
-                        <h2 class="ftco-heading-2">{{ __('landings.pretty.footer_menu') }}</h2>
+                        <h2 class="ftco-heading-2"><x-landing.text key="lbl_pretty_footer_menu" tag="bdi" :default="__('landings.pretty.footer_menu')" :title-fallback="false" /></h2>
                         <ul class="list-unstyled">
-                            <li class="mb-2"><a href="#services" class="smoothscroll">{{ __('landings.pretty.nav_services') }}</a></li>
-                            <li class="mb-2"><a href="#work" class="smoothscroll">{{ __('landings.pretty.nav_work') }}</a></li>
-                            <li class="mb-2"><a href="#booking" class="smoothscroll">{{ __('landings.pretty.nav_booking') }}</a></li>
+                            <li class="mb-2"><a href="#services" class="smoothscroll"><x-landing.text key="lbl_pretty_nav_services" tag="bdi" :default="__('landings.pretty.nav_services')" :title-fallback="false" /></a></li>
+                            <li class="mb-2"><a href="#work" class="smoothscroll"><x-landing.text key="lbl_pretty_nav_work" tag="bdi" :default="__('landings.pretty.nav_work')" :title-fallback="false" /></a></li>
+                            <li class="mb-2"><a href="#booking" class="smoothscroll"><x-landing.text key="lbl_pretty_nav_booking" tag="bdi" :default="__('landings.pretty.nav_booking')" :title-fallback="false" /></a></li>
                         </ul>
                     </div>
                 </div>
                 @if($address !== '' || $phoneHref || $editing)
                     <div class="col-md-3">
                         <div class="ftco-footer-widget mb-4">
-                            <h2 class="ftco-heading-2">{{ __('landings.pretty.footer_contacts') }}</h2>
+                            <h2 class="ftco-heading-2"><x-landing.text key="lbl_pretty_footer_contacts" tag="bdi" :default="__('landings.pretty.footer_contacts')" :title-fallback="false" /></h2>
                             <div class="block-23 mb-3">
                                 <ul>
                                     @if($address !== '' || $editing)

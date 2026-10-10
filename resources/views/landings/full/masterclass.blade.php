@@ -66,9 +66,9 @@
             </button>
             <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                 <div class="navbar-nav py-0">
-                    <a href="#about" class="nav-item nav-link">{{ __('landings.masterclass.about_kicker') }}</a>
-                    <a href="#courses" class="nav-item nav-link">{{ __('landings.masterclass.programs') }}</a>
-                    <a href="#signup" class="nav-item nav-link">{{ __('landings.common.nav_booking') }}</a>
+                    <a href="#about" class="nav-item nav-link"><x-landing.text key="lbl_masterclass_about_kicker" tag="bdi" :default="__('landings.masterclass.about_kicker')" :title-fallback="false" /></a>
+                    <a href="#courses" class="nav-item nav-link"><x-landing.text key="lbl_masterclass_programs" tag="bdi" :default="__('landings.masterclass.programs')" :title-fallback="false" /></a>
+                    <a href="#signup" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a>
                 </div>
                 <a class="btn btn-primary py-2 px-4 ml-auto d-none d-lg-block" href="#signup"><x-landing.text key="cta_label" tag="bdi" :default="__('landings.masterclass.signup')" /></a>
             </div>
@@ -78,7 +78,7 @@
     <x-landing.bg key="hero_image_1" default="landing-templates/masterclass/img/carousel-1.jpg" tag="div" class="container-fluid p-0 pb-5 mb-5 mc-hero">
         <div class="d-flex align-items-center justify-content-center text-center" style="min-height: 460px; background: rgba(0, 0, 0, .55);">
             <div class="p-5" style="width: 100%; max-width: 900px;">
-                <h5 class="text-white text-uppercase mb-md-3">{{ __('landings.masterclass.kicker') }}</h5>
+                <h5 class="text-white text-uppercase mb-md-3"><x-landing.text key="lbl_masterclass_kicker" tag="bdi" :default="__('landings.masterclass.kicker')" :title-fallback="false" /></h5>
                 <x-landing.text key="hero_title" tag="h1" class="display-4 text-white mb-md-4" :default="__('landings.common.hero_default')" :title-fallback="false" />
                 @if($editing || filled($heroText))
                     <x-landing.text key="hero_text" tag="p" class="text-white mb-4" />
@@ -96,8 +96,8 @@
                 </div>
                 <div class="col-lg-7">
                     <div class="text-left mb-4">
-                        <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">{{ __('landings.masterclass.about_kicker') }}</h5>
-                        <h1>{{ __('landings.common.about_title') }}</h1>
+                        <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;"><x-landing.text key="lbl_masterclass_about_kicker" tag="bdi" :default="__('landings.masterclass.about_kicker')" :title-fallback="false" /></h5>
+                        <h1><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></h1>
                     </div>
                     @if($editing || filled($settings['master_bio'] ?? null))
                         <x-landing.text key="master_bio" tag="p" />
@@ -110,10 +110,10 @@
                         </ul>
                     @endif
                     @if(count($hours))
-                        <p class="mb-1"><strong>{{ __('landings.common.hours_kicker') }}</strong></p>
+                        <p class="mb-1"><strong><x-landing.text key="lbl_common_hours_kicker" tag="bdi" :default="__('landings.common.hours_kicker')" :title-fallback="false" /></strong></p>
                         @foreach($hours as $line)<div>{{ $line['days'] }}: {{ $line['from'] }}–{{ $line['to'] }}</div>@endforeach
                     @endif
-                    <a href="#signup" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-3">{{ __('landings.common.book') }}</a>
+                    <a href="#signup" class="btn btn-primary py-md-2 px-md-4 font-weight-semi-bold mt-3"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                 </div>
             </div>
         </div>
@@ -123,9 +123,9 @@
         <div class="container-fluid py-5" id="courses">
             <div class="container py-5">
                 <div class="text-center mb-5">
-                    <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">{{ __('landings.common.services_kicker') }}</h5>
-                    <h1>{{ __('landings.masterclass.programs') }}</h1>
-                    <p class="mb-0">{{ __('landings.masterclass.programs_lead') }}</p>
+                    <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;"><x-landing.text key="lbl_common_services_kicker" tag="bdi" :default="__('landings.common.services_kicker')" :title-fallback="false" /></h5>
+                    <h1><x-landing.text key="lbl_masterclass_programs" tag="bdi" :default="__('landings.masterclass.programs')" :title-fallback="false" /></h1>
+                    <p class="mb-0"><x-landing.text key="lbl_masterclass_programs_lead" tag="bdi" :default="__('landings.masterclass.programs_lead')" :title-fallback="false" /></p>
                 </div>
                 <div class="row">
                     @foreach($cards->take(6) as $card)
@@ -138,7 +138,7 @@
                                     <span class="h5">{{ $card['name'] }}</span>
                                     <div class="border-top mt-auto pt-4">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <a href="#signup" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                            <a href="#signup" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                                             @if(!empty($card['price']))<h5 class="m-0">{{ $price($card['price']) }} ₽</h5>@endif
                                         </div>
                                     </div>
@@ -156,11 +156,11 @@
             <div class="row align-items-center">
                 <div class="col-lg-7 mb-5 mb-lg-0">
                     <div class="mb-4">
-                        <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;">{{ __('landings.common.booking_kicker') }}</h5>
+                        <h5 class="text-primary text-uppercase mb-3" style="letter-spacing: 5px;"><x-landing.text key="lbl_common_booking_kicker" tag="bdi" :default="__('landings.common.booking_kicker')" :title-fallback="false" /></h5>
                         @if($hasOffer)
                             <h1 class="text-white">{{ __('landings.pretty.offer_kicker', ['percent' => $offerPercent]) }}</h1>
                         @else
-                            <h1 class="text-white">{{ __('landings.common.booking_title') }}</h1>
+                            <h1 class="text-white"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h1>
                         @endif
                     </div>
                     @if($hasOffer && ($promoCode || $endsAt))
@@ -176,7 +176,7 @@
                 <div class="col-lg-5">
                     <div class="card border-0">
                         <div class="card-header bg-light text-center p-4">
-                            <h1 class="m-0 h2">{{ __('landings.masterclass.signup') }}</h1>
+                            <h1 class="m-0 h2"><x-landing.text key="lbl_masterclass_signup" tag="bdi" :default="__('landings.masterclass.signup')" :title-fallback="false" /></h1>
                         </div>
                         <div class="card-body rounded-bottom bg-primary p-5">
                             <form id="request-form" novalidate>

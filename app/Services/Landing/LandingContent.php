@@ -48,7 +48,25 @@ class LandingContent
         'work_image_4' => ['kind' => 'image'],
         'work_image_5' => ['kind' => 'image'],
         'work_image_6' => ['kind' => 'image'],
+        // Big pictures of a section that is neither the hero, the master nor her works
+        // (a banner behind an offer, the photo next to the price list).
+        'extra_image_1' => ['kind' => 'image'],
+        'extra_image_2' => ['kind' => 'image'],
+        'extra_image_3' => ['kind' => 'image'],
     ];
+
+    /**
+     * Static captions of a page (section headings, button texts, kickers) are
+     * editable too, under `lbl_<lang key>` — `lbl_common_services_title` for
+     * `landings.common.services_title`. They need no manifest entry: any
+     * template may expose any caption, and the text survives a change of
+     * template because the key is the caption's, not the layout's.
+     */
+    public const LABEL_PATTERN = '/^lbl_[a-z0-9_]{2,80}$/';
+
+    public const LABEL_MAX_LENGTH = 500;
+
+    public const MAX_LABELS_PER_LANDING = 150;
 
     private ?Landing $landing = null;
 
@@ -56,6 +74,21 @@ class LandingContent
 
     public function __construct(private readonly TemplateRegistry $registry)
     {
+    }
+
+    /** @return array{kind: string, max?: int, items?: int, required?: bool}|null */
+    public static function field(string $key): ?array
+    {
+        if (isset(self::FIELDS[$key])) {
+            return self::FIELDS[$key];
+        }
+
+        return self::isLabel($key) ? ['kind' => 'text', 'max' => self::LABEL_MAX_LENGTH] : null;
+    }
+
+    public static function isLabel(string $key): bool
+    {
+        return preg_match(self::LABEL_PATTERN, $key) === 1;
     }
 
     public function bind(Landing $landing, bool $editing = false): static
@@ -107,16 +140,18 @@ class LandingContent
     /** data-* attributes for an editable element, empty outside edit mode. */
     public function attrs(string $key, ?int $index = null): array
     {
-        if (! $this->editing || ! isset(self::FIELDS[$key])) {
+        $field = self::field($key);
+
+        if (! $this->editing || ! $field) {
             return [];
         }
 
-        $kind = self::FIELDS[$key]['kind'];
+        $kind = $field['kind'];
 
         return array_filter([
             'data-lf-key' => $key,
             'data-lf-kind' => $kind,
-            'data-lf-max' => self::FIELDS[$key]['max'] ?? null,
+            'data-lf-max' => $field['max'] ?? null,
             'data-lf-index' => $index,
             'data-lf-placeholder' => $kind === 'image' ? null : __('landings.editor.ui.placeholder'),
             'data-lf-custom' => $kind === 'image' && filled(data_get($this->landing?->settings, 'images.' . $key)) ? '1' : null,
@@ -160,9 +195,9 @@ class LandingContent
 
         foreach ($changes as $i => $change) {
             $key = (string) ($change['key'] ?? '');
-            $field = self::FIELDS[$key] ?? null;
+            $field = self::field($key);
 
-            if (! $field || ! in_array($key, $allowed, true) || $field['kind'] === 'image') {
+            if (! $field || ! (self::isLabel($key) || in_array($key, $allowed, true)) || $field['kind'] === 'image') {
                 $errors["changes.$i.key"] = __('landings.editor.errors.unknown_key');
 
                 continue;
@@ -185,6 +220,14 @@ class LandingContent
 
         $settings = $landing->settings ?? [];
         $edited = $settings['_edited'] ?? [];
+
+        $labelsAfter = collect($settings)->keys()->filter(fn ($k) => self::isLabel((string) $k))
+            ->merge(collect($clean)->filter(fn ($v) => $v !== '')->keys()->filter(fn ($k) => self::isLabel($k)))
+            ->unique()->count();
+
+        if ($labelsAfter > self::MAX_LABELS_PER_LANDING) {
+            throw ValidationException::withMessages(['changes' => __('landings.editor.errors.too_many')]);
+        }
 
         foreach ($clean as $key => $value) {
             if ($key === 'title') {

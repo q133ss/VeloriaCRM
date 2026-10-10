@@ -110,7 +110,15 @@ asset folder. Then:
    - a text with `<x-landing.text key="hero_title" tag="h1" class="…" :default="$landing->title" />`
    - a list item with `<x-landing.text key="proof_items_text" :index="$loop->index" tag="p" />`
    - a photo with `<x-landing.image key="hero_image_1" default="landing-templates/<slug>/img/a.jpg" class="…" alt="" />`
-3. List every key and photo you used in the manifest (`fields`, `images`).
+   - a static caption (heading, kicker, button text) with
+     `<x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" />`:
+     the key is `lbl_` plus the lang key with dots as underscores. `lbl_*` keys need no manifest entry and are
+     editable on every template; a template must not leave a visible caption as a bare `{{ __() }}`.
+     Leave it bare only inside attributes, `<button>`, `<option>` and where the text is data (prices, minutes).
+   - a big section photo or banner with `<x-landing.image key="extra_image_1" …>` / `<x-landing.bg …>`
+     (`extra_image_1..3`); small decorative icons may stay as they are.
+3. List every other key and photo you used in the manifest (`fields`, `images` with its stock photo).
+   `LandingEditableCoverageTest` fails when a template prints a key its manifest does not declare.
 4. Add `preview.jpg` (480×316) and set `thumb` in the manifest. The wizard shows the layout by itself.
 5. `php artisan test --filter=LandingEditorTest`. The smoke test renders every registered template
    for all landing types and checks that visitors get no editor markup and the owner does.

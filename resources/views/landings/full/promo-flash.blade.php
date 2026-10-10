@@ -45,7 +45,7 @@ promotion's own deadline (settings.ends_at). Without an offer it degrades to a p
                 </div>
 
                 @if($hasOffer)
-                    <span class="pf-kicker">{{ __('landings.pretty.nav_offer') }}</span>
+                    <span class="pf-kicker"><x-landing.text key="lbl_pretty_nav_offer" tag="bdi" :default="__('landings.pretty.nav_offer')" :title-fallback="false" /></span>
                     <div class="pf-percent">−{{ $offerPercent }}%</div>
                 @endif
 
@@ -89,7 +89,7 @@ promotion's own deadline (settings.ends_at). Without an offer it degrades to a p
                                 <strong>{{ $card['name'] }}</strong>
                                 @if(!empty($card['duration']))<small>{{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}</small>@endif
                                 @if(!empty($card['price']))<span class="pf-price">{{ $price($card['price']) }} ₽</span>@endif
-                                <a href="#booking" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                <a href="#booking" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                             </div>
                         @endforeach
                     </div>
@@ -111,7 +111,7 @@ promotion's own deadline (settings.ends_at). Without an offer it degrades to a p
 
         <section class="pf-section" id="booking">
             <div class="pf-wrap">
-                <h2>{{ __('landings.common.booking_title') }}</h2>
+                <h2><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h2>
                 @if($editing || filled($settings['booking_hint'] ?? null))
                     <x-landing.text key="booking_hint" tag="p" class="pf-lead" />
                 @endif

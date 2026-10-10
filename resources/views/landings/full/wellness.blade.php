@@ -65,7 +65,7 @@
                                     <div class="text">
                                         <i class="fa fa-phone-alt"></i>
                                         <h2><a href="{{ $phoneHref ?: '#' }}" style="color: inherit"><x-landing.text key="phone" tag="bdi" /></a></h2>
-                                        <p>{{ __('landings.common.nav_booking') }}</p>
+                                        <p><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></p>
                                     </div>
                                 @endif
                             </div>
@@ -91,10 +91,10 @@
                 </button>
                 <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                     <div class="navbar-nav ml-auto">
-                        <a href="#about" class="nav-item nav-link">{{ __('landings.common.about_kicker') }}</a>
-                        @if($cards->isNotEmpty())<a href="#service" class="nav-item nav-link">{{ __('landings.common.nav_services') }}</a>@endif
-                        @if($priced->isNotEmpty())<a href="#price" class="nav-item nav-link">{{ __('landings.common.nav_prices') }}</a>@endif
-                        <a href="#booking" class="nav-item nav-link">{{ __('landings.common.nav_booking') }}</a>
+                        <a href="#about" class="nav-item nav-link"><x-landing.text key="lbl_common_about_kicker" tag="bdi" :default="__('landings.common.about_kicker')" :title-fallback="false" /></a>
+                        @if($cards->isNotEmpty())<a href="#service" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>@endif
+                        @if($priced->isNotEmpty())<a href="#price" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_prices" tag="bdi" :default="__('landings.common.nav_prices')" :title-fallback="false" /></a>@endif
+                        <a href="#booking" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a>
                     </div>
                 </div>
             </div>
@@ -138,8 +138,8 @@
                     @endif
                     <div class="{{ $has('about_image') ? 'col-lg-7 col-md-6' : 'col-lg-9 mx-auto text-center' }}">
                         <div class="section-header {{ $has('about_image') ? 'text-left' : 'text-center' }}">
-                            <p>{{ __('landings.common.about_kicker') }}</p>
-                            <h2>{{ __('landings.common.about_title') }}</h2>
+                            <p><x-landing.text key="lbl_common_about_kicker" tag="bdi" :default="__('landings.common.about_kicker')" :title-fallback="false" /></p>
+                            <h2><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></h2>
                         </div>
                         <div class="about-text">
                             @if($editing || filled($settings['master_bio'] ?? null))
@@ -150,7 +150,7 @@
                                     <p class="mb-2"><i class="fa fa-check mr-2" style="color: #F7CAC9"></i><x-landing.text key="proof_items_text" :index="$loop->index" tag="bdi" /></p>
                                 @endforeach
                             @endif
-                            <a class="btn mt-3" href="#booking">{{ __('landings.common.book') }}</a>
+                            <a class="btn mt-3" href="#booking"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                         </div>
                     </div>
                 </div>
@@ -161,8 +161,8 @@
             <div class="service" id="service">
                 <div class="container">
                     <div class="section-header text-center wow zoomIn" data-wow-delay="0.1s">
-                        <p>{{ __('landings.common.services_kicker') }}</p>
-                        <h2>{{ __('landings.common.services_title') }}</h2>
+                        <p><x-landing.text key="lbl_common_services_kicker" tag="bdi" :default="__('landings.common.services_kicker')" :title-fallback="false" /></p>
+                        <h2><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h2>
                     </div>
                     <div class="row">
                         @foreach($cards->take(6) as $card)
@@ -175,7 +175,7 @@
                                         @if(!empty($card['price']) && !empty($card['duration'])) · @endif
                                         @if(!empty($card['duration'])){{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}@endif
                                     </p>
-                                    <a href="#booking" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                    <a href="#booking" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                                 </div>
                             </div>
                         @endforeach
@@ -188,7 +188,7 @@
             <div class="discount wow zoomIn" data-wow-delay="0.1s">
                 <div class="container">
                     <div class="section-header text-center">
-                        <p>{{ __('landings.pretty.nav_offer') }}</p>
+                        <p><x-landing.text key="lbl_pretty_nav_offer" tag="bdi" :default="__('landings.pretty.nav_offer')" :title-fallback="false" /></p>
                         <h2>−<span>{{ $offerPercent }}%</span></h2>
                     </div>
                     <div class="container discount-text">
@@ -198,7 +198,7 @@
                                 @if($endsAt){{ __('landings.pretty.offer_until', ['date' => $endsAt]) }}@endif
                             </p>
                         @endif
-                        <a class="btn" href="#booking">{{ __('landings.common.book') }}</a>
+                        <a class="btn" href="#booking"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                     </div>
                 </div>
             </div>
@@ -208,8 +208,8 @@
             <div class="price" id="price">
                 <div class="container">
                     <div class="section-header text-center wow zoomIn" data-wow-delay="0.1s">
-                        <p>{{ __('landings.common.prices_kicker') }}</p>
-                        <h2>{{ __('landings.common.prices_title') }}</h2>
+                        <p><x-landing.text key="lbl_common_prices_kicker" tag="bdi" :default="__('landings.common.prices_kicker')" :title-fallback="false" /></p>
+                        <h2><x-landing.text key="lbl_common_prices_title" tag="bdi" :default="__('landings.common.prices_title')" :title-fallback="false" /></h2>
                     </div>
                     <div class="row justify-content-center">
                         @foreach($priced as $card)
@@ -227,7 +227,7 @@
                                         </div>
                                     </div>
                                     <div class="price-footer">
-                                        <div class="price-action"><a class="btn" href="#booking" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a></div>
+                                        <div class="price-action"><a class="btn" href="#booking" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a></div>
                                     </div>
                                 </div>
                             </div>
@@ -240,8 +240,8 @@
         <div class="price" id="booking" style="padding-top: 0">
             <div class="container">
                 <div class="section-header text-center wow zoomIn" data-wow-delay="0.1s">
-                    <p>{{ __('landings.common.booking_kicker') }}</p>
-                    <h2>{{ __('landings.common.booking_title') }}</h2>
+                    <p><x-landing.text key="lbl_common_booking_kicker" tag="bdi" :default="__('landings.common.booking_kicker')" :title-fallback="false" /></p>
+                    <h2><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h2>
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-lg-7">
