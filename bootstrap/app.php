@@ -39,6 +39,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);
 
+        // The cabinet's JS reads this cookie as is (and the form login writes it
+        // plain), so it must not be encrypted when set from the social callback.
+        $middleware->encryptCookies(except: ['token']);
+
         // Guests must meet the 403, not the redirect to /login that
         // `auth:sanctum` would answer with on pages behind the cabinet group.
         $middleware->prependToPriorityList(
