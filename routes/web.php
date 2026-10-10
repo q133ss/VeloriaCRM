@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HelpPageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LandingBookingController;
+use App\Http\Controllers\PaymentReturnController;
 use App\Http\Controllers\LandingDemoController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LandingRequestController;
@@ -26,6 +27,9 @@ Route::middleware('set.locale')->group(function () {
     Route::get('/l/{slug}/availability', [LandingBookingController::class, 'availability'])
         ->middleware('throttle:60,1')
         ->name('landings.availability');
+    // Where a client lands after paying a booking prepayment.
+    Route::get('/pay/return/{token}', [PaymentReturnController::class, 'page'])->name('payments.return');
+    Route::get('/l/{slug}/paid/{token}', [PaymentReturnController::class, 'page'])->name('landings.paid');
     Route::post('/l/{slug}/book', [LandingBookingController::class, 'book'])
         ->middleware('throttle:10,1')
         ->name('landings.book');

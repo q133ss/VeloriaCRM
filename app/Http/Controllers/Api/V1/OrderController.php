@@ -18,7 +18,10 @@ use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Services\Ai\AiGateway;
 use App\Services\Booking\BookingConflictService;
+use App\Services\Booking\ClientBookingService;
 use App\Services\Booking\Intent\BookingIntentResolver;
+use App\Services\Booking\PrepaymentFailedException;
+use App\Services\Prepayment\PrepaymentSettlementService;
 use App\Services\Booking\OrderDurationResolver;
 use App\Services\Booking\ServiceDurationEstimator;
 use App\Services\ClientIdentityService;
@@ -653,14 +656,58 @@ class OrderController extends Controller
 
         $order->refresh();
 
+        // The client's side of the booking goes with it, or its time stays blocked.
+        app(ClientBookingService::class)->cancelAppointmentFor($order);
+
+        $prepayment = $this->settlePrepaymentOnCancel($order, $request->input('refund_prepayment'));
+        $order->refresh();
+
         if ($previousSlot) {
             $this->waitlistMatches->notifyMatchesForSlot($this->currentUserId(), $previousSlot, $duration, $serviceId);
         }
 
-        return response()->json([
+        return response()->json(array_filter([
             'data' => $this->decorateOrder($order),
             'message' => 'Запись отменена.',
-        ]);
+            'prepayment' => $prepayment,
+        ], fn ($value) => $value !== null));
+    }
+
+    /**
+     * A cancelled booking that carries a prepayment: one still unpaid is
+     * dropped (a late payment of it is then refunded), a paid one is returned
+     * as the master chose, or by her own rule when she did not say.
+     *
+     * @return array{refunded: float, kept: float, warning?: string}|null
+     */
+    private function settlePrepaymentOnCancel(Order $order, mixed $refundChoice): ?array
+    {
+        if ($order->payment_status === 'awaiting') {
+            $order->update(['payment_status' => 'failed']);
+
+            return null;
+        }
+
+        if ($order->payment_status !== 'paid') {
+            return null;
+        }
+
+        $settlement = app(PrepaymentSettlementService::class);
+        $refundable = $settlement->refundable($order);
+        $amount = $refundChoice === null
+            ? $settlement->suggestedRefund($order)
+            : (filter_var($refundChoice, FILTER_VALIDATE_BOOLEAN) ? $refundable : 0.0);
+
+        $result = ['refunded' => 0.0, 'kept' => $refundable];
+
+        try {
+            $result['refunded'] = $settlement->refund($order, $amount);
+            $result['kept'] = round($refundable - $result['refunded'], 2);
+        } catch (PrepaymentFailedException) {
+            $result['warning'] = __('prepayment.refund_failed');
+        }
+
+        return $result;
     }
 
     public function reschedule(RescheduleOrderRequest $request, Order $order): JsonResponse

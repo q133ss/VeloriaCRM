@@ -263,6 +263,7 @@ Artisan::command('clients:refresh-visits {--master= : Only this master\'s client
 
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
+Schedule::command('prepayment:sync')->everyMinute()->withoutOverlapping();
 Schedule::command('alerts:send-allergy-reminders')->everyMinute();
 Schedule::command('alerts:send-appointment-reminders')->hourly();
 Schedule::command('content:send-daily-ideas')->dailyAt('09:00');

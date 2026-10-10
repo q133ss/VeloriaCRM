@@ -35,6 +35,13 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
     Route::post('/auth/vkid', \App\Http\Controllers\Auth\VkIdController::class)->middleware('throttle:20,1')->name('api.auth.vkid');
+    // Booking prepayments: the page a client returns to polls this, and ЮKassa notifies the webhook.
+    Route::get('/payments/status/{token}', [\App\Http\Controllers\PaymentReturnController::class, 'status'])
+        ->middleware('throttle:120,1')
+        ->name('api.payments.status');
+    Route::post('/payments/yookassa/webhook', \App\Http\Controllers\YooKassaWebhookController::class)
+        ->middleware('throttle:300,1')
+        ->name('api.payments.yookassa.webhook');
     Route::post('/support-requests', [SupportRequestController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('api.support-requests.store');

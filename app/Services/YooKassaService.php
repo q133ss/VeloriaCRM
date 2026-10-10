@@ -144,7 +144,7 @@ class YooKassaService
     /**
      * @return array{id:string,status:string}
      */
-    public function refund(string $paymentId, float $amount): array
+    public function refund(string $paymentId, float $amount, string $idempotenceSuffix = ''): array
     {
         if (! $this->enabled()) {
             throw new RuntimeException('YooKassa credentials are not configured.');
@@ -158,7 +158,7 @@ class YooKassaService
                 'value' => number_format($amount, 2, '.', ''),
                 'currency' => $currency,
             ],
-        ], 'refund-' . $paymentId . '-' . number_format($amount, 2, '.', ''));
+        ], 'refund-' . $paymentId . '-' . number_format($amount, 2, '.', '') . '-' . $idempotenceSuffix);
 
         return ['id' => $response->getId(), 'status' => $response->getStatus()];
     }
@@ -177,6 +177,8 @@ class YooKassaService
             'status' => $response->getStatus(),
             'paid' => $response->getPaid(),
             'amount' => $response->getAmount() ? (string) $response->getAmount()->getValue() : null,
+            'refunded_amount' => $response->getRefundedAmount() ? (string) $response->getRefundedAmount()->getValue() : '0',
+            'cancellation_reason' => $response->getCancellationDetails() ? $response->getCancellationDetails()->getReason() : null,
             'metadata' => $response->getMetadata() ? $response->getMetadata()->toArray() : [],
             'captured_at' => $capturedAt ? Carbon::instance($capturedAt)->toIso8601String() : null,
             'created_at' => $createdAt ? Carbon::instance($createdAt)->toIso8601String() : null,

@@ -5,140 +5,21 @@ namespace Tests\Feature;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\ClientNotification;
-use App\Models\Landing;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PrepaymentRule;
-use App\Models\Service;
-use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\ClientBookingService;
-use App\Services\Integrations\IntegrationCatalog;
-use App\Services\Landing\TemplateRegistry;
-use App\Services\YooKassaService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
-use RuntimeException;
-use Tests\TestCase;
+use Tests\Support\FakeYooKassa;
 
 /**
  * Booking that has to be prepaid: held unpaid, the slot stays blocked, nobody
  * is told until the money arrives.
  */
-class PrepaymentBookingTest extends TestCase
+class PrepaymentBookingTest extends PrepaymentTestCase
 {
-    use RefreshDatabase;
-
-    private User $master;
-
-    private Service $service;
-
-    private Setting $settings;
-
-    public bool $gatewayDown = false;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            DB::statement('PRAGMA ignore_check_constraints = ON');
-        }
-
-        Carbon::setTestNow('2026-10-05 08:00:00');
-
-        $this->master = User::factory()->create(['timezone' => 'Europe/Moscow']);
-
-        $this->settings = Setting::create([
-            'user_id' => $this->master->id,
-            'work_hours' => ['mon' => ['10:00', '11:00', '12:00']],
-            'yookassa_shop_id' => '123456',
-            'yookassa_secret_key' => 'live_secret',
-            'deposit_policy' => ['enabled' => true, 'default_mode' => 'percent', 'default_value' => 30],
-        ]);
-        $this->verifyShop();
-
-        $this->service = Service::create([
-            'user_id' => $this->master->id,
-            'name' => 'Маникюр',
-            'base_price' => 2000,
-            'cost' => 500,
-            'duration_min' => 60,
-        ]);
-
-        Landing::create([
-            'user_id' => $this->master->id,
-            'title' => 'Студия',
-            'type' => 'general',
-            'landing' => app(TemplateRegistry::class)->defaultTemplate('general'),
-            'slug' => 'studio',
-            'settings' => ['primary_color' => 'indigo', 'background_type' => 'preset', 'show_all_services' => true],
-            'is_active' => true,
-        ]);
-
-        $test = $this;
-        $this->app->bind(YooKassaService::class, fn () => new class($test) extends YooKassaService {
-            public function __construct(private $test)
-            {
-            }
-
-            public function enabled(): bool
-            {
-                return true;
-            }
-
-            public function createBookingPayment(\App\Models\Order $order, float $amount, string $returnUrl, string $description): array
-            {
-                if ($this->test->gatewayDown) {
-                    throw new RuntimeException('down');
-                }
-
-                return [
-                    'id' => 'pay-' . $order->id,
-                    'status' => 'pending',
-                    'paid' => false,
-                    'amount' => number_format($amount, 2, '.', ''),
-                    'currency' => 'RUB',
-                    'confirmation_url' => 'https://yookassa.test/pay/' . $order->id . '?return=' . urlencode($returnUrl),
-                ];
-            }
-        });
-    }
-
-    protected function tearDown(): void
-    {
-        Carbon::setTestNow();
-
-        parent::tearDown();
-    }
-
-    private function verifyShop(): void
-    {
-        $this->settings->refresh();
-        $this->settings->forceFill(['integration_checks' => ['yookassa' => [
-            'ok' => true,
-            'fingerprint' => IntegrationCatalog::fingerprint($this->settings, 'yookassa'),
-        ]]])->save();
-    }
-
-    private function policy(array $policy): void
-    {
-        $this->settings->forceFill(['deposit_policy' => $policy])->save();
-    }
-
-    private function book(array $override = [])
-    {
-        return $this->postJson('/l/studio/book', array_merge([
-            'client_name' => 'Мария',
-            'client_phone' => '+7(911)555-66-77',
-            'service_id' => $this->service->id,
-            'date' => '2026-10-05',
-            'time' => '10:00',
-        ], $override));
-    }
-
     public function test_a_prepaid_booking_is_held_unpaid_with_the_amount_and_a_payment_link(): void
     {
         $this->book()->assertCreated()
@@ -292,7 +173,7 @@ class PrepaymentBookingTest extends TestCase
 
     public function test_a_gateway_failure_leaves_no_booking_behind(): void
     {
-        $this->gatewayDown = true;
+        FakeYooKassa::$down = true;
 
         $this->book()->assertStatus(503);
 

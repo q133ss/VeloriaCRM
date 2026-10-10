@@ -26,6 +26,7 @@ class Payment extends Model
         'refunded_amount',
         'status',
         'confirmation_url',
+        'return_token',
         'metadata',
         'paid_at',
     ];

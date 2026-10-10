@@ -204,7 +204,7 @@ class ClientBookingService
             'service_label' => $serviceLabel,
             'payment' => $payment ? [
                 'id' => $payment->id,
-                'token' => $payment->metadata['return_token'],
+                'token' => $payment->return_token,
                 'amount' => (float) $payment->amount,
                 'confirmation_url' => $payment->confirmation_url,
                 'expires_at' => $order->prepay_expires_at,
@@ -232,6 +232,28 @@ class ClientBookingService
         $this->orderService->scheduleStartReminder($order);
         $this->notifyMaster($order->master_id, $client, $label, $startsAtLocal);
         $this->clientNotifications->notifyBookingConfirmed($client, $label, $startsAtLocal);
+    }
+
+    /**
+     * The booking's appointment (what the client sees, and what the slot
+     * search counts as busy) goes with its order: without this a cancelled
+     * order kept the time blocked.
+     */
+    public function cancelAppointmentFor(Order $order): void
+    {
+        $times = array_filter([$order->scheduled_at, $order->rescheduled_from]);
+
+        if ($times === []) {
+            return;
+        }
+
+        Appointment::query()
+            ->where('user_id', $order->master_id)
+            ->whereIn('starts_at', $times)
+            ->where('status', '!=', 'cancelled')
+            ->get()
+            ->filter(fn (Appointment $appointment) => (int) ($appointment->meta['order_id'] ?? 0) === (int) $order->id)
+            ->each(fn (Appointment $appointment) => $appointment->update(['status' => 'cancelled']));
     }
 
     private function createPrepayment(
@@ -275,8 +297,8 @@ class ClientBookingService
             'amount' => $amount,
             'status' => $created['status'] ?: Payment::STATUS_PENDING,
             'confirmation_url' => $created['confirmation_url'],
+            'return_token' => $token,
             'metadata' => [
-                'return_token' => $token,
                 'client_card_id' => $client->id,
                 'appointment_id' => $appointment->id,
                 'service_label' => $serviceLabel,
