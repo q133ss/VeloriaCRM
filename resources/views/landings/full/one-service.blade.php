@@ -72,9 +72,9 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarCollapse">
                     <div class="navbar-nav ms-auto">
-                        <a href="#about" class="nav-item nav-link">{{ __('landings.common.about_kicker') }}</a>
-                        @if($others->isNotEmpty())<a href="#others" class="nav-item nav-link">{{ __('landings.common.nav_services') }}</a>@endif
-                        <a href="#booking" class="nav-item nav-link">{{ __('landings.common.nav_booking') }}</a>
+                        <a href="#about" class="nav-item nav-link"><x-landing.text key="lbl_common_about_kicker" tag="bdi" :default="__('landings.common.about_kicker')" :title-fallback="false" /></a>
+                        @if($others->isNotEmpty())<a href="#others" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>@endif
+                        <a href="#booking" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a>
                     </div>
                     <a href="#booking" class="btn btn-dark py-2 px-4 d-none d-lg-inline-block"><x-landing.text key="cta_label" tag="bdi" :default="$ctaDefault" /></a>
                 </div>
@@ -131,15 +131,15 @@
                     </div>
                 @endif
                 <div class="{{ $uploaded('about_image') ? 'col-lg-6' : 'col-lg-8 mx-auto text-center' }} wow fadeIn" data-wow-delay="0.3s">
-                    <h1 class="text-primary mb-4">{{ __('landings.common.master_title') }}</h1>
+                    <h1 class="text-primary mb-4"><x-landing.text key="lbl_common_master_title" tag="bdi" :default="__('landings.common.master_title')" :title-fallback="false" /></h1>
                     @if($editing || filled($settings['master_bio'] ?? null))
                         <x-landing.text key="master_bio" tag="p" class="mb-4" />
                     @endif
                     @if(count($hours))
-                        <p class="mb-1"><strong>{{ __('landings.common.hours_kicker') }}</strong></p>
+                        <p class="mb-1"><strong><x-landing.text key="lbl_common_hours_kicker" tag="bdi" :default="__('landings.common.hours_kicker')" :title-fallback="false" /></strong></p>
                         @foreach($hours as $line)<div>{{ $line['days'] }}: {{ $line['from'] }}–{{ $line['to'] }}</div>@endforeach
                     @endif
-                    <a class="btn btn-primary py-2 px-4 mt-4" href="#booking">{{ __('landings.common.book') }}</a>
+                    <a class="btn btn-primary py-2 px-4 mt-4" href="#booking"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                 </div>
             </div>
         </div>
@@ -172,7 +172,7 @@
                                 @elseif($hasOffer && $endsAt)
                                     <p class="mb-4">{{ __('landings.pretty.offer_until', ['date' => $endsAt]) }}</p>
                                 @endif
-                                <a class="btn btn-primary py-2 px-4" href="#booking" data-pick-service="{{ $main['id'] }}">{{ __('landings.common.book') }}</a>
+                                <a class="btn btn-primary py-2 px-4" href="#booking" data-pick-service="{{ $main['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                             </div>
                         </div>
                     </div>
@@ -185,7 +185,7 @@
         <div class="container-fluid py-5" id="others">
             <div class="container">
                 <div class="mx-auto text-center mb-4" style="max-width: 600px;">
-                    <h1 class="text-primary">{{ __('landings.common.services_title') }}</h1>
+                    <h1 class="text-primary"><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h1>
                 </div>
                 <ul class="list-unstyled os-others mx-auto" style="max-width: 640px;">
                     @foreach($others as $card)
@@ -204,7 +204,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6">
                     <div class="bg-white p-4 p-md-5">
-                        <h2 class="text-center mb-2">{{ __('landings.common.booking_title') }}</h2>
+                        <h2 class="text-center mb-2"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h2>
                         @if($editing || filled($settings['booking_hint'] ?? null))
                             <x-landing.text key="booking_hint" tag="p" class="text-center text-muted" />
                         @endif

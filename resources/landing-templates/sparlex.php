@@ -32,11 +32,13 @@ return [
         'work_image_1' => 'landing-templates/sparlex/img/gallery-1.jpg',
         'work_image_2' => 'landing-templates/sparlex/img/gallery-2.jpg',
         'work_image_3' => 'landing-templates/sparlex/img/gallery-3.jpg',
+        'extra_image_1' => 'landing-templates/sparlex/img/about-2.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'master_role',
         'hero_image_1', 'hero_image_2', 'hero_image_3', 'about_image', 'master_photo',
         'work_image_1', 'work_image_2', 'work_image_3',
+        'extra_image_1',
     ],
 ];

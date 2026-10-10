@@ -49,17 +49,17 @@
                             <div class="main-menu">
                                 <nav>
                                     <ul id="navigation">
-                                        <li><a href="#about">{{ __('landings.common.about_title') }}</a></li>
-                                        <li><a href="#services">{{ __('landings.common.nav_services') }}</a></li>
+                                        <li><a href="#about"><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></a></li>
+                                        <li><a href="#services"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a></li>
                                         @if($priced->isNotEmpty())
-                                            <li><a href="#prices">{{ __('landings.common.nav_prices') }}</a></li>
+                                            <li><a href="#prices"><x-landing.text key="lbl_common_nav_prices" tag="bdi" :default="__('landings.common.nav_prices')" :title-fallback="false" /></a></li>
                                         @endif
-                                        <li><a href="#contacts">{{ __('landings.common.nav_contacts') }}</a></li>
+                                        <li><a href="#contacts"><x-landing.text key="lbl_common_nav_contacts" tag="bdi" :default="__('landings.common.nav_contacts')" :title-fallback="false" /></a></li>
                                     </ul>
                                 </nav>
                             </div>
                             <div class="book_room">
-                                <div class="book_btn"><a href="#booking">{{ __('landings.common.book') }}</a></div>
+                                <div class="book_btn"><a href="#booking"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a></div>
                             </div>
                         </div>
                     </div>
@@ -99,7 +99,7 @@
                 <div class="col-xl-6 col-lg-6 col-md-6">
                     <div class="about_info">
                         <div class="section_title mb-20px">
-                            <h3>{{ __('landings.common.about_title') }}</h3>
+                            <h3><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></h3>
                             @if($editing || $proofItems->isNotEmpty())
                                 <ul class="vb-list">
                                     @foreach($proofItems->take(5) as $item)
@@ -110,13 +110,13 @@
                         </div>
                         @if(count($hours))
                             <p class="opening_hour">
-                                {{ __('landings.common.hours_kicker') }}
+                                <x-landing.text key="lbl_common_hours_kicker" tag="bdi" :default="__('landings.common.hours_kicker')" :title-fallback="false" />
                                 @foreach($hours as $line)
                                     <span class="d-block ml-0" style="font-size:17px">{{ $line["days"] }}: {{ $line["from"] }}–{{ $line["to"] }}</span>
                                 @endforeach
                             </p>
                         @endif
-                        <a href="#booking" class="boxed-btn3">{{ __('landings.common.book') }}</a>
+                        <a href="#booking" class="boxed-btn3"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                     </div>
                 </div>
             </div>
@@ -128,7 +128,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-md-10">
                     <div class="section_title text-center mb-55">
-                        <h3>{{ __('landings.common.services_title') }}</h3>
+                        <h3><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h3>
                     </div>
                 </div>
             </div>
@@ -147,7 +147,7 @@
                                         @if(!empty($card['duration'])){{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}@endif
                                     </p>
                                 @endif
-                                <a href="#booking" class="vb-link" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                <a href="#booking" class="vb-link" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                             </div>
                         </div>
                     </div>
@@ -162,7 +162,7 @@
                 <div class="row justify-content-center">
                     <div class="col-lg-6 col-md-10">
                         <div class="section_title text-center mb-55">
-                            <h3>{{ __('landings.common.prices_title') }}</h3>
+                            <h3><x-landing.text key="lbl_common_prices_title" tag="bdi" :default="__('landings.common.prices_title')" :title-fallback="false" /></h3>
                         </div>
                     </div>
                 </div>
@@ -171,14 +171,14 @@
                         <div class="col-lg-6">
                             <div class="single_prising vb-price">
                                 <div class="single_service">
-                                    <div class="service_inner"><div class="thumb"><img src="{{ $asset('img/prising/1.png') }}" alt=""></div></div>
+                                    <div class="service_inner"><div class="thumb"><x-landing.image key="extra_image_1" default="landing-templates/barber-doc/img/prising/1.png" alt="" /></div></div>
                                     <div class="hair_style_info">
                                         <div class="prise d-flex justify-content-between">
                                             <span>{{ $card['name'] }}</span>
                                             <span>{{ $price($card['price']) }} ₽</span>
                                         </div>
                                         @if(!empty($card['duration']))
-                                            <p>{{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }} · <a href="#booking" class="vb-link" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a></p>
+                                            <p>{{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }} · <a href="#booking" class="vb-link" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a></p>
                                         @endif
                                     </div>
                                 </div>
@@ -193,7 +193,7 @@
     <div class="vb-booking" id="booking">
         <div class="container">
             <div class="section_title text-center mb-55">
-                <h3>{{ __('landings.common.booking_title') }}</h3>
+                <h3><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h3>
                 @if($editing || filled($settings['booking_hint'] ?? null))
                     <x-landing.text key="booking_hint" tag="p" />
                 @endif
@@ -248,17 +248,17 @@
                     </div>
                     <div class="col-xl-3 col-md-6 col-lg-3">
                         <div class="footer_widget">
-                            <h3 class="footer_title">{{ __('landings.common.quick_links') }}</h3>
+                            <h3 class="footer_title"><x-landing.text key="lbl_common_quick_links" tag="bdi" :default="__('landings.common.quick_links')" :title-fallback="false" /></h3>
                             <ul class="links">
-                                <li><a href="#about">{{ __('landings.common.about_title') }}</a></li>
-                                <li><a href="#services">{{ __('landings.common.nav_services') }}</a></li>
-                                <li><a href="#booking">{{ __('landings.common.nav_booking') }}</a></li>
+                                <li><a href="#about"><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></a></li>
+                                <li><a href="#services"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a></li>
+                                <li><a href="#booking"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a></li>
                             </ul>
                         </div>
                     </div>
                     <div class="col-xl-4 col-md-6 col-lg-4">
                         <div class="footer_widget">
-                            <h3 class="footer_title">{{ __('landings.common.nav_services') }}</h3>
+                            <h3 class="footer_title"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></h3>
                             <ul class="links">
                                 @foreach($cards->take(4) as $card)
                                     <li><a href="#booking" data-pick-service="{{ $card['id'] }}">{{ $card['name'] }}</a></li>

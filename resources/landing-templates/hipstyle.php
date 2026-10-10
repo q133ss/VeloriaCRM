@@ -24,10 +24,14 @@ return [
         'consultation' => $view,
     ],
     'images' => [
-        // 'hero_image_1' => 'landing-templates/hipstyle/images/hero.jpg',
+        'hero_image_1' => 'landing-templates/hipstyle/img/banner_bg.jpg',
+        'extra_image_1' => 'landing-templates/hipstyle/img/about_us_1.png',
+        'extra_image_2' => 'landing-templates/hipstyle/img/about_us_2.png',
+        'extra_image_3' => 'landing-templates/hipstyle/img/about_us_3.png',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text',
+        'hero_image_1', 'extra_image_1', 'extra_image_2', 'extra_image_3', 'faq_items_text',
     ],
 ];

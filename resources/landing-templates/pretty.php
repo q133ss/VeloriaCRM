@@ -27,6 +27,8 @@ return [
         'work_image_1' => 'landing-templates/pretty/images/work-1.jpg',
         'work_image_2' => 'landing-templates/pretty/images/work-2.jpg',
         'work_image_3' => 'landing-templates/pretty/images/work-3.jpg',
+        'extra_image_1' => 'landing-templates/pretty/images/bg_2.jpg',
+        'extra_image_2' => 'landing-templates/pretty/images/bg_2.jpg',
     ],
     // What the template is good for; the wizard filters by these.
     'purposes' => ['booking', 'portfolio'],
@@ -38,5 +40,6 @@ return [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'faq_items_text', 'master_role', 'master_bio',
         'hero_image_1', 'master_photo', 'work_image_1', 'work_image_2', 'work_image_3',
+        'extra_image_1', 'extra_image_2',
     ],
 ];

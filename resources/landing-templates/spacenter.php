@@ -29,10 +29,13 @@ return [
         'hero_image_3' => 'landing-templates/spacenter/img/carousel-3.jpg',
         'about_image' => 'landing-templates/spacenter/img/about.jpg',
         'master_photo' => 'landing-templates/spacenter/img/team-1.jpg',
+        'extra_image_1' => 'landing-templates/spacenter/img/opening.jpg',
+        'extra_image_2' => 'landing-templates/spacenter/img/pricing.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'master_role',
         'hero_image_1', 'hero_image_2', 'hero_image_3', 'about_image', 'master_photo',
+        'extra_image_1', 'extra_image_2',
     ],
 ];

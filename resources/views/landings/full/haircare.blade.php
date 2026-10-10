@@ -52,14 +52,14 @@
 
         <div class="collapse navbar-collapse" id="ftco-nav">
           <ul class="navbar-nav ml-auto">
-            <li class="nav-item"><a href="#services" class="nav-link">{{ __('landings.common.nav_services') }}</a></li>
-            <li class="nav-item"><a href="#booking" class="nav-link">{{ __('landings.common.nav_booking') }}</a></li>
-            <li class="nav-item"><a href="#master" class="nav-link">{{ __('landings.common.nav_master') }}</a></li>
-            <li class="nav-item"><a href="#gallery" class="nav-link">{{ __('landings.pretty.nav_work') }}</a></li>
+            <li class="nav-item"><a href="#services" class="nav-link"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a></li>
+            <li class="nav-item"><a href="#booking" class="nav-link"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a></li>
+            <li class="nav-item"><a href="#master" class="nav-link"><x-landing.text key="lbl_common_nav_master" tag="bdi" :default="__('landings.common.nav_master')" :title-fallback="false" /></a></li>
+            <li class="nav-item"><a href="#gallery" class="nav-link"><x-landing.text key="lbl_pretty_nav_work" tag="bdi" :default="__('landings.pretty.nav_work')" :title-fallback="false" /></a></li>
             @if($priced->isNotEmpty())
-              <li class="nav-item"><a href="#prices" class="nav-link">{{ __('landings.common.nav_prices') }}</a></li>
+              <li class="nav-item"><a href="#prices" class="nav-link"><x-landing.text key="lbl_common_nav_prices" tag="bdi" :default="__('landings.common.nav_prices')" :title-fallback="false" /></a></li>
             @endif
-            <li class="nav-item"><a href="#contacts" class="nav-link">{{ __('landings.common.nav_contacts') }}</a></li>
+            <li class="nav-item"><a href="#contacts" class="nav-link"><x-landing.text key="lbl_common_nav_contacts" tag="bdi" :default="__('landings.common.nav_contacts')" :title-fallback="false" /></a></li>
           </ul>
         </div>
       </div>
@@ -85,32 +85,32 @@
       <div class="container-fluid px-0">
         <div class="row no-gutters">
           <div class="col-md text-center d-flex align-items-stretch">
-            <div class="services-wrap d-flex align-items-center img" style="background-image: url({{ $asset('images/formen.jpg') }});">
+            <x-landing.bg key="extra_image_1" default="landing-templates/haircare/images/formen.jpg" tag="div" class="services-wrap d-flex align-items-center img">
               <div class="text">
-                <h3>{{ __('landings.haircare.for_men') }}</h3>
-                <p><a href="#services" class="btn-custom">{{ __('landings.haircare.see_services') }} <span class="ion-ios-arrow-round-forward"></span></a></p>
+                <h3><x-landing.text key="lbl_haircare_for_men" tag="bdi" :default="__('landings.haircare.for_men')" :title-fallback="false" /></h3>
+                <p><a href="#services" class="btn-custom"><x-landing.text key="lbl_haircare_see_services" tag="bdi" :default="__('landings.haircare.see_services')" :title-fallback="false" /> <span class="ion-ios-arrow-round-forward"></span></a></p>
               </div>
-            </div>
+            </x-landing.bg>
           </div>
           <div class="col-md-3 text-center d-flex align-items-stretch">
             <div class="text-about py-5 px-4">
               <h1 class="logo">
                 <a href="#top"><span class="flaticon-scissors-in-a-hair-salon-badge"></span><x-landing.text key="title" tag="bdi" /></a>
               </h1>
-              <h2>{{ __('landings.haircare.welcome') }}</h2>
+              <h2><x-landing.text key="lbl_haircare_welcome" tag="bdi" :default="__('landings.haircare.welcome')" :title-fallback="false" /></h2>
               @if($editing || filled($heroText))
                 <x-landing.text key="hero_text" tag="p" />
               @endif
-              <p class="mt-3"><a href="#booking" class="btn btn-primary btn-outline-primary">{{ __('landings.common.book') }}</a></p>
+              <p class="mt-3"><a href="#booking" class="btn btn-primary btn-outline-primary"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a></p>
             </div>
           </div>
           <div class="col-md text-center d-flex align-items-stretch">
-            <div class="services-wrap d-flex align-items-center img" style="background-image: url({{ $asset('images/forwomen.jpg') }});">
+            <x-landing.bg key="extra_image_2" default="landing-templates/haircare/images/forwomen.jpg" tag="div" class="services-wrap d-flex align-items-center img">
               <div class="text">
-                <h3>{{ __('landings.haircare.for_women') }}</h3>
-                <p><a href="#services" class="btn-custom">{{ __('landings.haircare.see_services') }} <span class="ion-ios-arrow-round-forward"></span></a></p>
+                <h3><x-landing.text key="lbl_haircare_for_women" tag="bdi" :default="__('landings.haircare.for_women')" :title-fallback="false" /></h3>
+                <p><a href="#services" class="btn-custom"><x-landing.text key="lbl_haircare_see_services" tag="bdi" :default="__('landings.haircare.see_services')" :title-fallback="false" /> <span class="ion-ios-arrow-round-forward"></span></a></p>
               </div>
-            </div>
+            </x-landing.bg>
           </div>
         </div>
       </div>
@@ -120,8 +120,8 @@
       <div class="container">
         <div class="row justify-content-center pb-3">
           <div class="col-md-10 heading-section text-center ftco-animate">
-            <span class="subheading">{{ __('landings.common.services_kicker') }}</span>
-            <h2 class="mb-4">{{ __('landings.common.services_title') }}</h2>
+            <span class="subheading"><x-landing.text key="lbl_common_services_kicker" tag="bdi" :default="__('landings.common.services_kicker')" :title-fallback="false" /></span>
+            <h2 class="mb-4"><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h2>
           </div>
         </div>
         <div class="row no-gutters d-flex justify-content-center">
@@ -142,7 +142,7 @@
                       @endif
                     </p>
                   @endif
-                  <p><a href="#booking" class="btn btn-primary btn-outline-primary btn-sm px-3" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a></p>
+                  <p><a href="#booking" class="btn btn-primary btn-outline-primary btn-sm px-3" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a></p>
                 </div>
               </div>
             </div>
@@ -155,15 +155,15 @@
       <div class="container ftco-relative">
         <div class="row justify-content-center pb-3">
           <div class="col-md-10 heading-section text-center ftco-animate">
-            <span class="subheading">{{ __('landings.common.booking_kicker') }}</span>
-            <h2 class="mb-4">{{ __('landings.common.booking_title') }}</h2>
+            <span class="subheading"><x-landing.text key="lbl_common_booking_kicker" tag="bdi" :default="__('landings.common.booking_kicker')" :title-fallback="false" /></span>
+            <h2 class="mb-4"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h2>
             @if($editing || filled($settings['booking_hint'] ?? null))
               <x-landing.text key="booking_hint" tag="p" />
             @endif
           </div>
         </div>
         @if($phoneHref || $editing)
-          <h3 class="vr">{{ __('landings.pretty.info_phone') }}: <a href="{{ $phoneHref ?: '#' }}" style="color: inherit;"><x-landing.text key="phone" tag="bdi" /></a></h3>
+          <h3 class="vr"><x-landing.text key="lbl_pretty_info_phone" tag="bdi" :default="__('landings.pretty.info_phone')" :title-fallback="false" />: <a href="{{ $phoneHref ?: '#' }}" style="color: inherit;"><x-landing.text key="phone" tag="bdi" /></a></h3>
         @endif
         <div class="row justify-content-center">
           <div class="col-md-10 ftco-animate">
@@ -210,8 +210,8 @@
       <div class="container-fluid px-md-5">
         <div class="row justify-content-center pb-3">
           <div class="col-md-10 heading-section text-center ftco-animate">
-            <span class="subheading">{{ __('landings.common.master_kicker') }}</span>
-            <h2 class="mb-4">{{ __('landings.common.master_title') }}</h2>
+            <span class="subheading"><x-landing.text key="lbl_common_master_kicker" tag="bdi" :default="__('landings.common.master_kicker')" :title-fallback="false" /></span>
+            <h2 class="mb-4"><x-landing.text key="lbl_common_master_title" tag="bdi" :default="__('landings.common.master_title')" :title-fallback="false" /></h2>
           </div>
         </div>
         <div class="row justify-content-center">
@@ -230,7 +230,7 @@
       <div class="container">
         <div class="row no-gutters justify-content-center mb-5 pb-2">
           <div class="col-md-6 text-center heading-section ftco-animate">
-            <span class="subheading">{{ __('landings.pretty.work_title') }}</span>
+            <span class="subheading"><x-landing.text key="lbl_pretty_work_title" tag="bdi" :default="__('landings.pretty.work_title')" :title-fallback="false" /></span>
             @if($editing)
               <p>{{ __('landings.pretty.work_hint') }}</p>
             @endif
@@ -255,8 +255,8 @@
         <div class="container">
           <div class="row justify-content-center pb-3">
             <div class="col-md-10 heading-section text-center ftco-animate">
-              <span class="subheading">{{ __('landings.common.prices_kicker') }}</span>
-              <h2 class="mb-4">{{ __('landings.common.prices_title') }}</h2>
+              <span class="subheading"><x-landing.text key="lbl_common_prices_kicker" tag="bdi" :default="__('landings.common.prices_kicker')" :title-fallback="false" /></span>
+              <h2 class="mb-4"><x-landing.text key="lbl_common_prices_title" tag="bdi" :default="__('landings.common.prices_title')" :title-fallback="false" /></h2>
             </div>
           </div>
           <div class="row justify-content-center">
@@ -272,7 +272,7 @@
                       @endif
                     </p>
                   </div>
-                  <p class="button text-center"><a href="#booking" class="btn btn-primary px-4 py-3" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a></p>
+                  <p class="button text-center"><a href="#booking" class="btn btn-primary px-4 py-3" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a></p>
                 </div>
               </div>
             @endforeach
@@ -308,18 +308,18 @@
           </div>
           <div class="col-md">
             <div class="ftco-footer-widget mb-4 ml-md-5">
-              <h2 class="ftco-heading-2">{{ __('landings.common.quick_links') }}</h2>
+              <h2 class="ftco-heading-2"><x-landing.text key="lbl_common_quick_links" tag="bdi" :default="__('landings.common.quick_links')" :title-fallback="false" /></h2>
               <ul class="list-unstyled">
-                <li><a href="#services" class="py-2 d-block">{{ __('landings.common.nav_services') }}</a></li>
-                <li><a href="#booking" class="py-2 d-block">{{ __('landings.common.nav_booking') }}</a></li>
-                <li><a href="#master" class="py-2 d-block">{{ __('landings.common.nav_master') }}</a></li>
+                <li><a href="#services" class="py-2 d-block"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a></li>
+                <li><a href="#booking" class="py-2 d-block"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a></li>
+                <li><a href="#master" class="py-2 d-block"><x-landing.text key="lbl_common_nav_master" tag="bdi" :default="__('landings.common.nav_master')" :title-fallback="false" /></a></li>
               </ul>
             </div>
           </div>
           @if($address !== '' || $phoneHref || $editing)
             <div class="col-md">
               <div class="ftco-footer-widget mb-4">
-                <h2 class="ftco-heading-2">{{ __('landings.common.contacts_title') }}</h2>
+                <h2 class="ftco-heading-2"><x-landing.text key="lbl_common_contacts_title" tag="bdi" :default="__('landings.common.contacts_title')" :title-fallback="false" /></h2>
                 <div class="block-23 mb-3">
                   <ul>
                     @if($address !== '' || $editing)

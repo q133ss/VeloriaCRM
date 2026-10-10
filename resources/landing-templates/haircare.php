@@ -29,10 +29,14 @@ return [
         'work_image_1' => 'landing-templates/haircare/images/work-1.jpg',
         'work_image_2' => 'landing-templates/haircare/images/work-2.jpg',
         'work_image_3' => 'landing-templates/haircare/images/work-3.jpg',
+        'extra_image_1' => 'landing-templates/haircare/images/formen.jpg',
+        'extra_image_2' => 'landing-templates/haircare/images/forwomen.jpg',
+        'work_image_4' => 'landing-templates/haircare/images/work-4.jpg',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text', 'master_role',
         'hero_image_1', 'master_photo', 'work_image_1', 'work_image_2', 'work_image_3',
+        'extra_image_1', 'extra_image_2', 'work_image_4',
     ],
 ];

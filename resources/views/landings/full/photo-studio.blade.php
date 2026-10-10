@@ -61,13 +61,13 @@
         </button>
         <div class="collapse navbar-collapse justify-content-between py-4 py-lg-0" id="navbarCollapse">
             <div class="navbar-nav ms-auto py-0">
-                <a href="#home" class="nav-item nav-link active">{{ __('landings.common.nav_master') }}</a>
-                @if($cards->isNotEmpty())<a href="#services" class="nav-item nav-link">{{ __('landings.common.nav_services') }}</a>@endif
+                <a href="#home" class="nav-item nav-link active"><x-landing.text key="lbl_common_nav_master" tag="bdi" :default="__('landings.common.nav_master')" :title-fallback="false" /></a>
+                @if($cards->isNotEmpty())<a href="#services" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>@endif
             </div>
             <a href="#home" class="navbar-brand bg-primary py-2 px-4 mx-3 d-none d-lg-block"><h1 class="text-white fs-4 m-0"><x-landing.text key="title" tag="bdi" /></h1></a>
             <div class="navbar-nav me-auto py-0">
-                @if($works->isNotEmpty())<a href="#works" class="nav-item nav-link">{{ __('landings.pretty.nav_work') }}</a>@endif
-                <a href="#contact" class="nav-item nav-link">{{ __('landings.common.nav_booking') }}</a>
+                @if($works->isNotEmpty())<a href="#works" class="nav-item nav-link"><x-landing.text key="lbl_pretty_nav_work" tag="bdi" :default="__('landings.pretty.nav_work')" :title-fallback="false" /></a>@endif
+                <a href="#contact" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a>
             </div>
         </div>
     </nav>
@@ -107,8 +107,8 @@
         <div class="container-xxl bg-light py-5 my-5" id="services">
             <div class="container py-5">
                 <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 500px;">
-                    <p class="text-primary text-uppercase mb-2">{{ __('landings.common.services_kicker') }}</p>
-                    <h1 class="display-6 mb-0">{{ __('landings.common.services_title') }}</h1>
+                    <p class="text-primary text-uppercase mb-2"><x-landing.text key="lbl_common_services_kicker" tag="bdi" :default="__('landings.common.services_kicker')" :title-fallback="false" /></p>
+                    <h1 class="display-6 mb-0"><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h1>
                 </div>
                 <div class="row g-3">
                     @foreach($cards->take(8) as $card)
@@ -117,7 +117,7 @@
                                 <h4 class="mb-2">{{ $card['name'] }}</h4>
                                 @if(!empty($card['duration']))<small class="text-muted mb-2">{{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}</small>@endif
                                 @if(!empty($card['price']))<div class="ps-price fs-4 mb-3">{{ $price($card['price']) }} ₽</div>@endif
-                                <a href="#contact" class="btn btn-outline-primary mt-auto" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                <a href="#contact" class="btn btn-outline-primary mt-auto" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                             </div>
                         </div>
                     @endforeach
@@ -130,7 +130,7 @@
         <div class="container-xxl py-5" id="works">
             <div class="container">
                 <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 500px;">
-                    <h1 class="display-6 mb-0">{{ __('landings.pretty.work_title') }}</h1>
+                    <h1 class="display-6 mb-0"><x-landing.text key="lbl_pretty_work_title" tag="bdi" :default="__('landings.pretty.work_title')" :title-fallback="false" /></h1>
                     @if($editing)<p class="mt-2 mb-0">{{ __('landings.pretty.work_hint') }}</p>@endif
                 </div>
                 <div class="row g-3 ps-gallery">
@@ -150,8 +150,8 @@
         <div class="container py-5">
             <div class="row g-5">
                 <div class="col-lg-5">
-                    <p class="text-primary text-uppercase mb-2">{{ __('landings.common.booking_kicker') }}</p>
-                    <h1 class="display-6 mb-4">{{ __('landings.common.booking_title') }}</h1>
+                    <p class="text-primary text-uppercase mb-2"><x-landing.text key="lbl_common_booking_kicker" tag="bdi" :default="__('landings.common.booking_kicker')" :title-fallback="false" /></p>
+                    <h1 class="display-6 mb-4"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h1>
                     @if($editing || filled($settings['booking_hint'] ?? null))
                         <x-landing.text key="booking_hint" tag="p" class="mb-4" />
                     @endif

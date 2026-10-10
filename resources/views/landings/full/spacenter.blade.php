@@ -84,15 +84,15 @@
             </button>
             <div class="collapse navbar-collapse justify-content-between px-lg-3" id="navbarCollapse">
                 <div class="navbar-nav m-auto py-0">
-                    <a href="#services" class="nav-item nav-link">{{ __('landings.common.nav_services') }}</a>
+                    <a href="#services" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>
                     @if($hours || $editing)
-                        <a href="#hours" class="nav-item nav-link">{{ __('landings.common.nav_hours') }}</a>
+                        <a href="#hours" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_hours" tag="bdi" :default="__('landings.common.nav_hours')" :title-fallback="false" /></a>
                     @endif
                     @if($priced->isNotEmpty())
-                        <a href="#prices" class="nav-item nav-link">{{ __('landings.common.nav_prices') }}</a>
+                        <a href="#prices" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_prices" tag="bdi" :default="__('landings.common.nav_prices')" :title-fallback="false" /></a>
                     @endif
-                    <a href="#master" class="nav-item nav-link">{{ __('landings.common.nav_master') }}</a>
-                    <a href="#contacts" class="nav-item nav-link">{{ __('landings.common.nav_contacts') }}</a>
+                    <a href="#master" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_master" tag="bdi" :default="__('landings.common.nav_master')" :title-fallback="false" /></a>
+                    <a href="#contacts" class="nav-item nav-link"><x-landing.text key="lbl_common_nav_contacts" tag="bdi" :default="__('landings.common.nav_contacts')" :title-fallback="false" /></a>
                 </div>
                 <a href="#booking" class="btn btn-primary d-none d-lg-block"><x-landing.text key="cta_label" tag="bdi" :default="$ctaDefault" /></a>
             </div>
@@ -127,7 +127,7 @@
                     <x-landing.image key="hero_image_2" default="landing-templates/spacenter/img/carousel-2.jpg" class="position-absolute w-100 h-100" style="object-fit: cover;" alt="" />
                     <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
                         <div class="p-3" style="max-width: 900px;">
-                            <h3 class="display-3 text-capitalize text-white mb-3">{{ __('landings.common.hero_slide_two') }}</h3>
+                            <h3 class="display-3 text-capitalize text-white mb-3"><x-landing.text key="lbl_common_hero_slide_two" tag="bdi" :default="__('landings.common.hero_slide_two')" :title-fallback="false" /></h3>
                             <a class="btn btn-outline-light py-3 px-4 mt-3" href="#booking"><x-landing.text key="cta_label" tag="bdi" :default="$ctaDefault" /></a>
                         </div>
                     </div>
@@ -136,8 +136,8 @@
                     <x-landing.image key="hero_image_3" default="landing-templates/spacenter/img/carousel-3.jpg" class="position-absolute w-100 h-100" style="object-fit: cover;" alt="" />
                     <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
                         <div class="p-3" style="max-width: 900px;">
-                            <h3 class="display-3 text-capitalize text-white mb-3">{{ __('landings.common.services_title') }}</h3>
-                            <a class="btn btn-outline-light py-3 px-4 mt-3" href="#services">{{ __('landings.common.nav_services') }}</a>
+                            <h3 class="display-3 text-capitalize text-white mb-3"><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h3>
+                            <a class="btn btn-outline-light py-3 px-4 mt-3" href="#services"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a>
                         </div>
                     </div>
                 </div>
@@ -156,8 +156,8 @@
                         <x-landing.image key="about_image" default="landing-templates/spacenter/img/about.jpg" class="img-fluid w-100" alt="" />
                     </div>
                     <div class="col-lg-6">
-                        <h6 class="d-inline-block text-primary text-uppercase bg-light py-1 px-2">{{ __('landings.common.about_kicker') }}</h6>
-                        <h1 class="mb-4">{{ __('landings.common.about_title') }}</h1>
+                        <h6 class="d-inline-block text-primary text-uppercase bg-light py-1 px-2"><x-landing.text key="lbl_common_about_kicker" tag="bdi" :default="__('landings.common.about_kicker')" :title-fallback="false" /></h6>
+                        <h1 class="mb-4"><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></h1>
                         @if($editing || filled($heroText))
                             <p class="pl-4 border-left border-primary">{{ $heroText }}</p>
                         @endif
@@ -182,8 +182,8 @@
     <div class="container-fluid px-0 py-5 my-5" id="services">
         <div class="row mx-0 justify-content-center text-center">
             <div class="col-lg-6">
-                <h6 class="d-inline-block bg-light text-primary text-uppercase py-1 px-2">{{ __('landings.common.services_kicker') }}</h6>
-                <h1>{{ __('landings.common.services_title') }}</h1>
+                <h6 class="d-inline-block bg-light text-primary text-uppercase py-1 px-2"><x-landing.text key="lbl_common_services_kicker" tag="bdi" :default="__('landings.common.services_kicker')" :title-fallback="false" /></h6>
+                <h1><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h1>
             </div>
         </div>
         <div class="owl-carousel service-carousel">
@@ -202,7 +202,7 @@
                             @endif
                         </p>
                         <div class="w-100 bg-white text-center p-4">
-                            <a class="btn btn-primary" href="#booking" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                            <a class="btn btn-primary" href="#booking" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                         </div>
                     </div>
                 </div>
@@ -212,7 +212,7 @@
         <div class="row justify-content-center bg-appointment mx-0" id="booking">
             <div class="col-lg-6 py-5">
                 <div class="p-5 my-5" style="background: rgba(33, 30, 28, 0.7);">
-                    <h1 class="text-white text-center mb-4">{{ __('landings.common.booking_title') }}</h1>
+                    <h1 class="text-white text-center mb-4"><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h1>
                     @if($editing || filled($settings['booking_hint'] ?? null))
                         <x-landing.text key="booking_hint" tag="p" class="text-white text-center mb-4" />
                     @endif
@@ -258,20 +258,20 @@
                 <div class="row">
                     <div class="col-lg-6" style="min-height: 500px;">
                         <div class="position-relative h-100">
-                            <img class="position-absolute w-100 h-100" src="{{ $asset('img/opening.jpg') }}" style="object-fit: cover;" alt="">
+                            <x-landing.image key="extra_image_1" default="landing-templates/spacenter/img/opening.jpg" class="position-absolute w-100 h-100" style="object-fit: cover;" alt="" />
                         </div>
                     </div>
                     <div class="col-lg-6 pt-5 pb-lg-5">
                         <div class="hours-text bg-light p-4 p-lg-5 my-lg-5">
-                            <h6 class="d-inline-block text-white text-uppercase bg-primary py-1 px-2">{{ __('landings.common.hours_kicker') }}</h6>
-                            <h1 class="mb-4">{{ __('landings.common.hours_title') }}</h1>
-                            <p>{{ __('landings.common.hours_note') }}</p>
+                            <h6 class="d-inline-block text-white text-uppercase bg-primary py-1 px-2"><x-landing.text key="lbl_common_hours_kicker" tag="bdi" :default="__('landings.common.hours_kicker')" :title-fallback="false" /></h6>
+                            <h1 class="mb-4"><x-landing.text key="lbl_common_hours_title" tag="bdi" :default="__('landings.common.hours_title')" :title-fallback="false" /></h1>
+                            <p><x-landing.text key="lbl_common_hours_note" tag="bdi" :default="__('landings.common.hours_note')" :title-fallback="false" /></p>
                             <ul class="list-inline">
                                 @foreach($hours as $line)
                                     <li class="h6 py-1"><i class="far fa-circle text-primary mr-3"></i>{{ $line['days'] }} : {{ $line['from'] }} - {{ $line['to'] }}</li>
                                 @endforeach
                             </ul>
-                            <a href="#booking" class="btn btn-primary mt-2">{{ __('landings.common.book') }}</a>
+                            <a href="#booking" class="btn btn-primary mt-2"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                         </div>
                     </div>
                 </div>
@@ -288,12 +288,12 @@
                 <div class="row">
                     <div class="col-lg-5" style="min-height: 500px;">
                         <div class="position-relative h-100">
-                            <img class="position-absolute w-100 h-100" src="{{ $asset('img/pricing.jpg') }}" style="object-fit: cover;" alt="">
+                            <x-landing.image key="extra_image_2" default="landing-templates/spacenter/img/pricing.jpg" class="position-absolute w-100 h-100" style="object-fit: cover;" alt="" />
                         </div>
                     </div>
                     <div class="col-lg-7 pt-5 pb-lg-5">
                         <div class="pricing-text bg-light p-4 p-lg-5 my-lg-5">
-                            <h6 class="d-inline-block text-white text-uppercase bg-primary py-1 px-2 mb-3">{{ __('landings.common.prices_kicker') }}</h6>
+                            <h6 class="d-inline-block text-white text-uppercase bg-primary py-1 px-2 mb-3"><x-landing.text key="lbl_common_prices_kicker" tag="bdi" :default="__('landings.common.prices_kicker')" :title-fallback="false" /></h6>
                             <div class="owl-carousel pricing-carousel">
                                 @foreach($priced as $card)
                                     <div class="bg-white">
@@ -305,7 +305,7 @@
                                             @if(!empty($card['duration']))
                                                 <p><i class="fa fa-clock text-success mr-2"></i>{{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}</p>
                                             @endif
-                                            <a href="#booking" class="btn btn-primary my-2" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                            <a href="#booking" class="btn btn-primary my-2" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                                         </div>
                                     </div>
                                 @endforeach
@@ -324,8 +324,8 @@
         <div class="container pt-5">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-6">
-                    <h6 class="d-inline-block bg-light text-primary text-uppercase py-1 px-2">{{ __('landings.common.master_kicker') }}</h6>
-                    <h1 class="mb-5">{{ __('landings.common.master_title') }}</h1>
+                    <h6 class="d-inline-block bg-light text-primary text-uppercase py-1 px-2"><x-landing.text key="lbl_common_master_kicker" tag="bdi" :default="__('landings.common.master_kicker')" :title-fallback="false" /></h6>
+                    <h1 class="mb-5"><x-landing.text key="lbl_common_master_title" tag="bdi" :default="__('landings.common.master_title')" :title-fallback="false" /></h1>
                 </div>
             </div>
             <div class="row justify-content-center">
@@ -361,7 +361,7 @@
         <div class="container pt-4">
             <div class="row">
                 <div class="col-md-6 mb-5">
-                    <h5 class="text-white text-uppercase mb-4">{{ __('landings.common.contacts_title') }}</h5>
+                    <h5 class="text-white text-uppercase mb-4"><x-landing.text key="lbl_common_contacts_title" tag="bdi" :default="__('landings.common.contacts_title')" :title-fallback="false" /></h5>
                     @if($address !== '' || $editing)
                         <p><i class="fa fa-map-marker-alt mr-2"></i><x-landing.text key="address" tag="bdi" /></p>
                     @endif
@@ -378,7 +378,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 mb-5">
-                    <h5 class="text-white text-uppercase mb-4">{{ __('landings.common.nav_services') }}</h5>
+                    <h5 class="text-white text-uppercase mb-4"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></h5>
                     <div class="d-flex flex-column justify-content-start">
                         @foreach($cards->take(6) as $card)
                             <a class="text-white-50 mb-2" href="#booking" data-pick-service="{{ $card['id'] }}"><i class="fa fa-angle-right mr-2"></i>{{ $card['name'] }}</a>

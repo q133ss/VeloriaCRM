@@ -67,10 +67,10 @@ popup and testimonial plugins of the original are not loaded.
                 </button>
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav text-uppercase ml-auto">
-                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#services">{{ __('landings.common.nav_services') }}</a></li>
-                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#about">{{ __('landings.common.about_title') }}</a></li>
-                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#portfolio">{{ __('landings.pretty.nav_work') }}</a></li>
-                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#contact">{{ __('landings.common.nav_booking') }}</a></li>
+                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#services"><x-landing.text key="lbl_common_nav_services" tag="bdi" :default="__('landings.common.nav_services')" :title-fallback="false" /></a></li>
+                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#about"><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></a></li>
+                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#portfolio"><x-landing.text key="lbl_pretty_nav_work" tag="bdi" :default="__('landings.pretty.nav_work')" :title-fallback="false" /></a></li>
+                        <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#contact"><x-landing.text key="lbl_common_nav_booking" tag="bdi" :default="__('landings.common.nav_booking')" :title-fallback="false" /></a></li>
                     </ul>
                 </div>
             </div>
@@ -103,7 +103,7 @@ popup and testimonial plugins of the original are not loaded.
                 <div class="row mb-5">
                     <div class="col-md-12 text-center mb-5">
                         <div class="heading">
-                            <h1>{{ __('landings.common.services_title') }}</h1>
+                            <h1><x-landing.text key="lbl_common_services_title" tag="bdi" :default="__('landings.common.services_title')" :title-fallback="false" /></h1>
                             <div class="bord-bot"></div>
                         </div>
                     </div>
@@ -120,7 +120,7 @@ popup and testimonial plugins of the original are not loaded.
                                         @if(!empty($card['price']) && !empty($card['duration'])) · @endif
                                         @if(!empty($card['duration'])){{ __('landings.salone.minutes', ['n' => (int) $card['duration']]) }}@endif
                                     </p>
-                                    <a href="#contact" class="js-scroll-trigger ss-book" data-pick-service="{{ $card['id'] }}">{{ __('landings.common.book') }}</a>
+                                    <a href="#contact" class="js-scroll-trigger ss-book" data-pick-service="{{ $card['id'] }}"><x-landing.text key="lbl_common_book" tag="bdi" :default="__('landings.common.book')" :title-fallback="false" /></a>
                                 </div>
                             </div>
                         </div>
@@ -134,7 +134,7 @@ popup and testimonial plugins of the original are not loaded.
                 <div class="row mb-5">
                     <div class="col-md-12 text-center">
                         <div class="heading">
-                            <h1>{{ __('landings.common.about_title') }}</h1>
+                            <h1><x-landing.text key="lbl_common_about_title" tag="bdi" :default="__('landings.common.about_title')" :title-fallback="false" /></h1>
                             <div class="bord-bot"></div>
                         </div>
                     </div>
@@ -151,7 +151,7 @@ popup and testimonial plugins of the original are not loaded.
                             @endif
                             @if(count($hours))
                                 <p class="ss-hours">
-                                    <strong>{{ __('landings.common.hours_kicker') }}</strong>
+                                    <strong><x-landing.text key="lbl_common_hours_kicker" tag="bdi" :default="__('landings.common.hours_kicker')" :title-fallback="false" /></strong>
                                     @foreach($hours as $line)
                                         <br>{{ $line['days'] }}: {{ $line['from'] }}–{{ $line['to'] }}
                                     @endforeach
@@ -162,7 +162,7 @@ popup and testimonial plugins of the original are not loaded.
                     </div>
                     <div class="col-md-7 m-auto text-center">
                         <div class="body-img-1">
-                            <img src="{{ $asset('img/treamer-small.png') }}" alt="" class="img-fluid">
+                            <x-landing.image key="extra_image_1" default="landing-templates/salon-style/img/treamer-small.png" alt="" class="img-fluid" />
                         </div>
                     </div>
                 </div>
@@ -174,7 +174,7 @@ popup and testimonial plugins of the original are not loaded.
                 <div class="row mb-5">
                     <div class="col-md-12 text-center mb-3">
                         <div class="heading">
-                            <h1>{{ __('landings.pretty.work_title') }}</h1>
+                            <h1><x-landing.text key="lbl_pretty_work_title" tag="bdi" :default="__('landings.pretty.work_title')" :title-fallback="false" /></h1>
                             <div class="bord-bot"></div>
                             @if($editing)
                                 <p>{{ __('landings.pretty.work_hint') }}</p>
@@ -199,7 +199,7 @@ popup and testimonial plugins of the original are not loaded.
                 <div class="row mb-5">
                     <div class="col-md-12 text-center">
                         <div class="heading">
-                            <h1>{{ __('landings.common.booking_title') }}</h1>
+                            <h1><x-landing.text key="lbl_common_booking_title" tag="bdi" :default="__('landings.common.booking_title')" :title-fallback="false" /></h1>
                             <div class="bord-bot"></div>
                             @if($editing || filled($settings['booking_hint'] ?? null))
                                 <x-landing.text key="booking_hint" tag="p" class="desc" />

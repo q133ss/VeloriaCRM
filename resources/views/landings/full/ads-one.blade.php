@@ -42,7 +42,7 @@ One-screen ad page: promise, three benefits, a booking form, contacts. No price 
         @if($editing || $proofItems->isNotEmpty())
             <section class="ao-section">
                 <div class="ao-wrap">
-                    <h2>{{ __('landings.ads.benefits_title') }}</h2>
+                    <h2><x-landing.text key="lbl_ads_benefits_title" tag="bdi" :default="__('landings.ads.benefits_title')" :title-fallback="false" /></h2>
                     <ul class="ao-benefits">
                         @foreach($proofItems->take(3) as $item)
                             <x-landing.text key="proof_items_text" :index="$loop->index" tag="li" />
@@ -54,11 +54,11 @@ One-screen ad page: promise, three benefits, a booking form, contacts. No price 
 
         <section class="ao-form-box" id="booking">
             <div class="ao-wrap">
-                <h2>{{ __('landings.ads.form_title') }}</h2>
+                <h2><x-landing.text key="lbl_ads_form_title" tag="bdi" :default="__('landings.ads.form_title')" :title-fallback="false" /></h2>
                 @if($editing || filled($settings['booking_hint'] ?? null))
                     <x-landing.text key="booking_hint" tag="p" class="ao-lead" />
                 @else
-                    <p class="ao-lead">{{ __('landings.ads.form_lead') }}</p>
+                    <p class="ao-lead"><x-landing.text key="lbl_ads_form_lead" tag="bdi" :default="__('landings.ads.form_lead')" :title-fallback="false" /></p>
                 @endif
                 <form id="request-form" class="ao-form" novalidate>
                     <input type="text" name="client_name" placeholder="{{ __('landings.salone.field_name') }}" required maxlength="120" autocomplete="name">
@@ -80,7 +80,7 @@ One-screen ad page: promise, three benefits, a booking form, contacts. No price 
         @if($hasInfo)
             <section class="ao-section">
                 <div class="ao-wrap">
-                    <h2>{{ __('landings.ads.contacts_title') }}</h2>
+                    <h2><x-landing.text key="lbl_ads_contacts_title" tag="bdi" :default="__('landings.ads.contacts_title')" :title-fallback="false" /></h2>
                     <div class="ao-contacts">
                         @if($address !== '' || $editing)<x-landing.text key="address" tag="span" />@endif
                         @if($telegram)<a href="{{ $telegram }}" target="_blank" rel="noopener">Telegram</a>@endif

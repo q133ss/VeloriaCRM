@@ -24,10 +24,14 @@ return [
         'consultation' => $view,
     ],
     'images' => [
-        // 'hero_image_1' => 'landing-templates/barber-doc/images/hero.jpg',
+        'hero_image_1' => 'landing-templates/barber-doc/img/banner/banner.jpg',
+        'work_image_1' => 'landing-templates/barber-doc/img/about/about_lft.png',
+        'work_image_2' => 'landing-templates/barber-doc/img/about/about_right.png',
+        'extra_image_1' => 'landing-templates/barber-doc/img/prising/1.png',
     ],
     'fields' => [
         'title', 'hero_title', 'hero_text', 'cta_label', 'booking_hint',
         'phone', 'address', 'proof_items_text',
+        'hero_image_1', 'work_image_1', 'work_image_2', 'extra_image_1',
     ],
 ];
