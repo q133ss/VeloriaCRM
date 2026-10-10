@@ -66,7 +66,8 @@ return [
         'client_id' => env('YANDEX_CLIENT_ID'),
         'client_secret' => env('YANDEX_CLIENT_SECRET'),
         'redirect' => env('YANDEX_REDIRECT_URI'),
-        'scopes' => ['login:email', 'login:info'],
+        // Space separated, exactly as ticked in the Yandex OAuth app (invalid_scope otherwise).
+        'scopes' => array_values(array_filter(explode(' ', (string) env('YANDEX_SCOPES', 'login:email login:info')))),
     ],
 
 ];

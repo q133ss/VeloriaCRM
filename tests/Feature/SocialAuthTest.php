@@ -70,6 +70,16 @@ class SocialAuthTest extends TestCase
             ->assertSessionHas('auth_error');
     }
 
+    public function test_yandex_scopes_are_sent_space_separated(): void
+    {
+        $this->configure();
+
+        $location = $this->get('/auth/yandex/redirect')->assertRedirect()->headers->get('Location');
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
+
+        $this->assertSame('login:email login:info', $query['scope']);
+    }
+
     public function test_new_user_is_created_and_linked(): void
     {
         $this->configure();

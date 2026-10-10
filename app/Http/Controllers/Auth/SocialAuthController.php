@@ -130,7 +130,8 @@ class SocialAuthController extends Controller
     private function providerConfig(string $provider): array
     {
         $config = config("services.{$provider}", []);
-        $config['scope'] = Arr::wrap($config['scopes'] ?? []);
+        // Yandex wants scopes separated by a space, Socialite joins with a comma.
+        $config['scopes'] = [implode(' ', Arr::wrap($config['scopes'] ?? []))];
 
         return $config;
     }
