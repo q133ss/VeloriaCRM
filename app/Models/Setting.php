@@ -60,6 +60,7 @@ class Setting extends Model
             'branding' => 'array',
             'map_point' => 'array',
             'smtp_port' => 'integer',
+            'yookassa_secret_key' => 'encrypted',
             'integration_checks' => 'array',
             'allergy_reminder_enabled' => 'boolean',
             'allergy_reminder_minutes' => 'integer',

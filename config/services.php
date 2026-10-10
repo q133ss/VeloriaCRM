@@ -39,6 +39,7 @@ return [
         'shop_id' => env('YOOKASSA_SHOP_ID'),
         'secret_key' => env('YOOKASSA_SECRET_KEY'),
         'return_url' => env('YOOKASSA_RETURN_URL', env('APP_URL').'/subscription'),
+        'app_return_url' => env('YOOKASSA_APP_RETURN_URL', env('APP_URL').'/pay/return/{token}'),
         'currency' => env('YOOKASSA_CURRENCY', 'RUB'),
     ],
 

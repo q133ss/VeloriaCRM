@@ -110,6 +110,7 @@ class AllergyReminderService
                 ->with(['master'])
                 ->where('master_id', $user->id)
                 ->whereIn('status', ['new', 'confirmed'])
+                ->notAwaitingPayment()
                 ->whereNull('actual_started_at')
                 ->whereBetween('scheduled_at', [$windowStart, $windowEnd])
                 ->orderBy('scheduled_at')

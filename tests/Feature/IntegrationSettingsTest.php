@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -122,10 +123,13 @@ class IntegrationSettingsTest extends TestCase
             'smtp_port' => 465,
             'whatsapp_sender' => '123456789',
             'telegram_bot_token' => 'bot-token',
-            'yookassa_secret_key' => 'secret-key',
             'address' => 'Preserved address',
             'reminder_message' => 'Preserved reminder',
         ]);
+
+        // The shop secret is encrypted at rest: readable through the model, not in the table.
+        $this->assertSame('secret-key', Setting::where('user_id', $user->id)->value('yookassa_secret_key'));
+        $this->assertNotSame('secret-key', DB::table('settings')->where('user_id', $user->id)->value('yookassa_secret_key'));
     }
 
     public function test_settings_update_persists_schedule_rules_and_legacy_weekly_fields(): void

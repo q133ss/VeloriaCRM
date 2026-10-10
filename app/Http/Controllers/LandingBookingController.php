@@ -9,6 +9,7 @@ use App\Models\LandingRequest;
 use App\Models\Order;
 use App\Models\Service;
 use App\Services\Booking\ClientBookingService;
+use App\Services\Booking\PrepaymentFailedException;
 use App\Services\Booking\SlotUnavailableException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,10 +69,15 @@ class LandingBookingController extends Controller
                 $validated['time'],
                 $validated['message'] ?? null,
                 'landing',
+                url('/l/' . $landing->slug . '/paid/{token}'),
             );
         } catch (SlotUnavailableException) {
             throw ValidationException::withMessages(['time' => __('landings.booking.slot_taken')]);
+        } catch (PrepaymentFailedException) {
+            return response()->json(['message' => __('prepayment.payment_failed')], 503);
         }
+
+        $payment = $booked['payment'];
 
         // Kept with the landing's other requests so its counters and the
         // "requests" list on the edit page include people who booked outright.
@@ -84,7 +90,7 @@ class LandingBookingController extends Controller
             'client_phone' => $validated['client_phone'],
             'preferred_date' => $validated['date'],
             'message' => $validated['message'] ?? null,
-            'status' => 'booked',
+            'status' => $payment ? 'awaiting_payment' : 'booked',
             'meta' => [
                 'landing_title' => $landing->title,
                 'service_name' => $service?->name,
@@ -98,9 +104,16 @@ class LandingBookingController extends Controller
         $start = $booked['starts_at_local'];
 
         return response()->json([
-            'message' => __('landings.booking.booked'),
+            'message' => $payment
+                ? __('prepayment.required', ['amount' => number_format($payment['amount'], 0, ',', ' ')])
+                : __('landings.booking.booked'),
             'data' => [
-                'kind' => 'booked',
+                'kind' => $payment ? 'payment_required' : 'booked',
+                'payment' => $payment ? [
+                    'amount' => $payment['amount'],
+                    'confirmation_url' => $payment['confirmation_url'],
+                    'expires_at' => $payment['expires_at']->toIso8601String(),
+                ] : null,
                 'date' => $start->toDateString(),
                 'date_label' => $start->translatedFormat('j F, l'),
                 'time' => $start->format('H:i'),

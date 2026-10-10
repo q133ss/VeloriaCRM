@@ -61,6 +61,8 @@ class Order extends Model
         'confidence_level',
         'source',
         'prepaid_amount',
+        'prepay_expires_at',
+        'prepay_rule',
         'is_reminder_sent',
         'complexity_level',
         'recommended_services',
@@ -93,6 +95,8 @@ class Order extends Model
             'confidence_level' => 'decimal:2',
             'source' => 'string',
             'prepaid_amount' => 'decimal:2',
+            'prepay_expires_at' => 'datetime',
+            'prepay_rule' => 'array',
             'is_reminder_sent' => 'boolean',
             'complexity_level' => 'integer',
             'recommended_services' => 'array',
@@ -107,6 +111,12 @@ class Order extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    /** A booking held for a prepayment that has not arrived is not a visit yet. */
+    public function scopeNotAwaitingPayment(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'awaiting'));
     }
 
     public function scopeWithFilter(Builder $query, array $filters): Builder

@@ -16,6 +16,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Booking\AvailabilityService;
 use App\Services\Booking\ClientBookingService;
+use App\Services\Booking\PrepaymentFailedException;
 use App\Services\Booking\SlotUnavailableException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
@@ -194,6 +195,7 @@ class BookingController extends Controller
                 (string) $validated['time'],
                 $validated['note'] ?? null,
                 'client_portal',
+                config('services.yookassa.app_return_url', url('/pay/return/{token}')),
             );
         } catch (SlotUnavailableException) {
             return response()->json([
@@ -202,11 +204,25 @@ class BookingController extends Controller
                     'message' => __('client_portal.booking.slot_unavailable'),
                 ],
             ], 422);
+        } catch (PrepaymentFailedException) {
+            return response()->json([
+                'error' => [
+                    'code' => 'payment_unavailable',
+                    'message' => __('prepayment.payment_failed'),
+                ],
+            ], 503);
         }
+
+        $payment = $booked['payment'];
 
         return response()->json([
             'data' => [
                 'appointment' => $booked['appointment'],
+                'payment' => $payment ? [
+                    'amount' => $payment['amount'],
+                    'confirmation_url' => $payment['confirmation_url'],
+                    'expires_at' => $payment['expires_at']->toIso8601String(),
+                ] : null,
             ],
         ], 201);
     }

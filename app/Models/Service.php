@@ -19,6 +19,8 @@ class Service extends Model
         'cost',
         'duration_min',
         'upsell_suggestions',
+        'prepay_mode',
+        'prepay_value',
     ];
 
     protected function casts(): array
@@ -28,6 +30,7 @@ class Service extends Model
             'cost' => 'float',
             'duration_min' => 'integer',
             'upsell_suggestions' => 'array',
+            'prepay_value' => 'float',
         ];
     }
 
