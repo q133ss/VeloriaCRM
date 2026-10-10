@@ -106,7 +106,11 @@
     <p>{{ $message }}</p>
 
     <div class="err-actions">
-        <a class="err-btn err-btn-primary" href="/dashboard">{{ __('errors.to_dashboard') }}</a>
+        @if (request()->user('sanctum') ?? request()->user())
+            <a class="err-btn err-btn-primary" href="/dashboard">{{ __('errors.to_dashboard') }}</a>
+        @else
+            <a class="err-btn err-btn-primary" href="/login">{{ __('errors.to_login') }}</a>
+        @endif
         <a class="err-btn err-btn-ghost" href="/help">{{ __('errors.to_help') }}</a>
     </div>
 </div>

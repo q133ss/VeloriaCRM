@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminSupportTicketController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController as ApiAdminUserController;
 use App\Http\Controllers\Api\V1\LandingController;
 use App\Http\Controllers\Api\V1\MasterPostController;
+use App\Http\Controllers\Api\V1\SupportRequestController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\TrendsController;
 use App\Http\Controllers\Api\V1\UsefulController;
@@ -33,6 +34,9 @@ use App\Http\Controllers\Api\V1\Admin\AdminUsefulPostController;
 Route::middleware('set.locale')->prefix('v1')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('api.register');
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
+    Route::post('/support-requests', [SupportRequestController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('api.support-requests.store');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth:sanctum', 'token.user'])->name('api.logout');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('api.forgot');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('api.reset');

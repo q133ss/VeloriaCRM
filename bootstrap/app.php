@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'token.cookie' => \App\Http\Middleware\TokenFromCookie::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
             'token.user' => \App\Http\Middleware\EnsureSanctumTokenIsUser::class,
+            'cabinet' => \App\Http\Middleware\EnsureCabinetAccess::class,
             'token.client' => \App\Http\Middleware\EnsureSanctumTokenIsClient::class,
             'admin.access' => \App\Http\Middleware\EnsureAdminAccess::class,
             'user.active' => \App\Http\Middleware\EnsureUserIsActive::class,
@@ -37,6 +38,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->prepend(\App\Http\Middleware\TokenFromCookie::class);
+
+        // Guests must meet the 403, not the redirect to /login that
+        // `auth:sanctum` would answer with on pages behind the cabinet group.
+        $middleware->prependToPriorityList(
+            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            \App\Http\Middleware\EnsureCabinetAccess::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (QueryException $exception, $request) {

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\AdminPageController;
 use App\Http\Controllers\ClientPortal\MagicLinkRedirectController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HelpPageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LandingBookingController;
 use App\Http\Controllers\LandingDemoController;
@@ -59,7 +60,11 @@ Route::middleware('set.locale')->group(function () {
             ->name('social.callback');
     });
 
-    Route::middleware('token.cookie')->group(function () {
+    // The one page of the cabinet a guest may open: a master sees the help
+    // centre, a visitor sees a form that leaves their contact for the team.
+    Route::get('/help', HelpPageController::class)->name('help');
+
+    Route::middleware(['token.cookie', 'cabinet'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
         Route::view('/profile', 'profile')->name('profile');
         Route::view('/settings', 'settings')->name('settings');
@@ -132,7 +137,6 @@ Route::middleware('set.locale')->group(function () {
         });
         // Chat is open on every plan — no `plan:pro` gate here.
         Route::view('/messages', 'chat.index')->name('messages');
-        Route::view('/help', 'help.index')->name('help');
         Route::view('/notifications', 'notifications.index')->name('notifications.index');
 
         Route::middleware('auth:sanctum')->group(function () {
