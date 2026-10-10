@@ -1,0 +1,93 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.2'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, pdo_sqlite, sqlite3, gd, bcmath, intl, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare app
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - run: php artisan test
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      SSH_HOST: q133ss.beget.tech
+      SSH_USER: q133ss_veloria
+      APP_DIR: /home/q/q133ss/veloriapro.ru/public_html
+      REMOTE_PHP: php8.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, pdo_sqlite, sqlite3, gd, bcmath, intl, zip
+          coverage: none
+          tools: composer:v2
+
+      # vendor is built here: the server only has Composer 1.
+      - run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
+
+      - name: Set up SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload code
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key -o BatchMode=yes"
+          # tracked files only; the mobile app, tests and CI config are not deployed
+          git ls-files | grep -v -e '^Client Mobile App/' -e '^tests/' -e '^\.github/' > /tmp/files.txt
+          rsync -az --files-from=/tmp/files.txt -e "$SSH" ./ "$SSH_USER@$SSH_HOST:$APP_DIR/"
+          rsync -az --delete -e "$SSH" vendor/ "$SSH_USER@$SSH_HOST:$APP_DIR/vendor/"
+
+      - name: Migrate and refresh caches
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SSH_USER@$SSH_HOST" "
+            set -e
+            cd $APP_DIR
+            $REMOTE_PHP artisan migrate --force
+            $REMOTE_PHP artisan optimize:clear
+            $REMOTE_PHP artisan config:cache
+            $REMOTE_PHP artisan view:cache
+          "
