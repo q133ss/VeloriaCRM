@@ -85,8 +85,7 @@
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
 
-    <link rel="icon" href="/logo.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="/favicon.ico">
+    @include('partials.favicon')
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|lora:600,600i&display=swap" rel="stylesheet">
