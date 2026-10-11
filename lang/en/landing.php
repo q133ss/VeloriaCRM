@@ -6,8 +6,8 @@
  */
 return [
     'meta' => [
-        'title' => 'Veloria — online booking for beauty pros on Instagram',
-        'description' => 'Free: a booking site for your Instagram and Telegram, a bot, a client app and a master workspace. No more booking in DMs or forgotten appointments.',
+        'title' => 'Veloria — clients book themselves. A free booking site, bot and app for beauty pros',
+        'description' => 'Free: a booking website, a Telegram bot, a client app and a workspace for the master. No more booking in DMs, no more forgotten appointments.',
     ],
 
     'nav' => [
