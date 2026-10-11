@@ -12,6 +12,8 @@ class SetLocale
      */
     private const SUPPORTED_LOCALES = ['ru', 'en'];
 
+    private const DEFAULT_LOCALE = 'ru';
+
     public function handle(Request $request, Closure $next): mixed
     {
         $locale = null;
@@ -24,16 +26,11 @@ class SetLocale
             }
         }
 
+        // Russian is the product default. Accept-Language is deliberately ignored:
+        // link-preview crawlers (Telegram, etc.) send "en" and would cache an
+        // English snippet. English is only served when the user picks it.
         if (! $locale) {
-            $locale = $request->getPreferredLanguage(self::SUPPORTED_LOCALES);
-        }
-
-        if (! in_array($locale, self::SUPPORTED_LOCALES, true)) {
-            $locale = config('app.fallback_locale', 'en');
-        }
-
-        if (! in_array($locale, self::SUPPORTED_LOCALES, true)) {
-            $locale = 'en';
+            $locale = self::DEFAULT_LOCALE;
         }
 
         app()->setLocale($locale);

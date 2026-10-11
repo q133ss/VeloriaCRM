@@ -7,7 +7,7 @@
 return [
     'meta' => [
         'title' => 'Veloria — clients book themselves. A free booking site, bot and app for beauty pros',
-        'description' => 'Free forever: a booking website, a Telegram bot, a client app and a workspace for the master. No more booking in DMs, no more forgotten appointments.',
+        'description' => 'Free: a booking website, a Telegram bot, a client app and a workspace for the master. No more booking in DMs, no more forgotten appointments.',
     ],
 
     'nav' => [
@@ -22,13 +22,13 @@ return [
     ],
 
     'hero' => [
-        'badge' => 'Free forever',
+        'badge' => 'Free',
         'title' => 'Clients book',
         'title_accent' => 'themselves',
         'lead' => 'Your own booking website, a Telegram bot and a client app — free. You work, bookings keep coming: no back-and-forth in DMs and no “oops, I forgot”.',
         'cta_primary' => 'Get my free website',
         'cta_example' => 'See an example site',
-        'note' => 'No card · not a trial, free forever · 5-minute setup',
+        'note' => 'No card · not a trial · 5-minute setup',
         'site_address' => 'anna-nails',
         'notify_label' => 'New booking',
         'notify_title' => 'Anna K. · Gel manicure',
@@ -193,11 +193,11 @@ return [
 
     'pricing' => [
         'label' => 'Pricing',
-        'title' => 'Website, bot and app — free forever',
+        'title' => 'Website, bot and app — free',
         'lead' => 'Pay only when you want to bring clients back automatically.',
         'period' => 'per month',
         'free' => 'free',
-        'note' => 'No card needed. The free plan is forever, not for two weeks.',
+        'note' => 'No card needed. The free plan is not a trial.',
         'cta_free' => 'Start for free',
         'cta_paid' => 'Choose “:plan”',
         'plans' => [
