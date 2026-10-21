@@ -93,6 +93,28 @@ class ProspectTest extends TestCase
         $this->get('/l/nails-anna')->assertOk()->assertHeader('X-Robots-Tag', 'noindex, nofollow');
     }
 
+    public function test_without_a_model_items_are_grouped_and_non_services_dropped(): void
+    {
+        $result = app(\App\Services\Prospects\ProspectServiceParser::class)->parse([
+            ['name' => 'Smart педикюр', 'price' => '2 975 ₽'],
+            ['name' => 'Маникюр без г-лака', 'price' => '1 500 ₽'],
+            ['name' => 'Маникюр «Все включено» Акция', 'price' => '2 099 ₽'],
+            ['name' => 'Маникюр + френч АКЦИЯ', 'price' => '2 399 ₽'],
+            ['name' => 'Брови комплекс', 'price' => '1 500 ₽'],
+            ['name' => 'Гарантия', 'price' => 'бесплатно'],
+        ], [], 'nails');
+
+        $byName = collect($result['services'])->keyBy('name');
+
+        $this->assertSame('items', $result['source']);
+        $this->assertFalse($byName->has('Гарантия'));
+        $this->assertSame(['Педикюр', 90], [$byName['Smart педикюр']['category'], $byName['Smart педикюр']['duration']]);
+        $this->assertSame(['Маникюр', 60], [$byName['Маникюр без г-лака']['category'], $byName['Маникюр без г-лака']['duration']]);
+        $this->assertTrue($byName->has('Маникюр «Все включено»'));
+        $this->assertTrue($byName->has('Маникюр + френч'));
+        $this->assertSame('Брови', $byName['Брови комплекс']['category']);
+    }
+
     public function test_without_any_prices_the_niche_defaults_are_used(): void
     {
         Sanctum::actingAs($this->admin());

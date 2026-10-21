@@ -34,6 +34,30 @@ class ProspectServiceParser
         'makeup' => [['Макияж', 'Дневной макияж', 60], ['Макияж', 'Вечерний макияж', 90], ['Макияж', 'Свадебный макияж', 120]],
     ];
 
+    /** Items a group lists among its services that nobody books a time for. */
+    private const NOT_A_SERVICE = '/гаранти|сертификат|подарочн|обучени|курсы?(\s|$)|ваканси|ищем модел|абонемент/u';
+
+    /** First match wins: the more specific words go first. [pattern, category, minutes] */
+    private const KEYWORD_RULES = [
+        ['/без\s+(г-?\s?лака|гель|покрыти)/u', 'Маникюр', 60],
+        ['/педикюр/u', 'Педикюр', 90],
+        ['/наращивани\S*\s+ногт|наращивани\S*\s+маникюр/u', 'Наращивание ногтей', 150],
+        ['/маникюр|ногт|гель-?\s?лак|френч|покрыти/u', 'Маникюр', 90],
+        ['/ламинировани\S*\s+ресниц/u', 'Ресницы', 60],
+        ['/ресниц/u', 'Ресницы', 120],
+        ['/бров/u', 'Брови', 45],
+        ['/перманент|татуаж/u', 'Перманентный макияж', 120],
+        ['/бород|усы/u', 'Борода', 30],
+        ['/окрашивани|мелировани|тонировани|блонд/u', 'Окрашивание', 150],
+        ['/кератин|ботокс для волос|восстановлени\S*\s+волос/u', 'Уход за волосами', 120],
+        ['/стрижк/u', 'Стрижки', 60],
+        ['/укладк|причёск|прическ/u', 'Укладки', 60],
+        ['/массаж/u', 'Массаж', 60],
+        ['/шугаринг|депиляц|эпиляц|воск/u', 'Депиляция', 45],
+        ['/чистк|пилинг|уход за лицом|маск|мезо|биоревит/u', 'Уход за лицом', 60],
+        ['/макияж|визаж/u', 'Макияж', 60],
+    ];
+
     public function __construct(private readonly AiGateway $ai)
     {
     }
@@ -56,11 +80,53 @@ class ProspectServiceParser
             }
         }
 
+        $ready = $this->enrich($ready);
+
         if ($ready !== []) {
             return ['source' => 'items', 'services' => $ready];
         }
 
         return ['source' => 'default', 'services' => $this->defaults($niche)];
+    }
+
+    /**
+     * Without a model: drop what is not a service, group by the words in the
+     * name and give each a typical duration instead of a flat hour.
+     *
+     * @return array<int, array{category: string, name: string, price: ?float, duration: int}>
+     */
+    public function enrich(array $services): array
+    {
+        $out = [];
+
+        foreach ($services as $service) {
+            $low = mb_strtolower($service['name']);
+
+            if (preg_match(self::NOT_A_SERVICE, $low)) {
+                continue;
+            }
+
+            $name = trim(preg_replace('/(^|[\s,+!-]+)акци[яи](?=$|[\s!»"])[\s!]*/iu', ' ', $service['name']) ?? $service['name']);
+            $name = trim(preg_replace('/\s{2,}/u', ' ', $name) ?? $name) ?: $service['name'];
+
+            foreach (self::KEYWORD_RULES as [$pattern, $category, $minutes]) {
+                if (preg_match($pattern, $low)) {
+                    if ($service['category'] === 'Услуги') {
+                        $service['category'] = $category;
+                    }
+                    if ($service['duration'] === self::DEFAULT_DURATION) {
+                        $service['duration'] = $minutes;
+                    }
+
+                    break;
+                }
+            }
+
+            $service['name'] = $name;
+            $out[] = $service;
+        }
+
+        return $out;
     }
 
     /** @return array<int, array{category: string, name: string, price: ?float, duration: int}> */
