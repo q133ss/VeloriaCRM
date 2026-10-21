@@ -115,6 +115,23 @@ class ProspectTest extends TestCase
         $this->assertSame('Брови', $byName['Брови комплекс']['category']);
     }
 
+    public function test_the_page_skips_vk_contact_lines_and_cleans_the_title(): void
+    {
+        Sanctum::actingAs($this->admin());
+
+        $this->postJson('/api/v1/admin/prospects', $this->payload([
+            'title' => 'Маникюр| Марьино Москва | Beauty Zone Bo',
+            'description' => "Для записи на маникюр по Акции пишите\nvk.me/nailboo\n\n✅ Марьино, МСК, Луговой проезд, 9к2\n\n✅Качественный маникюр и педикюр от мастеров с опытом от 5 лет\n\n🔥СКИДКИ для новых клиентов!",
+        ]))->assertCreated();
+
+        $this->get('/l/nailboo-anna')->assertNotFound();
+        $html = $this->get('/l/nails-anna')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Маникюр · Марьино Москва · Beauty Zone Bo', $html);
+        $this->assertStringContainsString('Качественный маникюр и педикюр от мастеров с опытом от 5 лет', $html);
+        $this->assertStringNotContainsString('по Акции пишите', $html);
+    }
+
     public function test_without_any_prices_the_niche_defaults_are_used(): void
     {
         Sanctum::actingAs($this->admin());

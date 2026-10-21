@@ -284,7 +284,7 @@ class ProspectBuilder
         ]);
 
         $texts = [
-            'hero_title' => $this->clip($title, 255),
+            'hero_title' => $this->clip($this->cleanTitle($title), 255),
             'hero_text' => $this->intro($payload['description'] ?? null),
             'master_bio' => $this->clip($this->intro($payload['description'] ?? null), 500),
         ];
@@ -374,10 +374,32 @@ class ProspectBuilder
             return null;
         }
 
-        $paragraph = preg_split('/\n\s*\n/u', $text)[0] ?? $text;
-        $paragraph = trim(preg_replace('/[ \t]+/u', ' ', $paragraph) ?? $paragraph);
+        // Group descriptions open with "write to vk.me/..." or the address: those
+        // are for VK, not for the page. The first paragraph about the work wins.
+        foreach (preg_split('/\n\s*\n/u', $text) ?: [] as $paragraph) {
+            $paragraph = trim(preg_replace('/^[^\p{L}\p{N}«"]+/u', '', trim($paragraph)) ?? '');
+            $paragraph = trim(preg_replace('/[ \t]+/u', ' ', $paragraph) ?? $paragraph);
+            $low = mb_strtolower($paragraph);
 
-        return $this->clip($paragraph, 300);
+            if (mb_strlen($paragraph) < 15
+                || preg_match('~https?://|vk\.(me|com|ru|cc)/|t\.me/|wa\.me/|@[a-z0-9_]~u', $low)
+                || preg_match('/пиши|пишит|запис[ыа]|звонит|телефон|директ|в лс|скидк|акци/u', $low)
+                || preg_match('/ул\.|улица|проезд|проспект|пр-т|шоссе|переулок|бульвар|\d+к\d/u', $low)) {
+                continue;
+            }
+
+            return $this->clip($paragraph, 300);
+        }
+
+        return null;
+    }
+
+    /** "Маникюр| Марьино | Beauty Zone" reads as a list in VK and as noise on a page. */
+    private function cleanTitle(string $title): string
+    {
+        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*[|\/•]+\s*/u', $title) ?: [])));
+
+        return $parts !== [] ? implode(' · ', $parts) : $title;
     }
 
     private function firstLine(mixed $value): ?string
