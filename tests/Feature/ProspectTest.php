@@ -128,6 +128,7 @@ class ProspectTest extends TestCase
         $html = $this->get('/l/nails-anna')->assertOk()->getContent();
 
         $this->assertStringContainsString('Маникюр · Марьино Москва · Beauty Zone Bo', $html);
+        $this->assertStringNotContainsString('Маникюр|', $html);
         $this->assertStringContainsString('Качественный маникюр и педикюр от мастеров с опытом от 5 лет', $html);
         $this->assertStringNotContainsString('по Акции пишите', $html);
     }

@@ -265,7 +265,7 @@ class ProspectBuilder
     private function createLanding(User $user, array $payload, string $externalId, string $niche): Landing
     {
         $layout = $this->pickLayout($niche, $payload['template'] ?? null);
-        $title = Str::limit(trim((string) $payload['title']), 250, '');
+        $title = Str::limit($this->cleanTitle(trim((string) $payload['title'])), 250, '');
 
         $landing = Landing::create([
             'user_id' => $user->id,
@@ -284,7 +284,7 @@ class ProspectBuilder
         ]);
 
         $texts = [
-            'hero_title' => $this->clip($this->cleanTitle($title), 255),
+            'hero_title' => $this->clip($title, 255),
             'hero_text' => $this->intro($payload['description'] ?? null),
             'master_bio' => $this->clip($this->intro($payload['description'] ?? null), 500),
         ];
