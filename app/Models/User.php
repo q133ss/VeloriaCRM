@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
 use App\Models\Plan;
 use App\Models\SubscriptionTransaction;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 
 class User extends Authenticatable
 {
@@ -78,6 +80,17 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
             'suspended_at' => 'datetime',
         ];
+    }
+
+    public function prospect(): HasOne
+    {
+        return $this->hasOne(Prospect::class);
+    }
+
+    /** Leaves out accounts built for outreach that nobody has taken over yet. */
+    public function scopeWithoutPendingProspects(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('prospect', fn (Builder $prospect) => $prospect->pending());
     }
 
     public function socialAccounts(): HasMany

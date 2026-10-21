@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\MarketingCampaign;
+use App\Models\Prospect;
+use App\Services\Prospects\ProspectBuilder;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Ai\AiGateway;
@@ -261,6 +263,35 @@ Artisan::command('clients:refresh-visits {--master= : Only this master\'s client
     return 0;
 })->purpose('Recount when each client last came, from the bookings');
 
+Artisan::command('prospects:expire {--dry-run}', function (ProspectBuilder $builder) {
+    // Accounts built for outreach that nobody took over: the page, the photos
+    // and the user go; the row stays so the same group is not built twice blind.
+    $cutoff = now()->subDays((int) config('prospects.ttl_days'));
+    $expired = Prospect::query()->pending()->where('created_at', '<', $cutoff)->get();
+
+    foreach ($expired as $prospect) {
+        if ($this->option('dry-run')) {
+            $this->line("Would expire #{$prospect->id} {$prospect->external_id}");
+
+            continue;
+        }
+
+        $builder->destroy($prospect);
+        $prospect->forceFill([
+            'status' => Prospect::STATUS_EXPIRED,
+            'user_id' => null,
+            'landing_id' => null,
+            'password' => null,
+            'claim_token' => null,
+        ])->save();
+    }
+
+    $this->info("Expired: {$expired->count()}.");
+
+    return 0;
+})->purpose('Delete outreach accounts nobody claimed in time');
+
+Schedule::command('prospects:expire')->dailyAt('04:10');
 Schedule::command('marketing:dispatch-scheduled')->everyMinute();
 Schedule::command('subscription:sync-pending')->everyMinute();
 Schedule::command('prepayment:sync')->everyMinute()->withoutOverlapping();
