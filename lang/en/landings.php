@@ -660,6 +660,20 @@ return [
         'form_lead' => 'Pick a time or just leave your phone and we will call you back.',
     ],
 
+    'price_list' => [
+        'prices_title' => 'Services and prices',
+        'prices_empty' => 'We will tell you the price when you book.',
+        'works_title' => 'Work',
+        'booking_title' => 'Book online',
+        'booking_lead' => 'Pick a service and a free time; the booking goes straight to the master\'s calendar.',
+        'contacts_title' => 'How to find us',
+        'hours_title' => 'Opening hours',
+        'call' => 'Call',
+        'book_this' => 'Book',
+        'min' => 'min',
+        'price_on_request' => 'on request',
+    ],
+
     'masterclass' => [
         'kicker' => 'Training and workshops',
         'programs' => 'Programs and classes',

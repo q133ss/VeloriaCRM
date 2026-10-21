@@ -34,6 +34,8 @@ class ProspectBuilder
 {
     private const WORK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
+    public const OUTREACH_LAYOUT = 'price-list';
+
     /** Hero first, then the works, then whatever else the template shows. */
     private const PHOTO_SLOTS = [
         'hero_image_1', 'work_image_1', 'work_image_2', 'work_image_3', 'work_image_4',
@@ -178,6 +180,11 @@ class ProspectBuilder
     {
         if ($requested && $this->registry->layout($requested)) {
             return $requested;
+        }
+
+        // Made for exactly this: a group's price list by category and its own photos, no stock.
+        if ($this->registry->layout(self::OUTREACH_LAYOUT)) {
+            return self::OUTREACH_LAYOUT;
         }
 
         $category = $niche === 'lashes' ? 'brows' : $niche;
@@ -397,7 +404,7 @@ class ProspectBuilder
     /** "Маникюр| Марьино | Beauty Zone" reads as a list in VK and as noise on a page. */
     private function cleanTitle(string $title): string
     {
-        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*[|\/•]+\s*/u', $title) ?: [])));
+        $parts = array_values(array_filter(array_map('trim', preg_split('/\s*[|•]+\s*/u', $title) ?: [])));
 
         return $parts !== [] ? implode(' · ', $parts) : $title;
     }
