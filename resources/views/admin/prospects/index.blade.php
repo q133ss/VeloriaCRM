@@ -107,7 +107,7 @@
                                     <div class="admin-row-meta mt-1">${esc(p.login)} / ${esc(p.password)}</div>
                                 </details>` : ''}
                         </div>
-                        <span class="admin-chip">${esc(statusLabels[p.status] || p.status)}</span>
+                        <span class="admin-chip align-self-start text-nowrap">${esc(statusLabels[p.status] || p.status)}</span>
                     </article>`;
             };
 
