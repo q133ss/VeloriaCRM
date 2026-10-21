@@ -38,6 +38,8 @@ class AdminUserController extends Controller
                 });
             })
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            // Outreach accounts have their own page; a search still finds them.
+            ->when($search === '', fn ($query) => $query->withoutPendingProspects())
             ->withCount([
                 'clients',
                 'subscriptionTransactions',

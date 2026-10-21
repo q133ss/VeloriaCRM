@@ -31,4 +31,9 @@ class AdminPageController extends Controller
     {
         return view('admin.audit.index');
     }
+
+    public function prospects(): View
+    {
+        return view('admin.prospects.index');
+    }
 }

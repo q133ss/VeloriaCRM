@@ -18,8 +18,8 @@ class AdminOverviewController extends Controller
         $sevenDaysAgo = $now->copy()->subDays(7);
 
         $summary = [
-            'total_users' => User::count(),
-            'new_users_7d' => User::where('created_at', '>=', $sevenDaysAgo)->count(),
+            'total_users' => User::query()->withoutPendingProspects()->count(),
+            'new_users_7d' => User::query()->withoutPendingProspects()->where('created_at', '>=', $sevenDaysAgo)->count(),
             'paid_users' => User::whereHas('subscriptionTransactions', function ($query) {
                 $query->where('status', 'paid');
             })->count(),
@@ -53,6 +53,7 @@ class AdminOverviewController extends Controller
             ->pluck('total', 'status');
 
         $recentUsers = User::query()
+            ->withoutPendingProspects()
             ->latest()
             ->limit(6)
             ->get(['id', 'name', 'email', 'status', 'is_admin', 'admin_role', 'created_at'])

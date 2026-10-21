@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -24,6 +25,13 @@ class EnsureAdminAccess
         $user = $request->user();
 
         if (! $user || ! method_exists($user, 'canAccessAdmin') || ! $user->canAccessAdmin()) {
+            abort(403);
+        }
+
+        // A token issued for one job (the outreach scraper) opens only that job's routes.
+        $token = $user->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken && $token->cant('*') && ! $request->routeIs('api.admin.prospects.*')) {
             abort(403);
         }
 

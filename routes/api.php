@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Marketing\WarmupController;
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\AdminOverviewController;
 use App\Http\Controllers\Api\V1\Admin\AdminAuditController;
+use App\Http\Controllers\Api\V1\Admin\AdminProspectController;
 use App\Http\Controllers\Api\V1\Admin\AdminSupportTicketController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController as ApiAdminUserController;
 use App\Http\Controllers\Api\V1\LandingController;
@@ -254,5 +255,21 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
                 Route::patch('/useful/posts/{article}', [AdminUsefulPostController::class, 'update']);
                 Route::delete('/useful/posts/{article}', [AdminUsefulPostController::class, 'destroy']);
             });
+
+            // Accounts built in advance for cold outreach: they carry a login and
+            // password, so the super administrator only. The scraper's token is
+            // limited to these routes (see EnsureAdminAccess).
+            Route::middleware('admin.access:super_admin')
+                ->prefix('prospects')
+                ->name('api.admin.prospects.')
+                ->group(function () {
+                    Route::get('/', [AdminProspectController::class, 'index'])->name('index');
+                    Route::post('/', [AdminProspectController::class, 'store'])->middleware('throttle:30,1')->name('store');
+                    Route::post('/import', [AdminProspectController::class, 'import'])->middleware('throttle:30,1')->name('import');
+                    Route::post('/token', [AdminProspectController::class, 'token'])->name('token');
+                    Route::get('/{channel}/{externalId}', [AdminProspectController::class, 'show'])->name('show');
+                    Route::patch('/{prospect}', [AdminProspectController::class, 'update'])->name('update');
+                    Route::delete('/{prospect}', [AdminProspectController::class, 'destroy'])->name('destroy');
+                });
         });
 });

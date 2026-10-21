@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Landing;
+use App\Models\Prospect;
 use App\Models\Service;
 use App\Services\Landing\LandingContent;
 use App\Services\Landing\TemplateRegistry;
 use Illuminate\Support\Collection;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
 class LandingPageController extends Controller
 {
-    public function __invoke(Request $request, string $slug): View
+    public function __invoke(Request $request, string $slug): Response
     {
         $landing = Landing::query()->where('slug', $slug)->firstOrFail();
 
@@ -38,13 +39,21 @@ class LandingPageController extends Controller
         // A stored template that no longer exists (a retired layout) falls back to the default.
         $template = app(TemplateRegistry::class)->resolve($landing->landing, $landing->type);
 
-        return view($template, [
+        $response = response()->view($template, [
             'landing' => $landing,
             'template' => $template,
             'isPreview' => $isPreview,
             'isEdit' => $isEdit,
             'featuredServices' => $this->resolveFeaturedServices($landing),
         ]);
+
+        // A page built for a master from outreach is hers to publish: until she
+        // takes the account over, search engines are asked to leave it alone.
+        if (Prospect::isPendingUser($landing->user_id)) {
+            $response->header('X-Robots-Tag', 'noindex, nofollow');
+        }
+
+        return $response;
     }
 
     protected function resolveFeaturedServices(Landing $landing): Collection

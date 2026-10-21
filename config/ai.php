@@ -66,6 +66,10 @@ return [
         // for something the rules already answered most of, so the paid
         // provider goes first here and the local one is the safety net.
         'booking_intent' => env('AI_ROUTE_BOOKING_INTENT', 'openai_first'),
+
+        // Reading a price list out of a group's texts for an outreach account.
+        // The texts run past the local cap anyway, and the scraper is waiting.
+        'prospect_services' => env('AI_ROUTE_PROSPECT_SERVICES', 'openai_first'),
     ],
 
     /*

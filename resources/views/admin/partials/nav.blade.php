@@ -11,6 +11,11 @@
     <a href="{{ route('admin.support') }}" class="admin-subnav-link {{ request()->routeIs('admin.support') ? 'is-active' : '' }}">
         Поддержка
     </a>
+    @if (auth()->user()?->admin_role === \App\Models\User::ADMIN_ROLE_SUPER_ADMIN)
+        <a href="{{ route('admin.prospects') }}" class="admin-subnav-link {{ request()->routeIs('admin.prospects') ? 'is-active' : '' }}">
+            Заготовки
+        </a>
+    @endif
     <a href="{{ route('admin.audit') }}" class="admin-subnav-link {{ request()->routeIs('admin.audit') ? 'is-active' : '' }}">
         Журнал
     </a>

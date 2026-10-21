@@ -12,6 +12,7 @@ use App\Http\Controllers\LandingDemoController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LandingRequestController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ProspectClaimController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('set.locale')->group(function () {
@@ -48,6 +49,14 @@ Route::middleware('set.locale')->group(function () {
             ]);
         })->name($document);
     }
+
+    // A master takes over the account built for her from outreach.
+    Route::get('/claim/{token}', [ProspectClaimController::class, 'show'])
+        ->middleware('throttle:30,1')
+        ->name('prospects.claim');
+    Route::post('/claim/{token}', [ProspectClaimController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('prospects.claim.store');
 
     Route::view('/login', 'auth.login')->name('login');
     Route::view('/register', 'auth.register')->name('register.form');
@@ -161,6 +170,9 @@ Route::middleware('set.locale')->group(function () {
                 Route::get('/useful', [AdminPageController::class, 'useful'])->name('admin.useful');
                 Route::get('/support', [AdminPageController::class, 'support'])->name('admin.support');
                 Route::get('/audit', [AdminPageController::class, 'audit'])->name('admin.audit');
+                Route::get('/prospects', [AdminPageController::class, 'prospects'])
+                    ->middleware('admin.access:super_admin')
+                    ->name('admin.prospects');
             });
     });
 });
