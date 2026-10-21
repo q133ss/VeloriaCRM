@@ -120,17 +120,33 @@ class ProspectTest extends TestCase
         Sanctum::actingAs($this->admin());
 
         $this->postJson('/api/v1/admin/prospects', $this->payload([
-            'title' => 'Маникюр| Марьино Москва | Beauty Zone Bo',
+            'title' => 'Маникюр| Марьино Москва | Beauty Zone Bo 24/7',
             'description' => "Для записи на маникюр по Акции пишите\nvk.me/nailboo\n\n✅ Марьино, МСК, Луговой проезд, 9к2\n\n✅Качественный маникюр и педикюр от мастеров с опытом от 5 лет\n\n🔥СКИДКИ для новых клиентов!",
         ]))->assertCreated();
 
         $this->get('/l/nailboo-anna')->assertNotFound();
         $html = $this->get('/l/nails-anna')->assertOk()->getContent();
 
-        $this->assertStringContainsString('Маникюр · Марьино Москва · Beauty Zone Bo', $html);
+        $this->assertStringContainsString('Маникюр · Марьино Москва · Beauty Zone Bo 24/7', $html);
         $this->assertStringNotContainsString('Маникюр|', $html);
         $this->assertStringContainsString('Качественный маникюр и педикюр от мастеров с опытом от 5 лет', $html);
         $this->assertStringNotContainsString('по Акции пишите', $html);
+    }
+
+    public function test_outreach_pages_use_the_price_list_layout_with_services_by_category(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $this->postJson('/api/v1/admin/prospects', $this->payload())->assertCreated();
+
+        $landing = Prospect::firstOrFail()->landing;
+        $this->assertSame('landings.full.price-list', $landing->landing);
+
+        $html = $this->get('/l/' . $landing->slug)->assertOk()->getContent();
+        // Groups from the catalog, real prices, the formatted phone, and no stock placeholder for visitors.
+        $this->assertStringContainsString('pl-group-title', $html);
+        $this->assertStringContainsString('1 800 ₽', $html);
+        $this->assertStringContainsString('+7 900 123-45-67', $html);
+        $this->assertStringNotContainsString('placeholder.svg', $html);
     }
 
     public function test_without_any_prices_the_niche_defaults_are_used(): void

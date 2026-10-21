@@ -64,7 +64,7 @@ class LandingPageController extends Controller
             ->orderBy('name');
 
         if ($landing->type === 'general' && data_get($settings, 'show_all_services')) {
-            return $query->get(['id', 'name', 'base_price', 'duration_min']);
+            return $query->get(['id', 'name', 'base_price', 'duration_min', 'category_id']);
         }
 
         $serviceIds = collect(data_get($settings, 'service_ids', []))
@@ -77,9 +77,9 @@ class LandingPageController extends Controller
         if ($serviceIds->isNotEmpty()) {
             return $query
                 ->whereIn('id', $serviceIds->all())
-                ->get(['id', 'name', 'base_price', 'duration_min']);
+                ->get(['id', 'name', 'base_price', 'duration_min', 'category_id']);
         }
 
-        return $query->limit(5)->get(['id', 'name', 'base_price', 'duration_min']);
+        return $query->limit(5)->get(['id', 'name', 'base_price', 'duration_min', 'category_id']);
     }
 }
