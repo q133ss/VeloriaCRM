@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Landing;
 use App\Models\Prospect;
+use App\Models\ProspectVisit;
+use App\Services\Prospects\ProspectVisitRecorder;
 use App\Models\Service;
 use App\Services\Landing\LandingContent;
 use App\Services\Landing\TemplateRegistry;
@@ -32,6 +34,11 @@ class LandingPageController extends Controller
         if (! $isPreview) {
             Landing::whereKey($landing->id)->increment('views');
             $landing->refresh();
+
+            // The page built for a master from outreach: note who opens it, signed-in people (her, us) aside.
+            if (! Auth::guard('sanctum')->check() && ($prospect = Prospect::query()->where('landing_id', $landing->id)->first())) {
+                app(ProspectVisitRecorder::class)->record($prospect, ProspectVisit::KIND_LANDING, $request);
+            }
         }
 
         app(LandingContent::class)->bind($landing, $isEdit);

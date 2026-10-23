@@ -227,6 +227,53 @@ class ProspectTest extends TestCase
         $this->get('/l/nails-anna')->assertOk()->assertHeaderMissing('X-Robots-Tag');
     }
 
+    public function test_opens_of_the_claim_link_and_the_page_are_counted_apart_from_bots(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $data = $this->postJson('/api/v1/admin/prospects', $this->payload())->json('data');
+        $claimPath = parse_url($data['claim_url'], PHP_URL_PATH);
+        $landingPath = parse_url($data['landing_url'], PHP_URL_PATH);
+
+        $person = ['User-Agent' => 'Mozilla/5.0 (iPhone) Safari', 'Referer' => 'https://vk.com/im'];
+
+        // A guest (not the admin session) opens both links, and VK's preview robot opens one.
+        $this->app['auth']->forgetGuards();
+        $this->withHeaders($person)->get($claimPath)->assertOk();
+        $this->withHeaders($person)->get($claimPath)->assertOk();
+        $this->withHeaders($person)->get($landingPath)->assertOk();
+        $this->withHeaders(['User-Agent' => 'vkShare; +http://vk.com/dev/Share'])->get($claimPath)->assertOk();
+
+        Sanctum::actingAs($this->admin());
+        $row = collect($this->getJson('/api/v1/admin/prospects')->json('data'))->firstWhere('id', $data['id']);
+
+        $this->assertSame(2, $row['visits']['claim']['views']);
+        $this->assertSame(1, $row['visits']['claim']['visitors']);
+        $this->assertSame(1, $row['visits']['landing']['views']);
+        $this->assertSame(1, $row['visits']['bot_hits']);
+        $this->assertCount(1, $this->getJson('/api/v1/admin/prospects?status=opened')->json('data'));
+
+        $log = $this->getJson('/api/v1/admin/prospects/' . $data['id'] . '/visits')->json('data');
+        $this->assertCount(4, $log);
+        $this->assertSame('vk.com/im', preg_replace('#^https?://#', '', $log[array_search('landing', array_column($log, 'kind'))]['referer']));
+    }
+
+    public function test_claimed_prospect_shows_the_email_she_registered_with(): void
+    {
+        Sanctum::actingAs($this->admin());
+        $data = $this->postJson('/api/v1/admin/prospects', $this->payload())->json('data');
+        $this->app['auth']->forgetGuards();
+
+        $this->post(parse_url($data['claim_url'], PHP_URL_PATH), [
+            'email' => 'anna@example.com', 'password' => 'secret-pass-1', 'password_confirmation' => 'secret-pass-1',
+        ]);
+
+        Sanctum::actingAs($this->admin());
+        $row = collect($this->getJson('/api/v1/admin/prospects')->json('data'))->firstWhere('id', $data['id']);
+
+        $this->assertSame('claimed', $row['status']);
+        $this->assertSame('anna@example.com', $row['email']);
+    }
+
     public function test_claim_refuses_an_email_that_already_has_an_account(): void
     {
         User::factory()->create(['email' => 'taken@example.com']);

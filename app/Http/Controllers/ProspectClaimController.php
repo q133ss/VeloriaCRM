@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Prospect;
+use App\Models\ProspectVisit;
 use App\Models\User;
+use App\Services\Prospects\ProspectVisitRecorder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,9 +21,10 @@ use Illuminate\Validation\Rule;
  */
 class ProspectClaimController extends Controller
 {
-    public function show(string $token): View
+    public function show(Request $request, string $token, ProspectVisitRecorder $visits): View
     {
         $prospect = $this->find($token);
+        $visits->record($prospect, ProspectVisit::KIND_CLAIM, $request);
 
         return view('prospects.claim', [
             'prospect' => $prospect,

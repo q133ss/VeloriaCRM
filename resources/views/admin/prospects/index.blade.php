@@ -22,6 +22,7 @@
                             <option value="all">Все</option>
                             <option value="built">Собраны</option>
                             <option value="sent">Отправлены</option>
+                            <option value="opened">Открыли ссылку, не зарегистрировались</option>
                             <option value="claimed">Забраны</option>
                             <option value="expired">Истекли</option>
                         </select>
@@ -67,6 +68,27 @@
 
             const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
             const formatDate = (value) => value ? new Date(value).toLocaleDateString() : '';
+            const formatTime = (value) => value ? new Date(value).toLocaleString([], {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : '';
+            const kindLabels = {claim: 'ссылка кабинета', landing: 'страница записи'};
+
+            // Where she is in the funnel: nothing opened, looked at the page, opened the hand-over link, took the account.
+            const stage = (p) => {
+                const v = p.visits || {};
+                if (p.status === 'claimed') return ['Зарегистрировалась' + (p.email ? ': ' + esc(p.email) : ''), 'text-success'];
+                if (p.status === 'expired') return ['Не забрала, истекла', 'text-muted'];
+                if (v.claim && v.claim.views) return ['Открыла ссылку кабинета, но не зарегистрировалась', 'text-warning'];
+                if (v.landing && v.landing.views) return ['Смотрела страницу записи, ссылку кабинета не открывала', 'text-warning'];
+                return [p.status === 'sent' ? 'Отправлено, пока никто не открывал' : 'Ещё не отправлено', 'text-muted'];
+            };
+
+            const visitsLine = (p) => {
+                const v = p.visits || {};
+                const part = (label, d) => d && d.views
+                    ? `${label}: открытий ${d.views}${d.visitors > 1 ? `, разных людей ${d.visitors}` : ''}, первый ${formatTime(d.first_at)}, последний ${formatTime(d.last_at)}`
+                    : null;
+                return [part('Ссылка кабинета', v.claim), part('Страница записи', v.landing),
+                    v.bot_hits ? `превью и боты: ${v.bot_hits}` : null].filter(Boolean).join(' • ');
+            };
 
             const copy = async (text, button) => {
                 try {
@@ -88,11 +110,17 @@
                     pending && p.expires_at ? 'удалится ' + formatDate(p.expires_at) : null,
                 ].filter(Boolean).join(' • ');
 
+                const [stageText, stageClass] = stage(p);
+                const visitsText = visitsLine(p);
+
                 return `
                     <article class="admin-row" data-id="${p.id}">
                         <div class="flex-grow-1">
                             <div class="admin-row-title">${esc(p.title || p.external_id)}</div>
                             <div class="admin-row-meta">${meta}</div>
+                            <div class="admin-row-meta fw-semibold ${stageClass}">${stageText}</div>
+                            ${visitsText ? `<div class="admin-row-meta">${visitsText}</div>` : ''}
+                            ${visitsText ? `<details class="mt-1" data-visits><summary class="admin-row-meta">Все переходы</summary><div class="admin-row-meta mt-1" data-visits-body>Загружаю…</div></details>` : ''}
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 ${p.landing_url ? `<a class="btn btn-sm btn-primary" href="${esc(p.landing_url)}" target="_blank" rel="noopener">Страница</a>` : ''}
                                 ${p.landing_url ? `<button type="button" class="btn btn-sm btn-outline-primary" data-copy="${esc(p.landing_url)}">Ссылка на страницу</button>` : ''}
@@ -162,6 +190,25 @@
                     load();
                 }
             });
+
+            listEl.addEventListener('toggle', async (event) => {
+                const details = event.target;
+                const article = details.closest('[data-id]');
+
+                if (!details.matches('[data-visits]') || !details.open || !article) {
+                    return;
+                }
+
+                const body = details.querySelector('[data-visits-body]');
+                const response = await fetch(`/api/v1/admin/prospects/${article.dataset.id}/visits`, {headers});
+                const rows = response.ok ? ((await response.json()).data || []) : null;
+
+                body.innerHTML = rows === null ? 'Не удалось загрузить.' : rows.map((r) => {
+                    const from = r.referer ? 'из ' + esc(r.referer.replace(/^https?:\/\//, '')) : 'без источника (прямая ссылка, мессенджер)';
+                    const who = r.is_bot ? '<em>превью/бот</em>' : 'человек ' + esc(r.visitor);
+                    return `<div>${formatTime(r.at)} • ${kindLabels[r.kind] || r.kind} • ${who} • ${from}${r.is_bot ? '' : ' • ' + esc((r.user_agent || '').slice(0, 60))}</div>`;
+                }).join('') || 'Пока пусто.';
+            }, true);
 
             document.getElementById('prospect-import').addEventListener('submit', async (event) => {
                 event.preventDefault();
