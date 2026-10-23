@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Prospect;
 use App\Models\Service;
 use App\Services\Admin\AdminAuditService;
+use App\Models\ProspectVisit;
 use App\Services\Prospects\ProspectBuilder;
+use App\Services\Prospects\ProspectVisitRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -29,6 +31,7 @@ class AdminProspectController extends Controller
     public function __construct(
         private readonly ProspectBuilder $builder,
         private readonly AdminAuditService $auditService,
+        private readonly ProspectVisitRecorder $visits,
     ) {
     }
 
@@ -42,13 +45,33 @@ class AdminProspectController extends Controller
             ->when($search !== '', fn ($q) => $q->where(fn ($b) => $b
                 ->where('title', 'like', '%' . $search . '%')
                 ->orWhere('external_id', 'like', '%' . $search . '%')))
-            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->when($status === 'opened', fn ($q) => $q->pending()->whereHas('visits', fn ($v) => $v->where('kind', ProspectVisit::KIND_CLAIM)->where('is_bot', false)))
+            ->when(! in_array($status, ['all', 'opened'], true), fn ($q) => $q->where('status', $status))
             ->latest()
             ->limit(200)
             ->get();
 
+        $summaries = $this->visits->summaries($prospects->pluck('id')->all());
+
         return response()->json([
-            'data' => $prospects->map(fn (Prospect $p) => $this->transform($p))->all(),
+            'data' => $prospects->map(fn (Prospect $p) => $this->transform($p) + ['visits' => $summaries[$p->id]])->all(),
+        ]);
+    }
+
+    /** Every open of her links, newest first, with where the person came from. */
+    public function visits(Prospect $prospect): JsonResponse
+    {
+        $rows = $prospect->visits()->latest('created_at')->latest('id')->limit(100)->get();
+
+        return response()->json([
+            'data' => $rows->map(fn (ProspectVisit $v) => [
+                'kind' => $v->kind,
+                'is_bot' => $v->is_bot,
+                'referer' => $v->referer,
+                'user_agent' => $v->user_agent,
+                'visitor' => substr($v->visitor, 0, 6),
+                'at' => $v->created_at->toIso8601String(),
+            ])->all(),
         ]);
     }
 
@@ -229,6 +252,7 @@ class AdminProspectController extends Controller
             'services_count' => $prospect->user_id ? Service::query()->where('user_id', $prospect->user_id)->count() : 0,
             'landing_url' => $landing ? route('landings.public', $landing->slug) : null,
             'editor_url' => $landing ? route('landings.public', ['slug' => $landing->slug, 'edit' => 1]) : null,
+            'email' => $prospect->status === Prospect::STATUS_CLAIMED ? $prospect->user?->email : null,
             'login' => $pending ? $prospect->user?->email : null,
             'password' => $pending ? $prospect->password : null,
             'claim_url' => $pending && $prospect->claim_token ? route('prospects.claim', $prospect->claim_token) : null,

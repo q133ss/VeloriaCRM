@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * An account built in advance for a master from cold outreach: services,
@@ -62,6 +63,11 @@ class Prospect extends Model
     public function landing(): BelongsTo
     {
         return $this->belongsTo(Landing::class);
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(ProspectVisit::class);
     }
 
     public function isPending(): bool

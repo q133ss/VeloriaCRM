@@ -267,6 +267,7 @@ Route::middleware('set.locale')->prefix('v1')->group(function () {
                     Route::post('/', [AdminProspectController::class, 'store'])->middleware('throttle:30,1')->name('store');
                     Route::post('/import', [AdminProspectController::class, 'import'])->middleware('throttle:30,1')->name('import');
                     Route::post('/token', [AdminProspectController::class, 'token'])->name('token');
+                    Route::get('/{prospect}/visits', [AdminProspectController::class, 'visits'])->whereNumber('prospect')->name('visits');
                     Route::get('/{channel}/{externalId}', [AdminProspectController::class, 'show'])->name('show');
                     Route::patch('/{prospect}', [AdminProspectController::class, 'update'])->name('update');
                     Route::delete('/{prospect}', [AdminProspectController::class, 'destroy'])->name('destroy');
